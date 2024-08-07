@@ -1,0 +1,27 @@
+# /docker-compose.yml
+
+services:
+  activity:
+    build:
+      context: ./activity
+    ports:
+      - "8081:8081"
+  employee:
+    build:
+      context: ./employee
+    ports:
+      - "8082:8082"
+  urgency:
+    build:
+      context: ./urgency
+    ports:
+      - "8083:8083"
+  api-gateway:
+    build:
+      context: ./api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - activity
+      - employee
+      - urgency
