@@ -11,7 +11,7 @@ const (
 	dbConnectionTemplate = "host=%v user=%v password=%v dbname=%v port=%v sslmode=disable"
 	defaultHost          = "localhost"
 	defaultPort          = "5432"
-	defaultUser          = "dpavlovic"
+	defaultUser          = "postgres"
 	defaultPassword      = "etf"
 	defaultDbName        = "activity"
 )
@@ -22,7 +22,7 @@ const (
 //	default host = `defaultHost`
 //	default port = `5432`
 //	default db name = `activity`
-func GetDbConnection(log utils.Logger, hostname, port, dbName string) *gorm.DB {
+func GetDbConnection(log utils.Logger, hostname, port, user, dbName string) *gorm.DB {
 	if hostname == "" {
 		log.Warnf("Hostname not provided, creating a connection with a default one (%v)", defaultHost)
 		hostname = defaultHost
@@ -33,13 +33,17 @@ func GetDbConnection(log utils.Logger, hostname, port, dbName string) *gorm.DB {
 	}
 	if dbName == "" {
 		log.Warnf("Database name not provided, creating a connection with a default one (%v)", defaultDbName)
-		dbName = defaultHost
+		dbName = defaultDbName
+	}
+	if user == "" {
+		log.Warnf("User not provided, creating a connection with a default one (%v)", defaultUser)
+		user = defaultUser
 	}
 
-	dsn := fmt.Sprintf(dbConnectionTemplate, defaultHost, defaultUser, defaultPassword, dbName, defaultPort)
+	dsn := fmt.Sprintf(dbConnectionTemplate, hostname, user, defaultPassword, dbName, port)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("failed to connect to employee database: %v", err)
+		log.Fatalf("failed to connect to '%v' database: %v", dbName, err)
 	}
 	return db
 }

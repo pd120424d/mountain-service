@@ -8,6 +8,6 @@ COPY . .
 RUN go mod download
 RUN go build -o main ./cmd/employee
 
-EXPOSE 8081
+EXPOSE 8082
 
 CMD ["./main"]
