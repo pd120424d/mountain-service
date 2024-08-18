@@ -4,6 +4,7 @@ import (
 	"gorm.io/gorm"
 
 	"mountain-service/employee/internal/models"
+	"mountain-service/shared/utils"
 )
 
 type EmployeeRepository interface {
@@ -20,6 +21,11 @@ func NewEmployeeRepository(db *gorm.DB) EmployeeRepository {
 }
 
 func (repo *employeeRepository) Create(employee *models.Employee) error {
+	hashedPassword, err := utils.HashPassword(employee.Password)
+	if err != nil {
+		return err
+	}
+	employee.Password = hashedPassword
 	return repo.db.Create(employee).Error
 }
 

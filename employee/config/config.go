@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"gorm.io/gorm"
 
 	"mountain-service/shared/config"

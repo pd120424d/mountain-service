@@ -2,9 +2,11 @@ package config
 
 import (
 	"fmt"
+
+	"mountain-service/shared/utils"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"mountain-service/shared/utils"
 )
 
 const (
@@ -19,7 +21,7 @@ const (
 // GetDbConnection creates a connection to postgres db with provided host, port and name.
 // If any of these is not provided (empty) it fall back to the default values.
 //
-//	default host = `defaultHost`
+//	default host = `localhost`
 //	default port = `5432`
 //	default db name = `activity`
 func GetDbConnection(log utils.Logger, hostname, port, user, dbName string) *gorm.DB {
