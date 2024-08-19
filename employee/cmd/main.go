@@ -54,6 +54,7 @@ func main() {
 	r := gin.Default()
 	r.POST("/employees", employeeHandler.CreateEmployee)
 	r.GET("/employees", employeeHandler.GetAllEmployees)
+	r.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%v", config.ServerPort),
