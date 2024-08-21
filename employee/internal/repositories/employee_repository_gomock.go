@@ -5,7 +5,7 @@
 package repositories
 
 import (
-	models "mountain-service/employee/internal/models"
+	models "mountain-service/employee/internal/model"
 	reflect "reflect"
 
 	"go.uber.org/mock/gomock"

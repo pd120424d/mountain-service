@@ -1,0 +1,128 @@
+basePath: /api/v1
+definitions:
+  gin.H:
+    additionalProperties: {}
+    type: object
+  model.EmployeeCreateRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      gender:
+        type: string
+      last_name:
+        type: string
+      phone:
+        type: string
+      profile_picture:
+        type: string
+      profile_type:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - first_name
+    - gender
+    - last_name
+    - phone
+    - username
+    type: object
+  model.EmployeeResponse:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      gender:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+      phone:
+        type: string
+      profile_picture:
+        description: this may be represented as a byte array if we read the picture
+          from somewhere for an example
+        type: string
+      profile_type:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8082
+info:
+  contact:
+    email: support@example.com
+    name: Подршка за API
+    url: http://www.example.com/support
+  description: Ово је пример API сервиса за запослене.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://example.com/terms/
+  title: API Сервис за Запослене
+  version: "1.0"
+paths:
+  /api/v1/employees:
+    get:
+      description: Преузимање свих запослених
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.EmployeeResponse'
+            type: array
+      summary: Преузимање листе запослених
+      tags:
+      - запослени
+    post:
+      consumes:
+      - application/json
+      description: Креирање новог запосленог у систему
+      parameters:
+      - description: Подаци о новом запосленом
+        in: body
+        name: employee
+        required: true
+        schema:
+          $ref: '#/definitions/model.EmployeeCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.EmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Креирање новог запосленог
+      tags:
+      - запослени
+  /api/v1/employees/{id}:
+    delete:
+      description: Брисање запосленог по ID-ју
+      parameters:
+      - description: ID запосленог
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Брисање запосленог
+      tags:
+      - запослени
+swagger: "2.0"

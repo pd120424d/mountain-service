@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,16 +11,33 @@ import (
 	"time"
 
 	"mountain-service/employee/config"
-	"mountain-service/employee/internal/handlers"
-	"mountain-service/employee/internal/models"
+	"mountain-service/employee/internal/handler"
+	"mountain-service/employee/internal/model"
 	"mountain-service/employee/internal/repositories"
 	"mountain-service/shared/utils"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "mountain-service/employee/cmd/docs"
 )
 
 const hostname = "localhost"
 
+// @title API Сервис за Запослене
+// @version 1.0
+// @description Ово је пример API сервиса за запослене.
+// @termsOfService http://example.com/terms/
+
+// @contact.name Подршка за API
+// @contact.url http://www.example.com/support
+// @contact.email support@example.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8082
+// @BasePath /api/v1
 func main() {
 	env := os.Getenv("APP_ENV")
 	if env == "" {
@@ -42,19 +57,24 @@ func main() {
 
 	db := config.GetEmployeeDB(log, hostname)
 
-	// Auto migrate the models
-	err := db.AutoMigrate(&models.Employee{})
+	// Auto migrate the model
+	err := db.AutoMigrate(&model.Employee{})
 	if err != nil {
-		log.Fatalf("failed to migrate employee models: %v", err)
+		log.Fatalf("failed to migrate employee model: %v", err)
 	}
 
 	employeeRepo := repositories.NewEmployeeRepository(db)
-	employeeHandler := handlers.NewEmployeeHandler(log, employeeRepo)
+	employeeHandler := handler.NewEmployeeHandler(log, employeeRepo)
 
 	r := gin.Default()
-	r.POST("/employees", employeeHandler.CreateEmployee)
-	r.GET("/employees", employeeHandler.GetAllEmployees)
-	r.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	api := r.Group("/api/v1")
+	{
+		api.POST("/employees", employeeHandler.CreateEmployee)
+		api.GET("/employees", employeeHandler.GetAllEmployees)
+		api.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
+	}
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%v", config.ServerPort),
@@ -83,13 +103,4 @@ func main() {
 	}
 
 	log.Info("Employee Service exiting")
-}
-
-func executeSchema(db *sql.DB) error {
-	schema, err := ioutil.ReadFile("employee/schema.sql")
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(string(schema))
-	return err
 }

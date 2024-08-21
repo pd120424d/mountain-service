@@ -6,13 +6,13 @@ import (
 	"gorm.io/gorm"
 	"time"
 
-	"mountain-service/employee/internal/models"
+	"mountain-service/employee/internal/model"
 	"mountain-service/shared/utils"
 )
 
 type EmployeeRepository interface {
-	Create(employee *models.Employee) error
-	GetAll() ([]models.Employee, error)
+	Create(employee *model.Employee) error
+	GetAll() ([]model.Employee, error)
 	Delete(employeeID uint) error
 }
 
@@ -25,7 +25,7 @@ func NewEmployeeRepository(db *gorm.DB) EmployeeRepository {
 }
 
 // Create creates and employee with the hashed version of its password.
-func (repo *employeeRepository) Create(employee *models.Employee) error {
+func (repo *employeeRepository) Create(employee *model.Employee) error {
 	hashedPassword, err := utils.HashPassword(employee.Password)
 	if err != nil {
 		return err
@@ -35,8 +35,8 @@ func (repo *employeeRepository) Create(employee *models.Employee) error {
 }
 
 // GetAll returns all the employees which have deleted_at flag set as NULL in db.
-func (repo *employeeRepository) GetAll() ([]models.Employee, error) {
-	var employees []models.Employee
+func (repo *employeeRepository) GetAll() ([]model.Employee, error) {
+	var employees []model.Employee
 	err := repo.db.Where("deleted_at IS NULL").Find(&employees).Error
 	return employees, err
 }
@@ -44,7 +44,7 @@ func (repo *employeeRepository) GetAll() ([]models.Employee, error) {
 // Delete marks the employee record as deleted by setting the deleted_at timestamp.
 func (repo *employeeRepository) Delete(employeeID uint) error {
 	// First, check if the employee is already soft-deleted
-	var employee models.Employee
+	var employee model.Employee
 	err := repo.db.Select("deleted_at").First(&employee, employeeID).Error
 	if err != nil {
 		// Return error if the employee is not found or any other issue occurs
@@ -57,5 +57,5 @@ func (repo *employeeRepository) Delete(employeeID uint) error {
 	}
 
 	// If not already soft-deleted, mark the employee as deleted
-	return repo.db.Model(&models.Employee{}).Where("id = ?", employeeID).Update("deleted_at", time.Now()).Error
+	return repo.db.Model(&model.Employee{}).Where("id = ?", employeeID).Update("deleted_at", time.Now()).Error
 }

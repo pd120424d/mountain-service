@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"mountain-service/employee/internal/models"
+	"mountain-service/employee/internal/model"
 	"mountain-service/employee/internal/repositories"
 	"mountain-service/shared/utils"
 
@@ -45,7 +45,7 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
-		validEmployee := models.Employee{
+		validEmployee := model.Employee{
 			Username:  "jdoe",
 			Password:  "Pass123!",
 			FirstName: "John",
@@ -66,7 +66,7 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var createdEmployee models.Employee
+		var createdEmployee model.Employee
 		err := json.Unmarshal(w.Body.Bytes(), &createdEmployee)
 		assert.Nil(t, err)
 		assert.Equal(t, "jdoe", createdEmployee.Username)
@@ -90,7 +90,7 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
-		mockRepo.EXPECT().GetAll().Return([]models.Employee{}, nil).Times(1)
+		mockRepo.EXPECT().GetAll().Return([]model.Employee{}, nil).Times(1)
 
 		handler.GetAllEmployees(c)
 
@@ -102,7 +102,7 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
-		employees := []models.Employee{
+		employees := []model.Employee{
 			{Username: "jdoe", FirstName: "John", LastName: "Doe", Password: "Pass123!"},
 			{Username: "asmith", FirstName: "Alice", LastName: "Smith", Password: "Pass123!"},
 		}

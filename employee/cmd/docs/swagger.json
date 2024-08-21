@@ -1,0 +1,188 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Ово је пример API сервиса за запослене.",
+        "title": "API Сервис за Запослене",
+        "termsOfService": "http://example.com/terms/",
+        "contact": {
+            "name": "Подршка за API",
+            "url": "http://www.example.com/support",
+            "email": "support@example.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8082",
+    "basePath": "/api/v1",
+    "paths": {
+        "/api/v1/employees": {
+            "get": {
+                "description": "Преузимање свих запослених",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Преузимање листе запослених",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.EmployeeResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Креирање новог запосленог у систему",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Креирање новог запосленог",
+                "parameters": [
+                    {
+                        "description": "Подаци о новом запосленом",
+                        "name": "employee",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.EmployeeCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.EmployeeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/employees/{id}": {
+            "delete": {
+                "description": "Брисање запосленог по ID-ју",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Брисање запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "gin.H": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "model.EmployeeCreateRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "first_name",
+                "gender",
+                "last_name",
+                "phone",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profile_picture": {
+                    "type": "string"
+                },
+                "profile_type": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.EmployeeResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profile_picture": {
+                    "description": "this may be represented as a byte array if we read the picture from somewhere for an example",
+                    "type": "string"
+                },
+                "profile_type": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
