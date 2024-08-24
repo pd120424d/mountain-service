@@ -15,16 +15,12 @@ const (
 	dbName     = "employee_service"
 )
 
-func GetEmployeeDB(log utils.Logger, hostname string) *gorm.DB {
-	return config.GetDbConnection(log, hostname, dbPort, "postgres", dbName)
+func GetEmployeeDB(log utils.Logger, connString string) *gorm.DB {
+	return config.GetDbConnection(log, connString)
 }
 
-func GetDefaultDB(log utils.Logger, hostname string) *gorm.DB {
-	return config.GetDbConnection(log, hostname, dbPort, "postgres", "postgres")
-}
-
-func CreateEmployeeDB(log utils.Logger, hostname string) {
-	db := GetDefaultDB(log, hostname)
+func CreateEmployeeDB(log utils.Logger, connString string) {
+	db := config.GetDbConnection(log, connString)
 
 	cmd := fmt.Sprintf("CREATE DATABASE %s", dbName)
 	tx := db.Exec(cmd)

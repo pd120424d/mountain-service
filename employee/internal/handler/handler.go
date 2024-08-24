@@ -35,7 +35,7 @@ func NewEmployeeHandler(log utils.Logger, repo repositories.EmployeeRepository) 
 // @Param employee body model.EmployeeCreateRequest true "Подаци о новом запосленом"
 // @Success 201 {object} model.EmployeeResponse
 // @Failure 400 {object} gin.H
-// @Router /api/v1/employees [post]
+// @Router /employees [post]
 func (h *employeeHandler) CreateEmployee(ctx *gin.Context) {
 	var req model.EmployeeCreateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -87,7 +87,7 @@ func (h *employeeHandler) CreateEmployee(ctx *gin.Context) {
 // @Tags запослени
 // @Produce  json
 // @Success 200 {array} model.EmployeeResponse
-// @Router /api/v1/employees [get]
+// @Router /employees [get]
 func (h *employeeHandler) GetAllEmployees(c *gin.Context) {
 	employees, err := h.repo.GetAll()
 	if err != nil {
@@ -120,7 +120,7 @@ func (h *employeeHandler) GetAllEmployees(c *gin.Context) {
 // @Param id path int true "ID запосленог"
 // @Success 204
 // @Failure 404 {object} gin.H
-// @Router /api/v1/employees/{id} [delete]
+// @Router /employees/{id} [delete]
 func (h *employeeHandler) DeleteEmployee(c *gin.Context) {
 	idParam := c.Param("id")
 	employeeID, err := strconv.Atoi(idParam)
