@@ -28,7 +28,7 @@ func NewEmployeeHandler(log utils.Logger, repo repositories.EmployeeRepository) 
 	return &employeeHandler{log: log, repo: repo}
 }
 
-// CreateEmployee Креирање новог запосленог
+// RegisterEmployee Креирање новог запосленог
 // @Summary Креирање новог запосленог
 // @Description Креирање новог запосленог у систему
 // @Tags запослени
@@ -37,7 +37,7 @@ func NewEmployeeHandler(log utils.Logger, repo repositories.EmployeeRepository) 
 // @Param employee body model.EmployeeCreateRequest true "Подаци о новом запосленом"
 // @Success 201 {object} model.EmployeeResponse
 // @Failure 400 {object} gin.H
-// @Router /api/v1/employees [post]
+// @Router /employees [post]
 func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	var req model.EmployeeCreateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -113,13 +113,13 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-// GetAllEmployees Преузимање листе запослених
+// ListEmployees Преузимање листе запослених
 // @Summary Преузимање листе запослених
 // @Description Преузимање свих запослених
 // @Tags запослени
 // @Produce  json
 // @Success 200 {array} model.EmployeeResponse
-// @Router /api/v1/employees [get]
+// @Router /employees [get]
 func (h *employeeHandler) ListEmployees(c *gin.Context) {
 	employees, err := h.repo.GetAll()
 	if err != nil {
@@ -179,7 +179,7 @@ func (h *employeeHandler) UpdateEmployee(db *gorm.DB, logger *zap.Logger) gin.Ha
 // @Param id path int true "ID запосленог"
 // @Success 204
 // @Failure 404 {object} gin.H
-// @Router /api/v1/employees/{id} [delete]
+// @Router /employees/{id} [delete]
 func (h *employeeHandler) DeleteEmployee(c *gin.Context) {
 	idParam := c.Param("id")
 	employeeID, err := strconv.Atoi(idParam)

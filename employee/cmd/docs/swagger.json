@@ -18,7 +18,7 @@
     "host": "localhost:8082",
     "basePath": "/api/v1",
     "paths": {
-        "/api/v1/employees": {
+        "/employees": {
             "get": {
                 "description": "Преузимање свих запослених",
                 "produces": [
@@ -79,7 +79,7 @@
                 }
             }
         },
-        "/api/v1/employees/{id}": {
+        "/employees/{id}": {
             "delete": {
                 "description": "Брисање запосленог по ID-ју",
                 "tags": [

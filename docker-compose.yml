@@ -1,27 +1,61 @@
-# /docker-compose.yml
-
 services:
-  activity:
-    build:
-      context: ./activity
+  employee-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: etf
+      POSTGRES_DB: employee_service
+    volumes:
+      - db_data:/var/lib/postgresql/data
     ports:
-      - "8081:8081"
-  employee:
+      - "5432:5432"
+    networks:
+      - employee_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  employee-service:
     build:
-      context: ./employee
+      context: .
+      dockerfile: employee/Dockerfile
+    environment:
+      - DB_HOST=employee-db   # This should match the service name
+      - DB_PORT=5432
+      - DB_USER_FILE=/run/secrets/db_user
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - DB_NAME=employee_service
+    depends_on:
+      employee-db:
+        condition: service_healthy  # Wait for the database to be healthy
     ports:
       - "8082:8082"
-  urgency:
-    build:
-      context: ./urgency
+    networks:
+      - employee_network
+    secrets:
+      - db_user
+      - db_password
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui
     ports:
-      - "8083:8083"
-  api-gateway:
-    build:
-      context: ./api-gateway
-    ports:
-      - "8080:8080"
-    depends_on:
-      - activity
-      - employee
-      - urgency
+      - "9082:9082"
+    environment:
+      # Point this to the swagger.json or openapi.json served by employee-service
+      API_URL: "http://employee-service:8082/swagger.json"
+    networks:
+      - employee_network
+
+networks:
+  employee_network:
+
+volumes:
+  db_data:
+
+secrets:
+  db_user:
+    file: ./employee/secrets/db_user.txt
+  db_password:
+    file: ./employee/secrets/db_password.txt

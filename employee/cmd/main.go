@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,8 +23,6 @@ import (
 	_ "mountain-service/employee/cmd/docs"
 )
 
-const hostname = "localhost"
-
 // @title API Сервис за Запослене
 // @version 1.0
 // @description Ово је пример API сервиса за запослене.
@@ -39,6 +38,10 @@ const hostname = "localhost"
 // @host localhost:8082
 // @BasePath /api/v1
 func main() {
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+
 	env := os.Getenv("APP_ENV")
 	if env == "" {
 		env = "staging"
@@ -52,13 +55,25 @@ func main() {
 		}
 	}(log)
 
-	// Create the employee_service database if it doesn't exist
-	config.CreateEmployeeDB(log, hostname)
+	dbUser, err := readSecret(os.Getenv("DB_USER_FILE"))
+	if err != nil {
+		log.Fatalf("Failed to read DB_USER: %v", err)
+	}
 
-	db := config.GetEmployeeDB(log, hostname)
+	dbPassword, err := readSecret(os.Getenv("DB_PASSWORD_FILE"))
+	if err != nil {
+		log.Fatalf("Failed to read DB_PASSWORD: %v", err)
+	}
+
+	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
+	dbStringEmployee := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		dbHost, dbPort, dbUser, dbPassword, dbName)
+	// Create the employee_service database if it doesn't exist
+
+	db := config.GetEmployeeDB(log, dbStringEmployee)
 
 	// Auto migrate the model
-	err := db.AutoMigrate(&model.Employee{})
+	err = db.AutoMigrate(&model.Employee{})
 	if err != nil {
 		log.Fatalf("failed to migrate employee model: %v", err)
 	}
@@ -103,4 +118,12 @@ func main() {
 	}
 
 	log.Info("Employee Service exiting")
+}
+
+func readSecret(filePath string) (string, error) {
+	secret, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+	return string(secret), nil
 }

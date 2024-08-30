@@ -24,7 +24,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/employees": {
+        "/employees": {
             "get": {
                 "description": "Преузимање свих запослених",
                 "produces": [
@@ -85,7 +85,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/employees/{id}": {
+        "/employees/{id}": {
             "delete": {
                 "description": "Брисање запосленог по ID-ју",
                 "tags": [

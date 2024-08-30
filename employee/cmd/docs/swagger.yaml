@@ -66,7 +66,7 @@ info:
   title: API Сервис за Запослене
   version: "1.0"
 paths:
-  /api/v1/employees:
+  /employees:
     get:
       description: Преузимање свих запослених
       produces:
@@ -106,7 +106,7 @@ paths:
       summary: Креирање новог запосленог
       tags:
       - запослени
-  /api/v1/employees/{id}:
+  /employees/{id}:
     delete:
       description: Брисање запосленог по ID-ју
       parameters:
