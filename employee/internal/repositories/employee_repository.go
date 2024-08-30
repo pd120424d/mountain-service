@@ -13,7 +13,10 @@ import (
 type EmployeeRepository interface {
 	Create(employee *model.Employee) error
 	GetAll() ([]model.Employee, error)
+	GetEmployeeByID(id string, employee *model.Employee) error
+	UpdateEmployee(employee *model.Employee) error
 	Delete(employeeID uint) error
+	ListEmployees(filters map[string]interface{}) ([]model.Employee, error)
 }
 
 type employeeRepository struct {
@@ -25,27 +28,35 @@ func NewEmployeeRepository(db *gorm.DB) EmployeeRepository {
 }
 
 // Create creates and employee with the hashed version of its password.
-func (repo *employeeRepository) Create(employee *model.Employee) error {
+func (r *employeeRepository) Create(employee *model.Employee) error {
 	hashedPassword, err := utils.HashPassword(employee.Password)
 	if err != nil {
 		return err
 	}
 	employee.Password = hashedPassword
-	return repo.db.Create(employee).Error
+	return r.db.Create(employee).Error
 }
 
 // GetAll returns all the employees which have deleted_at flag set as NULL in db.
-func (repo *employeeRepository) GetAll() ([]model.Employee, error) {
+func (r *employeeRepository) GetAll() ([]model.Employee, error) {
 	var employees []model.Employee
-	err := repo.db.Where("deleted_at IS NULL").Find(&employees).Error
+	err := r.db.Where("deleted_at IS NULL").Find(&employees).Error
 	return employees, err
 }
 
+func (r *employeeRepository) GetEmployeeByID(id string, employee *model.Employee) error {
+	return r.db.First(employee, "id = ?", id).Error
+}
+
+func (r *employeeRepository) UpdateEmployee(employee *model.Employee) error {
+	return r.db.Save(employee).Error
+}
+
 // Delete marks the employee record as deleted by setting the deleted_at timestamp.
-func (repo *employeeRepository) Delete(employeeID uint) error {
+func (r *employeeRepository) Delete(employeeID uint) error {
 	// First, check if the employee is already soft-deleted
 	var employee model.Employee
-	err := repo.db.Select("deleted_at").First(&employee, employeeID).Error
+	err := r.db.Select("deleted_at").First(&employee, employeeID).Error
 	if err != nil {
 		// Return error if the employee is not found or any other issue occurs
 		return err
@@ -57,5 +68,15 @@ func (repo *employeeRepository) Delete(employeeID uint) error {
 	}
 
 	// If not already soft-deleted, mark the employee as deleted
-	return repo.db.Model(&model.Employee{}).Where("id = ?", employeeID).Update("deleted_at", time.Now()).Error
+	return r.db.Model(&model.Employee{}).Where("id = ?", employeeID).Update("deleted_at", time.Now()).Error
+}
+
+func (r *employeeRepository) ListEmployees(filters map[string]interface{}) ([]model.Employee, error) {
+	var employees []model.Employee
+	query := r.db.Where("active = ?", true)
+	for key, value := range filters {
+		query = query.Where(key+" LIKE ?", "%"+value.(string)+"%")
+	}
+	err := query.Find(&employees).Error
+	return employees, err
 }

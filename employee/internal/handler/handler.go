@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 
@@ -12,8 +14,8 @@ import (
 )
 
 type EmployeeHandler interface {
-	CreateEmployee(ctx *gin.Context)
-	GetAllEmployees(c *gin.Context)
+	RegisterEmployee(ctx *gin.Context)
+	ListEmployees(c *gin.Context)
 	DeleteEmployee(c *gin.Context)
 }
 
@@ -36,7 +38,7 @@ func NewEmployeeHandler(log utils.Logger, repo repositories.EmployeeRepository) 
 // @Success 201 {object} model.EmployeeResponse
 // @Failure 400 {object} gin.H
 // @Router /api/v1/employees [post]
-func (h *employeeHandler) CreateEmployee(ctx *gin.Context) {
+func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	var req model.EmployeeCreateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -52,6 +54,36 @@ func (h *employeeHandler) CreateEmployee(ctx *gin.Context) {
 		Email:          req.Email,
 		ProfilePicture: req.ProfilePicture,
 		ProfileType:    req.ProfileType,
+	}
+
+	// Check for unique username
+	usernameFilter := map[string]interface{}{
+		"username": employee.Username,
+	}
+	existingEmployees, err := h.repo.ListEmployees(usernameFilter)
+	if err != nil {
+		h.log.Error("Failed to check for existing username", zap.Error(err))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check for existing username"})
+		return
+	}
+	if len(existingEmployees) > 0 {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		return
+	}
+
+	// Check for unique email
+	emailFilter := map[string]interface{}{
+		"email": employee.Email,
+	}
+	existingEmployees, err = h.repo.ListEmployees(emailFilter)
+	if err != nil {
+		h.log.Error("Failed to check for existing email", zap.Error(err))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check for existing email"})
+		return
+	}
+	if len(existingEmployees) > 0 {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+		return
 	}
 
 	// Validate the password
@@ -88,7 +120,7 @@ func (h *employeeHandler) CreateEmployee(ctx *gin.Context) {
 // @Produce  json
 // @Success 200 {array} model.EmployeeResponse
 // @Router /api/v1/employees [get]
-func (h *employeeHandler) GetAllEmployees(c *gin.Context) {
+func (h *employeeHandler) ListEmployees(c *gin.Context) {
 	employees, err := h.repo.GetAll()
 	if err != nil {
 		h.log.Errorf("failed to retrieve employees: %v", err)
@@ -111,6 +143,33 @@ func (h *employeeHandler) GetAllEmployees(c *gin.Context) {
 		})
 	}
 	c.JSON(http.StatusOK, employees)
+}
+
+func (h *employeeHandler) UpdateEmployee(db *gorm.DB, logger *zap.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+
+		var employee models.Employee
+		if err := db.First(&employee, id).Error; err != nil {
+			logger.Error("Employee not found", zap.Error(err))
+			c.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
+			return
+		}
+
+		if err := c.ShouldBindJSON(&employee); err != nil {
+			logger.Error("Failed to bind employee data", zap.Error(err))
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+			return
+		}
+
+		if err := db.Save(&employee).Error; err != nil {
+			logger.Error("Failed to update employee", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update employee"})
+			return
+		}
+
+		c.JSON(http.StatusOK, employee)
+	}
 }
 
 // DeleteEmployee Брисање запосленог

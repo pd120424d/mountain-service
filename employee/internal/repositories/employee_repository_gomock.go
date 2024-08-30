@@ -5,7 +5,7 @@
 package repositories
 
 import (
-	models "mountain-service/employee/internal/model"
+	model "mountain-service/employee/internal/model"
 	reflect "reflect"
 
 	"go.uber.org/mock/gomock"
@@ -35,7 +35,7 @@ func (m *MockEmployeeRepository) EXPECT() *MockEmployeeRepositoryMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockEmployeeRepository) Create(employee *models.Employee) error {
+func (m *MockEmployeeRepository) Create(employee *model.Employee) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", employee)
 	ret0, _ := ret[0].(error)
@@ -63,10 +63,10 @@ func (mr *MockEmployeeRepositoryMockRecorder) Delete(employeeID interface{}) *go
 }
 
 // GetAll mocks base method.
-func (m *MockEmployeeRepository) GetAll() ([]models.Employee, error) {
+func (m *MockEmployeeRepository) GetAll() ([]model.Employee, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]models.Employee)
+	ret0, _ := ret[0].([]model.Employee)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

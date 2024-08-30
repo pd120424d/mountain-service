@@ -71,8 +71,8 @@ func main() {
 
 	api := r.Group("/api/v1")
 	{
-		api.POST("/employees", employeeHandler.CreateEmployee)
-		api.GET("/employees", employeeHandler.GetAllEmployees)
+		api.POST("/employees", employeeHandler.RegisterEmployee)
+		api.GET("/employees", employeeHandler.ListEmployees)
 		api.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
 	}
 

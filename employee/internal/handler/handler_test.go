@@ -92,7 +92,7 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 
 		mockRepo.EXPECT().GetAll().Return([]model.Employee{}, nil).Times(1)
 
-		handler.GetAllEmployees(c)
+		handler.ListEmployees(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.JSONEq(t, `[]`, w.Body.String())
@@ -109,7 +109,7 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 
 		mockRepo.EXPECT().GetAll().Return(employees, nil).Times(1)
 
-		handler.GetAllEmployees(c)
+		handler.ListEmployees(c)
 
 		expectedJSON := `[
             {"ID":0,"CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","DeletedAt":null,"Username":"jdoe","Password":"Pass123!","FirstName":"John","LastName":"Doe","Gender":"","Phone":"","Email":"","ProfilePicture":"","ProfileType":""},
