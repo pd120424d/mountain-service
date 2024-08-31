@@ -56,6 +56,6 @@ volumes:
 
 secrets:
   db_user:
-    file: ./employee/secrets/db_user.txt
+    file: employee/secrets/db_user.txt
   db_password:
-    file: ./employee/secrets/db_password.txt
+    file: employee/secrets/db_password.txt

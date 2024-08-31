@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"mountain-service/employee/internal/model"
+	"api/employee/internal/model"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -73,7 +73,7 @@ func TestEmployeeRepository_Delete(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"deleted_at"}).AddRow(nil))
 
 		mock.ExpectBegin()
-		mock.ExpectExec("UPDATE \"employees\" SET \"deleted_at\"").
+		mock.ExpectExec(`UPDATE \"employees\" SET \"deleted_at\"`).
 			WithArgs(sqlmock.AnyArg(), employeeID).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectCommit()

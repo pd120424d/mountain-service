@@ -5,8 +5,8 @@ package repositories
 import (
 	"gorm.io/gorm"
 
-	"mountain-service/employee/internal/model"
-	"mountain-service/shared/utils"
+	"api/employee/internal/model"
+	"api/shared/utils"
 )
 
 type EmployeeRepository interface {

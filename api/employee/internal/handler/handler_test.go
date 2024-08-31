@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"api/employee/internal/repositories"
+	"api/shared/utils"
 	"encoding/json"
 	"gorm.io/gorm"
 	"net/http"
@@ -8,10 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"mountain-service/employee/internal/model"
-	"mountain-service/employee/internal/repositories"
-	"mountain-service/shared/utils"
-
+	"api/employee/internal/model"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"

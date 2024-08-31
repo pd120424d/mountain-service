@@ -1,16 +1,15 @@
 package handler
 
 import (
+	"api/employee/internal/model"
+	"api/employee/internal/repositories"
+	"api/shared/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-
-	"mountain-service/employee/internal/model"
-	"mountain-service/employee/internal/repositories"
-	"mountain-service/shared/utils"
 )
 
 type EmployeeHandler interface {

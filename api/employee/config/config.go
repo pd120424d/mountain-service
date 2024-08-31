@@ -1,10 +1,11 @@
 package config
 
 import (
-	"gorm.io/gorm"
+	"api/shared/config"
+	"api/shared/utils"
+	"fmt"
 
-	"mountain-service/shared/config"
-	"mountain-service/shared/utils"
+	"gorm.io/gorm"
 )
 
 const (

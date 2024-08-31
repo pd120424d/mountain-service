@@ -11,16 +11,16 @@ import (
 	"syscall"
 	"time"
 
-	"mountain-service/employee/config"
-	"mountain-service/employee/internal/handler"
-	"mountain-service/employee/internal/model"
-	"mountain-service/employee/internal/repositories"
-	"mountain-service/shared/utils"
+	_ "api/employee/cmd/docs"
+	"api/employee/config"
+	"api/employee/internal/handler"
+	"api/employee/internal/model"
+	"api/employee/internal/repositories"
+	"api/shared/utils"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	_ "mountain-service/employee/cmd/docs"
 )
 
 // @title API Сервис за Запослене

@@ -5,10 +5,10 @@
 package repositories
 
 import (
-	model "mountain-service/employee/internal/model"
+	model "api/employee/internal/model"
 	reflect "reflect"
 
-	"go.uber.org/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockEmployeeRepository is a mock of EmployeeRepository interface.
@@ -75,4 +75,47 @@ func (m *MockEmployeeRepository) GetAll() ([]model.Employee, error) {
 func (mr *MockEmployeeRepositoryMockRecorder) GetAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockEmployeeRepository)(nil).GetAll))
+}
+
+// GetEmployeeByID mocks base method.
+func (m *MockEmployeeRepository) GetEmployeeByID(id string, employee *model.Employee) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmployeeByID", id, employee)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetEmployeeByID indicates an expected call of GetEmployeeByID.
+func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeByID(id, employee interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByID", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeeByID), id, employee)
+}
+
+// ListEmployees mocks base method.
+func (m *MockEmployeeRepository) ListEmployees(filters map[string]interface{}) ([]model.Employee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListEmployees", filters)
+	ret0, _ := ret[0].([]model.Employee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListEmployees indicates an expected call of ListEmployees.
+func (mr *MockEmployeeRepositoryMockRecorder) ListEmployees(filters interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEmployees", reflect.TypeOf((*MockEmployeeRepository)(nil).ListEmployees), filters)
+}
+
+// UpdateEmployee mocks base method.
+func (m *MockEmployeeRepository) UpdateEmployee(employee *model.Employee) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateEmployee", employee)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateEmployee indicates an expected call of UpdateEmployee.
+func (mr *MockEmployeeRepositoryMockRecorder) UpdateEmployee(employee interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmployee", reflect.TypeOf((*MockEmployeeRepository)(nil).UpdateEmployee), employee)
 }

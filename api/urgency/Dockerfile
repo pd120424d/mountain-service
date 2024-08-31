@@ -3,7 +3,7 @@ FROM golang:1.20-alpine
 
 WORKDIR /app
 
-COPY .. .
+COPY ../.. .
 
 RUN go mod download
 RUN go build -o main ./cmd/urgency
