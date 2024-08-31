@@ -13,6 +13,8 @@ definitions:
         type: string
       last_name:
         type: string
+      password:
+        type: string
       phone:
         type: string
       profile_picture:
@@ -26,6 +28,7 @@ definitions:
     - first_name
     - gender
     - last_name
+    - password
     - phone
     - username
     type: object

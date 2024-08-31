@@ -20,11 +20,12 @@ type EmployeeRepository interface {
 }
 
 type employeeRepository struct {
-	db *gorm.DB
+	log utils.Logger
+	db  *gorm.DB
 }
 
-func NewEmployeeRepository(db *gorm.DB) EmployeeRepository {
-	return &employeeRepository{db: db}
+func NewEmployeeRepository(log utils.Logger, db *gorm.DB) EmployeeRepository {
+	return &employeeRepository{log: log, db: db}
 }
 
 // Create creates and employee with the hashed version of its password.
@@ -48,6 +49,17 @@ func (r *employeeRepository) GetEmployeeByID(id string, employee *model.Employee
 	return r.db.First(employee, "id = ?", id).Error
 }
 
+func (r *employeeRepository) ListEmployees(filters map[string]interface{}) ([]model.Employee, error) {
+	var employees []model.Employee
+	query := r.db.Model(&model.Employee{})
+	for key, value := range filters {
+		query = query.Where(key+" LIKE ?", "%"+value.(string)+"%")
+	}
+	r.log.Infof("query: %v", query)
+	err := query.Find(&employees).Error
+	return employees, err
+}
+
 func (r *employeeRepository) UpdateEmployee(employee *model.Employee) error {
 	return r.db.Save(employee).Error
 }
@@ -69,14 +81,4 @@ func (r *employeeRepository) Delete(employeeID uint) error {
 
 	// If not already soft-deleted, mark the employee as deleted
 	return r.db.Model(&model.Employee{}).Where("id = ?", employeeID).Update("deleted_at", time.Now()).Error
-}
-
-func (r *employeeRepository) ListEmployees(filters map[string]interface{}) ([]model.Employee, error) {
-	var employees []model.Employee
-	query := r.db.Where("active = ?", true)
-	for key, value := range filters {
-		query = query.Where(key+" LIKE ?", "%"+value.(string)+"%")
-	}
-	err := query.Find(&employees).Error
-	return employees, err
 }

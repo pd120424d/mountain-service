@@ -49,6 +49,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 		Username:       req.Username,
 		FirstName:      req.FirstName,
 		LastName:       req.LastName,
+		Password:       req.Password,
 		Gender:         req.Gender,
 		Phone:          req.Phone,
 		Email:          req.Email,
@@ -149,7 +150,7 @@ func (h *employeeHandler) UpdateEmployee(db *gorm.DB, logger *zap.Logger) gin.Ha
 	return func(c *gin.Context) {
 		id := c.Param("id")
 
-		var employee models.Employee
+		var employee model.Employee
 		if err := db.First(&employee, id).Error; err != nil {
 			logger.Error("Employee not found", zap.Error(err))
 			c.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})

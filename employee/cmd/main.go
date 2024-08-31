@@ -78,7 +78,7 @@ func main() {
 		log.Fatalf("failed to migrate employee model: %v", err)
 	}
 
-	employeeRepo := repositories.NewEmployeeRepository(db)
+	employeeRepo := repositories.NewEmployeeRepository(log, db)
 	employeeHandler := handler.NewEmployeeHandler(log, employeeRepo)
 
 	r := gin.Default()

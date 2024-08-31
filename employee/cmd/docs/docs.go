@@ -127,6 +127,7 @@ const docTemplate = `{
                 "first_name",
                 "gender",
                 "last_name",
+                "password",
                 "phone",
                 "username"
             ],
@@ -141,6 +142,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "last_name": {
+                    "type": "string"
+                },
+                "password": {
                     "type": "string"
                 },
                 "phone": {

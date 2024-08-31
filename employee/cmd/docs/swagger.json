@@ -121,6 +121,7 @@
                 "first_name",
                 "gender",
                 "last_name",
+                "password",
                 "phone",
                 "username"
             ],
@@ -135,6 +136,9 @@
                     "type": "string"
                 },
                 "last_name": {
+                    "type": "string"
+                },
+                "password": {
                     "type": "string"
                 },
                 "phone": {
