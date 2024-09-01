@@ -15,6 +15,7 @@ export class EmployeeListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadEmployees();
+    console.log('EmployeeListComponent initialized');
   }
 
   loadEmployees(): void {
@@ -25,7 +26,7 @@ export class EmployeeListComponent implements OnInit {
 
   deleteEmployee(id: number): void {
     this.employeeService.deleteEmployee(id).subscribe(() => {
-      this.loadEmployees(); // Reload the employee list after deletion
+      this.loadEmployees(); // Reload the list after deletion
     });
   }
 }

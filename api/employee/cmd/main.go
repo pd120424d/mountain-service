@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gorilla/handlers"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -91,9 +92,17 @@ func main() {
 		api.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
 	}
 
+	// CORS setup
+	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+	origins := handlers.AllowedOrigins([]string{"http://localhost:4200"})
+
+	// Wrap the router with CORS middleware
+	corsHandler := handlers.CORS(origins, headers, methods)(r)
+
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%v", config.ServerPort),
-		Handler: r,
+		Handler: corsHandler,
 	}
 
 	// Run server in a goroutine

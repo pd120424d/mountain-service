@@ -1,8 +1,8 @@
 // src/app/employee/employee-form/employee-form.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { EmployeeService } from '../employee.service';
-import { Router, ActivatedRoute } from '@angular/router';
 import { Employee } from '../employee.model';
 
 @Component({
@@ -21,9 +21,13 @@ export class EmployeeFormComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     this.employeeForm = this.fb.group({
-      name: ['', Validators.required],
-      position: ['', Validators.required],
-      department: ['', Validators.required]
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      gender: ['', Validators.required],
+      username: ['', Validators.required],
+      phoneNumber: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      profile: ['', Validators.required]
     });
   }
 
@@ -52,4 +56,9 @@ export class EmployeeFormComponent implements OnInit {
       }
     }
   }
+
+    // Method to handle cancel button click
+    cancel(): void {
+      this.router.navigate(['/employees']); // Navigate back to the employee list or another appropriate route
+    }
 }

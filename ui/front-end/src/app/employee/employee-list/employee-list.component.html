@@ -1,27 +1,29 @@
 <!-- src/app/employee/employee-list/employee-list.component.html -->
 <div>
-    <h2>Employee List</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Position</th>
-          <th>Department</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let employee of employees">
-          <td>{{ employee.id }}</td>
-          <td>{{ employee.name }}</td>
-          <td>{{ employee.position }}</td>
-          <td>{{ employee.department }}</td>
-          <td>
-            <button (click)="deleteEmployee(employee.id)">Delete</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  
+  <h2>Списак Запослених</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Име</th>
+        <th>Презиме</th>
+        <th>Позиција</th>
+        <th>Одељење</th>
+        <th>Акције</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let employee of employees">
+        <td>{{ employee.id }}</td>
+        <td>{{ employee.firstName }}</td>
+        <td>{{ employee.lastName }}</td>
+        <td>{{ employee.profile }}</td>
+        <td>
+          <button (click)="deleteEmployee(employee.id)">Обриши</button>
+          <button [routerLink]="['/employees/edit', employee.id]">Измени</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <button [routerLink]="['/employees/new']">Додај Новог Запосленог</button>
+</div>

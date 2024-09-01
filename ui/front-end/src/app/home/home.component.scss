@@ -1,0 +1,52 @@
+@import '@fortawesome/fontawesome-free/css/all.css';
+
+/* src/app/home/home.component.scss */
+.navigation-section {
+  h2 {
+    margin-bottom: 20px;
+    font-size: 2rem;
+  }
+
+  .nav-links {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+
+    .nav-button, .nav-card {  // Style both button and link (if using <a> tags)
+      z-index: 1;
+      padding: 20px;
+      background-color: #5f6a75;
+      color: white;
+      border-radius: 8px;
+      text-align: center;
+      text-decoration: none;
+      border: none;
+      width: 200px;
+      transition: background-color 0.3s, transform 0.3s;
+      cursor: pointer;
+
+      h3 {
+        margin-bottom: 10px;
+        font-size: 1.5rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+
+      &:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);  // Slightly enlarge the button on hover
+      }
+
+      &:active {
+        background-color: #003d80;
+        transform: scale(0.95);  // Slightly shrink the button when active
+      }
+
+      i {
+        margin-right: 8px;
+      }
+    }
+  }
+}

@@ -1,1 +1,33 @@
-<p>employee-form works!</p>
+<!-- src/app/employee/employee-form/employee-form.component.html -->
+<form [formGroup]="employeeForm" (ngSubmit)="onSubmit()">
+    <label for="firstName">Име:</label>
+    <input id="firstName" formControlName="firstName" type="text">
+  
+    <label for="lastName">Презиме:</label>
+    <input id="lastName" formControlName="lastName" type="text">
+  
+    <label for="gender">Пол:</label>
+    <select id="gender" formControlName="gender">
+      <option value="M">Мушко</option>
+      <option value="F">Женско</option>
+    </select>
+  
+    <label for="username">Корисничко Име:</label>
+    <input id="username" formControlName="username" type="text">
+  
+    <label for="phoneNumber">Телефон:</label>
+    <input id="phoneNumber" formControlName="phoneNumber" type="text">
+  
+    <label for="email">И-мејл:</label>
+    <input id="email" formControlName="email" type="email">
+  
+    <label for="profile">Профил:</label>
+    <select id="profile" formControlName="profile">
+      <option value="Medic">Медицинар</option>
+      <option value="Technical Staff">Техничко Особље</option>
+    </select>
+  
+    <button type="submit">Сачувај</button>
+    <button type="button" (click)="cancel()">Откажи</button>
+  </form>
+  

@@ -1,26 +1,26 @@
 <!-- src/app/home/home.component.html -->
 <div class="home-container">
-    <div class="welcome-section">
-      <h1>Добродошли у Систем Управљања Горске Службе</h1>
-      <p>Платформа за ефикасно управљање сменама и хитним ситуацијама.</p>
-    </div>
-  
-    <div class="navigation-section">
-      <h2>Почетак рада</h2>
-      <div class="nav-links">
-        <a routerLink="/employees" class="nav-card">
-          <h3>Управљање Запосленима</h3>
-          <p>Преглед, додавање и измена података о запосленима.</p>
-        </a>
-        <a routerLink="/shifts" class="nav-card">
-          <h3>Организација Смена</h3>
-          <p>Планирање и управљање сменама.</p>
-        </a>
-        <a routerLink="/emergencies" class="nav-card">
-          <h3>Пријава Ургентне Ситуације</h3>
-          <p>Брза пријава и документовање ургентних ситуација.</p>
-        </a>
-      </div>
+  <div class="welcome-section">
+    <h1>Добродошли у Систем Управљања Горске Службе</h1>
+    <p>Платформа за ефикасно управљање сменама и хитним ситуацијама.</p>
+  </div>
+
+  <div class="navigation-section">
+    <div class="nav-links">
+      <button (click)="testClick()" routerLink="/employees" class="nav-button">
+        <i class="fas fa-users"></i>
+        <h3>Управљање Запосленима</h3>
+        <p>Преглед, додавање и измена података о запосленима.</p>
+      </button>
+      
+      <a routerLink="/shifts" class="nav-button">
+        <h3>Организација Смена</h3>
+        <p>Планирање и управљање сменама.</p>
+      </a>
+      <a routerLink="/emergencies" class="nav-button">
+        <h3>Пријава Ургентне Ситуације</h3>
+        <p>Брза пријава и документовање ургентних ситуација.</p>
+      </a>
     </div>
   </div>
-  
+</div>
