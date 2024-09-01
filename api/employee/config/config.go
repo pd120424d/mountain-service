@@ -3,7 +3,6 @@ package config
 import (
 	"api/shared/config"
 	"api/shared/utils"
-	"fmt"
 
 	"gorm.io/gorm"
 )
