@@ -1,14 +1,17 @@
 // src/app/employee/employee-form/employee-form.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EmployeeService } from '../employee.service';
 import { Employee } from '../employee.model';
+import { ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-employee-form',
   templateUrl: './employee-form.component.html',
-  styleUrls: ['./employee-form.component.scss']
+  styleUrls: ['./employee-form.component.scss'],
+  standalone: true,
+  imports: [RouterModule, ReactiveFormsModule], 
 })
 export class EmployeeFormComponent implements OnInit {
   employeeForm: FormGroup;

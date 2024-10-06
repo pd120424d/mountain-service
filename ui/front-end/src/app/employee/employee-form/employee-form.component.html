@@ -1,33 +1,40 @@
-<!-- src/app/employee/employee-form/employee-form.component.html -->
 <form [formGroup]="employeeForm" (ngSubmit)="onSubmit()">
-    <label for="firstName">Име:</label>
-    <input id="firstName" formControlName="firstName" type="text">
+  <label for="username">Корисничко Име:</label>
+  <input id="username" formControlName="username" type="text">
   
-    <label for="lastName">Презиме:</label>
-    <input id="lastName" formControlName="lastName" type="text">
+  <label for="password">Лозинка:</label>
+  <input id="password" formControlName="password" type="password">
   
-    <label for="gender">Пол:</label>
-    <select id="gender" formControlName="gender">
-      <option value="M">Мушко</option>
-      <option value="F">Женско</option>
-    </select>
+  <label for="confirmPassword">Потврда Лозинке:</label>
+  <input id="confirmPassword" formControlName="confirmPassword" type="password">
+
+  <label for="firstName">Име:</label>
+  <input id="firstName" formControlName="firstName" type="text">
+
+  <label for="lastName">Презиме:</label>
+  <input id="lastName" formControlName="lastName" type="text">
+
+  <label for="gender">Пол:</label>
+  <select id="gender" formControlName="gender">
+    <option value="M">Мушко</option>
+    <option value="F">Женско</option>
+  </select>
+
+  <label for="phoneNumber">Телефон:</label>
+  <input id="phoneNumber" formControlName="phoneNumber" type="text">
+
+  <label for="email">И-мејл:</label>
+  <input id="email" formControlName="email" type="email">
   
-    <label for="username">Корисничко Име:</label>
-    <input id="username" formControlName="username" type="text">
-  
-    <label for="phoneNumber">Телефон:</label>
-    <input id="phoneNumber" formControlName="phoneNumber" type="text">
-  
-    <label for="email">И-мејл:</label>
-    <input id="email" formControlName="email" type="email">
-  
-    <label for="profile">Профил:</label>
-    <select id="profile" formControlName="profile">
-      <option value="Medic">Медицинар</option>
-      <option value="Technical Staff">Техничко Особље</option>
-    </select>
-  
-    <button type="submit">Сачувај</button>
-    <button type="button" (click)="cancel()">Откажи</button>
-  </form>
-  
+  <label for="profilePicture">Профилна Слика:</label>
+  <input id="profilePicture" formControlName="profilePicture" type="file" accept="image/png, image/jpeg">
+
+  <label for="profile">Профил:</label>
+  <select id="profile" formControlName="profile">
+    <option value="Medic">Медицинар</option>
+    <option value="Technical Staff">Техничко Особље</option>
+  </select>
+
+  <button type="submit">Сачувај</button>
+  <button type="button" (click)="cancel()">Откажи</button>
+</form>

@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './home/home.component';
 import { EmployeeListComponent } from './employee/employee-list/employee-list.component';
 import { EmployeeFormComponent } from './employee/employee-form/employee-form.component';
+import { NotFoundComponent } from './not-found/not-found.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent }, // Default route that loads HomeComponent
@@ -10,5 +11,5 @@ export const routes: Routes = [
   { path: 'employees', component: EmployeeListComponent }, // /employees route
   { path: 'employees/new', component: EmployeeFormComponent }, // /employees/new route
   { path: 'employees/edit/:id', component: EmployeeFormComponent }, // /employees/edit/:id route
-  { path: '**', redirectTo: '' } // Wildcard route for undefined paths
+  { path: '**', component: NotFoundComponent } // Wildcard route for undefined paths
 ];
