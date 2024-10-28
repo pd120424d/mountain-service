@@ -1,4 +1,3 @@
-<!-- src/app/employee/employee-list/employee-list.component.html -->
 <div>
   <h2>Списак Запослених</h2>
   <table>
@@ -7,20 +6,33 @@
         <th>ID</th>
         <th>Име</th>
         <th>Презиме</th>
-        <th>Позиција</th>
-        <th>Одељење</th>
+        <th>Пол</th>
+        <th>Корисничко Име</th>
+        <th>Телефон</th>
+        <th>И-мејл</th>
+        <th>Профил</th>
+        <th>Профилна Слика</th>
         <th>Акције</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody>      
       <tr *ngFor="let employee of employees">
         <td>{{ employee.id }}</td>
         <td>{{ employee.firstName }}</td>
         <td>{{ employee.lastName }}</td>
-        <td>{{ employee.profile }}</td>
+        <td>{{ employee.gender === 'M' ? 'Мушки' : 'Женски' }}</td> 
+        <td>{{ employee.username }}</td>
+        <td>{{ employee.phoneNumber }}</td>
+        <td>{{ employee.email }}</td>
+        <td>{{ employee.profileType === 'Medic' ? 'Медицинар' : 'Техничко Особље' }}</td> 
         <td>
-          <button (click)="deleteEmployee(employee.id)">Обриши</button>
-          <button [routerLink]="['/employees/edit', employee.id]">Измени</button>
+          <img *ngIf="employee.profilePicture" [src]="employee.profilePicture" alt="Профилна слика" width="50" height="50">
+          <!-- Fallback for missing profile picture -->
+          <span *ngIf="!employee.profilePicture">Нема слике</span>
+        </td>
+        <td>
+          <button (click)="openDeleteDialog(employee.id)">Обриши</button>
+          <button [disabled]=true title="Измена није подржана">Измени</button>
         </td>
       </tr>
     </tbody>

@@ -2,11 +2,14 @@
   <label for="username">Корисничко Име:</label>
   <input id="username" formControlName="username" type="text">
   
-  <label for="password">Лозинка:</label>
-  <input id="password" formControlName="password" type="password">
-  
-  <label for="confirmPassword">Потврда Лозинке:</label>
-  <input id="confirmPassword" formControlName="confirmPassword" type="password">
+  <!-- Password fields are only shown if not in edit mode -->
+  <div *ngIf="!isEditMode">
+    <label for="password">Лозинка:</label>
+    <input id="password" formControlName="password" type="password">
+
+    <label for="confirmPassword">Потврда Лозинке:</label>
+    <input id="confirmPassword" formControlName="confirmPassword" type="password">
+  </div>
 
   <label for="firstName">Име:</label>
   <input id="firstName" formControlName="firstName" type="text">
@@ -16,8 +19,8 @@
 
   <label for="gender">Пол:</label>
   <select id="gender" formControlName="gender">
-    <option value="M">Мушко</option>
-    <option value="F">Женско</option>
+    <option value="M">Мушки</option>
+    <option value="F">Женски</option>
   </select>
 
   <label for="phoneNumber">Телефон:</label>
@@ -29,8 +32,8 @@
   <label for="profilePicture">Профилна Слика:</label>
   <input id="profilePicture" formControlName="profilePicture" type="file" accept="image/png, image/jpeg">
 
-  <label for="profile">Профил:</label>
-  <select id="profile" formControlName="profile">
+  <label for="profileType">Профил:</label>
+  <select id="profileType" formControlName="profileType">
     <option value="Medic">Медицинар</option>
     <option value="Technical Staff">Техничко Особље</option>
   </select>

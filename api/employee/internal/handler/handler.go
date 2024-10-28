@@ -38,11 +38,14 @@ func NewEmployeeHandler(log utils.Logger, repo repositories.EmployeeRepository) 
 // @Failure 400 {object} gin.H
 // @Router /employees [post]
 func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
-	var req model.EmployeeCreateRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	h.log.Info("Received Register Employee request")
+	req := &model.EmployeeCreateRequest{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	h.log.Infof("Creating new employee with data: %s", req.ToString())
 
 	employee := model.Employee{
 		Username:       req.Username,
@@ -140,9 +143,10 @@ func (h *employeeHandler) ListEmployees(c *gin.Context) {
 			Phone:          emp.Phone,
 			Email:          emp.Email,
 			ProfilePicture: emp.ProfilePicture,
+			ProfileType:    emp.ProfileType,
 		})
 	}
-	c.JSON(http.StatusOK, employees)
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *employeeHandler) UpdateEmployee(db *gorm.DB, logger *zap.Logger) gin.HandlerFunc {

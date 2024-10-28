@@ -10,6 +10,6 @@ export interface Employee {
     phoneNumber: string;
     email: string;
     profilePicture: string; // URL or path to the profile picture
-    profile: 'Medic' | 'Technical Staff';
+    profileType: 'Medic' | 'Technical Staff';
   }
   
