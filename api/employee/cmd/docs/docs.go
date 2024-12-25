@@ -124,36 +124,36 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "email",
-                "first_name",
+                "firstName",
                 "gender",
-                "last_name",
+                "lastName",
                 "password",
-                "phone",
+                "phoneNumber",
                 "username"
             ],
             "properties": {
                 "email": {
                     "type": "string"
                 },
-                "first_name": {
+                "firstName": {
                     "type": "string"
                 },
                 "gender": {
                     "type": "string"
                 },
-                "last_name": {
+                "lastName": {
                     "type": "string"
                 },
                 "password": {
                     "type": "string"
                 },
-                "phone": {
+                "phoneNumber": {
                     "type": "string"
                 },
-                "profile_picture": {
+                "profilePicture": {
                     "type": "string"
                 },
-                "profile_type": {
+                "profileType": {
                     "type": "string"
                 },
                 "username": {
@@ -167,7 +167,7 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "first_name": {
+                "firstName": {
                     "type": "string"
                 },
                 "gender": {
@@ -176,17 +176,17 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "last_name": {
+                "lastName": {
                     "type": "string"
                 },
-                "phone": {
+                "phoneNumber": {
                     "type": "string"
                 },
-                "profile_picture": {
+                "profilePicture": {
                     "description": "this may be represented as a byte array if we read the picture from somewhere for an example",
                     "type": "string"
                 },
-                "profile_type": {
+                "profileType": {
                     "type": "string"
                 },
                 "username": {
