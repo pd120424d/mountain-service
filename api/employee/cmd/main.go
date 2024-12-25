@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gorilla/handlers"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -80,7 +79,8 @@ func main() {
 	}
 
 	employeeRepo := repositories.NewEmployeeRepository(log, db)
-	employeeHandler := handler.NewEmployeeHandler(log, employeeRepo)
+	shiftsRepo := repositories.NewShiftRepository(db)
+	employeeHandler := handler.NewEmployeeHandler(log, employeeRepo, shiftsRepo)
 
 	r := gin.Default()
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -133,7 +133,7 @@ func main() {
 }
 
 func readSecret(filePath string) (string, error) {
-	secret, err := ioutil.ReadFile(filePath)
+	secret, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}

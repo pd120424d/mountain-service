@@ -28,13 +28,13 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 
 	t.Run("it returns an error when password validation fails", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
+		ctx, _ := gin.CreateTestContext(w)
 
 		invalidEmployee := `{"username": "jdoe", "password": "short", "first_name": "John", "last_name": "Doe"}`
-		c.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(invalidEmployee))
-		c.Request.Header.Set("Content-Type", "application/json")
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(invalidEmployee))
+		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler.CreateEmployee(c)
+		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), utils.ErrPasswordLength)
@@ -42,7 +42,7 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 
 	t.Run("it creates an employee when data is valid", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
+		ctx, _ := gin.CreateTestContext(w)
 
 		validEmployee := model.Employee{
 			Username:  "jdoe",
@@ -53,15 +53,15 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 
 		mockRepo.EXPECT().Create(&validEmployee).Return(nil).Times(1)
 
-		c.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(`{
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(`{
             "username": "jdoe",
             "password": "Pass123!",
             "firstName": "John",
             "lastName": "Doe"
         }`))
-		c.Request.Header.Set("Content-Type", "application/json")
+		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler.CreateEmployee(c)
+		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
@@ -87,11 +87,11 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 
 	t.Run("it returns an empty list when no employees exist", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
+		ctx, _ := gin.CreateTestContext(w)
 
 		mockRepo.EXPECT().GetAll().Return([]model.Employee{}, nil).Times(1)
 
-		handler.ListEmployees(c)
+		handler.ListEmployees(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.JSONEq(t, `[]`, w.Body.String())
@@ -99,7 +99,7 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 
 	t.Run("it returns a list of employees when employees exist", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
+		ctx, _ := gin.CreateTestContext(w)
 
 		employees := []model.Employee{
 			{Username: "jdoe", FirstName: "John", LastName: "Doe", Password: "Pass123!"},
@@ -108,7 +108,7 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 
 		mockRepo.EXPECT().GetAll().Return(employees, nil).Times(1)
 
-		handler.ListEmployees(c)
+		handler.ListEmployees(ctx)
 
 		expectedJSON := `[
             {"ID":0,"CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","DeletedAt":null,"Username":"jdoe","Password":"Pass123!","FirstName":"John","LastName":"Doe","Gender":"","Phone":"","Email":"","ProfilePicture":"","ProfileType":""},
@@ -131,12 +131,12 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 
 	t.Run("it returns an error when employee does not exist", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
+		ctx, _ := gin.CreateTestContext(w)
 
 		mockRepo.EXPECT().Delete(uint(1)).Return(gorm.ErrRecordNotFound).Times(1)
 
-		c.Params = []gin.Param{{Key: "id", Value: "1"}}
-		handler.DeleteEmployee(c)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		handler.DeleteEmployee(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "Failed to delete employee")
@@ -144,12 +144,12 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 
 	t.Run("it deletes an existing employee", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
+		ctx, _ := gin.CreateTestContext(w)
 
 		mockRepo.EXPECT().Delete(uint(1)).Return(nil).Times(1)
 
-		c.Params = []gin.Param{{Key: "id", Value: "1"}}
-		handler.DeleteEmployee(c)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		handler.DeleteEmployee(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "Employee deleted successfully")

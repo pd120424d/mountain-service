@@ -3,15 +3,10 @@ package repositories
 //go:generate mockgen -source=employee_repository.go -destination=employee_repository_gomock.go -package=repositories mountain_service/employee/internal/repositories -imports=gomock=go.uber.org/mock/gomock
 
 import (
-	"fmt"
-	"gorm.io/gorm"
-	"time"
-
 	"api/employee/internal/model"
 	"api/shared/utils"
+	"gorm.io/gorm"
 )
-
-const dateFormat = "2006-01-02"
 
 type EmployeeRepository interface {
 	Create(employee *model.Employee) error
@@ -82,80 +77,6 @@ func (r *employeeRepository) Delete(id uint) error {
 	}
 
 	return nil
-}
-
-func (r *employeeRepository) AssignShift(employeeID uint, shiftDate time.Time, shiftType int, employeeRole string) error {
-	// Validate shift type
-	if shiftType < 1 || shiftType > 3 {
-		return fmt.Errorf("invalid shift type: %d", shiftType)
-	}
-
-	// Validate role
-	if employeeRole != "Medic" && employeeRole != "Technical" {
-		return fmt.Errorf("invalid employee role: %s", employeeRole)
-	}
-
-	// Check if the employee is already assigned to this shift on the given date
-	var existingShift model.Shift
-	if err := r.db.Where("employee_id = ? AND shift_date = ? AND shift_type = ?", employeeID, shiftDate.Format(dateFormat), shiftType).First(&existingShift).Error; err == nil {
-		return fmt.Errorf("employee already assigned to this shift on %s", shiftDate.Format(dateFormat))
-	}
-
-	// Count current employees in the shift
-	var count int64
-	err := r.db.Model(&model.Shift{}).
-		Where("shift_date = ? AND shift_type = ? AND employee_role = ?", shiftDate.Format(dateFormat), shiftType, employeeRole).
-		Count(&count).Error
-	if err != nil {
-		return err
-	}
-
-	// Enforce maximum limits
-	if (employeeRole == "Medic" && count >= 2) || (employeeRole == "Technical" && count >= 4) {
-		return fmt.Errorf("maximum limit reached for role %s in shift %d on %s", employeeRole, shiftType, shiftDate.Format(dateFormat))
-	}
-
-	// Create the shift
-	shift := &model.Shift{
-		EmployeeID:   employeeID,
-		ShiftDate:    shiftDate,
-		ShiftType:    shiftType,
-		EmployeeRole: employeeRole,
-	}
-	return r.db.Create(shift).Error
-}
-
-func (r *employeeRepository) GetShiftsByEmployeeID(employeeID int) ([]model.Shift, error) {
-	var shifts []model.Shift
-	err := r.db.Where("employee_id = ?", employeeID).Order("shift_start ASC").Find(&shifts).Error
-	return shifts, err
-}
-
-func (r *employeeRepository) GetShiftAvailability(role string) (map[string]int, error) {
-	var counts struct {
-		Role  string
-		Count int
-	}
-	availability := make(map[string]int)
-
-	err := r.db.Model(&model.Employee{}).
-		Select("role, COUNT(*) AS count").
-		Joins("JOIN shifts ON employees.id = shifts.employee_id").
-		Where("? BETWEEN shifts.shift_start AND shifts.shift_end", time.Now()).
-		Group("role").
-		Scan(&counts).Error
-	if err != nil {
-		return nil, err
-	}
-
-	availability[counts.Role] = counts.Count
-	return availability, nil
-}
-
-func (r *employeeRepository) GetShiftsForTimeRange(start, end time.Time) ([]model.Shift, error) {
-	var shifts []model.Shift
-	err := r.db.Where("shift_start >= ? AND shift_end <= ?", start, end).Find(&shifts).Error
-	return shifts, err
 }
 
 // Delete marks the employee record as deleted by setting the deleted_at timestamp.

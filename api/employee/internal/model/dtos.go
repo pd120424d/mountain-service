@@ -40,6 +40,17 @@ type EmployeeUpdateRequest struct {
 	Email     string `json:"email,omitempty"`
 }
 
+type AssignShiftRequest struct {
+	ShiftDate   string `json:"shiftDate" binding:"required"`
+	ShiftType   int    `json:"shiftType" binding:"required,min=1,max=3"`
+	ProfileType string `json:"profileType" binding:"required,oneof=Medic Technical"`
+}
+
+type RemoveShiftRequest struct {
+	ShiftDate string `json:"shiftDate" binding:"required"`
+	ShiftType int    `json:"shiftType" binding:"required,min=1,max=3"`
+}
+
 func (e *EmployeeCreateRequest) ToString() string {
 	return fmt.Sprintf(
 		"EmployeeCreateRequest { FirstName: %s, LastName: %s, Username: %s, Password: %s,"+
