@@ -13,5 +13,13 @@ CREATE TABLE IF NOT EXISTS employee (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
+CREATE TABLE shifts (
+    id SERIAL PRIMARY KEY,
+    employee_id INT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    shift_start TIMESTAMP NOT NULL,
+    shift_end TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_employee_username ON employee(username);
 CREATE INDEX IF NOT EXISTS idx_employee_email ON employee(email);

@@ -16,6 +16,9 @@ type EmployeeHandler interface {
 	RegisterEmployee(ctx *gin.Context)
 	ListEmployees(c *gin.Context)
 	DeleteEmployee(c *gin.Context)
+	AssignShift(c *gin.Context)
+	GetShifts(c *gin.Context)
+	GetShiftsAvailability(c *gin.Context)
 }
 
 type employeeHandler struct {
@@ -201,4 +204,55 @@ func (h *employeeHandler) DeleteEmployee(c *gin.Context) {
 
 	h.log.Infof("Employee with ID %d was soft deleted", employeeID)
 	c.JSON(http.StatusOK, gin.H{"message": "Employee deleted successfully"})
+}
+
+// AssignShift Додељује смену запосленом
+// @Summary Додељује смену запосленом
+// @Description Додељује смену запосленом по ID-ју
+// @Tags запослени
+// @Param id path int true "ID запосленог"
+// @Param shift body model.ShiftRequest true "Подаци о смени"
+// @Success 201 {object} model.ShiftResponse
+// @Failure 400 {object} gin.H
+// @Router /employees/{id}/shifts [post]
+func (h *employeeHandler) AssignShift(c *gin.Context) {
+	id := c.Param("id")
+
+	// Parse request body
+	var shiftRequest struct {
+		ShiftStart string `json:"shiftStart" binding:"required,datetime"`
+		ShiftEnd   string `json:"shiftEnd" binding:"required,datetime"`
+	}
+	if err := c.ShouldBindJSON(&shiftRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
+		return
+	}
+
+	// Validate employee exists
+	employeeID, err := strconv.Atoi(id)
+	if err != nil || employeeID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee ID"})
+		return
+	}
+
+	// Business logic: Assign shift
+	err = h.repo.AssignShift(c, employeeID, shiftRequest.ShiftStart, shiftRequest.ShiftEnd)
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "shift assigned successfully"})
+}
+
+func (h *employeeHandler) GetShiftsAvailability(c *gin.Context) {
+	// Fetch availability data
+	availability, err := h.repo.GetShiftsAvailability(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Respond with availability
+	c.JSON(http.StatusOK, gin.H{"availability": availability})
 }

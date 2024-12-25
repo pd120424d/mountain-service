@@ -90,6 +90,9 @@ func main() {
 		api.POST("/employees", employeeHandler.RegisterEmployee)
 		api.GET("/employees", employeeHandler.ListEmployees)
 		api.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
+		api.POST("/empoyees/{id}/shifts", employeeHandler.AssignShift)
+		api.GET("/employees/{id}/shifts", employeeHandler.GetShifts)
+		api.GET("shifts/availability", employeeHandler.GetShiftsAvailability)
 	}
 
 	// CORS setup
