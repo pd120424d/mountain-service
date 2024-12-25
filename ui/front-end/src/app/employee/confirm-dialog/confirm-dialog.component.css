@@ -1,0 +1,56 @@
+/* Styling the dialog title */
+.dialog-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  /* Styling the dialog content */
+  .dialog-content {
+    font-size: 1rem;
+    color: #555;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  /* Refining the dialog actions for better button alignment */
+  .dialog-actions {
+    display: flex;
+    justify-content: center; /* Center the buttons horizontally */
+    gap: 20px; /* Add some space between the buttons */
+    margin-top: 20px;
+  }
+  
+  /* Cancel button styles */
+  button.cancel-button {
+    background-color: #f1f1f1;
+    color: #555;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px; /* Slightly rounded corners */
+  }
+  
+  /* Confirm (Delete) button styles */
+  button.confirm-button {
+    background-color: #d32f2f; /* Red for delete action */
+    color: white;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px; /* Slightly rounded corners */
+  }
+  
+  /* Hover effects for buttons */
+  button.cancel-button:hover,
+  button.confirm-button:hover {
+    opacity: 0.9;
+  }
+  
+  /* Additional hover effect for confirm (delete) button */
+  button.confirm-button:hover {
+    background-color: #b71c1c;
+  }
+  
