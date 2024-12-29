@@ -3,7 +3,6 @@ package handler
 import (
 	"api/employee/internal/repositories"
 	"api/shared/utils"
-	"encoding/json"
 	"gorm.io/gorm"
 	"net/http"
 	"net/http/httptest"
@@ -20,9 +19,10 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
+	mockEmplRepo := repositories.NewMockEmployeeRepository(ctrl)
+	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
 	log := utils.NewLogger() // Use a mocked or real logger depending on the situation
-	handler := NewEmployeeHandler(log, mockRepo)
+	handler := NewEmployeeHandler(log, mockEmplRepo, mockShiftRepo)
 
 	gin.SetMode(gin.TestMode)
 
@@ -30,7 +30,25 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		invalidEmployee := `{"username": "jdoe", "password": "short", "first_name": "John", "last_name": "Doe"}`
+		usernameFilter := map[string]interface{}{
+			"username": "jdoe",
+		}
+		emailFilter := map[string]interface{}{
+			"email": "jdoe@example.com",
+		}
+		mockEmplRepo.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
+		mockEmplRepo.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(1)
+		mockEmplRepo.EXPECT().Create(gomock.Any()).Return(nil).Times(0)
+		invalidEmployee := `{
+			"username": "jdoe",
+			"password": "short", 
+			"firstName": "John", 
+			"lastName": "Doe",
+			"gender": "M", 
+			"phone": "123456789",
+			"email": "jdoe@example.com", 
+			"profileType": "Medic"
+		}`
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(invalidEmployee))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
@@ -40,38 +58,100 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 		assert.Contains(t, w.Body.String(), utils.ErrPasswordLength)
 	})
 
-	t.Run("it creates an employee when data is valid", func(t *testing.T) {
+	t.Run("it returns an error when employee already exists", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		validEmployee := model.Employee{
-			Username:  "jdoe",
-			Password:  "Pass123!",
-			FirstName: "John",
-			LastName:  "Doe",
+		usernameFilter := map[string]interface{}{
+			"username": "jdoe",
 		}
-
-		mockRepo.EXPECT().Create(&validEmployee).Return(nil).Times(1)
-
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(`{
-            "username": "jdoe",
-            "password": "Pass123!",
-            "firstName": "John",
-            "lastName": "Doe"
-        }`))
+		emailFilter := map[string]interface{}{
+			"email": "jdoe@example.com",
+		}
+		mockEmplRepo.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{{}}, nil).Times(1)
+		mockEmplRepo.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(0)
+		mockEmplRepo.EXPECT().Create(gomock.Any()).Return(nil).Times(0)
+		existingEmployee := `{
+			"username": "jdoe",
+			"password": "Pass123!",
+			"firstName": "John", 
+			"lastName": "Doe",
+			"gender": "M", 
+			"phone": "123456789",
+			"email": "jdoe@example.com", 
+			"profileType": "Medic"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(existingEmployee))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		handler.RegisterEmployee(ctx)
 
-		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, http.StatusConflict, w.Code)
+		assert.Contains(t, w.Body.String(), "Username already exists")
+	})
 
-		var createdEmployee model.Employee
-		err := json.Unmarshal(w.Body.Bytes(), &createdEmployee)
-		assert.Nil(t, err)
-		assert.Equal(t, "jdoe", createdEmployee.Username)
-		assert.Equal(t, "Pass123!", createdEmployee.Password)
-		assert.Equal(t, "John", createdEmployee.FirstName)
-		assert.Equal(t, "Doe", createdEmployee.LastName)
+	t.Run("it returns an error when email already exists", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		usernameFilter := map[string]interface{}{
+			"username": "jdoe",
+		}
+		emailFilter := map[string]interface{}{
+			"email": "jdoe@example.com",
+		}
+		mockEmplRepo.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
+		mockEmplRepo.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{{}}, nil).Times(1)
+		mockEmplRepo.EXPECT().Create(gomock.Any()).Return(nil).Times(0)
+		existingEmployee := `{
+			"username": "jdoe",
+			"password": "Pass123!",
+			"firstName": "John", 
+			"lastName": "Doe",
+			"gender": "M", 
+			"phone": "123456789",
+			"email": "jdoe@example.com", 
+			"profileType": "Medic"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(existingEmployee))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.RegisterEmployee(ctx)
+
+		assert.Equal(t, http.StatusConflict, w.Code)
+		assert.Contains(t, w.Body.String(), "Email already exists")
+	})
+
+	t.Run("it creates an employee when data is valid", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		usernameFilter := map[string]interface{}{
+			"username": "jdoe",
+		}
+		emailFilter := map[string]interface{}{
+			"email": "jdoe@example.com",
+		}
+		mockEmplRepo.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
+		mockEmplRepo.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(1)
+		mockEmplRepo.EXPECT().Create(gomock.Any()).Return(nil).Times(1)
+		validEmployee := `{
+			"username": "jdoe",
+			"password": "Pass123!",
+			"firstName": "John", 
+			"lastName": "Doe",
+			"gender": "M", 
+			"phone": "123456789",
+			"email": "jdoe@example.com", 
+			"profileType": "Medic"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(validEmployee))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.RegisterEmployee(ctx)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+		assert.Equal(t, `{"id":0,"username":"jdoe","firstName":"John","lastName":"Doe","gender":"M","phoneNumber":"123456789","email":"jdoe@example.com","profilePicture":"","profileType":"Medic"}`, w.Body.String())
 	})
 }
 
@@ -80,8 +160,9 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
+	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
 	log := utils.NewLogger()
-	handler := NewEmployeeHandler(log, mockRepo)
+	handler := NewEmployeeHandler(log, mockRepo, mockShiftRepo)
 
 	gin.SetMode(gin.TestMode)
 
@@ -124,8 +205,9 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
+	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
 	log := utils.NewLogger()
-	handler := NewEmployeeHandler(log, mockRepo)
+	handler := NewEmployeeHandler(log, mockRepo, mockShiftRepo)
 
 	gin.SetMode(gin.TestMode)
 

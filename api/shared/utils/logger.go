@@ -18,7 +18,9 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 	Fatalf(format string, args ...interface{})
 	Sync() error
+	WithName(name string) Logger
 }
+
 type zapLogger struct {
 	logger *zap.Logger
 }
@@ -67,6 +69,11 @@ func (z *zapLogger) Sync() error {
 	return z.logger.Sync()
 }
 
+func (z *zapLogger) WithName(name string) Logger {
+	namedLogger := z.logger.Named(name)
+	return &zapLogger{logger: namedLogger}
+}
+
 func NewLogger() Logger {
 	var zapConfig zap.Config
 
@@ -85,4 +92,9 @@ func NewLogger() Logger {
 	}
 
 	return &zapLogger{logger}
+}
+
+func NewNamedLogger(name string) Logger {
+	baseLogger := NewLogger()
+	return baseLogger.WithName(name)
 }

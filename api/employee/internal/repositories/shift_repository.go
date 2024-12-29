@@ -1,7 +1,10 @@
 package repositories
 
+//go:generate mockgen -source=shift_repository.go -destination=shift_repository_gomock.go -package=repositories mountain_service/employee/internal/repositories -imports=gomock=go.uber.org/mock/gomock
+
 import (
 	"api/employee/internal/model"
+	"api/shared/utils"
 	"fmt"
 	"gorm.io/gorm"
 	"time"
@@ -15,24 +18,25 @@ type ShiftRepository interface {
 }
 
 type shiftRepository struct {
-	db *gorm.DB
+	log utils.Logger
+	db  *gorm.DB
 }
 
-func NewShiftRepository(db *gorm.DB) ShiftRepository {
-	return &shiftRepository{db: db}
+func NewShiftRepository(log utils.Logger, db *gorm.DB) ShiftRepository {
+	return &shiftRepository{log: log.WithName("shiftRepository"), db: db}
 }
 
 func (r *shiftRepository) AssignEmployee(shiftDate time.Time, shiftType int, employeeID uint, profileType string) error {
 	// Check if the employee is already assigned to this shift
 	var existingShift model.Shift
-	if err := r.db.Where("employee_id = ? AND shift_date = ? AND shift_type = ?", employeeID, shiftDate.Format(model.DateFormat), shiftType).First(&existingShift).Error; err == nil {
+	if err := r.db.Where("employee_id = ? AND shift_date = ? AND shift_type = ?", employeeID, shiftDate.Format(time.DateOnly), shiftType).First(&existingShift).Error; err == nil {
 		return model.ErrAlreadyAssigned
 	}
 
 	// Count current employees in the shift for the given profile type
 	var count int64
 	err := r.db.Model(&model.Shift{}).
-		Where("shift_date = ? AND shift_type = ? AND employee_role = ?", shiftDate.Format(model.DateFormat), shiftType, profileType).
+		Where("shift_date = ? AND shift_type = ? AND employee_role = ?", shiftDate.Format(time.DateOnly), shiftType, profileType).
 		Count(&count).Error
 	if err != nil {
 		return err
@@ -75,7 +79,7 @@ func (r *shiftRepository) GetShiftAvailability(date time.Time) (map[int]map[mode
 	}
 	err := r.db.Model(&model.Shift{}).
 		Select("shift_type, profile_type, COUNT(*) AS count").
-		Where("shift_date = ?", date.Format(model.DateFormat)).
+		Where("shift_date = ?", date.Format(time.DateOnly)).
 		Group("shift_type, profile_type").
 		Scan(&counts).Error
 	if err != nil {

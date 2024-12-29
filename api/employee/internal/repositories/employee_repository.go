@@ -23,7 +23,7 @@ type employeeRepository struct {
 }
 
 func NewEmployeeRepository(log utils.Logger, db *gorm.DB) EmployeeRepository {
-	return &employeeRepository{log: log, db: db}
+	return &employeeRepository{log: log.WithName("employeeRepository"), db: db}
 }
 
 // Create creates and employee with the hashed version of its password.
@@ -79,6 +79,7 @@ func (r *employeeRepository) Delete(id uint) error {
 	return nil
 }
 
+// TODO:  Soft delete
 // Delete marks the employee record as deleted by setting the deleted_at timestamp.
 //func (r *employeeRepository) Delete(employeeID uint) error {
 //	// First, check if the employee is already soft-deleted

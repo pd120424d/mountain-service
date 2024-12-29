@@ -30,7 +30,7 @@ type employeeHandler struct {
 }
 
 func NewEmployeeHandler(log utils.Logger, emplRepo repositories.EmployeeRepository, shiftsRepo repositories.ShiftRepository) EmployeeHandler {
-	return &employeeHandler{log: log, emplRepo: emplRepo, shiftsRepo: shiftsRepo}
+	return &employeeHandler{log: log.WithName("employeeHandler"), emplRepo: emplRepo, shiftsRepo: shiftsRepo}
 }
 
 // RegisterEmployee Креирање новог запосленог
@@ -125,7 +125,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 		ProfileType:    employee.ProfileType.String(),
 	}
 
-	ctx.JSON(http.StatusOK, response)
+	ctx.JSON(http.StatusCreated, response)
 }
 
 // ListEmployees Преузимање листе запослених
@@ -136,6 +136,8 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 // @Success 200 {array} model.EmployeeResponse
 // @Router /employees [get]
 func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
+	h.log.Info("Received List Employees request")
+
 	employees, err := h.emplRepo.GetAll()
 	if err != nil {
 		h.log.Errorf("failed to retrieve employees: %v", err)
@@ -158,11 +160,25 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 			ProfileType:    emp.ProfileType.String(),
 		})
 	}
+
+	h.log.Info("Successfully mapped employees to response format")
+	h.log.Infof("Returning %d employees", len(response))
 	ctx.JSON(http.StatusOK, response)
 }
 
+// UpdateEmployee Ажурирање запосленог
+// @Summary Ажурирање запосленог
+// @Description Ажурирање запосленог по ID-ју
+// @Tags запослени
+// @Param id path int true "ID запосленог"
+// @Param employee body model.EmployeeUpdateRequest true "Подаци за ажурирање запосленог"
+// @Success 200 {object} model.EmployeeResponse
+// @Failure 400 {object} gin.H
+// @Router /employees/{id} [put]
 func (h *employeeHandler) UpdateEmployee(db *gorm.DB, logger *zap.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		h.log.Info("Received Update Employee request")
+
 		id := ctx.Param("id")
 
 		var employee model.Employee
@@ -184,6 +200,7 @@ func (h *employeeHandler) UpdateEmployee(db *gorm.DB, logger *zap.Logger) gin.Ha
 			return
 		}
 
+		h.log.Infof("Successfully updated employee with ID %v", employee.ID)
 		ctx.JSON(http.StatusOK, employee)
 	}
 }
@@ -197,6 +214,8 @@ func (h *employeeHandler) UpdateEmployee(db *gorm.DB, logger *zap.Logger) gin.Ha
 // @Failure 404 {object} gin.H
 // @Router /employees/{id} [delete]
 func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
+	h.log.Info("Received Delete Employee request")
+
 	idParam := ctx.Param("id")
 	employeeID, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -211,7 +230,7 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 		return
 	}
 
-	h.log.Infof("Employee with ID %d was soft deleted", employeeID)
+	h.log.Infof("Employee with ID %d was deleted", employeeID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Employee deleted successfully"})
 }
 
@@ -225,8 +244,9 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 // @Failure 400 {object} gin.H
 // @Router /employees/{id}/shifts [post]
 func (h *employeeHandler) AssignShift(ctx *gin.Context) {
-	// Extract employee ID from the URL
 	employeeIDParam := ctx.Param("id")
+	h.log.Infof("Received Assign Shift request for employee ID %s", employeeIDParam)
+
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee ID"})
@@ -248,7 +268,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	}
 
 	// Parse the shift date
-	shiftDate, err := time.Parse(model.DateFormat, req.ShiftDate)
+	shiftDate, err := time.Parse(time.DateOnly, req.ShiftDate)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid shiftDate format, expected YYYY-MM-DD"})
 		return
@@ -265,12 +285,22 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	}
 
 	// Return success response
+	h.log.Infof("Successfully assigned shift for employee ID %d", employeeID)
 	ctx.JSON(http.StatusCreated, gin.H{"message": "shift assigned successfully"})
 }
 
+// GetShifts Дохватање смена за запосленог
+// @Summary Дохватање смена за запосленог
+// @Description Дохватање смена за запосленог по ID-ју
+// @Tags запослени
+// @Param id path int true "ID запосленог"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Router /employees/{id}/shifts [get]
 func (h *employeeHandler) GetShifts(ctx *gin.Context) {
-	// Extract employee ID from the URL
 	employeeIDParam := ctx.Param("id")
+	h.log.Infof("Received Get Shifts request for employee ID %s", employeeIDParam)
+
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee ID"})
@@ -284,17 +314,26 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 		return
 	}
 
-	// Return the shifts
+	h.log.Infof("Successfully retrieved shifts for employee ID %d", employeeID)
 	ctx.JSON(http.StatusOK, gin.H{"shifts": shifts})
 }
 
+// GetShiftsAvailability Дохватање доступности смена
+// @Summary Дохватање доступности смена
+// @Description Дохватање доступности смена за одређени дан
+// @Tags запослени
+// @Param date query string false "Дан за који се проверава доступност смена"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Router /shifts/availability [get]
 func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
-	// Extract and validate date query parameter
+	h.log.Infof("Received Get Shifts Availability request for date %s", ctx.Query("date"))
+
 	dateParam := ctx.Query("date")
 	var date time.Time
 	var err error
 	if dateParam != "" {
-		date, err = time.Parse("2006-01-02", dateParam)
+		date, err = time.Parse(time.DateOnly, dateParam)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, expected YYYY-MM-DD"})
 			return
@@ -310,12 +349,22 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 		return
 	}
 
-	// Return availability
+	h.log.Infof("Successfully retrieved shifts availability for date %s", date.Format(time.DateOnly))
 	ctx.JSON(http.StatusOK, gin.H{"availability": availability})
 }
 
+// RemoveShift Уклањање смене за запосленог
+// @Summary Уклањање смене за запосленог
+// @Description Уклањање смене за запосленог по ID-ју и подацима о смени
+// @Tags запослени
+// @Param id path int true "ID запосленог"
+// @Param shift body model.RemoveShiftRequest true "Подаци о смени"
+// @Success 204
+// @Failure 400 {object} gin.H
+// @Router /employees/{id}/shifts [delete]
 func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
-	// Parse and validate request body
+	h.log.Infof("Received Remove Shift request for employee ID %s", ctx.Param("id"))
+
 	var req model.RemoveShiftRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -331,7 +380,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 	}
 
 	// Parse the shift date
-	shiftDate, err := time.Parse(model.DateFormat, req.ShiftDate)
+	shiftDate, err := time.Parse(time.DateOnly, req.ShiftDate)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid shiftDate format, expected YYYY-MM-DD"})
 		return
@@ -344,6 +393,6 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 		return
 	}
 
-	// Return success response
+	h.log.Infof("Successfully removed shift for employee ID %d", employeeID)
 	ctx.JSON(http.StatusNoContent, nil)
 }

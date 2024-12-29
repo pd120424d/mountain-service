@@ -27,7 +27,7 @@ type EmployeeCreateRequest struct {
 	Password       string `json:"password" binding:"required"`
 	Email          string `json:"email" binding:"required,email"`
 	Gender         string `json:"gender" binding:"required"`
-	Phone          string `json:"phoneNumber" binding:"required"`
+	Phone          string `json:"phone" binding:"required"`
 	ProfilePicture string `json:"profilePicture"`
 	ProfileType    string `json:"profileType"`
 }
