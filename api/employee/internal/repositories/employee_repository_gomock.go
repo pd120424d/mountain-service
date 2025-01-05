@@ -47,7 +47,7 @@ func (m *MockEmployeeRepository) Create(employee *model.Employee) error {
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockEmployeeRepositoryMockRecorder) Create(employee any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) Create(employee interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockEmployeeRepository)(nil).Create), employee)
 }
@@ -61,7 +61,7 @@ func (m *MockEmployeeRepository) Delete(employeeID uint) error {
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockEmployeeRepositoryMockRecorder) Delete(employeeID any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) Delete(employeeID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockEmployeeRepository)(nil).Delete), employeeID)
 }
@@ -90,13 +90,13 @@ func (m *MockEmployeeRepository) GetEmployeeByID(id string, employee *model.Empl
 }
 
 // GetEmployeeByID indicates an expected call of GetEmployeeByID.
-func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeByID(id, employee any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeByID(id, employee interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByID", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeeByID), id, employee)
 }
 
 // ListEmployees mocks base method.
-func (m *MockEmployeeRepository) ListEmployees(filters map[string]any) ([]model.Employee, error) {
+func (m *MockEmployeeRepository) ListEmployees(filters map[string]interface{}) ([]model.Employee, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListEmployees", filters)
 	ret0, _ := ret[0].([]model.Employee)
@@ -105,7 +105,7 @@ func (m *MockEmployeeRepository) ListEmployees(filters map[string]any) ([]model.
 }
 
 // ListEmployees indicates an expected call of ListEmployees.
-func (mr *MockEmployeeRepositoryMockRecorder) ListEmployees(filters any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) ListEmployees(filters interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEmployees", reflect.TypeOf((*MockEmployeeRepository)(nil).ListEmployees), filters)
 }
@@ -119,7 +119,7 @@ func (m *MockEmployeeRepository) UpdateEmployee(employee *model.Employee) error 
 }
 
 // UpdateEmployee indicates an expected call of UpdateEmployee.
-func (mr *MockEmployeeRepositoryMockRecorder) UpdateEmployee(employee any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) UpdateEmployee(employee interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmployee", reflect.TypeOf((*MockEmployeeRepository)(nil).UpdateEmployee), employee)
 }

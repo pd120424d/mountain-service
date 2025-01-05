@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // EmployeeResponse DTO for returning employee data
@@ -40,15 +41,29 @@ type EmployeeUpdateRequest struct {
 	Email     string `json:"email,omitempty"`
 }
 
+// ShiftResponse DTO for returning shift data for a certain employee
+type ShiftResponse struct {
+	ID        uint      `gorm:"primaryKey"`
+	ShiftDate time.Time `gorm:"not null"`
+	ShiftType int       `gorm:"not null"` // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid
+	CreatedAt time.Time
+}
+
 type AssignShiftRequest struct {
 	ShiftDate   string `json:"shiftDate" binding:"required"`
 	ShiftType   int    `json:"shiftType" binding:"required,min=1,max=3"`
 	ProfileType string `json:"profileType" binding:"required,oneof=Medic Technical"`
 }
 
+type AssignShiftResponse struct {
+	ID          uint   `json:"id"`
+	ShiftDate   string `json:"shiftDate""`
+	ShiftType   int    `json:"shiftType"`
+	ProfileType string `json:"profileType"`
+}
+
 type RemoveShiftRequest struct {
-	ShiftDate string `json:"shiftDate" binding:"required"`
-	ShiftType int    `json:"shiftType" binding:"required,min=1,max=3"`
+	ID uint `json:"id" cinding:"required"`
 }
 
 func (e *EmployeeCreateRequest) ToString() string {

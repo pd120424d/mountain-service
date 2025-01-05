@@ -40,7 +40,10 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.EmployeeResponse"
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/model.EmployeeResponse"
+                                }
                             }
                         }
                     }
@@ -86,6 +89,45 @@ const docTemplate = `{
             }
         },
         "/employees/{id}": {
+            "put": {
+                "description": "Ажурирање запосленог по ID-ју",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Ажурирање запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Подаци за ажурирање запосленог",
+                        "name": "employee",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.EmployeeUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.EmployeeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Брисање запосленог по ID-ју",
                 "tags": [
@@ -113,12 +155,189 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/employees/{id}/shifts": {
+            "get": {
+                "description": "Дохватање смена за запосленог по ID-ју",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Дохватање смена за запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.ShiftResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Додељује смену запосленом по ID-ју",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Додељује смену запосленом",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Подаци о смени",
+                        "name": "shift",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AssignShiftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.AssignShiftResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Уклањање смене за запосленог по ID-ју и подацима о смени",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Уклањање смене за запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Подаци о смени",
+                        "name": "shift",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RemoveShiftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/shifts/availability": {
+            "get": {
+                "description": "Дохватање доступности смена за одређени дан",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Дохватање доступности смена",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Дан за који се проверава доступност смена",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
         "gin.H": {
             "type": "object",
             "additionalProperties": {}
+        },
+        "model.AssignShiftRequest": {
+            "type": "object",
+            "required": [
+                "profileType",
+                "shiftDate",
+                "shiftType"
+            ],
+            "properties": {
+                "profileType": {
+                    "type": "string",
+                    "enum": [
+                        "Medic",
+                        "Technical"
+                    ]
+                },
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "type": "integer",
+                    "maximum": 3,
+                    "minimum": 1
+                }
+            }
+        },
+        "model.AssignShiftResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "profileType": {
+                    "type": "string"
+                },
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "type": "integer"
+                }
+            }
         },
         "model.EmployeeCreateRequest": {
             "type": "object",
@@ -128,7 +347,7 @@ const docTemplate = `{
                 "gender",
                 "lastName",
                 "password",
-                "phoneNumber",
+                "phone",
                 "username"
             ],
             "properties": {
@@ -147,7 +366,7 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
-                "phoneNumber": {
+                "phone": {
                     "type": "string"
                 },
                 "profilePicture": {
@@ -191,6 +410,49 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "model.EmployeeUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.RemoveShiftRequest": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.ShiftResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "description": "1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, \u003c 1 or \u003e 3: invalid",
+                    "type": "integer"
                 }
             }
         }

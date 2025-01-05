@@ -5,11 +5,12 @@ import (
 	"api/employee/internal/repositories"
 	"api/shared/utils"
 	"errors"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"time"
+
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -133,7 +134,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 // @Description Преузимање свих запослених
 // @Tags запослени
 // @Produce  json
-// @Success 200 {array} model.EmployeeResponse
+// @Success 200 {array} []model.EmployeeResponse
 // @Router /employees [get]
 func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 	h.log.Info("Received List Employees request")
@@ -239,8 +240,8 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 // @Description Додељује смену запосленом по ID-ју
 // @Tags запослени
 // @Param id path int true "ID запосленог"
-// @Param shift body model.ShiftRequest true "Подаци о смени"
-// @Success 201 {object} model.ShiftResponse
+// @Param shift body model.AssignShiftRequest true "Подаци о смени"
+// @Success 201 {object} model.AssignShiftResponse
 // @Failure 400 {object} gin.H
 // @Router /employees/{id}/shifts [post]
 func (h *employeeHandler) AssignShift(ctx *gin.Context) {
@@ -275,7 +276,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	}
 
 	// Call the repository method
-	err = h.shiftsRepo.AssignEmployee(shiftDate, req.ShiftType, uint(employeeID), req.ProfileType)
+	assignmentId, err := h.shiftsRepo.AssignEmployee(shiftDate, req.ShiftType, uint(employeeID), req.ProfileType)
 	if errors.Is(err, model.ErrCapacityReached) {
 		ctx.JSON(http.StatusConflict, gin.H{"error": "maximum capacity for this role reached in the selected shift"})
 	} else if errors.Is(err, model.ErrAlreadyAssigned) {
@@ -286,7 +287,12 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 
 	// Return success response
 	h.log.Infof("Successfully assigned shift for employee ID %d", employeeID)
-	ctx.JSON(http.StatusCreated, gin.H{"message": "shift assigned successfully"})
+
+	response := model.AssignShiftResponse{
+		ID: assignmentId,
+	}
+
+	ctx.JSON(http.StatusCreated, response)
 }
 
 // GetShifts Дохватање смена за запосленог
@@ -294,28 +300,39 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 // @Description Дохватање смена за запосленог по ID-ју
 // @Tags запослени
 // @Param id path int true "ID запосленог"
-// @Success 200 {object} gin.H
-// @Failure 400 {object} gin.H
+// @Success 200 {object} []model.ShiftResponse
 // @Router /employees/{id}/shifts [get]
 func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
-	h.log.Infof("Received Get Shifts request for employee ID %s", employeeIDParam)
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee ID"})
+		h.log.Error("failed to extract url param: invalid employee ID", zap.Error(err))
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
 
 	// Fetch shifts from the repository
-	shifts, err := h.shiftsRepo.GetShiftsByEmployeeID(uint(employeeID))
+	var shifts []model.Shift
+	err = h.shiftsRepo.GetShiftsByEmployeeID(uint(employeeID), &shifts)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
-
 	h.log.Infof("Successfully retrieved shifts for employee ID %d", employeeID)
-	ctx.JSON(http.StatusOK, gin.H{"shifts": shifts})
+
+	var response []model.ShiftResponse
+	for _, shift := range shifts {
+		response = append(response, model.ShiftResponse{
+			ID:        shift.ID,
+			ShiftDate: shift.ShiftDate,
+			ShiftType: shift.ShiftType,
+		})
+	}
+
+	h.log.Info("Successfully mapped shifts to response format")
+	h.log.Infof("Returning %d shifts", len(response))
+	ctx.JSON(http.StatusOK, response)
 }
 
 // GetShiftsAvailability Дохватање доступности смена
@@ -371,28 +388,13 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 		return
 	}
 
-	// Extract employee ID from the URL
-	employeeIDParam := ctx.Param("id")
-	employeeID, err := strconv.Atoi(employeeIDParam)
-	if err != nil || employeeID <= 0 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee ID"})
-		return
-	}
-
-	// Parse the shift date
-	shiftDate, err := time.Parse(time.DateOnly, req.ShiftDate)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid shiftDate format, expected YYYY-MM-DD"})
-		return
-	}
-
 	// Call repository method to remove the shift
-	err = h.shiftsRepo.RemoveEmployeeFromShift(shiftDate, req.ShiftType, uint(employeeID))
+	err := h.shiftsRepo.RemoveEmployeeFromShift(req.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	h.log.Infof("Successfully removed shift for employee ID %d", employeeID)
+	h.log.Infof("Successfully removed shift for employee ID %d", req.ID)
 	ctx.JSON(http.StatusNoContent, nil)
 }

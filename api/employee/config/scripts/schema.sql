@@ -15,10 +15,17 @@ CREATE TABLE IF NOT EXISTS employee (
 
 CREATE TABLE shifts (
     id SERIAL PRIMARY KEY,
-    employee_id INT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-    shift_start TIMESTAMP NOT NULL,
-    shift_end TIMESTAMP NOT NULL,
+    shift_date DATE NOT NULL,
+    shift_type INT NOT NULL, -- 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am
     created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE employee_shifts (
+    id SERIAL PRIMARY KEY,
+    employee_id INT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    shift_id INT NOT NULL REFERENCES shifts(id) ON DELETE CASCADE,
+    profile_type VARCHAR(50) NOT NULL, -- "Medic", "Technical", "Administrator"
+    UNIQUE (employee_id, shift_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_employee_username ON employee(username);

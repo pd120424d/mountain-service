@@ -1,8 +1,9 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type ProfileType string
@@ -27,11 +28,17 @@ type Employee struct {
 }
 
 type Shift struct {
-	ID           uint      `gorm:"primaryKey" json:"id"`
-	ShiftDate    time.Time `json:"shiftDate"`    // Represents the date of the shift
-	ShiftType    int       `json:"shiftType"`    // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid
-	EmployeeID   uint      `json:"employeeId"`   // Employee assigned to the shift
-	EmployeeRole string    `json:"employeeRole"` // Role of the employee (e.g., Medic, Technical)
+	ID        uint      `gorm:"primaryKey"`
+	ShiftDate time.Time `gorm:"not null"`
+	ShiftType int       `gorm:"not null"` // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid
+	CreatedAt time.Time
+}
+
+type EmployeeShift struct {
+	ID          uint   `gorm:"primaryKey"`
+	EmployeeID  uint   `gorm:"not null"`
+	ShiftID     uint   `gorm:"not null"`
+	ProfileType string `gorm:"not null"` // e.g., "Medic", "Technical"
 }
 
 func (p ProfileType) String() string {

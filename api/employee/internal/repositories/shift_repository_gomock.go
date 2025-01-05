@@ -40,15 +40,16 @@ func (m *MockShiftRepository) EXPECT() *MockShiftRepositoryMockRecorder {
 }
 
 // AssignEmployee mocks base method.
-func (m *MockShiftRepository) AssignEmployee(shiftDate time.Time, shiftType int, employeeID uint, employeeRole string) error {
+func (m *MockShiftRepository) AssignEmployee(shiftDate time.Time, shiftType int, employeeID uint, employeeRole string) (uint, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AssignEmployee", shiftDate, shiftType, employeeID, employeeRole)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(uint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // AssignEmployee indicates an expected call of AssignEmployee.
-func (mr *MockShiftRepositoryMockRecorder) AssignEmployee(shiftDate, shiftType, employeeID, employeeRole any) *gomock.Call {
+func (mr *MockShiftRepositoryMockRecorder) AssignEmployee(shiftDate, shiftType, employeeID, employeeRole interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignEmployee", reflect.TypeOf((*MockShiftRepository)(nil).AssignEmployee), shiftDate, shiftType, employeeID, employeeRole)
 }
@@ -63,36 +64,35 @@ func (m *MockShiftRepository) GetShiftAvailability(date time.Time) (map[int]map[
 }
 
 // GetShiftAvailability indicates an expected call of GetShiftAvailability.
-func (mr *MockShiftRepositoryMockRecorder) GetShiftAvailability(date any) *gomock.Call {
+func (mr *MockShiftRepositoryMockRecorder) GetShiftAvailability(date interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftAvailability", reflect.TypeOf((*MockShiftRepository)(nil).GetShiftAvailability), date)
 }
 
 // GetShiftsByEmployeeID mocks base method.
-func (m *MockShiftRepository) GetShiftsByEmployeeID(employeeID uint) ([]model.Shift, error) {
+func (m *MockShiftRepository) GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetShiftsByEmployeeID", employeeID)
-	ret0, _ := ret[0].([]model.Shift)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "GetShiftsByEmployeeID", employeeID, result)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // GetShiftsByEmployeeID indicates an expected call of GetShiftsByEmployeeID.
-func (mr *MockShiftRepositoryMockRecorder) GetShiftsByEmployeeID(employeeID any) *gomock.Call {
+func (mr *MockShiftRepositoryMockRecorder) GetShiftsByEmployeeID(employeeID, result interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftsByEmployeeID", reflect.TypeOf((*MockShiftRepository)(nil).GetShiftsByEmployeeID), employeeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftsByEmployeeID", reflect.TypeOf((*MockShiftRepository)(nil).GetShiftsByEmployeeID), employeeID, result)
 }
 
 // RemoveEmployeeFromShift mocks base method.
-func (m *MockShiftRepository) RemoveEmployeeFromShift(shiftDate time.Time, shiftType int, employeeID uint) error {
+func (m *MockShiftRepository) RemoveEmployeeFromShift(assignmentID uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveEmployeeFromShift", shiftDate, shiftType, employeeID)
+	ret := m.ctrl.Call(m, "RemoveEmployeeFromShift", assignmentID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveEmployeeFromShift indicates an expected call of RemoveEmployeeFromShift.
-func (mr *MockShiftRepositoryMockRecorder) RemoveEmployeeFromShift(shiftDate, shiftType, employeeID any) *gomock.Call {
+func (mr *MockShiftRepositoryMockRecorder) RemoveEmployeeFromShift(assignmentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveEmployeeFromShift", reflect.TypeOf((*MockShiftRepository)(nil).RemoveEmployeeFromShift), shiftDate, shiftType, employeeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveEmployeeFromShift", reflect.TypeOf((*MockShiftRepository)(nil).RemoveEmployeeFromShift), assignmentID)
 }

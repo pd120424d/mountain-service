@@ -6,15 +6,16 @@ import (
 	"api/employee/internal/model"
 	"api/shared/utils"
 	"fmt"
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type ShiftRepository interface {
-	AssignEmployee(shiftDate time.Time, shiftType int, employeeID uint, employeeRole string) error
-	GetShiftsByEmployeeID(employeeID uint) ([]model.Shift, error)
+	AssignEmployee(shiftDate time.Time, shiftType int, employeeID uint, employeeRole string) (uint, error)
+	GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error
 	GetShiftAvailability(date time.Time) (map[int]map[model.ProfileType]int, error)
-	RemoveEmployeeFromShift(shiftDate time.Time, shiftType int, employeeID uint) error
+	RemoveEmployeeFromShift(assignmentID uint) error
 }
 
 type shiftRepository struct {
@@ -26,41 +27,58 @@ func NewShiftRepository(log utils.Logger, db *gorm.DB) ShiftRepository {
 	return &shiftRepository{log: log.WithName("shiftRepository"), db: db}
 }
 
-func (r *shiftRepository) AssignEmployee(shiftDate time.Time, shiftType int, employeeID uint, profileType string) error {
-	// Check if the employee is already assigned to this shift
-	var existingShift model.Shift
-	if err := r.db.Where("employee_id = ? AND shift_date = ? AND shift_type = ?", employeeID, shiftDate.Format(time.DateOnly), shiftType).First(&existingShift).Error; err == nil {
-		return model.ErrAlreadyAssigned
+func (r *shiftRepository) AssignEmployee(shiftDate time.Time, shiftType int, employeeID uint, profileType string) (uint, error) {
+	// Step 1: Ensure the shift exists or create it
+	var shift model.Shift
+	err := r.db.Where("shift_date = ? AND shift_type = ?", shiftDate.Format("2006-01-02"), shiftType).
+		FirstOrCreate(&shift, model.Shift{
+			ShiftDate: shiftDate,
+			ShiftType: shiftType,
+		}).Error
+	if err != nil {
+		return 0, fmt.Errorf("failed to find or create shift: %w", err)
 	}
 
-	// Count current employees in the shift for the given profile type
+	// Step 2: Check if the employee is already assigned to this shift
+	var existingAssignment model.EmployeeShift
+	if err := r.db.Where("employee_id = ? AND shift_id = ?", employeeID, shift.ID).First(&existingAssignment).Error; err == nil {
+		return 0, model.ErrAlreadyAssigned
+	}
+
+	// Step 3: Count current assignments for the given role in this shift
 	var count int64
-	err := r.db.Model(&model.Shift{}).
-		Where("shift_date = ? AND shift_type = ? AND employee_role = ?", shiftDate.Format(time.DateOnly), shiftType, profileType).
+	err = r.db.Model(&model.EmployeeShift{}).
+		Where("shift_id = ? AND profile_type = ?", shift.ID, profileType).
 		Count(&count).Error
 	if err != nil {
-		return err
+		return 0, fmt.Errorf("failed to count assignments: %w", err)
 	}
 
-	// Enforce maximum limits
+	// Step 4: Enforce role-based limits
 	if (profileType == "Medic" && count >= 2) || (profileType == "Technical" && count >= 4) {
-		return model.ErrCapacityReached
+		return 0, model.ErrCapacityReached
 	}
 
-	// Assign the employee
-	shift := &model.Shift{
-		EmployeeID:   employeeID,
-		ShiftDate:    shiftDate,
-		ShiftType:    shiftType,
-		EmployeeRole: profileType,
+	// Step 5: Assign the employee to the shift
+	assignment := model.EmployeeShift{
+		EmployeeID:  employeeID,
+		ShiftID:     shift.ID,
+		ProfileType: profileType,
 	}
-	return r.db.Create(shift).Error
+	if err := r.db.Create(&assignment).Error; err != nil {
+		return 0, fmt.Errorf("failed to assign employee to shift: %w", err)
+	}
+
+	return assignment.ID, nil
 }
 
-func (r *shiftRepository) GetShiftsByEmployeeID(employeeID uint) ([]model.Shift, error) {
-	var shifts []model.Shift
-	err := r.db.Where("employee_id = ?", employeeID).Order("shift_date ASC, shift_type ASC").Find(&shifts).Error
-	return shifts, err
+func (r *shiftRepository) GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error {
+	return r.db.Table("employee_shifts").
+		Select("employee_shifts.id, shifts.shift_date, shifts.shift_type, employee_shifts.profile_type").
+		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
+		Where("employee_shifts.employee_id = ?", employeeID).
+		Order("shifts.shift_date ASC, shifts.shift_type ASC").
+		Scan(result).Error
 }
 
 func (r *shiftRepository) GetShiftAvailability(date time.Time) (map[int]map[model.ProfileType]int, error) {
@@ -97,10 +115,8 @@ func (r *shiftRepository) GetShiftAvailability(date time.Time) (map[int]map[mode
 	return availability, nil
 }
 
-func (r *shiftRepository) RemoveEmployeeFromShift(shiftDate time.Time, shiftType int, employeeID uint) error {
-	err := r.db.Where("employee_id = ? AND shift_date = ? AND shift_type = ?", employeeID, shiftDate.Format("2006-01-02"), shiftType).
-		Delete(&model.Shift{}).Error
-	if err != nil {
+func (r *shiftRepository) RemoveEmployeeFromShift(assignmentID uint) error {
+	if err := r.db.Where("id = ?", assignmentID).Delete(&model.EmployeeShift{}).Error; err != nil {
 		return fmt.Errorf("failed to remove employee from shift: %w", err)
 	}
 	return nil
