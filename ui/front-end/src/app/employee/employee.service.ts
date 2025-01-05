@@ -10,8 +10,10 @@ import { environment } from '../../environments/environment'; // Import environm
   providedIn: 'root'
 })
 export class EmployeeService {
-  private apiUrl = `${environment.apiUrl}/employees`;
-
+  // private apiUrl = `${environment.apiUrl}/employees`;
+  private apiUrl = `${environment.useMockApi}`
+    ? '/api/v1/employees' // Mock server URL
+    : `${environment.apiUrl}`; // Real API
   // private apiUrl = 'http://localhost:8082/api/v1/employees'; // Replace with your actual API URL
 
   constructor(private http: HttpClient) { }  // Inject HttpClient

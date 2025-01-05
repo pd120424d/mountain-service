@@ -1,18 +1,18 @@
-<!-- src/app/home/home.component.html -->
-<div class="home-container">
+<div class="home-container" [ngStyle]="{ 'background-image': 'url(' + images[currentImageIndex] + ')' }">
+  <!-- Welcome Section -->
   <div class="welcome-section">
     <h1>Добродошли у Систем Управљања Горске Службе</h1>
     <p>Платформа за ефикасно управљање сменама и хитним ситуацијама.</p>
   </div>
 
+  <!-- Navigation Section -->
   <div class="navigation-section">
     <div class="nav-links">
-      <button (click)="testClick()" routerLink="/employees" class="nav-button">
+      <button routerLink="/employees" class="nav-button">
         <i class="fas fa-users"></i>
         <h3>Управљање Запосленима</h3>
         <p>Преглед, додавање и измена података о запосленима.</p>
       </button>
-      
       <a routerLink="/shifts" class="nav-button">
         <i class="fas fa-briefcase"></i>
         <h3>Организација Смена</h3>

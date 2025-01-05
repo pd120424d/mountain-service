@@ -1,7 +1,9 @@
 /* src/app/app.component.scss */
 :host {
-    display: block;
-    padding: 20px;
-    background-color: #f8f9fa;
-  }
-  
+  display: block;
+  margin: 0; /* Ensure no margins */
+  padding: 0; /* Remove padding */
+  background-color: transparent; /* Remove the background color */
+  width: 100vw; /* Full viewport width */
+  height: 100vh; /* Full viewport height */
+}

@@ -1,0 +1,89 @@
+@import '@fortawesome/fontawesome-free/css/all.css';
+
+/* Global Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* Include padding and border in element dimensions */
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%; /* Ensure html and body occupy the full viewport */
+  width: 100%; /* Ensure html and body occupy the full width */
+  overflow: hidden; /* Prevent scrollbars */
+}
+
+/* Full-page background container */
+.home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Match viewport height */
+  width: 100vw; /* Match viewport width */
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Ensure no scrollbars */
+  background-size: cover; /* Ensure the image covers the viewport */
+  background-position: center center; /* Center the image */
+  background-repeat: no-repeat; /* Prevent tiling */
+  transition: background-image 1s ease-in-out; /* Smooth transitions */
+}
+
+/* Welcome Section */
+.welcome-section {
+  text-align: center;
+  color: white;
+  padding: 20px;
+  text-shadow: 0px 0px 8px rgba(0, 0, 0, 0.8);
+
+  h1 {
+    font-size: clamp(1.5rem, 5vw, 2.5rem); /* Responsive font size */
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: clamp(1rem, 3vw, 1.2rem); /* Responsive font size */
+    font-weight: 300;
+  }
+}
+
+/* Navigation Section */
+.navigation-section .nav-links {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.navigation-section .nav-links .nav-button {
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  width: 200px;
+  transition: background-color 0.3s, transform 0.3s;
+  cursor: pointer;
+}
+
+.navigation-section .nav-links .nav-button:hover {
+  background-color: rgba(0, 0, 0, 0.8); /* Darker on hover */
+  transform: scale(1.05);
+}
+
+.navigation-section .nav-links .nav-button:active {
+  transform: scale(0.95);
+}
+
+.navigation-section .nav-links .nav-button h3 {
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+}
+
+.navigation-section .nav-links .nav-button p {
+  font-size: 1rem;
+}

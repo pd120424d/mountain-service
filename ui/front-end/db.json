@@ -1,0 +1,6 @@
+{
+  "employees": [
+    { "id": 1, "username": "pd120424d", "firstName": "Душан", "lastName": "Павловић", "gender": "M", "role": "Medic", "email": "pd120424d@student.etf.bg.ac.rs" },
+    { "id": 2, "username": "admin", "firstName": "Admin", "lastName": "Admin", "gender": "M", "role": "Technical", "email": "admin@gorskasluzba.rs" }
+  ]
+}

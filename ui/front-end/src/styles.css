@@ -1,4 +1,14 @@
 /* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+/* Reset browser default margins and paddings */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box; /* Ensures padding and borders are included in element size */
+  }
+  
+  html, body {
+    height: 100%; /* Ensure html and body elements take up the full viewport height */
+    overflow: hidden; /* Prevent scrollbars */
+  }
+  

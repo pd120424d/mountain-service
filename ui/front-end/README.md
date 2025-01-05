@@ -12,7 +12,7 @@ Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The appli
 
 ## Production server
 
-Run `ng build --prod` for a prod server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+Run `ng build --prod` and `serve -s dist` for a prod server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
 ## Code scaffolding
 
