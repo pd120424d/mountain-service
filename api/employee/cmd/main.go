@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gorilla/handlers"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gorilla/handlers"
 
 	_ "api/employee/cmd/docs"
 	"api/employee/config"
@@ -79,7 +80,7 @@ func main() {
 	}
 
 	employeeRepo := repositories.NewEmployeeRepository(log, db)
-	shiftsRepo := repositories.NewShiftRepository(db)
+	shiftsRepo := repositories.NewShiftRepository(log, db)
 	employeeHandler := handler.NewEmployeeHandler(log, employeeRepo, shiftsRepo)
 
 	r := gin.Default()

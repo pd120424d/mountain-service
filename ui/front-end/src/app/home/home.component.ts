@@ -6,7 +6,7 @@ import { RouterModule } from '@angular/router';
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
-  standalone: true,  // Mark as standalone
+  standalone: true,
   imports: [RouterModule, CommonModule]})
 export class HomeComponent {
   images: string[] = [

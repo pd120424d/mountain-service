@@ -31,7 +31,7 @@ export class EmployeeFormComponent implements OnInit {
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       gender: ['', Validators.required],
-      phoneNumber: ['', Validators.required],
+      phone: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       profileType: ['', Validators.required],
       profilePicture: [null],
@@ -64,7 +64,7 @@ export class EmployeeFormComponent implements OnInit {
       firstName: employee.firstName,
       lastName: employee.lastName,
       gender: employee.gender,
-      phoneNumber: employee.phoneNumber,
+      phone: employee.phoneNumber,
       email: employee.email,
       profileType: employee.profileType,
     });

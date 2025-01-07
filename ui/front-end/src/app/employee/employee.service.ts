@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, Observable, throwError } from 'rxjs';
 import { Employee } from './employee.model';
+import { LoggingService } from '../logging.service';
 import { environment } from '../../environments/environment'; // Import environment variables
 
 
@@ -11,40 +12,48 @@ import { environment } from '../../environments/environment'; // Import environm
 })
 export class EmployeeService {
   // private apiUrl = `${environment.apiUrl}/employees`;
-  private apiUrl = `${environment.useMockApi}`
-    ? '/api/v1/employees' // Mock server URL
+  private baseApiUrl = environment.useMockApi
+    ? '/api/v1' // Mock server URL
     : `${environment.apiUrl}`; // Real API
-  // private apiUrl = 'http://localhost:8082/api/v1/employees'; // Replace with your actual API URL
+  // private apiUrl = 'http://localhost:8082/api/v1/employees';
+  private employeeApiUrl = this.baseApiUrl + "/employees"
 
-  constructor(private http: HttpClient) { }  // Inject HttpClient
+  constructor(
+    private http: HttpClient,
+    private logger: LoggingService
+  ) {
+    this.logger.info(`Starting employee service with url: ${this.employeeApiUrl}`);
+    this.logger.info(`Starting employee service with base apiUrl: ${this.baseApiUrl}`);
+   }
 
   // Example methods
   getEmployees(): Observable<Employee[]> {
-    return this.http.get<Employee[]>(this.apiUrl).pipe(
+    return this.http.get<Employee[]>(this.employeeApiUrl).pipe(
       catchError(this.handleError)
     );;
   }
 
   getEmployeeById(id: number): Observable<Employee> {
-    return this.http.get<Employee>(`${this.apiUrl}/${id}`).pipe(
+    this.logger.info(`Fetching employee with ID: ${id}`);
+    return this.http.get<Employee>(`${this.employeeApiUrl}/${id}`).pipe(
       catchError(this.handleError)
     );
   }
 
   addEmployee(employee: Employee): Observable<Employee> {
-    return this.http.post<Employee>(this.apiUrl, employee).pipe(
+    return this.http.post<Employee>(this.employeeApiUrl, employee).pipe(
       catchError(this.handleError)
     );
   }
 
   updateEmployee(id: number, employee: Employee): Observable<Employee> {
-    return this.http.put<Employee>(`${this.apiUrl}/${id}`, employee).pipe(
+    return this.http.put<Employee>(`${this.employeeApiUrl}/${id}`, employee).pipe(
       catchError(this.handleError)
     );
   }
 
   deleteEmployee(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+    return this.http.delete<void>(`${this.employeeApiUrl}/${id}`).pipe(
       catchError(this.handleError)
     );
   }

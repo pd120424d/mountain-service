@@ -15,18 +15,19 @@
         <th>Акције</th>
       </tr>
     </thead>
-    <tbody>      
+    <tbody>
       <tr *ngFor="let employee of employees">
         <td>{{ employee.id }}</td>
         <td>{{ employee.firstName }}</td>
         <td>{{ employee.lastName }}</td>
-        <td>{{ employee.gender === 'M' ? 'Мушки' : 'Женски' }}</td> 
+        <td>{{ employee.gender === 'M' ? 'Мушки' : 'Женски' }}</td>
         <td>{{ employee.username }}</td>
         <td>{{ employee.phoneNumber }}</td>
         <td>{{ employee.email }}</td>
-        <td>{{ employee.profileType === 'Medic' ? 'Медицинар' : 'Техничко Особље' }}</td> 
+        <td>{{ employee.profileType === 'Medic' ? 'Медицинар' : 'Техничко Особље' }}</td>
         <td>
-          <img *ngIf="employee.profilePicture" [src]="employee.profilePicture" alt="Профилна слика" width="50" height="50">
+          <img *ngIf="employee.profilePicture" [src]="employee.profilePicture" alt="Профилна слика" width="50"
+            height="50">
           <!-- Fallback for missing profile picture -->
           <span *ngIf="!employee.profilePicture">Нема слике</span>
         </td>
@@ -38,4 +39,7 @@
     </tbody>
   </table>
   <button routerLink="/employees/new" class="router-link">Додај Новог Запосленог</button>
+  <button (click)="goBackToHome()" class="btn btn-primary">
+    Назад на почетну страницу
+  </button>
 </div>

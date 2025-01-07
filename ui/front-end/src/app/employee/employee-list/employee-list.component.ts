@@ -16,7 +16,7 @@ import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.compone
   templateUrl: './employee-list.component.html',
   styleUrls: ['./employee-list.component.css'],
   standalone: true,
-  imports: [RouterModule, ReactiveFormsModule, CommonModule], 
+  imports: [RouterModule, ReactiveFormsModule, CommonModule],
 })
 export class EmployeeListComponent implements OnInit {
   showModal = false;
@@ -60,5 +60,9 @@ export class EmployeeListComponent implements OnInit {
     this.router.navigate(['/employees/edit', employee.id], {
       state: { employee }, // Pass the employee data via router state
     });
+  }
+
+  goBackToHome(): void {
+    this.router.navigate(['/']);
   }
 }
