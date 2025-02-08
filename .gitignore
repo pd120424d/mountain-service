@@ -56,3 +56,5 @@ ui/front-end/.npm/
 ui/front-end/**/*.js
 ui/front-end/**/*.js.map
 
+api/vendor/
+api/employee/secrets/

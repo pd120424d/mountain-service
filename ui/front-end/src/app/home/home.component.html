@@ -1,8 +1,8 @@
 <div class="home-container" [ngStyle]="{ 'background-image': 'url(' + images[currentImageIndex] + ')' }">
   <!-- Welcome Section -->
   <div class="welcome-section">
-    <h1>Добродошли у Систем Управљања Горске Службе</h1>
-    <p>Платформа за ефикасно управљање сменама и хитним ситуацијама.</p>
+    <h1>{{ 'HOME.WELCOME' | translate }}</h1>
+    <p>{{ 'HOME.DESCRIPTION' | translate }}</p>
   </div>
 
   <!-- Navigation Section -->
@@ -10,18 +10,18 @@
     <div class="nav-links">
       <button routerLink="/employees" class="nav-button">
         <i class="fas fa-users"></i>
-        <h3>Управљање Запосленима</h3>
-        <p>Преглед, додавање и измена података о запосленима.</p>
+        <h3>{{ 'NAV.EMPLOYEE_MANAGEMENT.TITLE' | translate }}</h3>
+        <p>{{ 'NAV.EMPLOYEE_MANAGEMENT.DESCRIPTION' | translate }}</p>
       </button>
       <a routerLink="/shifts" class="nav-button">
         <i class="fas fa-briefcase"></i>
-        <h3>Организација Смена</h3>
-        <p>Планирање и управљање сменама.</p>
+        <h3>{{ 'NAV.SHIFT_MANAGEMENT.TITLE' | translate }}</h3>
+        <p>{{ 'NAV.SHIFT_MANAGEMENT.DESCRIPTION' | translate }}</p>
       </a>
       <a routerLink="/emergencies" class="nav-button">
         <i class="fas fa-person-drowning"></i>
-        <h3>Пријава Ургентне Ситуације</h3>
-        <p>Брза пријава и документовање ургентних ситуација.</p>
+        <h3>{{ 'NAV.EMERGENCIES.TITLE' | translate }}</h3>
+        <p>{{ 'NAV.EMERGENCIES.DESCRIPTION' | translate }}</p>
       </a>
     </div>
   </div>

@@ -1,0 +1,32 @@
+{
+    "TITLE": "Employee Management",
+    "EMPLOYEES": "Employees",
+    "ADD_EMPLOYEE": "Add Employee",
+    "EDIT_EMPLOYEE": "Edit Employee",
+    "DELETE_EMPLOYEE": "Delete Employee",
+    "GO_BACK": "Go Back",
+    "LANGUAGE": {
+        "ENGLISH": "English",
+        "SERBIAN": "Serbian"
+    },
+    "HOME": {
+        "WELCOME": "Welcome to the Mountain Rescue Management System",
+        "DESCRIPTION": "A platform for efficient shift management and handling emergencies."
+    },
+    "NAV": {
+        "EMPLOYEE_MANAGEMENT": {
+            "TITLE": "Employee Management",
+            "DESCRIPTION": "View, add, and update employee details."
+        },
+        "SHIFT_MANAGEMENT": {
+            "TITLE": "Shift Management",
+            "DESCRIPTION": "Plan and manage shifts effectively."
+        },
+        "EMERGENCIES": {
+            "TITLE": "Report Emergencies",
+            "DESCRIPTION": "Quickly report and document emergency situations."
+        },
+        "EMPLOYEES": "Employees",
+        "SHIFTS": "Shifts"
+    }
+}

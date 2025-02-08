@@ -1,9 +1,33 @@
-/* src/app/app.component.scss */
-:host {
+.language-switcher-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.language-switcher {
+  position: relative;
+}
+
+.language-switcher .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1050;
   display: block;
-  margin: 0; /* Ensure no margins */
-  padding: 0; /* Remove padding */
-  background-color: transparent; /* Remove the background color */
-  width: 100vw; /* Full viewport width */
-  height: 100vh; /* Full viewport height */
+}
+
+.dropdown-item {
+  padding: 10px 15px;
+  font-size: 14px;
+  color: #000;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f8f9fa;
+  }
 }

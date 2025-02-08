@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common'
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 
@@ -23,7 +24,12 @@ export class EmployeeListComponent implements OnInit {
   employeeToDelete: number | null = null;
   employees: Employee[] = [];
 
-  constructor(private employeeService: EmployeeService, private router: Router, private dialog: MatDialog) { }
+  constructor(private employeeService: EmployeeService,
+    private router: Router,
+    private dialog: MatDialog,
+    private translate: TranslateService) {
+    this.translate.setDefaultLang('sr-cyr');
+  }
 
   ngOnInit(): void {
     this.loadEmployees();
@@ -64,5 +70,9 @@ export class EmployeeListComponent implements OnInit {
 
   goBackToHome(): void {
     this.router.navigate(['/']);
+  }
+
+  switchLanguage(language: string): void {
+    this.translate.use(language);
   }
 }

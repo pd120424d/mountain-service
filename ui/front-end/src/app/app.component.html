@@ -1,3 +1,22 @@
-<!-- src/app/app.component.html -->
-<router-outlet></router-outlet>
+<div class="language-switcher-container">
+  <nav class="navbar navbar-expand-lg navbar-light bg-transparent">
+    <div class="ms-auto dropdown language-switcher">
+      <button class="btn btn-secondary dropdown-toggle" type="button" id="languageDropdown" (click)="toggleDropdown()">
+        СР
+      </button>
+      <ul class="dropdown-menu"  *ngIf="isDropdownOpen">
+        <li>
+          <a class="dropdown-item" (click)="switchLanguage('sr-cyr')">СР</a>
+        </li>
+        <li>
+          <a class="dropdown-item" (click)="switchLanguage('sr-lat')">SR</a>
+        </li>
+        <li>
+          <a class="dropdown-item" (click)="switchLanguage('en')">EN</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+</div>
 
+<router-outlet></router-outlet>

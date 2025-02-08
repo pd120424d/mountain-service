@@ -1,0 +1,32 @@
+{
+  "TITLE": "Upravljanje zaposlenima",
+  "EMPLOYEES": "Zaposleni",
+  "ADD_EMPLOYEE": "Dodaj zaposlenog",
+  "EDIT_EMPLOYEE": "Izmeni zaposlenog",
+  "DELETE_EMPLOYEE": "Obriši zaposlenog",
+  "GO_BACK": "Nazad",
+  "LANGUAGE": {
+      "ENGLISH": "Engleski",
+      "SERBIAN": "Srpski"
+  },
+  "HOME": {
+      "WELCOME": "Dobrodošli u Sistem Upravljanja Gorske Službe",
+      "DESCRIPTION": "Platforma za efikasno upravljanje smenama i hitnim situacijama."
+  },
+  "NAV": {
+      "EMPLOYEE_MANAGEMENT": {
+          "TITLE": "Upravljanje Zaposlenima",
+          "DESCRIPTION": "Pregled, dodavanje i izmena podataka o zaposlenima."
+      },
+      "SHIFT_MANAGEMENT": {
+          "TITLE": "Organizacija Smena",
+          "DESCRIPTION": "Planiranje i upravljanje smenama."
+      },
+      "EMERGENCIES": {
+          "TITLE": "Prijava Urgentne Situacije",
+          "DESCRIPTION": "Brza prijava i dokumentovanje urgentnih situacija."
+      },
+      "EMPLOYEES": "Zaposleni",
+      "SHIFTS": "Smene"
+  }
+}

@@ -5,14 +5,15 @@ import { Router, RouterModule } from '@angular/router';
 import { EmployeeService } from '../employee.service';
 import { Employee } from '../employee.model';
 import { ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common'; 
+import { CommonModule } from '@angular/common';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-employee-form',
   templateUrl: './employee-form.component.html',
   styleUrls: ['./employee-form.component.css'],
   standalone: true,
-  imports: [RouterModule, ReactiveFormsModule, CommonModule], 
+  imports: [RouterModule, ReactiveFormsModule, CommonModule],
 })
 export class EmployeeFormComponent implements OnInit {
   employeeForm: FormGroup;
@@ -23,6 +24,7 @@ export class EmployeeFormComponent implements OnInit {
     private fb: FormBuilder,
     private employeeService: EmployeeService,
     private router: Router,
+    private translate: TranslateService,
   ) {
     this.employeeForm = this.fb.group({
       username: ['', Validators.required],
@@ -51,10 +53,12 @@ export class EmployeeFormComponent implements OnInit {
       this.isEditMode = false; // We're in create mode
       console.log("No employee data passed via state.");
     }
+
+    this.translate.setDefaultLang('sr-cyr');
   }
 
   ngOnInit(): void {
-   
+
   }
 
   // Populate the form with the employee data
@@ -85,8 +89,12 @@ export class EmployeeFormComponent implements OnInit {
     }
   }
 
-    // Method to handle cancel button click
-    cancel(): void {
-      this.router.navigate(['/employees']); // Navigate back to the employee list or another appropriate route
-    }
+  // Method to handle cancel button click
+  cancel(): void {
+    this.router.navigate(['/employees']); // Navigate back to the employee list or another appropriate route
+  }
+
+  switchLanguage(language: string): void {
+    this.translate.use(language);
+  }
 }

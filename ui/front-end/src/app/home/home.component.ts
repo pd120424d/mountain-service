@@ -1,13 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router'; 
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
   standalone: true,
-  imports: [RouterModule, CommonModule]})
+  imports: [RouterModule, CommonModule, TranslateModule]})
 export class HomeComponent {
   images: string[] = [
     'assets/slika_1.jpg',
@@ -25,15 +26,21 @@ export class HomeComponent {
 
   currentImageIndex: number;
 
-  constructor() {
+  constructor(private translate: TranslateService) {
     this.currentImageIndex = Math.floor(Math.random() * this.images.length);
 
     this.startSlideshow();
+
+    this.translate.setDefaultLang('sr-cyr')
   }
 
   startSlideshow(): void {
     setInterval(() => {
       this.currentImageIndex = (this.currentImageIndex + 1) % this.images.length;
     }, 5000); // Change image every 5 seconds
+  }
+
+  switchLanguage(language: string): void {
+    this.translate.use(language);
   }
 }
