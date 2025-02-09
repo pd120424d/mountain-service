@@ -27,5 +27,6 @@ export class AppComponent {
   switchLanguage(language: string): void {
     this.translate.use(language);
     localStorage.setItem('language', language);
+    this.isDropdownOpen = false; 
   }
 }

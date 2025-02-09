@@ -7,9 +7,8 @@ import { CommonModule } from '@angular/common'
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
-
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 
 @Component({
@@ -17,7 +16,7 @@ import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.compone
   templateUrl: './employee-list.component.html',
   styleUrls: ['./employee-list.component.css'],
   standalone: true,
-  imports: [RouterModule, ReactiveFormsModule, CommonModule],
+  imports: [RouterModule, ReactiveFormsModule, CommonModule, TranslateModule],
 })
 export class EmployeeListComponent implements OnInit {
   showModal = false;

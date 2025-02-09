@@ -1,18 +1,18 @@
 <div>
-  <h2>Списак Запослених</h2>
+  <h2>{{ 'EMPLOYEE_LIST.TITLE' | translate }}</h2>
   <table>
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Име</th>
-        <th>Презиме</th>
-        <th>Пол</th>
-        <th>Корисничко Име</th>
-        <th>Телефон</th>
-        <th>И-мејл</th>
-        <th>Профил</th>
-        <th>Профилна Слика</th>
-        <th>Акције</th>
+        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.ID' | translate }}</th>
+        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.FIRST_NAME' | translate }}</th>
+        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.LAST_NAME' | translate }}</th>
+        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.GENDER' | translate }}</th>
+        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.USERNAME' | translate }}</th>
+        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.PHONE' | translate }}</th>
+        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.EMAIL' | translate }}</th>
+        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.PROFILE' | translate }}</th>
+        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.PROFILE_PICTURE' | translate }}</th>
+        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.ACTIONS' | translate }}</th>
       </tr>
     </thead>
     <tbody>
@@ -20,26 +20,24 @@
         <td>{{ employee.id }}</td>
         <td>{{ employee.firstName }}</td>
         <td>{{ employee.lastName }}</td>
-        <td>{{ employee.gender === 'M' ? 'Мушки' : 'Женски' }}</td>
+        <td>{{ employee.gender === 'M' ? ('EMPLOYEE_LIST.GENDER.MALE' | translate) : ('EMPLOYEE_LIST.GENDER.FEMALE' | translate) }}</td>
         <td>{{ employee.username }}</td>
         <td>{{ employee.phoneNumber }}</td>
         <td>{{ employee.email }}</td>
-        <td>{{ employee.profileType === 'Medic' ? 'Медицинар' : 'Техничко Особље' }}</td>
+        <td>{{ employee.profileType === 'Medic' ? ('EMPLOYEE_LIST.PROFILE_TYPE.MEDIC' | translate) : ('EMPLOYEE_LIST.PROFILE_TYPE.TECHNICAL' | translate) }}</td>
         <td>
-          <img *ngIf="employee.profilePicture" [src]="employee.profilePicture" alt="Профилна слика" width="50"
-            height="50">
-          <!-- Fallback for missing profile picture -->
-          <span *ngIf="!employee.profilePicture">Нема слике</span>
+          <img *ngIf="employee.profilePicture" [src]="employee.profilePicture" alt="{{ 'EMPLOYEE_LIST.TABLE_HEADERS.PROFILE_PICTURE' | translate }}" width="50" height="50">
+          <span *ngIf="!employee.profilePicture">{{ 'EMPLOYEE_LIST.NO_PICTURE' | translate }}</span>
         </td>
         <td>
-          <button (click)="openDeleteDialog(employee.id)">Обриши</button>
-          <button [disabled]=true title="Измена није подржана">Измени</button>
+          <button (click)="openDeleteDialog(employee.id)">{{ 'EMPLOYEE_LIST.DELETE' | translate }}</button>
+          <button [disabled]=true title="{{ 'EMPLOYEE_LIST.EDIT_DISABLED' | translate }}">{{ 'EMPLOYEE_LIST.EDIT' | translate }}</button>
         </td>
       </tr>
     </tbody>
   </table>
-  <button routerLink="/employees/new" class="router-link">Додај Новог Запосленог</button>
+  <button routerLink="/employees/new" class="router-link">{{ 'EMPLOYEE_LIST.ADD_NEW_EMPLOYEE' | translate }}</button>
   <button (click)="goBackToHome()" class="btn btn-primary">
-    Назад на почетну страницу
+    {{ 'EMPLOYEE_LIST.GO_BACK' | translate }}
   </button>
 </div>

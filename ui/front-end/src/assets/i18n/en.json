@@ -28,5 +28,61 @@
         },
         "EMPLOYEES": "Employees",
         "SHIFTS": "Shifts"
+    },
+    "EMPLOYEE_LIST": {
+        "TITLE": "Employee List",
+        "TABLE_HEADERS": {
+            "ID": "ID",
+            "FIRST_NAME": "First Name",
+            "LAST_NAME": "Last Name",
+            "GENDER": "Gender",
+            "USERNAME": "Username",
+            "PHONE": "Phone",
+            "EMAIL": "Email",
+            "PROFILE": "Profile",
+            "PROFILE_PICTURE": "Profile Picture",
+            "ACTIONS": "Actions"
+        },
+        "GENDER": {
+            "MALE": "Male",
+            "FEMALE": "Female"
+        },
+        "PROFILE_TYPE": {
+            "MEDIC": "Medic",
+            "TECHNICAL": "Technical Staff"
+        },
+        "NO_PICTURE": "No Picture",
+        "DELETE": "Delete",
+        "EDIT": "Edit",
+        "EDIT_DISABLED": "Editing is not supported",
+        "ADD_NEW_EMPLOYEE": "Add New Employee",
+        "GO_BACK": "Back to Home"
+    },
+    "EMPLOYEE_FORM": {
+        "USERNAME": "Username",
+        "PASSWORD": "Password",
+        "CONFIRM_PASSWORD": "Confirm Password",
+        "FIRST_NAME": "First Name",
+        "LAST_NAME": "Last Name",
+        "GENDER": "Gender",
+        "GENDER_OPTIONS": {
+            "MALE": "Male",
+            "FEMALE": "Female"
+        },
+        "PHONE": "Phone",
+        "EMAIL": "Email",
+        "PROFILE_PICTURE": "Profile Picture",
+        "PROFILE_TYPE": "Profile",
+        "PROFILE_OPTIONS": {
+            "MEDIC": "Medic",
+            "TECHNICAL": "Technical Staff"
+        },
+        "SAVE": "Save",
+        "CANCEL": "Cancel"
+    },
+    "NOT_FOUND": {
+        "TITLE": "Page Not Found",
+        "DESCRIPTION": "It looks like the page you are looking for does not exist.",
+        "GO_HOME": "Return to Home Page"
     }
 }

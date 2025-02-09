@@ -1,43 +1,43 @@
 <form [formGroup]="employeeForm" (ngSubmit)="onSubmit()">
-  <label for="username">Корисничко Име:</label>
+  <label for="username">{{ 'EMPLOYEE_FORM.USERNAME' | translate }}:</label>
   <input id="username" formControlName="username" type="text">
-  
+
   <!-- Password fields are only shown if not in edit mode -->
   <div *ngIf="!isEditMode">
-    <label for="password">Лозинка:</label>
+    <label for="password">{{ 'EMPLOYEE_FORM.PASSWORD' | translate }}:</label>
     <input id="password" formControlName="password" type="password">
 
-    <label for="confirmPassword">Потврда Лозинке:</label>
+    <label for="confirmPassword">{{ 'EMPLOYEE_FORM.CONFIRM_PASSWORD' | translate }}:</label>
     <input id="confirmPassword" formControlName="confirmPassword" type="password">
   </div>
 
-  <label for="firstName">Име:</label>
+  <label for="firstName">{{ 'EMPLOYEE_FORM.FIRST_NAME' | translate }}:</label>
   <input id="firstName" formControlName="firstName" type="text">
 
-  <label for="lastName">Презиме:</label>
+  <label for="lastName">{{ 'EMPLOYEE_FORM.LAST_NAME' | translate }}:</label>
   <input id="lastName" formControlName="lastName" type="text">
 
-  <label for="gender">Пол:</label>
+  <label for="gender">{{ 'EMPLOYEE_FORM.GENDER' | translate }}:</label>
   <select id="gender" formControlName="gender">
-    <option value="M">Мушки</option>
-    <option value="F">Женски</option>
+    <option value="M">{{ 'EMPLOYEE_FORM.GENDER_OPTIONS.MALE' | translate }}</option>
+    <option value="F">{{ 'EMPLOYEE_FORM.GENDER_OPTIONS.FEMALE' | translate }}</option>
   </select>
 
-  <label for="phone">Телефон:</label>
+  <label for="phone">{{ 'EMPLOYEE_FORM.PHONE' | translate }}:</label>
   <input id="phone" formControlName="phone" type="text">
 
-  <label for="email">И-мејл:</label>
+  <label for="email">{{ 'EMPLOYEE_FORM.EMAIL' | translate }}:</label>
   <input id="email" formControlName="email" type="email">
-  
-  <label for="profilePicture">Профилна Слика:</label>
+
+  <label for="profilePicture">{{ 'EMPLOYEE_FORM.PROFILE_PICTURE' | translate }}:</label>
   <input id="profilePicture" formControlName="profilePicture" type="file" accept="image/png, image/jpeg">
 
-  <label for="profileType">Профил:</label>
+  <label for="profileType">{{ 'EMPLOYEE_FORM.PROFILE_TYPE' | translate }}:</label>
   <select id="profileType" formControlName="profileType">
-    <option value="Medic">Медицинар</option>
-    <option value="Technical">Техничко Особље</option>
+    <option value="Medic">{{ 'EMPLOYEE_FORM.PROFILE_OPTIONS.MEDIC' | translate }}</option>
+    <option value="Technical">{{ 'EMPLOYEE_FORM.PROFILE_OPTIONS.TECHNICAL' | translate }}</option>
   </select>
 
-  <button type="submit">Сачувај</button>
-  <button type="button" (click)="cancel()">Откажи</button>
+  <button type="submit">{{ 'EMPLOYEE_FORM.SAVE' | translate }}</button>
+  <button type="button" (click)="cancel()">{{ 'EMPLOYEE_FORM.CANCEL' | translate }}</button>
 </form>

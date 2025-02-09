@@ -1,3 +1,5 @@
-<h1>Страница није пронађена</h1>
-<p>Изгледа да страница коју тражите не постоји.</p>
-<a routerLink="/">Вратите се на почетну страну</a>
+<div class="not-found-container">
+    <h1>{{ 'NOT_FOUND.TITLE' | translate }}</h1>
+    <p>{{ 'NOT_FOUND.DESCRIPTION' | translate }}</p>
+    <a routerLink="/" class="go-home-btn">{{ 'NOT_FOUND.GO_HOME' | translate }}</a>
+</div>

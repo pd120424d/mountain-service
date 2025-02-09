@@ -1,32 +1,88 @@
 {
-  "TITLE": "Upravljanje zaposlenima",
-  "EMPLOYEES": "Zaposleni",
-  "ADD_EMPLOYEE": "Dodaj zaposlenog",
-  "EDIT_EMPLOYEE": "Izmeni zaposlenog",
-  "DELETE_EMPLOYEE": "Obriši zaposlenog",
-  "GO_BACK": "Nazad",
-  "LANGUAGE": {
-      "ENGLISH": "Engleski",
-      "SERBIAN": "Srpski"
-  },
-  "HOME": {
-      "WELCOME": "Dobrodošli u Sistem Upravljanja Gorske Službe",
-      "DESCRIPTION": "Platforma za efikasno upravljanje smenama i hitnim situacijama."
-  },
-  "NAV": {
-      "EMPLOYEE_MANAGEMENT": {
-          "TITLE": "Upravljanje Zaposlenima",
-          "DESCRIPTION": "Pregled, dodavanje i izmena podataka o zaposlenima."
-      },
-      "SHIFT_MANAGEMENT": {
-          "TITLE": "Organizacija Smena",
-          "DESCRIPTION": "Planiranje i upravljanje smenama."
-      },
-      "EMERGENCIES": {
-          "TITLE": "Prijava Urgentne Situacije",
-          "DESCRIPTION": "Brza prijava i dokumentovanje urgentnih situacija."
-      },
-      "EMPLOYEES": "Zaposleni",
-      "SHIFTS": "Smene"
-  }
+    "TITLE": "Upravljanje zaposlenima",
+    "EMPLOYEES": "Zaposleni",
+    "ADD_EMPLOYEE": "Dodaj zaposlenog",
+    "EDIT_EMPLOYEE": "Izmeni zaposlenog",
+    "DELETE_EMPLOYEE": "Obriši zaposlenog",
+    "GO_BACK": "Nazad",
+    "LANGUAGE": {
+        "ENGLISH": "Engleski",
+        "SERBIAN": "Srpski"
+    },
+    "HOME": {
+        "WELCOME": "Dobrodošli u Sistem Upravljanja Gorske Službe",
+        "DESCRIPTION": "Platforma za efikasno upravljanje smenama i hitnim situacijama."
+    },
+    "NAV": {
+        "EMPLOYEE_MANAGEMENT": {
+            "TITLE": "Upravljanje Zaposlenima",
+            "DESCRIPTION": "Pregled, dodavanje i izmena podataka o zaposlenima."
+        },
+        "SHIFT_MANAGEMENT": {
+            "TITLE": "Organizacija Smena",
+            "DESCRIPTION": "Planiranje i upravljanje smenama."
+        },
+        "EMERGENCIES": {
+            "TITLE": "Prijava Urgentne Situacije",
+            "DESCRIPTION": "Brza prijava i dokumentovanje urgentnih situacija."
+        },
+        "EMPLOYEES": "Zaposleni",
+        "SHIFTS": "Smene"
+    },
+    "EMPLOYEE_LIST": {
+        "TITLE": "Spisak zaposlenih",
+        "TABLE_HEADERS": {
+            "ID": "ID",
+            "FIRST_NAME": "Ime",
+            "LAST_NAME": "Prezime",
+            "GENDER": "Pol",
+            "USERNAME": "Korisničko ime",
+            "PHONE": "Telefon",
+            "EMAIL": "E-mail",
+            "PROFILE": "Profil",
+            "PROFILE_PICTURE": "Profilna slika",
+            "ACTIONS": "Akcije"
+        },
+        "GENDER": {
+            "MALE": "Muški",
+            "FEMALE": "Ženski"
+        },
+        "PROFILE_TYPE": {
+            "MEDIC": "Medicinar",
+            "TECHNICAL": "Tehničko osoblje"
+        },
+        "NO_PICTURE": "Nema slike",
+        "DELETE": "Obriši",
+        "EDIT": "Izmeni",
+        "EDIT_DISABLED": "Izmena nije podržana",
+        "ADD_NEW_EMPLOYEE": "Dodaj novog zaposlenog",
+        "GO_BACK": "Nazad na početnu stranicu"
+    },
+    "EMPLOYEE_FORM": {
+        "USERNAME": "Korisničko ime",
+        "PASSWORD": "Lozinka",
+        "CONFIRM_PASSWORD": "Potvrda lozinke",
+        "FIRST_NAME": "Ime",
+        "LAST_NAME": "Prezime",
+        "GENDER": "Pol",
+        "GENDER_OPTIONS": {
+            "MALE": "Muški",
+            "FEMALE": "Ženski"
+        },
+        "PHONE": "Telefon",
+        "EMAIL": "E-mail",
+        "PROFILE_PICTURE": "Profilna slika",
+        "PROFILE_TYPE": "Profil",
+        "PROFILE_OPTIONS": {
+            "MEDIC": "Medicinar",
+            "TECHNICAL": "Tehničko osoblje"
+        },
+        "SAVE": "Sačuvaj",
+        "CANCEL": "Otkaži"
+    },
+    "NOT_FOUND": {
+        "TITLE": "Stranica nije pronađena",
+        "DESCRIPTION": "Izgleda da stranica koju tražite ne postoji.",
+        "GO_HOME": "Vratite se na početnu stranicu"
+    }
 }

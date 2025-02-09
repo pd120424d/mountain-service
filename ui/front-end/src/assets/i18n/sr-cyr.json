@@ -1,33 +1,88 @@
 {
-    "TITLE": "Управљање запосленима",
+  "TITLE": "Управљање запосленима",
+  "EMPLOYEES": "Запослени",
+  "ADD_EMPLOYEE": "Додај запосленог",
+  "EDIT_EMPLOYEE": "Измени запосленог",
+  "DELETE_EMPLOYEE": "Обриши запосленог",
+  "GO_BACK": "Назад",
+  "LANGUAGE": {
+    "ENGLISH": "Енглески",
+    "SERBIAN": "Српски"
+  },
+  "HOME": {
+    "WELCOME": "Добродошли у Систем Управљања Горске Службе",
+    "DESCRIPTION": "Платформа за ефикасно управљање сменама и хитним ситуацијама."
+  },
+  "NAV": {
+    "EMPLOYEE_MANAGEMENT": {
+      "TITLE": "Управљање Запосленима",
+      "DESCRIPTION": "Преглед, додавање и измена података о запосленима."
+    },
+    "SHIFT_MANAGEMENT": {
+      "TITLE": "Организација Смена",
+      "DESCRIPTION": "Планирање и управљање сменама."
+    },
+    "EMERGENCIES": {
+      "TITLE": "Пријава Ургентне Ситуације",
+      "DESCRIPTION": "Брза пријава и документовање ургентних ситуација."
+    },
     "EMPLOYEES": "Запослени",
-    "ADD_EMPLOYEE": "Додај запосленог",
-    "EDIT_EMPLOYEE": "Измени запосленог",
-    "DELETE_EMPLOYEE": "Обриши запосленог",
-    "GO_BACK": "Назад",
-    "LANGUAGE": {
-      "ENGLISH": "Енглески",
-      "SERBIAN": "Српски"
+    "SHIFTS": "Смене"
+  },
+  "EMPLOYEE_LIST": {
+    "TITLE": "Списак запослених",
+    "TABLE_HEADERS": {
+      "ID": "ID",
+      "FIRST_NAME": "Име",
+      "LAST_NAME": "Презиме",
+      "GENDER": "Пол",
+      "USERNAME": "Корисничко име",
+      "PHONE": "Телефон",
+      "EMAIL": "И-мејл",
+      "PROFILE": "Профил",
+      "PROFILE_PICTURE": "Профилна слика",
+      "ACTIONS": "Акције"
     },
-    "HOME": {
-      "WELCOME": "Добродошли у Систем Управљања Горске Службе",
-      "DESCRIPTION": "Платформа за ефикасно управљање сменама и хитним ситуацијама."
+    "GENDER": {
+      "MALE": "Мушки",
+      "FEMALE": "Женски"
     },
-    "NAV": {
-      "EMPLOYEE_MANAGEMENT": {
-        "TITLE": "Управљање Запосленима",
-        "DESCRIPTION": "Преглед, додавање и измена података о запосленима."
-      },
-      "SHIFT_MANAGEMENT": {
-        "TITLE": "Организација Смена",
-        "DESCRIPTION": "Планирање и управљање сменама."
-      },
-      "EMERGENCIES": {
-        "TITLE": "Пријава Ургентне Ситуације",
-        "DESCRIPTION": "Брза пријава и документовање ургентних ситуација."
-      },
-      "EMPLOYEES": "Запослени",
-      "SHIFTS": "Смене"
-    }
+    "PROFILE_TYPE": {
+      "MEDIC": "Медицинар",
+      "TECHNICAL": "Техничко особље"
+    },
+    "NO_PICTURE": "Нема слике",
+    "DELETE": "Обриши",
+    "EDIT": "Измени",
+    "EDIT_DISABLED": "Измена није подржана",
+    "ADD_NEW_EMPLOYEE": "Додај новог запосленог",
+    "GO_BACK": "Назад на почетну страницу"
+  },
+  "EMPLOYEE_FORM": {
+    "USERNAME": "Корисничко име",
+    "PASSWORD": "Лозинка",
+    "CONFIRM_PASSWORD": "Потврда лозинке",
+    "FIRST_NAME": "Име",
+    "LAST_NAME": "Презиме",
+    "GENDER": "Пол",
+    "GENDER_OPTIONS": {
+      "MALE": "Мушки",
+      "FEMALE": "Женски"
+    },
+    "PHONE": "Телефон",
+    "EMAIL": "И-мејл",
+    "PROFILE_PICTURE": "Профилна слика",
+    "PROFILE_TYPE": "Профил",
+    "PROFILE_OPTIONS": {
+      "MEDIC": "Медицинар",
+      "TECHNICAL": "Техничко особље"
+    },
+    "SAVE": "Сачувај",
+    "CANCEL": "Откажи"
+  },
+  "NOT_FOUND": {
+    "TITLE": "Страница није пронађена",
+    "DESCRIPTION": "Изгледа да страница коју тражите не постоји.",
+    "GO_HOME": "Вратите се на почетну страницу"
   }
-  
+}
