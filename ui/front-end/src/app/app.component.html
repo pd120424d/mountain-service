@@ -1,25 +1,33 @@
-<div class="language-switcher-container">
-  <nav class="navbar navbar-expand-lg navbar-light bg-transparent">
-    <div class="ms-auto dropdown language-switcher">
-      <button class="btn btn-secondary dropdown-toggle" type="button" id="languageDropdown" (click)="toggleDropdown()">
-        СР
-      </button>
-      <ul class="dropdown-menu"  *ngIf="isDropdownOpen">
-        <li>
-          <a class="dropdown-item" (click)="switchLanguage('sr-cyr')">СР</a>
-        </li>
-        <li>
-          <a class="dropdown-item" (click)="switchLanguage('sr-lat')">SR</a>
-        </li>
-        <li>
-          <a class="dropdown-item" (click)="switchLanguage('ru')">РУ</a>
-        </li>
-        <li>
-          <a class="dropdown-item" (click)="switchLanguage('en')">EN</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
+<!-- Top-right section (Language Switcher + Login Button) -->
+<div class="top-right-container">
+  <!-- Language Switcher -->
+  <div class="dropdown language-switcher" [ngClass]="{ 'open': isDropdownOpen }">
+    <button class="btn btn-secondary dropdown-toggle" type="button" (click)="toggleDropdown()">
+      EN-SR-RU
+    </button>
+    <ul class="dropdown-menu">
+      <li>
+        <a class="dropdown-item" (click)="switchLanguage('en')">English</a>
+      </li>
+      <li>
+        <a class="dropdown-item" (click)="switchLanguage('sr-Latn')">Srpski (Latin)</a>
+      </li>
+      <li>
+        <a class="dropdown-item" (click)="switchLanguage('sr-Cyrl')">Српски (Ћирилица)</a>
+      </li>
+      <li>
+        <a class="dropdown-item" (click)="switchLanguage('ru')">Русский</a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Login/Logout button -->
+  <button *ngIf="!authService.isAuthenticated()" routerLink="/login" class="btn btn-outline-primary auth-button">
+    {{ 'LOGIN.BUTTON' | translate }}
+  </button>
+  <button *ngIf="authService.isAuthenticated()" (click)="authService.logout()" class="btn btn-outline-danger auth-button">
+    {{ 'LOGOUT.BUTTON' | translate }}
+  </button>
 </div>
 
 <router-outlet></router-outlet>

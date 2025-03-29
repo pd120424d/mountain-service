@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router'; 
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-home',
@@ -26,7 +27,7 @@ export class HomeComponent {
 
   currentImageIndex: number;
 
-  constructor(private translate: TranslateService) {
+  constructor(private translate: TranslateService, public authService: AuthService) {
     this.currentImageIndex = Math.floor(Math.random() * this.images.length);
 
     this.startSlideshow();

@@ -1,22 +1,21 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, HostListener } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { CommonModule } from '@angular/common'; // Import CommonModule
-
-
+import { AuthService } from './auth.service';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [TranslateModule, RouterOutlet, CommonModule],
+  imports: [CommonModule, RouterOutlet, TranslateModule],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
+  styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
-  isDropdownOpen = false; // Control dropdown visibility
+  isDropdownOpen = false; // Controls dropdown visibility
 
-  constructor(private translate: TranslateService) {
-    const savedLanguage = localStorage.getItem('language') || 'sr-cyr';
+  constructor(public authService: AuthService, private translate: TranslateService) {
+    const savedLanguage = localStorage.getItem('language') || 'en';
     this.translate.use(savedLanguage);
   }
 
@@ -27,6 +26,14 @@ export class AppComponent {
   switchLanguage(language: string): void {
     this.translate.use(language);
     localStorage.setItem('language', language);
-    this.isDropdownOpen = false; 
+    this.isDropdownOpen = false; // Close dropdown after selection
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeDropdown(event: Event): void {
+    const dropdown = document.querySelector('.language-switcher');
+    if (dropdown && !dropdown.contains(event.target as Node)) {
+      this.isDropdownOpen = false; // Close if clicked outside
+    }
   }
 }

@@ -84,5 +84,17 @@
         "TITLE": "Page Not Found",
         "DESCRIPTION": "It looks like the page you are looking for does not exist.",
         "GO_HOME": "Return to Home Page"
+    },
+    "LOGIN": {
+        "BUTTON": "Login",
+        "TITLE": "Login",
+        "USERNAME": "Username",
+        "PASSWORD": "Password",
+        "SUBMIT": "Login",
+        "NO_ACCOUNT": "Don't have an account?",
+        "REGISTER": "Register here"
+    },
+    "LOGOUT": {
+        "BUTTON": "Logout"
     }
 }

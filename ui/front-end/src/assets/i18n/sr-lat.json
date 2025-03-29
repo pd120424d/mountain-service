@@ -84,5 +84,17 @@
         "TITLE": "Stranica nije pronađena",
         "DESCRIPTION": "Izgleda da stranica koju tražite ne postoji.",
         "GO_HOME": "Vratite se na početnu stranicu"
+    },
+    "LOGIN": {
+        "BUTTON": "Prijava",
+        "TITLE": "Prijava",
+        "USERNAME": "Korisničko ime",
+        "PASSWORD": "Lozinka",
+        "SUBMIT": "Prijavi se",
+        "NO_ACCOUNT": "Nemate nalog?",
+        "REGISTER": "Registrujte se ovde"
+    },
+    "LOGOUT": {
+        "BUTTON": "Odjava"
     }
 }
