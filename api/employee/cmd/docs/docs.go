@@ -260,6 +260,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/login": {
+            "post": {
+                "description": "Пријавање запосленог са корисничким именом и лозинком",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Пријавање запосленог",
+                "parameters": [
+                    {
+                        "description": "Корисничко име и лозинка",
+                        "name": "employee",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.EmployeeLogin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
         "/shifts/availability": {
             "get": {
                 "description": "Дохватање доступности смена за одређени дан",
@@ -373,6 +413,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "profileType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.EmployeeLogin": {
+            "type": "object",
+            "properties": {
+                "password": {
                     "type": "string"
                 },
                 "username": {

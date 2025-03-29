@@ -70,3 +70,7 @@ func ProfileTypeFromString(s string) ProfileType {
 		return ""
 	}
 }
+
+func (e *Employee) Role() string {
+	return string(e.ProfileType)
+}

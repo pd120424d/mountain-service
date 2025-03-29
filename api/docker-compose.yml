@@ -27,6 +27,8 @@ services:
       - DB_USER_FILE=/run/secrets/db_user
       - DB_PASSWORD_FILE=/run/secrets/db_password
       - DB_NAME=employee_service
+      - APP_ENV=staging
+      - JWT_SECRET=my_secret_key
     depends_on:
       employee-db:
         condition: service_healthy  # Wait for the database to be healthy

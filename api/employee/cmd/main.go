@@ -14,6 +14,7 @@ import (
 
 	_ "api/employee/cmd/docs"
 	"api/employee/config"
+	"api/employee/internal/auth"
 	"api/employee/internal/handler"
 	"api/employee/internal/model"
 	"api/employee/internal/repositories"
@@ -86,14 +87,15 @@ func main() {
 	r := gin.Default()
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	api := r.Group("/api/v1")
+	r.POST("/api/v1/employees", employeeHandler.RegisterEmployee)
+	r.POST("/api/v1/login", employeeHandler.LoginEmployee)
+	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware())
 	{
-		api.POST("/employees", employeeHandler.RegisterEmployee)
-		api.GET("/employees", employeeHandler.ListEmployees)
-		api.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
-		api.POST("/empoyees/{id}/shifts", employeeHandler.AssignShift)
-		api.GET("/employees/{id}/shifts", employeeHandler.GetShifts)
-		api.GET("shifts/availability", employeeHandler.GetShiftsAvailability)
+		authorized.GET("/employees", employeeHandler.ListEmployees)
+		authorized.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
+		authorized.POST("/empoyees/{id}/shifts", employeeHandler.AssignShift)
+		authorized.GET("/employees/{id}/shifts", employeeHandler.GetShifts)
+		authorized.GET("shifts/availability", employeeHandler.GetShiftsAvailability)
 	}
 
 	// CORS setup

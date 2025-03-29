@@ -1,10 +1,11 @@
 package repositories
 
-//go:generate mockgen -source=employee_repository.go -destination=employee_repository_gomock.go -package=repositories mountain_service/employee/internal/repositories -imports=gomock=go.uber.org/mock/gomock
+//go:generate mockgen -source=employee_repository.go -destination=employee_repository_gomock.go -package=repositories mountain_service/employee/internal/repositories -imports=gomock=go.uber.org/mock/gomock -typed
 
 import (
 	"api/employee/internal/model"
 	"api/shared/utils"
+
 	"gorm.io/gorm"
 )
 
@@ -12,6 +13,7 @@ type EmployeeRepository interface {
 	Create(employee *model.Employee) error
 	GetAll() ([]model.Employee, error)
 	GetEmployeeByID(id string, employee *model.Employee) error
+	GetEmployeeByUsername(username string) (*model.Employee, error)
 	UpdateEmployee(employee *model.Employee) error
 	Delete(employeeID uint) error
 	ListEmployees(filters map[string]interface{}) ([]model.Employee, error)
@@ -46,6 +48,13 @@ func (r *employeeRepository) GetAll() ([]model.Employee, error) {
 // GetEmployeeByID returns employee by its id or error if it cannot be found.
 func (r *employeeRepository) GetEmployeeByID(id string, employee *model.Employee) error {
 	return r.db.First(employee, "id = ?", id).Error
+}
+
+// GetEmployeeByUsername returns employee by its username or error if it cannot be found.
+func (r *employeeRepository) GetEmployeeByUsername(username string) (*model.Employee, error) {
+	var employee model.Employee
+	err := r.db.Where("username = ?", username).First(&employee).Error
+	return &employee, err
 }
 
 func (r *employeeRepository) ListEmployees(filters map[string]interface{}) ([]model.Employee, error) {

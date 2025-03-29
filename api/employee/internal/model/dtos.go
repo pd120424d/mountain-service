@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+// EmployeeLogin DTO for employee login
+type EmployeeLogin struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 // EmployeeResponse DTO for returning employee data
 type EmployeeResponse struct {
 	ID        uint   `json:"id"`

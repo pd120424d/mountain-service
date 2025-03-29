@@ -1,21 +1,23 @@
 package handler
 
 import (
-	"api/employee/internal/model"
-	"api/employee/internal/repositories"
-	"api/shared/utils"
 	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gin-gonic/gin"
+	"api/employee/internal/auth"
+	"api/employee/internal/model"
+	"api/employee/internal/repositories"
+	"api/shared/utils"
 )
 
 type EmployeeHandler interface {
+	LoginEmployee(ctx *gin.Context)
 	RegisterEmployee(ctx *gin.Context)
 	ListEmployees(ctx *gin.Context)
 	DeleteEmployee(ctx *gin.Context)
@@ -32,6 +34,47 @@ type employeeHandler struct {
 
 func NewEmployeeHandler(log utils.Logger, emplRepo repositories.EmployeeRepository, shiftsRepo repositories.ShiftRepository) EmployeeHandler {
 	return &employeeHandler{log: log.WithName("employeeHandler"), emplRepo: emplRepo, shiftsRepo: shiftsRepo}
+}
+
+// LoginEmployee Пријавање запосленог
+// @Summary Пријавање запосленог
+// @Description Пријавање запосленог са корисничким именом и лозинком
+// @Tags запослени
+// @Accept  json
+// @Produce  json
+// @Param employee body model.EmployeeLogin true "Корисничко име и лозинка"
+// @Success 200 {object} gin.H
+// @Failure 401 {object} gin.H
+// @Router /login [post]
+func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
+	var req model.EmployeeLogin
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		return
+	}
+
+	// Fetch employee by username
+	employee, err := h.emplRepo.GetEmployeeByUsername(req.Username)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	// Verify password
+	if !auth.CheckPassword(employee.Password, req.Password) {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	// Generate JWT token
+	token, err := auth.GenerateJWT(employee.ID, employee.Role())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 // RegisterEmployee Креирање новог запосленог

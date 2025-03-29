@@ -95,6 +95,21 @@ func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeByID(id, employee inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByID", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeeByID), id, employee)
 }
 
+// GetEmployeeByUsername mocks base method.
+func (m *MockEmployeeRepository) GetEmployeeByUsername(username string) (*model.Employee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmployeeByUsername", username)
+	ret0, _ := ret[0].(*model.Employee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmployeeByUsername indicates an expected call of GetEmployeeByUsername.
+func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeByUsername(username interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByUsername", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeeByUsername), username)
+}
+
 // ListEmployees mocks base method.
 func (m *MockEmployeeRepository) ListEmployees(filters map[string]interface{}) ([]model.Employee, error) {
 	m.ctrl.T.Helper()

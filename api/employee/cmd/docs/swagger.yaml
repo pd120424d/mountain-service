@@ -61,6 +61,13 @@ definitions:
     - phone
     - username
     type: object
+  model.EmployeeLogin:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
   model.EmployeeResponse:
     properties:
       email:
@@ -280,6 +287,32 @@ paths:
           schema:
             $ref: '#/definitions/gin.H'
       summary: Додељује смену запосленом
+      tags:
+      - запослени
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Пријавање запосленог са корисничким именом и лозинком
+      parameters:
+      - description: Корисничко име и лозинка
+        in: body
+        name: employee
+        required: true
+        schema:
+          $ref: '#/definitions/model.EmployeeLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Пријавање запосленог
       tags:
       - запослени
   /shifts/availability:
