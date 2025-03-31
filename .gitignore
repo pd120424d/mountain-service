@@ -56,5 +56,11 @@ ui/front-end/.npm/
 ui/front-end/**/*.js
 ui/front-end/**/*.js.map
 
-api/vendor/
+# Ignore vendor folder with go third-party dependencies
+api/vendor
+api/vendor/*
 api/employee/secrets/
+api/vendor/modules.txt
+.idea/mountain-service.iml
+.idea/vcs.xml
+.idea/workspace.xml
