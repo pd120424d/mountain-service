@@ -2,13 +2,13 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
 	"api/employee/internal/auth"
 	"api/employee/internal/model"
@@ -17,9 +17,10 @@ import (
 )
 
 type EmployeeHandler interface {
-	LoginEmployee(ctx *gin.Context)
 	RegisterEmployee(ctx *gin.Context)
+	LoginEmployee(ctx *gin.Context)
 	ListEmployees(ctx *gin.Context)
+	UpdateEmployee(ctx *gin.Context)
 	DeleteEmployee(ctx *gin.Context)
 	AssignShift(ctx *gin.Context)
 	GetShifts(ctx *gin.Context)
@@ -36,47 +37,6 @@ func NewEmployeeHandler(log utils.Logger, emplRepo repositories.EmployeeReposito
 	return &employeeHandler{log: log.WithName("employeeHandler"), emplRepo: emplRepo, shiftsRepo: shiftsRepo}
 }
 
-// LoginEmployee Пријавање запосленог
-// @Summary Пријавање запосленог
-// @Description Пријавање запосленог са корисничким именом и лозинком
-// @Tags запослени
-// @Accept  json
-// @Produce  json
-// @Param employee body model.EmployeeLogin true "Корисничко име и лозинка"
-// @Success 200 {object} gin.H
-// @Failure 401 {object} gin.H
-// @Router /login [post]
-func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
-	var req model.EmployeeLogin
-
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
-		return
-	}
-
-	// Fetch employee by username
-	employee, err := h.emplRepo.GetEmployeeByUsername(req.Username)
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	// Verify password
-	if !auth.CheckPassword(employee.Password, req.Password) {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	// Generate JWT token
-	token, err := auth.GenerateJWT(employee.ID, employee.Role())
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{"token": token})
-}
-
 // RegisterEmployee Креирање новог запосленог
 // @Summary Креирање новог запосленог
 // @Description Креирање новог запосленог у систему
@@ -91,7 +51,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	h.log.Info("Received Register Employee request")
 	req := &model.EmployeeCreateRequest{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
 		return
 	}
 
@@ -153,6 +113,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	}
 
 	if err := h.emplRepo.Create(&employee); err != nil {
+		h.log.Errorf("failed to create employee: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -170,6 +131,47 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, response)
+}
+
+// LoginEmployee Пријавање запосленог
+// @Summary Пријавање запосленог
+// @Description Пријавање запосленог са корисничким именом и лозинком
+// @Tags запослени
+// @Accept  json
+// @Produce  json
+// @Param employee body model.EmployeeLogin true "Корисничко име и лозинка"
+// @Success 200 {object} gin.H
+// @Failure 401 {object} gin.H
+// @Router /login [post]
+func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
+	var req model.EmployeeLogin
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
+		return
+	}
+
+	// Fetch employee by username
+	employee, err := h.emplRepo.GetEmployeeByUsername(req.Username)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	// Verify password
+	if !auth.CheckPassword(employee.Password, req.Password) {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	// Generate JWT token
+	token, err := auth.GenerateJWT(employee.ID, employee.Role())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 // ListEmployees Преузимање листе запослених
@@ -190,7 +192,7 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 	}
 
 	h.log.Infof("Successfully retrieved %d employees", len(employees))
-	var response []model.EmployeeResponse
+	response := make([]model.EmployeeResponse, 0)
 	for _, emp := range employees {
 		response = append(response, model.EmployeeResponse{
 			ID:             emp.ID,
@@ -218,35 +220,61 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 // @Param employee body model.EmployeeUpdateRequest true "Подаци за ажурирање запосленог"
 // @Success 200 {object} model.EmployeeResponse
 // @Failure 400 {object} gin.H
+// @Failure 404 {object} gin.H
+// @Failure 500 {object} gin.H
 // @Router /employees/{id} [put]
-func (h *employeeHandler) UpdateEmployee(db *gorm.DB, logger *zap.Logger) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		h.log.Info("Received Update Employee request")
+func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
+	h.log.Info("Received Update Employee request")
 
-		id := ctx.Param("id")
-
-		var employee model.Employee
-		if err := db.First(&employee, id).Error; err != nil {
-			logger.Error("Employee not found", zap.Error(err))
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
-			return
-		}
-
-		if err := ctx.ShouldBindJSON(&employee); err != nil {
-			logger.Error("Failed to bind employee data", zap.Error(err))
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
-			return
-		}
-
-		if err := db.Save(&employee).Error; err != nil {
-			logger.Error("Failed to update employee", zap.Error(err))
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update employee"})
-			return
-		}
-
-		h.log.Infof("Successfully updated employee with ID %v", employee.ID)
-		ctx.JSON(http.StatusOK, employee)
+	id := ctx.Param("id")
+	var employee model.Employee
+	if err := h.emplRepo.GetEmployeeByID(id, &employee); err != nil {
+		h.log.Error("Employee not found", zap.Error(err))
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
+		return
 	}
+
+	var req model.EmployeeUpdateRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		h.log.Error("Failed to bind employee update data", zap.Error(err))
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		return
+	}
+
+	// TODO: Move to a mapper and do thorough validation
+	// Apply the changes from the update request
+	if req.FirstName != "" {
+		employee.FirstName = req.FirstName
+	}
+	if req.LastName != "" {
+		employee.LastName = req.LastName
+	}
+	if req.Email != "" {
+		employee.Email = req.Email
+	}
+
+	if err := h.emplRepo.UpdateEmployee(&employee); err != nil {
+		h.log.Error("Failed to update employee", zap.Error(err))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update employee"})
+		return
+	}
+
+	h.log.Infof("Successfully updated employee with ID %v", employee.ID)
+
+	// Prepare response
+	resp := model.EmployeeResponse{
+		ID:             employee.ID,
+		Username:       employee.Username,
+		FirstName:      employee.FirstName,
+		LastName:       employee.LastName,
+		Gender:         employee.Gender,
+		Phone:          employee.Phone,
+		Email:          employee.Email,
+		ProfilePicture: employee.ProfilePicture,
+		ProfileType:    employee.ProfileType.String(),
+	}
+
+	ctx.JSON(http.StatusOK, resp)
 }
 
 // DeleteEmployee Брисање запосленог
