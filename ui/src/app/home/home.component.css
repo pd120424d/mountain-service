@@ -30,6 +30,7 @@ html, body {
   background-position: center center; /* Center the image */
   background-repeat: no-repeat; /* Prevent tiling */
   transition: background-image 1s ease-in-out; /* Smooth transitions */
+  position: relative;
 }
 
 /* Welcome Section */
@@ -86,4 +87,19 @@ html, body {
 
 .navigation-section .nav-links .nav-button p {
   font-size: 1rem;
+}
+
+.bg-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 2s ease-in-out;
+  z-index: -2;
+  opacity: 0;
+}
+
+.bg-layer.active {
+  opacity: 1;
+  z-index: -1;
 }

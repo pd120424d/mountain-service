@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router'; 
+import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../auth.service';
 
@@ -9,8 +9,9 @@ import { AuthService } from '../auth.service';
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
   standalone: true,
-  imports: [RouterModule, CommonModule, TranslateModule]})
-export class HomeComponent {
+  imports: [RouterModule, CommonModule, TranslateModule]
+})
+export class HomeComponent implements OnInit {
   images: string[] = [
     'assets/slika_1.jpg',
     'assets/slika_2.jpg',
@@ -25,20 +26,33 @@ export class HomeComponent {
     'assets/slika_11.jpg',
   ];
 
-  currentImageIndex: number;
+  currentImageIndex = 0;
+  prevImageIndex = 0;
 
   constructor(private translate: TranslateService, public authService: AuthService) {
-    this.currentImageIndex = Math.floor(Math.random() * this.images.length);
-
-    this.startSlideshow();
-
     this.translate.setDefaultLang('sr-cyr')
   }
 
-  startSlideshow(): void {
+  ngOnInit(): void {
+    this.preloadImage(this.images[1]); // preload second image immediately
+
     setInterval(() => {
-      this.currentImageIndex = (this.currentImageIndex + 1) % this.images.length;
-    }, 5000); // Change image every 5 seconds
+      const nextIndex = (this.currentImageIndex + 1) % this.images.length;
+      const nextImageUrl = this.images[nextIndex];
+
+      this.preloadImage(nextImageUrl).then(() => {
+        this.prevImageIndex = this.currentImageIndex;
+        this.currentImageIndex = nextIndex;
+      });
+    }, 8000);
+  }
+
+  preloadImage(url: string): Promise<void> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => resolve();
+    });
   }
 
   switchLanguage(language: string): void {

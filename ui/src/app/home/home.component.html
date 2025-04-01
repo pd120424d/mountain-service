@@ -1,4 +1,9 @@
-<div class="home-container" [ngStyle]="{ 'background-image': 'url(' + images[currentImageIndex] + ')' }">
+<div class="home-container">
+
+   <!-- Background Layers -->
+   <div class="bg-layer" [ngStyle]="{ 'background-image': 'url(' + images[prevImageIndex] + ')' }"></div>
+   <div class="bg-layer active" [ngStyle]="{ 'background-image': 'url(' + images[currentImageIndex] + ')' }"></div>
+
   <!-- Welcome Section -->
   <div class="welcome-section">
     <h1>{{ 'HOME.WELCOME' | translate }}</h1>
