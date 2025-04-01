@@ -12,28 +12,45 @@ import { RouterOutlet } from '@angular/router';
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
-  isDropdownOpen = false; // Controls dropdown visibility
+  isDropdownOpen = false;
+  currentLanguageLabel = 'EN';
 
-  constructor(public authService: AuthService, private translate: TranslateService) {
+  private languageMap: { [key: string]: string } = {
+    'en': 'EN',
+    'sr-lat': 'SR',
+    'sr-cyr': 'СР',
+    'ru': 'RU'
+  };
+
+  constructor(
+    public authService: AuthService,
+    private translate: TranslateService
+  ) {
     const savedLanguage = localStorage.getItem('language') || 'en';
     this.translate.use(savedLanguage);
+    this.setLanguageLabel(savedLanguage);
   }
 
   toggleDropdown(): void {
-    this.isDropdownOpen = !this.isDropdownOpen; // Toggle dropdown visibility
+    this.isDropdownOpen = !this.isDropdownOpen;
   }
 
   switchLanguage(language: string): void {
     this.translate.use(language);
     localStorage.setItem('language', language);
-    this.isDropdownOpen = false; // Close dropdown after selection
+    this.setLanguageLabel(language);
+    this.isDropdownOpen = false;
+  }
+
+  setLanguageLabel(language: string): void {
+    this.currentLanguageLabel = this.languageMap[language] || language.toUpperCase();
   }
 
   @HostListener('document:click', ['$event'])
   closeDropdown(event: Event): void {
     const dropdown = document.querySelector('.language-switcher');
     if (dropdown && !dropdown.contains(event.target as Node)) {
-      this.isDropdownOpen = false; // Close if clicked outside
+      this.isDropdownOpen = false;
     }
   }
 }

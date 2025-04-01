@@ -3,17 +3,17 @@
   <!-- Language Switcher -->
   <div class="dropdown language-switcher" [ngClass]="{ 'open': isDropdownOpen }">
     <button class="btn btn-secondary dropdown-toggle" type="button" (click)="toggleDropdown()">
-      EN-SR-RU
+      {{ currentLanguageLabel }}
     </button>
     <ul class="dropdown-menu">
       <li>
         <a class="dropdown-item" (click)="switchLanguage('en')">English</a>
       </li>
       <li>
-        <a class="dropdown-item" (click)="switchLanguage('sr-Latn')">Srpski (Latin)</a>
+        <a class="dropdown-item" (click)="switchLanguage('sr-lat')">Srpski (Latin)</a>
       </li>
       <li>
-        <a class="dropdown-item" (click)="switchLanguage('sr-Cyrl')">Српски (Ћирилица)</a>
+        <a class="dropdown-item" (click)="switchLanguage('sr-cyr')">Српски (Ћирилица)</a>
       </li>
       <li>
         <a class="dropdown-item" (click)="switchLanguage('ru')">Русский</a>
@@ -25,7 +25,8 @@
   <button *ngIf="!authService.isAuthenticated()" routerLink="/login" class="btn btn-outline-primary auth-button">
     {{ 'LOGIN.BUTTON' | translate }}
   </button>
-  <button *ngIf="authService.isAuthenticated()" (click)="authService.logout()" class="btn btn-outline-danger auth-button">
+  <button *ngIf="authService.isAuthenticated()" (click)="authService.logout()"
+    class="btn btn-outline-danger auth-button">
     {{ 'LOGOUT.BUTTON' | translate }}
   </button>
 </div>

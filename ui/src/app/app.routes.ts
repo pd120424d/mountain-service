@@ -1,4 +1,3 @@
-// src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { HomeComponent } from './home/home.component';
 import { EmployeeListComponent } from './employee/employee-list/employee-list.component';
