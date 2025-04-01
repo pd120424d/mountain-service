@@ -51,6 +51,16 @@ services:
     networks:
       - employee_network
 
+  frontend:
+    build:
+      context: ./ui
+    ports:
+      - "80:80"
+    depends_on:
+      - employee-service
+    networks:
+      - employee_network
+
 networks:
   employee_network:
 
