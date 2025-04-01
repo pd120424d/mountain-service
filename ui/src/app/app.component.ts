@@ -2,12 +2,12 @@ import { Component, HostListener } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from './auth.service';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { RouterModule, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, TranslateModule],
+  imports: [RouterModule, CommonModule, RouterOutlet, TranslateModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })

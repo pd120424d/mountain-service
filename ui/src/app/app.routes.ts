@@ -9,9 +9,9 @@ import { AuthGuard } from './auth.guard';
 export const routes: Routes = [
   { path: '', component: HomeComponent }, // Default route that loads HomeComponent
   { path: 'home', component: HomeComponent }, // /home route
-  { path: 'employees', component: EmployeeListComponent, canActivate: [AuthGuard] }, // /employees route
-  { path: 'employees/new', component: EmployeeFormComponent, canActivate: [AuthGuard] }, // /employees/new route
-  { path: 'employees/edit/:id', component: EmployeeFormComponent, canActivate: [AuthGuard] }, // /employees/edit/:id route
+  { path: 'employees', component: EmployeeListComponent, canActivate: [AuthGuard] },
+  { path: 'employees/edit/:id', component: EmployeeFormComponent, canActivate: [AuthGuard] },
+  { path: 'employees/new', component: EmployeeFormComponent }, // used to register new employees
+  { path: 'login', component: LoginComponent }, // used to login existing employees
   { path: '**', component: NotFoundComponent }, // Wildcard route for undefined paths
-  { path: 'login', component: LoginComponent },
 ];

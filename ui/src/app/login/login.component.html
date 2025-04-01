@@ -1,24 +1,25 @@
 <div class="login-container">
-    <div class="login-box">
-      <h2>{{ 'LOGIN.TITLE' | translate }}</h2>
-      <form (ngSubmit)="onLogin()">
-        <div class="input-group">
-          <label for="username">{{ 'LOGIN.USERNAME' | translate }}</label>
-          <input id="username" type="text" [(ngModel)]="credentials.username" required>
-        </div>
-  
-        <div class="input-group">
-          <label for="password">{{ 'LOGIN.PASSWORD' | translate }}</label>
-          <input id="password" type="password" [(ngModel)]="credentials.password" required>
-        </div>
-  
-        <button type="submit" class="login-btn">{{ 'LOGIN.SUBMIT' | translate }}</button>
-  
-        <p class="register-link">
-          {{ 'LOGIN.NO_ACCOUNT' | translate }}
-          <a routerLink="/register">{{ 'LOGIN.REGISTER' | translate }}</a>
-        </p>
-      </form>
-    </div>
+  <div class="login-box">
+    <h2>{{ 'LOGIN.TITLE' | translate }}</h2>
+
+    <form (ngSubmit)="onLogin()">
+      <div class="input-group">
+        <label for="username">{{ 'LOGIN.USERNAME' | translate }}</label>
+        <input id="username" name="username" type="text" [(ngModel)]="credentials.username" required>
+      </div>
+
+      <div class="input-group">
+        <label for="password">{{ 'LOGIN.PASSWORD' | translate }}</label>
+        <input id="password" name="password" type="password" [(ngModel)]="credentials.password" required>
+      </div>
+
+      <button type="submit" class="login-btn">{{ 'LOGIN.SUBMIT' | translate }}</button>
+    </form>
+
+    <!-- Move this outside the form -->
+    <p class="register-link">
+      {{ 'LOGIN.NO_ACCOUNT' | translate }}
+      <a routerLink="/employee/new">{{ 'LOGIN.REGISTER' | translate }}</a>
+    </p>
   </div>
-  
+</div>
