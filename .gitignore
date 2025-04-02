@@ -32,9 +32,6 @@ ui/dist/
 ui/tmp/
 ui/out-tsc/
 
-# Ignore environment files (optional if you don't want to commit them)
-ui/src/environments/*.ts
-
 # Ignore IDE-specific files (if you use any of these)
 ui/.idea/
 ui/.vscode/
