@@ -1,36 +1,121 @@
-# npm install
-# npm install @fortawesome/fontawesome-free
+# Mountain Rescue Management System
 
+A web application built with Angular for managing mountain rescue service operations, including employee management, shift scheduling, and emergency response coordination.
 
-# FrontEnd
+## Features
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.2.
+- Multi-language support (English, Serbian Latin, Serbian Cyrillic, Russian)
+- Employee management system
+- Authentication and authorization
+- Responsive design with Bootstrap and Material UI
+- Image carousel on home page
+- RESTful API integration
 
-## Development server
+## Prerequisites
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+- Node.js (v18 or later)
+- npm (Node Package Manager)
+- Angular CLI (v19.0.6)
 
-## Production server
+## Installation
 
-Run `ng build --prod` and `serve -s dist` for a prod server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+1. Clone the repository
+2. Install dependencies:
+```bash
+npm install
+```
 
-## Code scaffolding
+## Development Server
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Run the development server:
+```bash
+ng serve
+```
+Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
-## Build
+## Production Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+1. Build the project:
+```bash
+ng build --configuration production
+```
 
-## Running unit tests
+2. The build artifacts will be stored in the `dist/ui/` directory.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+## Docker Deployment
 
-## Running end-to-end tests
+Build and run the application using Docker:
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+```bash
+docker build -t mountain-rescue-ui .
+docker run -p 80:80 mountain-rescue-ui
+```
 
-## Further help
+## Environment Configuration
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- Development: `src/environments/environment.ts`
+- Production: `src/environments/environment.prod.ts`
+
+Configure the API URL and other environment-specific settings in these files.
+
+## Testing
+
+- Run unit tests:
+```bash
+ng test
+```
+
+- Run end-to-end tests:
+```bash
+ng e2e
+```
+
+## Project Structure
+
+```
+ui/
+├── src/
+│   ├── app/
+│   │   ├── components/
+│   │   ├── services/
+│   │   └── shared/
+│   ├── assets/
+│   │   └── i18n/          # Translation files
+│   └── environments/      # Environment configurations
+├── public/               # Public assets
+└── dist/                # Production build output
+```
+
+## Internationalization
+
+The application supports multiple languages. Translation files are located in `src/assets/i18n/`.
+Available languages:
+- English (en)
+- Serbian Latin (sr-lat)
+- Serbian Cyrillic (sr-cyr)
+- Russian (ru)
+
+## Dependencies
+
+- Angular v19.0.5
+- Angular Material v18.2.10
+- Bootstrap v5.3.3
+- Font Awesome v6.6.0
+- NgX-Translate
+- RxJS
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
 
