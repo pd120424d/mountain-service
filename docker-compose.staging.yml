@@ -8,11 +8,11 @@ services:
       POSTGRES_PASSWORD: etf
       POSTGRES_DB: employee_service
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data_staging:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
-      - employee_network
+      - web
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -30,17 +30,18 @@ services:
       - DB_PASSWORD_FILE=/run/secrets/db_password
       - DB_NAME=employee_service
       - APP_ENV=staging
-      - JWT_SECRET=my_secret_key
+      - JWT_SECRET=super-secret-staging-key
     depends_on:
       employee-db:
         condition: service_healthy
     ports:
       - "8082:8082"
     networks:
-      - employee_network
+      - web
     secrets:
       - db_user
       - db_password
+    restart: unless-stopped
 
   swagger-ui:
     image: swaggerapi/swagger-ui
@@ -49,23 +50,26 @@ services:
     environment:
       API_URL: "http://employee-service:8082/swagger.json"
     networks:
-      - employee_network
+      - web
 
   frontend:
     build:
       context: ./ui
     ports:
-      - "80:80"
+      - "8080:80"
+    environment:
+      - NODE_ENV=staging
     depends_on:
       - employee-service
     networks:
-      - employee_network
+      - web
+    restart: unless-stopped
 
 networks:
-  employee_network:
+  web:
 
 volumes:
-  db_data:
+  db_data_staging:
 
 secrets:
   db_user:
