@@ -1,7 +1,7 @@
 package config
 
 import (
-	"api/shared/utils"
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

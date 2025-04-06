@@ -1,8 +1,8 @@
 package config
 
 import (
-	"api/shared/config"
-	"api/shared/utils"
+	"github.com/pd120424d/mountain-service/api/shared/config"
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	"gorm.io/gorm"
 )

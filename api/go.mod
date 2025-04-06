@@ -1,4 +1,4 @@
-module api
+module github.com/pd120424d/mountain-service/api
 
 go 1.23
 

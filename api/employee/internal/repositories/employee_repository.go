@@ -3,8 +3,8 @@ package repositories
 //go:generate mockgen -source=employee_repository.go -destination=employee_repository_gomock.go -package=repositories mountain_service/employee/internal/repositories -imports=gomock=go.uber.org/mock/gomock -typed
 
 import (
-	"api/employee/internal/model"
-	"api/shared/utils"
+	"github.com/pd120424d/mountain-service/api/employee/internal/model"
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	"gorm.io/gorm"
 )

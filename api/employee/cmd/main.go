@@ -12,13 +12,13 @@ import (
 
 	"github.com/gorilla/handlers"
 
-	_ "api/employee/cmd/docs"
-	"api/employee/config"
-	"api/employee/internal/auth"
-	"api/employee/internal/handler"
-	"api/employee/internal/model"
-	"api/employee/internal/repositories"
-	"api/shared/utils"
+	_ "github.com/pd120424d/mountain-service/api/employee/cmd/docs"
+	"github.com/pd120424d/mountain-service/api/employee/config"
+	"github.com/pd120424d/mountain-service/api/employee/internal/auth"
+	"github.com/pd120424d/mountain-service/api/employee/internal/handler"
+	"github.com/pd120424d/mountain-service/api/employee/internal/model"
+	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"

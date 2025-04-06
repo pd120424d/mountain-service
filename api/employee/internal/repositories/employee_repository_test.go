@@ -1,11 +1,12 @@
 package repositories
 
 import (
-	"api/shared/utils"
 	"testing"
 	"time"
 
-	"api/employee/internal/model"
+	"github.com/pd120424d/mountain-service/api/shared/utils"
+
+	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"

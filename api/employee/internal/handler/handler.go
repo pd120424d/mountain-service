@@ -10,10 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"api/employee/internal/auth"
-	"api/employee/internal/model"
-	"api/employee/internal/repositories"
-	"api/shared/utils"
+	"github.com/pd120424d/mountain-service/api/employee/internal/auth"
+	"github.com/pd120424d/mountain-service/api/employee/internal/model"
+	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
 type EmployeeHandler interface {

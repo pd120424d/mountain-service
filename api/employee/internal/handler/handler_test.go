@@ -8,9 +8,9 @@ import (
 
 	"gorm.io/gorm"
 
-	"api/employee/internal/model"
-	"api/employee/internal/repositories"
-	"api/shared/utils"
+	"github.com/pd120424d/mountain-service/api/employee/internal/model"
+	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"

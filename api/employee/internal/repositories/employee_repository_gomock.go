@@ -9,7 +9,7 @@
 package repositories
 
 import (
-	model "api/employee/internal/model"
+	model "github.com/pd120424d/mountain-service/api/employee/internal/model"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"

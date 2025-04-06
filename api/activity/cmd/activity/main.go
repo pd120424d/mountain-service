@@ -1,9 +1,10 @@
 package main
 
 import (
-	"api/activity/internal/handler"
 	"log"
 	"net/http"
+
+	"github.com/pd120424d/mountain-service/api/activity/internal/handler"
 )
 
 func main() {

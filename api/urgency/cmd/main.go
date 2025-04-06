@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"api/urgency/internal/handler"
+	"github.com/pd120424d/mountain-service/api/urgency/internal/handler"
 )
 
 func main() {
