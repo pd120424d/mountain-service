@@ -29,26 +29,27 @@ jobs:
     - name: Set up SSH
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.AZURE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-        chmod 600 ~/.ssh/id_ed25519
+        echo "${{ secrets.AZURE_SSH_PRIVATE_KEY }}" > ~/.ssh/github_actions
+        chmod 600 ~/.ssh/github_actions
         ssh-keyscan -H ${{ secrets.AZURE_VM_HOST }} >> ~/.ssh/known_hosts
 
     - name: Test SSH Connection
       run: |
-        ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} "echo connected successfully"
+        ssh -i ~/.ssh/github_actions -o StrictHostKeyChecking=no ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} "echo connected successfully"
 
     - name: Copy Docker images to Azure VM
       run: |
-        scp -i ~/.ssh/id_ed25519 frontend.tar employee.tar ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:~
+        scp -i ~/.ssh/github_actions frontend.tar employee.tar ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:~
 
     - name: Load and run Docker containers on Azure VM
       run: |
-        ssh -i ~/.ssh/id_ed25519 ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} '
+        ssh -i ~/.ssh/github_actions ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} '
           set -e
           docker load < ~/frontend.tar
           docker load < ~/employee.tar
           rm ~/frontend.tar ~/employee.tar
           cd mountain-service
+          git pull origin main
           docker compose -f docker-compose.prod.yml down
           docker compose -f docker-compose.prod.yml up -d
         '
