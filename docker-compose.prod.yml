@@ -20,9 +20,7 @@ services:
       retries: 5
 
   employee-service:
-    build:
-      context: ./api
-      dockerfile: employee/Dockerfile
+    image: employee-service:latest
     environment:
       - DB_HOST=employee-db
       - DB_PORT=5432
@@ -52,8 +50,7 @@ services:
       - web
 
   frontend:
-    build:
-      context: ./ui
+    image: frontend:latest
     ports:
       - "80:80"
     environment:
