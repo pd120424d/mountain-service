@@ -6,13 +6,12 @@ A modular, microservice-based system designed for managing mountain operations�
 
 ## 📚 Table of Contents
 
-- [Features](#features)
-- [Architecture](#architecture)
-- [Microservices](#microservices)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Contributing](#contributing)
-- [License](#license)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Microservices](#-microservices)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+- [License](#-license)
 
 ---
 
@@ -95,13 +94,6 @@ docker-compose up --build
 
 - [Backend README](./api/README.md)
 - [Frontend README](./ui/README.md)
-
----
-
-## 🤝 Contributing
-
-Pull requests are welcome! For major changes, please open an issue first.  
-Make sure to update tests as appropriate.
 
 ---
 
