@@ -145,6 +145,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 // @Router /login [post]
 func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	var req model.EmployeeLogin
+	h.log.Info("Received Login Employee request")
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
@@ -154,12 +155,14 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	// Fetch employee by username
 	employee, err := h.emplRepo.GetEmployeeByUsername(req.Username)
 	if err != nil {
+		h.log.Errorf("failed to retrieve employee: %v", err)
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
 	// Verify password
 	if !auth.CheckPassword(employee.Password, req.Password) {
+		h.log.Error("failed to verify password")
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -167,10 +170,12 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	// Generate JWT token
 	token, err := auth.GenerateJWT(employee.ID, employee.Role())
 	if err != nil {
+		h.log.Errorf("failed to generate token: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 
+	h.log.Info("Successfully validate employee and generated JWT token")
 	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }
 
@@ -375,6 +380,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 // @Router /employees/{id}/shifts [get]
 func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
+	h.log.Infof("Received Get Shifts request for employee ID %s", employeeIDParam)
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {

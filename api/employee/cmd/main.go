@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/handlers"
+	"gorm.io/gorm"
 
 	_ "github.com/pd120424d/mountain-service/api/employee/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/employee/config"
@@ -62,73 +63,19 @@ func main() {
 		}
 	}(log)
 
-	dbUser, err := readSecret(os.Getenv("DB_USER_FILE"))
-	if err != nil {
-		log.Fatalf("Failed to read DB_USER: %v", err)
-	}
-
-	dbPassword, err := readSecret(os.Getenv("DB_PASSWORD_FILE"))
-	if err != nil {
-		log.Fatalf("Failed to read DB_PASSWORD: %v", err)
-	}
-
-	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
-	dbStringEmployee := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPassword, dbName)
-	// Create the employee_service database if it doesn't exist
-
-	db := config.GetEmployeeDB(log, dbStringEmployee)
-
-	// Auto migrate the model
-	err = db.AutoMigrate(&model.Employee{})
-	if err != nil {
-		log.Fatalf("failed to migrate employee model: %v", err)
-	}
+	db := initDb(log, dbHost, dbPort, dbName)
 
 	employeeRepo := repositories.NewEmployeeRepository(log, db)
 	shiftsRepo := repositories.NewShiftRepository(log, db)
 	employeeHandler := handler.NewEmployeeHandler(log, employeeRepo, shiftsRepo)
 
 	r := gin.Default()
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:4200"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-	}))
 
-	r.Use(gin.Recovery())
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
-		ginSwagger.URL("/swagger.json"),
-	))
-	r.GET("/swagger.json", func(c *gin.Context) {
-		c.File("/docs/swagger.json")
-	})
+	r.Use(requestLogger(log))
 
-	r.POST("/api/v1/employees", employeeHandler.RegisterEmployee)
-	r.POST("/api/v1/login", employeeHandler.LoginEmployee)
-	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware())
-	{
-		authorized.GET("/employees", employeeHandler.ListEmployees)
-		authorized.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
-		authorized.POST("/empoyees/{id}/shifts", employeeHandler.AssignShift)
-		authorized.GET("/employees/{id}/shifts", employeeHandler.GetShifts)
-		authorized.GET("/shifts/availability", employeeHandler.GetShiftsAvailability)
-	}
+	corsHandler := setupCORS(log, r)
 
-	// CORS setup
-	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
-	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
-
-	corsOriginsEnv := os.Getenv("CORS_ALLOWED_ORIGINS") // e.g., "http://localhost:4200 for local development
-	corsOrigins := strings.Split(corsOriginsEnv, ",")
-	origins := handlers.AllowedOrigins(corsOrigins)
-
-	log.Infof("Allowed CORS origins: %s", os.Getenv("CORS_ALLOWED_ORIGINS"))
-
-	// Wrap the router with CORS middleware
-	corsHandler := handlers.CORS(origins, headers, methods)(r)
+	setupRoutes(log, r, employeeHandler)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%v", config.ServerPort),
@@ -159,10 +106,114 @@ func main() {
 	log.Info("Employee Service exiting")
 }
 
+func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
+	log.Info("Setting up database...")
+	dbUser, err := readSecret(os.Getenv("DB_USER_FILE"))
+	if err != nil {
+		log.Fatalf("Failed to read DB_USER: %v", err)
+	}
+
+	dbPassword, err := readSecret(os.Getenv("DB_PASSWORD_FILE"))
+	if err != nil {
+		log.Fatalf("Failed to read DB_PASSWORD: %v", err)
+	}
+
+	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
+	dbStringEmployee := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		dbHost, dbPort, dbUser, dbPassword, dbName)
+
+	// Create the employee_service database if it doesn't exist
+	db := config.GetEmployeeDB(log, dbStringEmployee)
+
+	// Auto migrate the model
+	err = db.AutoMigrate(&model.Employee{})
+	if err != nil {
+		log.Fatalf("failed to migrate employee model: %v", err)
+	}
+
+	log.Info("Database setup finished")
+	return db
+}
+
+func setupCORS(log utils.Logger, r *gin.Engine) http.Handler {
+	log.Info("Setting up CORS...")
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:4200"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
+
+	r.Use(gin.Recovery())
+	r.GET("/swagger/*any", func(c *gin.Context) {
+		log.Infof("Swagger request: %s %s from %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
+		ginSwagger.WrapHandler(swaggerFiles.Handler,
+			ginSwagger.URL("/swagger.json"),
+		)(c)
+	})
+	r.GET("/swagger.json", func(c *gin.Context) {
+		c.File("/docs/swagger.json")
+	})
+
+	// CORS setup
+	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+
+	corsOriginsEnv := os.Getenv("CORS_ALLOWED_ORIGINS") // e.g., "http://localhost:4200 for local development
+	corsOrigins := strings.Split(corsOriginsEnv, ",")
+	origins := handlers.AllowedOrigins(corsOrigins)
+
+	log.Infof("Allowed CORS origins: %s", os.Getenv("CORS_ALLOWED_ORIGINS"))
+
+	log.Info("CORS setup finished")
+
+	// Wrap the router with CORS middleware
+	return handlers.CORS(origins, headers, methods)(r)
+}
+
+func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.EmployeeHandler) {
+	r.POST("/api/v1/employees", employeeHandler.RegisterEmployee)
+	r.POST("/api/v1/login", employeeHandler.LoginEmployee)
+	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log))
+	{
+		authorized.GET("/employees", employeeHandler.ListEmployees)
+		authorized.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
+		authorized.POST("/empoyees/{id}/shifts", employeeHandler.AssignShift)
+		authorized.GET("/employees/{id}/shifts", employeeHandler.GetShifts)
+		authorized.GET("/shifts/availability", employeeHandler.GetShiftsAvailability)
+	}
+
+	// TODO: Remove this or turn it into the health check
+	r.GET("/ping", func(c *gin.Context) {
+		log.Info("Ping route hit")
+		c.JSON(200, gin.H{"message": "pong"})
+	})
+
+}
+
 func readSecret(filePath string) (string, error) {
 	secret, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
 	return string(secret), nil
+}
+
+func requestLogger(log utils.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+
+		// Process request
+		c.Next()
+
+		// After request
+		duration := time.Since(start)
+		status := c.Writer.Status()
+		method := c.Request.Method
+		path := c.Request.URL.Path
+		clientIP := c.ClientIP()
+
+		log.Infof("[%d] %s %s from %s (%s)", status, method, path, clientIP, duration)
+	}
 }
