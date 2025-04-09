@@ -11,6 +11,9 @@ RUN go mod download
 COPY employee/ ./employee/
 COPY shared/ ./shared/
 
+# Copy Swagger docs
+COPY employee/cmd/docs/ ./docs/
+
 # Build the employee service
 RUN go build -v -o /employee-service ./employee/cmd/main.go
 
@@ -19,6 +22,7 @@ FROM alpine:latest
 
 WORKDIR /root/
 COPY --from=build /employee-service .
+COPY --from=build /app/docs /docs
 
 EXPOSE 8082
 CMD ["./employee-service"]

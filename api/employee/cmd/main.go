@@ -21,6 +21,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -86,7 +87,13 @@ func main() {
 	employeeHandler := handler.NewEmployeeHandler(log, employeeRepo, shiftsRepo)
 
 	r := gin.Default()
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.Use(cors.Default())
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
+		ginSwagger.URL("/swagger.json"),
+	))
+	r.GET("/swagger.json", func(c *gin.Context) {
+		c.File("/docs/swagger.json")
+	})
 
 	r.POST("/api/v1/employees", employeeHandler.RegisterEmployee)
 	r.POST("/api/v1/login", employeeHandler.LoginEmployee)
