@@ -30,7 +30,7 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 }
 
 func TestEmployeeRepository_Create(t *testing.T) {
-	log := utils.NewNamedLogger("testLogger")
+	log := utils.NewTestLogger()
 
 	gormDB, mock := setupMockDB(t)
 	repo := NewEmployeeRepository(log, gormDB)
@@ -56,7 +56,7 @@ func TestEmployeeRepository_Create(t *testing.T) {
 }
 
 func TestEmployeeRepository_Delete(t *testing.T) {
-	log := utils.NewNamedLogger("testLogger")
+	log := utils.NewTestLogger()
 
 	gormDB, mock := setupMockDB(t)
 	repo := NewEmployeeRepository(log, gormDB)

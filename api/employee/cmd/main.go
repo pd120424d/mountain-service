@@ -51,7 +51,10 @@ func main() {
 		env = "staging"
 	}
 
-	log := utils.NewLogger()
+	log, err := utils.NewLogger("employee-service")
+	if err != nil {
+		fmt.Errorf("failed to create logger: %v", err)
+	}
 	defer func(log utils.Logger) {
 		err := log.Sync()
 		if err != nil {

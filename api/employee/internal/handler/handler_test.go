@@ -18,6 +18,7 @@ import (
 )
 
 func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
+	log := utils.NewTestLogger()
 
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
 		w := httptest.NewRecorder()
@@ -29,7 +30,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(invalidPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler := NewEmployeeHandler(utils.NewLogger(), nil, nil)
+		handler := NewEmployeeHandler(log, nil, nil)
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -53,7 +54,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler := NewEmployeeHandler(utils.NewLogger(), nil, nil)
+		handler := NewEmployeeHandler(log, nil, nil)
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -80,7 +81,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -109,7 +110,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{existingEmployee}, nil).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusConflict, w.Code)
@@ -140,7 +141,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		emplRepoMock.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
 		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -173,7 +174,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		emplRepoMock.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
 		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{existingEmployee}, nil).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusConflict, w.Code)
@@ -229,7 +230,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 			emplRepoMock.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
 			emplRepoMock.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(1)
 
-			handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+			handler := NewEmployeeHandler(log, emplRepoMock, nil)
 			handler.RegisterEmployee(ctx)
 
 			if test.error != "" {
@@ -269,7 +270,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		emplRepoMock.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(1)
 		emplRepoMock.EXPECT().Create(gomock.Any()).Return(gorm.ErrInvalidDB).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -304,7 +305,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		emplRepoMock.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(1)
 		emplRepoMock.EXPECT().Create(gomock.Any()).Return(nil).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
@@ -313,6 +314,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 }
 
 func TestEmployeeHandler_LoginEmployee(t *testing.T) {
+	log := utils.NewTestLogger()
 
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
 		w := httptest.NewRecorder()
@@ -324,7 +326,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(invalidPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler := NewEmployeeHandler(utils.NewLogger(), nil, nil)
+		handler := NewEmployeeHandler(log, nil, nil)
 		handler.LoginEmployee(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -345,7 +347,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		emplRepoMock.EXPECT().GetEmployeeByUsername("jdoe").Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.LoginEmployee(ctx)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
@@ -366,7 +368,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		emplRepoMock.EXPECT().GetEmployeeByUsername("jdoe").Return(&model.Employee{Password: "Pass123!"}, nil).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.LoginEmployee(ctx)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
@@ -387,7 +389,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		emplRepoMock.EXPECT().GetEmployeeByUsername("jdoe").Return(&model.Employee{Username: "jdoe", Password: "$2a$10$wq8KS0Dy7tGWM5pnCqPhfO.uY1vvVzZb5.CWsqqCyEQv89Uu6QDaK"}, nil).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.LoginEmployee(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -397,6 +399,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 }
 
 func TestEmployeeHandler_ListEmployees(t *testing.T) {
+	log := utils.NewTestLogger()
 
 	t.Run("it returns an error when it fails to retrieve employees", func(t *testing.T) {
 		w := httptest.NewRecorder()
@@ -405,7 +408,7 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		emplRepoMock.EXPECT().GetAll().Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.ListEmployees(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -419,7 +422,7 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		emplRepoMock.EXPECT().GetAll().Return([]model.Employee{}, nil).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.ListEmployees(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -438,7 +441,7 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		emplRepoMock.EXPECT().GetAll().Return(employees, nil).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.ListEmployees(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -448,6 +451,7 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 }
 
 func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
+	log := utils.NewTestLogger()
 
 	t.Run("it returns an error when employee does not exist", func(t *testing.T) {
 		w := httptest.NewRecorder()
@@ -458,7 +462,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		emplRepoMock.EXPECT().GetEmployeeByID("1", gomock.Any()).Return(gorm.ErrRecordNotFound).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.UpdateEmployee(ctx)
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
@@ -481,7 +485,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", strings.NewReader(invalidPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.UpdateEmployee(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -508,7 +512,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().UpdateEmployee(gomock.Any()).Return(gorm.ErrRecordNotFound).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.UpdateEmployee(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -535,7 +539,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().UpdateEmployee(gomock.Any()).Return(nil).Times(1)
 
-		handler := NewEmployeeHandler(utils.NewLogger(), emplRepoMock, nil)
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.UpdateEmployee(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -550,7 +554,7 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 
 	mockEmplRepo := repositories.NewMockEmployeeRepository(ctrl)
 	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
-	log := utils.NewLogger() // Use a mocked or real logger depending on the situation
+	log := utils.NewTestLogger()
 	handler := NewEmployeeHandler(log, mockEmplRepo, mockShiftRepo)
 
 	gin.SetMode(gin.TestMode)
@@ -690,7 +694,7 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 
 	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
 	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
-	log := utils.NewLogger()
+	log := utils.NewTestLogger()
 	handler := NewEmployeeHandler(log, mockRepo, mockShiftRepo)
 
 	gin.SetMode(gin.TestMode)
@@ -736,7 +740,7 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 
 	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
 	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
-	log := utils.NewLogger()
+	log := utils.NewTestLogger()
 	handler := NewEmployeeHandler(log, mockRepo, mockShiftRepo)
 
 	gin.SetMode(gin.TestMode)

@@ -2,8 +2,12 @@ package utils
 
 import (
 	"fmt"
-	"go.uber.org/zap"
+	"io"
 	"os"
+	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Logger interface {
@@ -74,27 +78,54 @@ func (z *zapLogger) WithName(name string) Logger {
 	return &zapLogger{logger: namedLogger}
 }
 
-func NewLogger() Logger {
-	var zapConfig zap.Config
+func NewLogger(svcName string) (Logger, error) {
+	logFile := fmt.Sprintf("/var/log/%s.%s.log", svcName, time.Now().Format("2006-01-02"))
+
+	// Open the file in append mode, create it if it doesn't exist
+	file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	return newLoggerFromFile(file), nil
+}
+
+func NewNamedLogger(baseLogger Logger, name string) Logger {
+	return baseLogger.WithName(name)
+}
+
+func NewTestLogger() Logger {
+	// Use stdout for testing
+	return newLoggerFromFile(os.Stdout)
+}
+
+func newLoggerFromFile(file io.Writer) Logger {
+	writeSyncer := zapcore.AddSync(file)
+
+	var encoderConfig zapcore.EncoderConfig
 
 	switch os.Getenv("LOG_LEVEL") {
 	case "DEBUG":
-		zapConfig = zap.NewDevelopmentConfig()
+		encoderConfig = zap.NewDevelopmentEncoderConfig()
 	case "PROD":
-		zapConfig = zap.NewProductionConfig()
+		encoderConfig = zap.NewProductionEncoderConfig()
 	default:
-		zapConfig = zap.NewDevelopmentConfig()
+		encoderConfig = zap.NewDevelopmentEncoderConfig()
 	}
 
-	logger, err := zapConfig.Build()
-	if err != nil {
-		panic(err)
-	}
+	logLevel := zapcore.DebugLevel
 
-	return &zapLogger{logger}
-}
+	encoderConfig.TimeKey = "timestamp"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
-func NewNamedLogger(name string) Logger {
-	baseLogger := NewLogger()
-	return baseLogger.WithName(name)
+	// Create the core logger
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderConfig), // Use JSON format
+		writeSyncer,
+		logLevel,
+	)
+
+	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+
+	return &zapLogger{logger: logger}
 }
