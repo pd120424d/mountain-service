@@ -48,8 +48,18 @@ jobs:
           docker load < ~/frontend.tar
           docker load < ~/employee.tar
           rm ~/frontend.tar ~/employee.tar
+
           cd mountain-service
+
+          # Injecting the secret as environment variable
+          echo "SWAGGER_API_URL=${{ secrets.SWAGGER_API_URL }}" > .env
+
           git pull origin main
+
           docker compose -f docker-compose.prod.yml down
           docker compose -f docker-compose.prod.yml up -d
         '
+
+    - name: Validate Swagger UI
+      run: |
+        curl -I http://${{ secrets.AZURE_VM_HOST }}:9082

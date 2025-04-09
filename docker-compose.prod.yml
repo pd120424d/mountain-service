@@ -43,9 +43,9 @@ services:
   swagger-ui:
     image: swaggerapi/swagger-ui
     ports:
-      - "9082:9082"
+      - "9082:8080"
     environment:
-      API_URL: "http://employee-service:8082/swagger.json"
+      API_URL: "${SWAGGER_API_URL}"
     networks:
       - web
 
