@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -95,13 +96,18 @@ func main() {
 		authorized.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
 		authorized.POST("/empoyees/{id}/shifts", employeeHandler.AssignShift)
 		authorized.GET("/employees/{id}/shifts", employeeHandler.GetShifts)
-		authorized.GET("shifts/availability", employeeHandler.GetShiftsAvailability)
+		authorized.GET("/shifts/availability", employeeHandler.GetShiftsAvailability)
 	}
 
 	// CORS setup
 	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
-	origins := handlers.AllowedOrigins([]string{"http://localhost:4200"})
+
+	corsOriginsEnv := os.Getenv("CORS_ALLOWED_ORIGINS") // e.g., "http://localhost:4200 for local development
+	corsOrigins := strings.Split(corsOriginsEnv, ",")
+	origins := handlers.AllowedOrigins(corsOrigins)
+
+	log.Infof("Allowed CORS origins: %s", os.Getenv("CORS_ALLOWED_ORIGINS"))
 
 	// Wrap the router with CORS middleware
 	corsHandler := handlers.CORS(origins, headers, methods)(r)
