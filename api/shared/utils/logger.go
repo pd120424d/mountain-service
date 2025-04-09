@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -26,68 +27,124 @@ type Logger interface {
 }
 
 type zapLogger struct {
-	logger *zap.Logger
+	mutex       sync.Mutex
+	logger      *zap.Logger
+	file        *os.File
+	svcName     string
+	currentDate string
 }
 
+func NewLogger(svcName string) (Logger, error) {
+	z := &zapLogger{svcName: svcName}
+	if err := z.rotate(); err != nil {
+		return nil, err
+	}
+	return z, nil
+}
+
+func (z *zapLogger) rotate() error {
+	z.mutex.Lock()
+	defer z.mutex.Unlock()
+
+	currentDate := time.Now().Format("2006-01-02")
+	if z.currentDate == currentDate {
+		return nil // No rotation needed
+	}
+
+	// Close old file if exists
+	if z.file != nil {
+		_ = z.file.Close()
+	}
+
+	// New log file
+	filename := fmt.Sprintf("/var/log/%s.%s.log", z.svcName, currentDate)
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	logger := newLoggerFromWriter(file)
+
+	if z.logger != nil {
+		_ = z.logger.Sync()
+	}
+
+	z.file = file
+	z.logger = logger
+	z.currentDate = currentDate
+
+	return nil
+}
+
+// Logging methods with rotation check
 func (z *zapLogger) Debug(msg string, fields ...zap.Field) {
+	_ = z.rotate()
 	z.logger.Debug(msg, fields...)
 }
 
 func (z *zapLogger) Info(msg string, fields ...zap.Field) {
+	_ = z.rotate()
 	z.logger.Info(msg, fields...)
 }
 
 func (z *zapLogger) Warn(msg string, fields ...zap.Field) {
+	_ = z.rotate()
 	z.logger.Warn(msg, fields...)
 }
 
 func (z *zapLogger) Error(msg string, fields ...zap.Field) {
+	_ = z.rotate()
 	z.logger.Error(msg, fields...)
 }
 
 func (z *zapLogger) Fatal(msg string, fields ...zap.Field) {
+	_ = z.rotate()
 	z.logger.Fatal(msg, fields...)
 }
 
 func (z *zapLogger) Debugf(format string, args ...interface{}) {
+	_ = z.rotate()
 	z.logger.Debug(fmt.Sprintf(format, args...))
 }
 
 func (z *zapLogger) Infof(format string, args ...interface{}) {
+	_ = z.rotate()
 	z.logger.Info(fmt.Sprintf(format, args...))
 }
 
 func (z *zapLogger) Warnf(format string, args ...interface{}) {
+	_ = z.rotate()
 	z.logger.Warn(fmt.Sprintf(format, args...))
 }
 
 func (z *zapLogger) Errorf(format string, args ...interface{}) {
+	_ = z.rotate()
 	z.logger.Error(fmt.Sprintf(format, args...))
 }
 
 func (z *zapLogger) Fatalf(format string, args ...interface{}) {
+	_ = z.rotate()
 	z.logger.Fatal(fmt.Sprintf(format, args...))
 }
 
 func (z *zapLogger) Sync() error {
-	return z.logger.Sync()
+	z.mutex.Lock()
+	defer z.mutex.Unlock()
+	if z.logger != nil {
+		return z.logger.Sync()
+	}
+	return nil
 }
 
 func (z *zapLogger) WithName(name string) Logger {
-	namedLogger := z.logger.Named(name)
-	return &zapLogger{logger: namedLogger}
-}
-
-func NewLogger(svcName string) (Logger, error) {
-	logFile := fmt.Sprintf("/var/log/%s.%s.log", svcName, time.Now().Format("2006-01-02"))
-
-	// Open the file in append mode, create it if it doesn't exist
-	file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return nil, err
+	_ = z.rotate()
+	named := z.logger.Named(name)
+	return &zapLogger{
+		logger:      named,
+		file:        z.file,
+		svcName:     z.svcName,
+		currentDate: z.currentDate,
 	}
-
-	return newLoggerFromFile(file), nil
 }
 
 func NewNamedLogger(baseLogger Logger, name string) Logger {
@@ -95,37 +152,32 @@ func NewNamedLogger(baseLogger Logger, name string) Logger {
 }
 
 func NewTestLogger() Logger {
-	// Use stdout for testing
-	return newLoggerFromFile(os.Stdout)
+	return &zapLogger{logger: newLoggerFromWriter(os.Stdout)}
 }
 
-func newLoggerFromFile(file io.Writer) Logger {
-	writeSyncer := zapcore.AddSync(file)
+func newLoggerFromWriter(writer io.Writer) *zap.Logger {
+	writeSyncer := zapcore.AddSync(writer)
 
 	var encoderConfig zapcore.EncoderConfig
-
-	switch os.Getenv("LOG_LEVEL") {
-	case "DEBUG":
-		encoderConfig = zap.NewDevelopmentEncoderConfig()
-	case "PROD":
+	level := os.Getenv("LOG_LEVEL")
+	if level == "DEBUG" {
 		encoderConfig = zap.NewProductionEncoderConfig()
-	default:
-		encoderConfig = zap.NewDevelopmentEncoderConfig()
+		encoderConfig.LevelKey = "level"
+	} else {
+		encoderConfig = zap.NewProductionEncoderConfig()
 	}
-
-	logLevel := zapcore.DebugLevel
-
-	encoderConfig.TimeKey = "timestamp"
+	encoderConfig.LevelKey = "level"
+	encoderConfig.TimeKey = "time"
+	encoderConfig.MessageKey = "message"
+	encoderConfig.CallerKey = "caller"
+	encoderConfig.NameKey = "logger"
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	// Create the core logger
 	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig), // Use JSON format
+		zapcore.NewJSONEncoder(encoderConfig),
 		writeSyncer,
-		logLevel,
+		zapcore.DebugLevel,
 	)
 
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
-
-	return &zapLogger{logger: logger}
+	return zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 }
