@@ -40,7 +40,7 @@ import (
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
 
-// @host localhost:8082
+// @host
 // @BasePath /api/v1
 func main() {
 	dbHost := os.Getenv("DB_HOST")
