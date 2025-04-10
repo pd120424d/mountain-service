@@ -41,10 +41,13 @@ type EmployeeCreateRequest struct {
 
 // EmployeeUpdateRequest DTO for updating an existing employee
 type EmployeeUpdateRequest struct {
-	FirstName string `json:"firstName,omitempty"`
-	LastName  string `json:"lastName,omitempty"`
-	Age       int    `json:"age,omitempty"`
-	Email     string `json:"email,omitempty"`
+	FirstName      string `json:"firstName,omitempty"`
+	LastName       string `json:"lastName,omitempty"`
+	Email          string `json:"email,omitempty"`
+	Gender         string `json:"gender,omitempty"`
+	Phone          string `json:"phone,omitempty"`
+	ProfilePicture string `json:"profilePicture,omitempty"`
+	ProfileType    string `json:"profileType,omitempty"`
 }
 
 // ShiftResponse DTO for returning shift data for a certain employee

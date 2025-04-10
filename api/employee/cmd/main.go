@@ -180,6 +180,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.Employ
 		authorized.GET("/employees", employeeHandler.ListEmployees)
 		authorized.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
 		authorized.POST("/empoyees/{id}/shifts", employeeHandler.AssignShift)
+		authorized.PUT("/employees/{id}", employeeHandler.UpdateEmployee)
 		authorized.GET("/employees/{id}/shifts", employeeHandler.GetShifts)
 		authorized.GET("/shifts/availability", employeeHandler.GetShiftsAvailability)
 	}
