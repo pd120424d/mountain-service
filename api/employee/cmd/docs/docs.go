@@ -479,16 +479,25 @@ const docTemplate = `{
         "model.EmployeeUpdateRequest": {
             "type": "object",
             "properties": {
-                "age": {
-                    "type": "integer"
-                },
                 "email": {
                     "type": "string"
                 },
                 "firstName": {
                     "type": "string"
                 },
+                "gender": {
+                    "type": "string"
+                },
                 "lastName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profilePicture": {
+                    "type": "string"
+                },
+                "profileType": {
                     "type": "string"
                 }
             }
