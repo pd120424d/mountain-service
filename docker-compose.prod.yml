@@ -18,6 +18,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   employee-service:
     image: employee-service:latest
@@ -42,6 +43,7 @@ services:
     secrets:
       - db_user
       - db_password
+    restart: unless-stopped
 
   swagger-ui:
     image: swaggerapi/swagger-ui
@@ -51,6 +53,7 @@ services:
       API_URL: "${SWAGGER_API_URL}"
     networks:
       - web
+    restart: unless-stopped
 
   frontend:
     image: frontend:latest
@@ -64,6 +67,7 @@ services:
       - web
     volumes:
       - /var/log:/var/log
+    restart: unless-stopped
 
 networks:
   web:
