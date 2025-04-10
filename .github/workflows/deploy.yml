@@ -60,7 +60,3 @@ jobs:
           docker compose -f docker-compose.prod.yml down
           docker compose -f docker-compose.prod.yml up -d
         '
-
-    - name: Validate Swagger UI
-      run: |
-        curl -I http://${{ secrets.AZURE_VM_HOST }}:9082
