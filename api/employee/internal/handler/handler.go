@@ -183,6 +183,7 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 // @Summary Преузимање листе запослених
 // @Description Преузимање свих запослених
 // @Tags запослени
+// @Security BearerAuth
 // @Produce  json
 // @Success 200 {array} []model.EmployeeResponse
 // @Router /employees [get]
@@ -221,6 +222,7 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 // @Summary Ажурирање запосленог
 // @Description Ажурирање запосленог по ID-ју
 // @Tags запослени
+// @Security BearerAuth
 // @Param id path int true "ID запосленог"
 // @Param employee body model.EmployeeUpdateRequest true "Подаци за ажурирање запосленог"
 // @Success 200 {object} model.EmployeeResponse
@@ -286,6 +288,7 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 // @Summary Брисање запосленог
 // @Description Брисање запосленог по ID-ју
 // @Tags запослени
+// @Security BearerAuth
 // @Param id path int true "ID запосленог"
 // @Success 204
 // @Failure 404 {object} gin.H
@@ -315,6 +318,7 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 // @Summary Додељује смену запосленом
 // @Description Додељује смену запосленом по ID-ју
 // @Tags запослени
+// @Security BearerAuth
 // @Param id path int true "ID запосленог"
 // @Param shift body model.AssignShiftRequest true "Подаци о смени"
 // @Success 201 {object} model.AssignShiftResponse
@@ -375,6 +379,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 // @Summary Дохватање смена за запосленог
 // @Description Дохватање смена за запосленог по ID-ју
 // @Tags запослени
+// @Security BearerAuth
 // @Param id path int true "ID запосленог"
 // @Success 200 {object} []model.ShiftResponse
 // @Router /employees/{id}/shifts [get]
@@ -416,6 +421,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 // @Summary Дохватање доступности смена
 // @Description Дохватање доступности смена за одређени дан
 // @Tags запослени
+// @Security BearerAuth
 // @Param date query string false "Дан за који се проверава доступност смена"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} gin.H
@@ -451,6 +457,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 // @Summary Уклањање смене за запосленог
 // @Description Уклањање смене за запосленог по ID-ју и подацима о смени
 // @Tags запослени
+// @Security BearerAuth
 // @Param id path int true "ID запосленог"
 // @Param shift body model.RemoveShiftRequest true "Подаци о смени"
 // @Success 204

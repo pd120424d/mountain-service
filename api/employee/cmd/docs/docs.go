@@ -26,6 +26,11 @@ const docTemplate = `{
     "paths": {
         "/employees": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Преузимање свих запослених",
                 "produces": [
                     "application/json"
@@ -90,6 +95,11 @@ const docTemplate = `{
         },
         "/employees/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Ажурирање запосленог по ID-ју",
                 "tags": [
                     "запослени"
@@ -141,6 +151,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Брисање запосленог по ID-ју",
                 "tags": [
                     "запослени"
@@ -170,6 +185,11 @@ const docTemplate = `{
         },
         "/employees/{id}/shifts": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Дохватање смена за запосленог по ID-ју",
                 "tags": [
                     "запослени"
@@ -197,6 +217,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Додељује смену запосленом по ID-ју",
                 "tags": [
                     "запослени"
@@ -236,6 +261,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Уклањање смене за запосленог по ID-ју и подацима о смени",
                 "tags": [
                     "запослени"
@@ -314,6 +344,11 @@ const docTemplate = `{
         },
         "/shifts/availability": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Дохватање доступности смена за одређени дан",
                 "tags": [
                     "запослени"
@@ -527,6 +562,13 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

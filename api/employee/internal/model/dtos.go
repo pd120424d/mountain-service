@@ -7,12 +7,14 @@ import (
 )
 
 // EmployeeLogin DTO for employee login
+// swagger:model
 type EmployeeLogin struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
 // EmployeeResponse DTO for returning employee data
+// swagger:model
 type EmployeeResponse struct {
 	ID        uint   `json:"id"`
 	Username  string `json:"username"`
@@ -27,6 +29,7 @@ type EmployeeResponse struct {
 }
 
 // EmployeeCreateRequest DTO for creating a new employee
+// swagger:model
 type EmployeeCreateRequest struct {
 	FirstName      string `json:"firstName" binding:"required"`
 	LastName       string `json:"lastName" binding:"required"`
@@ -40,6 +43,7 @@ type EmployeeCreateRequest struct {
 }
 
 // EmployeeUpdateRequest DTO for updating an existing employee
+// swagger:model
 type EmployeeUpdateRequest struct {
 	FirstName      string `json:"firstName,omitempty"`
 	LastName       string `json:"lastName,omitempty"`
@@ -51,6 +55,7 @@ type EmployeeUpdateRequest struct {
 }
 
 // ShiftResponse DTO for returning shift data for a certain employee
+// swagger:model
 type ShiftResponse struct {
 	ID        uint      `gorm:"primaryKey"`
 	ShiftDate time.Time `gorm:"not null"`
@@ -58,12 +63,16 @@ type ShiftResponse struct {
 	CreatedAt time.Time
 }
 
+// AssignShiftRequest DTO for assigning a shift to an employee
+// swagger:model
 type AssignShiftRequest struct {
 	ShiftDate   string `json:"shiftDate" binding:"required"`
 	ShiftType   int    `json:"shiftType" binding:"required,min=1,max=3"`
 	ProfileType string `json:"profileType" binding:"required,oneof=Medic Technical"`
 }
 
+// AssignShiftResponse DTO for returning the shift data after assigning it to an employee
+// swagger:model
 type AssignShiftResponse struct {
 	ID          uint   `json:"id"`
 	ShiftDate   string `json:"shiftDate""`
@@ -71,6 +80,8 @@ type AssignShiftResponse struct {
 	ProfileType string `json:"profileType"`
 }
 
+// RemoveShiftRequest DTO for removing a shift from an employee
+// swagger:model
 type RemoveShiftRequest struct {
 	ID uint `json:"id" cinding:"required"`
 }

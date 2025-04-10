@@ -152,6 +152,8 @@ paths:
                 $ref: '#/definitions/model.EmployeeResponse'
               type: array
             type: array
+      security:
+      - BearerAuth: []
       summary: Преузимање листе запослених
       tags:
       - запослени
@@ -196,6 +198,8 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
       summary: Брисање запосленог
       tags:
       - запослени
@@ -230,6 +234,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
       summary: Ажурирање запосленог
       tags:
       - запослени
@@ -255,6 +261,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
       summary: Уклањање смене за запосленог
       tags:
       - запослени
@@ -273,6 +281,8 @@ paths:
             items:
               $ref: '#/definitions/model.ShiftResponse'
             type: array
+      security:
+      - BearerAuth: []
       summary: Дохватање смена за запосленог
       tags:
       - запослени
@@ -299,6 +309,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
       summary: Додељује смену запосленом
       tags:
       - запослени
@@ -345,7 +357,14 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
       summary: Дохватање доступности смена
       tags:
       - запослени
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
