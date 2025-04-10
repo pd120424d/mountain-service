@@ -80,7 +80,7 @@ definitions:
         type: integer
       lastName:
         type: string
-      phoneNumber:
+      phone:
         type: string
       profilePicture:
         description: this may be represented as a byte array if we read the picture

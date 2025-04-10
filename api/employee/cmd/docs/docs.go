@@ -496,7 +496,7 @@ const docTemplate = `{
                 "lastName": {
                     "type": "string"
                 },
-                "phoneNumber": {
+                "phone": {
                     "type": "string"
                 },
                 "profilePicture": {

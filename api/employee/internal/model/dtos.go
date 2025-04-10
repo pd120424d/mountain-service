@@ -21,7 +21,7 @@ type EmployeeResponse struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	Gender    string `json:"gender"`
-	Phone     string `json:"phoneNumber"`
+	Phone     string `json:"phone"`
 	Email     string `json:"email"`
 	// this may be represented as a byte array if we read the picture from somewhere for an example
 	ProfilePicture string `json:"profilePicture"`
