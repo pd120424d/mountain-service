@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, Observable, throwError } from 'rxjs';
 import { Employee } from './employee.model';
-import { LoggingService } from '../logging.service';
+import { LoggingService } from '../services/logging.service';
 import { environment } from '../../environments/environment'; // Import environment variables
 
 
@@ -11,11 +11,9 @@ import { environment } from '../../environments/environment'; // Import environm
   providedIn: 'root'
 })
 export class EmployeeService {
-  // private apiUrl = `${environment.apiUrl}/employees`;
   private baseApiUrl = environment.useMockApi
     ? '/api/v1' // Mock server URL
     : `${environment.apiUrl}`; // Real API
-  // private apiUrl = 'http://localhost:8082/api/v1/employees';
   private employeeApiUrl = this.baseApiUrl + "/employees"
 
   constructor(

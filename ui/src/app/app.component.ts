@@ -1,13 +1,14 @@
 import { Component, HostListener } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule, RouterOutlet } from '@angular/router';
+import { VersionBannerComponent } from './version-banner/version-banner.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterModule, CommonModule, RouterOutlet, TranslateModule],
+  imports: [RouterModule, CommonModule, RouterOutlet, TranslateModule, VersionBannerComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
