@@ -69,6 +69,11 @@ services:
       - /var/log:/var/log
     restart: unless-stopped
 
+  version-service:
+    image: ${VERSION_SERVICE_IMAGE}
+    ports:
+      - "8090:8090"
+
 networks:
   web:
 
