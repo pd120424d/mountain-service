@@ -73,6 +73,9 @@ services:
     image: ${VERSION_SERVICE_IMAGE}
     ports:
       - "8090:8090"
+    networks:
+      - web
+    restart: unless-stopped
 
 networks:
   web:
