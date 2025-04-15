@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -24,6 +25,7 @@ type Logger interface {
 	Fatalf(format string, args ...interface{})
 	Sync() error
 	WithName(name string) Logger
+	RequestLogger() gin.HandlerFunc
 }
 
 type zapLogger struct {
@@ -180,4 +182,22 @@ func newLoggerFromWriter(writer io.Writer) *zap.Logger {
 	)
 
 	return zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+}
+
+func (l *zapLogger) RequestLogger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+
+		// Process request
+		c.Next()
+
+		// After request
+		duration := time.Since(start)
+		status := c.Writer.Status()
+		method := c.Request.Method
+		path := c.Request.URL.Path
+		clientIP := c.ClientIP()
+
+		l.Infof("[%d] %s %s from %s (%s)", status, method, path, clientIP, duration)
+	}
 }

@@ -73,6 +73,8 @@ services:
     image: ${VERSION_SERVICE_IMAGE}
     ports:
       - "8090:8090"
+    volumes:
+      - /var/log:/var/log
     networks:
       - web
     restart: unless-stopped

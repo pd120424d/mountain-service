@@ -11,9 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gorilla/handlers"
-	"gorm.io/gorm"
-
 	_ "github.com/pd120424d/mountain-service/api/employee/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/employee/config"
 	"github.com/pd120424d/mountain-service/api/employee/internal/auth"
@@ -24,8 +21,10 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/handlers"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"gorm.io/gorm"
 )
 
 // @title API Сервис за Запослене
@@ -58,7 +57,7 @@ func main() {
 
 	log, err := utils.NewLogger("employee-service")
 	if err != nil {
-		fmt.Errorf("failed to create logger: %v", err)
+		panic("failed to create logger:" + err.Error())
 	}
 	defer func(log utils.Logger) {
 		err := log.Sync()
@@ -75,7 +74,7 @@ func main() {
 
 	r := gin.Default()
 
-	r.Use(requestLogger(log))
+	r.Use(log.RequestLogger())
 
 	corsHandler := setupCORS(log, r)
 
@@ -183,7 +182,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.Employ
 	{
 		authorized.GET("/employees", employeeHandler.ListEmployees)
 		authorized.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
-		authorized.POST("/empoyees/{id}/shifts", employeeHandler.AssignShift)
+		authorized.POST("/employees/{id}/shifts", employeeHandler.AssignShift)
 		authorized.PUT("/employees/{id}", employeeHandler.UpdateEmployee)
 		authorized.GET("/employees/{id}/shifts", employeeHandler.GetShifts)
 		authorized.GET("/shifts/availability", employeeHandler.GetShiftsAvailability)
@@ -194,7 +193,6 @@ func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.Employ
 		log.Info("Ping route hit")
 		c.JSON(200, gin.H{"message": "pong"})
 	})
-
 }
 
 func readSecret(filePath string) (string, error) {
@@ -203,22 +201,4 @@ func readSecret(filePath string) (string, error) {
 		return "", err
 	}
 	return string(secret), nil
-}
-
-func requestLogger(log utils.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-
-		// Process request
-		c.Next()
-
-		// After request
-		duration := time.Since(start)
-		status := c.Writer.Status()
-		method := c.Request.Method
-		path := c.Request.URL.Path
-		clientIP := c.ClientIP()
-
-		log.Infof("[%d] %s %s from %s (%s)", status, method, path, clientIP, duration)
-	}
 }

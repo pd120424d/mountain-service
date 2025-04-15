@@ -1,9 +1,18 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
+
+	"github.com/pd120424d/mountain-service/api/shared/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 var (
@@ -13,19 +22,55 @@ var (
 )
 
 func main() {
-	http.HandleFunc("api/v1/version", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+	log, err := utils.NewLogger("version-service")
+	if err != nil {
+		panic("failed to create new logger: " + err.Error())
+	}
 
-		uptime := time.Since(startTime).String()
+	log.Info("Starting Version service on :8090...")
 
-		json.NewEncoder(w).Encode(map[string]string{
-			"version": Version,
-			"gitSha":  GitSHA,
-			"uptime":  uptime,
-		})
+	r := gin.Default()
+
+	r.Use(log.RequestLogger())
+
+	r.POST("api/v1/version", versionHandler)
+	r.GET("/healthz", func(c *gin.Context) {
+		c.Status(http.StatusOK)
 	})
 
-	if err := http.ListenAndServe(":8090", nil); err != nil {
-		panic("failed to start version-service: " + err.Error())
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%v", "8090"),
+		Handler: r.Handler(),
 	}
+
+	// Run server in a goroutine
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("failed to start Version service: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shut down the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Info("Shutting down Version service...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Version service forced to shutdown: %v", err)
+	}
+
+	log.Info("Version service exiting")
+
+}
+
+func versionHandler(c *gin.Context) {
+	response := map[string]string{
+		"version": Version,
+		"gitSHA":  GitSHA,
+		"uptime":  time.Since(startTime).String(),
+	}
+	c.JSON(http.StatusOK, response)
 }
