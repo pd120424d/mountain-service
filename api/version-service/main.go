@@ -34,7 +34,8 @@ func main() {
 	r.Use(log.RequestLogger())
 
 	r.GET("/api/v1/version", versionHandler)
-	r.GET("/api/v1/healthz", func(c *gin.Context) {
+	r.GET("/api/v1/health", func(c *gin.Context) {
+		// TODO: check health of all other services
 		c.Status(http.StatusOK)
 	})
 
