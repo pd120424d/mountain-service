@@ -33,8 +33,8 @@ func main() {
 
 	r.Use(log.RequestLogger())
 
-	r.POST("api/v1/version", versionHandler)
-	r.GET("/healthz", func(c *gin.Context) {
+	r.GET("/api/v1/version", versionHandler)
+	r.GET("/api/v1/healthz", func(c *gin.Context) {
 		c.Status(http.StatusOK)
 	})
 
