@@ -309,7 +309,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"id\":0,\"username\":\"jdoe\",\"firstName\":\"John\",\"lastName\":\"Doe\",\"gender\":\"M\",\"phoneNumber\":\"123456789\",\"email\":\"jdoe@example.com\",\"profilePicture\":\"\",\"profileType\":\"Medic\"}")
+		assert.Contains(t, w.Body.String(), "{\"id\":0,\"username\":\"jdoe\",\"firstName\":\"John\",\"lastName\":\"Doe\",\"gender\":\"M\",\"phone\":\"123456789\",\"email\":\"jdoe@example.com\",\"profilePicture\":\"\",\"profileType\":\"Medic\"}")
 	})
 }
 
@@ -445,7 +445,7 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 		handler.ListEmployees(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "[{\"id\":0,\"username\":\"jdoe\",\"firstName\":\"John\",\"lastName\":\"Doe\",\"gender\":\"\",\"phoneNumber\":\"\",\"email\":\"\",\"profilePicture\":\"\",\"profileType\":\"Unknown\"},{\"id\":0,\"username\":\"asmith\",\"firstName\":\"Alice\",\"lastName\":\"Smith\",\"gender\":\"\",\"phoneNumber\":\"\",\"email\":\"\",\"profilePicture\":\"\",\"profileType\":\"Unknown\"}]")
+		assert.Contains(t, w.Body.String(), "[{\"id\":0,\"username\":\"jdoe\",\"firstName\":\"John\",\"lastName\":\"Doe\",\"gender\":\"\",\"phone\":\"\",\"email\":\"\",\"profilePicture\":\"\",\"profileType\":\"Unknown\"},{\"id\":0,\"username\":\"asmith\",\"firstName\":\"Alice\",\"lastName\":\"Smith\",\"gender\":\"\",\"phone\":\"\",\"email\":\"\",\"profilePicture\":\"\",\"profileType\":\"Unknown\"}]")
 	})
 
 }
@@ -543,7 +543,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		handler.UpdateEmployee(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"id\":0,\"username\":\"\",\"firstName\":\"John\",\"lastName\":\"Doe\",\"gender\":\"\",\"phoneNumber\":\"\",\"email\":\"jdoe@example.com\",\"profilePicture\":\"\",\"profileType\":\"Unknown\"}")
+		assert.Contains(t, w.Body.String(), "{\"id\":0,\"username\":\"\",\"firstName\":\"John\",\"lastName\":\"Doe\",\"gender\":\"\",\"phone\":\"\",\"email\":\"jdoe@example.com\",\"profilePicture\":\"\",\"profileType\":\"Unknown\"}")
 	})
 
 }
@@ -684,7 +684,7 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
-		assert.Equal(t, `{"id":0,"username":"jdoe","firstName":"John","lastName":"Doe","gender":"M","phoneNumber":"123456789","email":"jdoe@example.com","profilePicture":"","profileType":"Medic"}`, w.Body.String())
+		assert.Equal(t, `{"id":0,"username":"jdoe","firstName":"John","lastName":"Doe","gender":"M","phone":"123456789","email":"jdoe@example.com","profilePicture":"","profileType":"Medic"}`, w.Body.String())
 	})
 }
 
@@ -725,8 +725,8 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 		handler.ListEmployees(ctx)
 
 		expectedJSON := `[
-			{"id":0,"username":"jdoe","firstName":"John","lastName":"Doe","gender":"","phoneNumber":"","email":"","profilePicture":"","profileType":"Unknown"},
-			{"id":0,"username":"asmith","firstName":"Alice","lastName":"Smith","gender":"","phoneNumber":"","email":"","profilePicture":"","profileType":"Unknown"}
+			{"id":0,"username":"jdoe","firstName":"John","lastName":"Doe","gender":"","phone":"","email":"","profilePicture":"","profileType":"Unknown"},
+			{"id":0,"username":"asmith","firstName":"Alice","lastName":"Smith","gender":"","phone":"","email":"","profilePicture":"","profileType":"Unknown"}
 		]`
 
 		assert.Equal(t, http.StatusOK, w.Code)

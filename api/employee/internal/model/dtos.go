@@ -75,7 +75,7 @@ type AssignShiftRequest struct {
 // swagger:model
 type AssignShiftResponse struct {
 	ID          uint   `json:"id"`
-	ShiftDate   string `json:"shiftDate""`
+	ShiftDate   string `json:"shiftDate"`
 	ShiftType   int    `json:"shiftType"`
 	ProfileType string `json:"profileType"`
 }
@@ -108,4 +108,12 @@ func sanitizePassword(password string) string {
 		return ""
 	}
 	return strings.Repeat("*", len(password)) // Replace each character with an asterisk
+}
+
+func (e *EmployeeUpdateRequest) Validate() error {
+	if e.Email != "" && !strings.Contains(e.Email, "@") {
+		return fmt.Errorf("invalid email format")
+	}
+
+	return nil
 }

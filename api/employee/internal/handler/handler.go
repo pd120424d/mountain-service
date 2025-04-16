@@ -243,22 +243,19 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 
 	var req model.EmployeeUpdateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		h.log.Error("Failed to bind employee update data", zap.Error(err))
+		h.log.Error("Invalid employee update payload", zap.Error(err))
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
-	// TODO: Move to a mapper and do thorough validation
-	// Apply the changes from the update request
-	if req.FirstName != "" {
-		employee.FirstName = req.FirstName
+	// Validate here or in middleware
+	if validationErr := req.Validate(); validationErr != nil {
+		h.log.Error("Validation failed", zap.Error(validationErr))
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		return
 	}
-	if req.LastName != "" {
-		employee.LastName = req.LastName
-	}
-	if req.Email != "" {
-		employee.Email = req.Email
-	}
+
+	model.MapUpdateRequestToEmployee(&req, &employee)
 
 	if err := h.emplRepo.UpdateEmployee(&employee); err != nil {
 		h.log.Error("Failed to update employee", zap.Error(err))
@@ -266,21 +263,7 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 		return
 	}
 
-	h.log.Infof("Successfully updated employee with ID %v", employee.ID)
-
-	// Prepare response
-	resp := model.EmployeeResponse{
-		ID:             employee.ID,
-		Username:       employee.Username,
-		FirstName:      employee.FirstName,
-		LastName:       employee.LastName,
-		Gender:         employee.Gender,
-		Phone:          employee.Phone,
-		Email:          employee.Email,
-		ProfilePicture: employee.ProfilePicture,
-		ProfileType:    employee.ProfileType.String(),
-	}
-
+	resp := employee.UpdateResponseFromEmployee()
 	ctx.JSON(http.StatusOK, resp)
 }
 

@@ -146,16 +146,25 @@ func TestEmployeeRepository_UpdateEmployee(t *testing.T) {
 
 	gormDB, mock := setupMockDB(t)
 	repo := NewEmployeeRepository(log, gormDB)
+	gormDB.Logger = gormDB.Logger.LogMode(logger.Info)
 
 	t.Run("it updates an employee when it exists", func(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectExec(`UPDATE "employees"`).
 			WithArgs(
+				sqlmock.AnyArg(), // created_at
 				sqlmock.AnyArg(), // updated_at
+				nil,              // deleted_at
+				"jdoe",           // username
+				"",               // password
 				"John",
 				"Doe",
+				"", // gender
+				"", // phone
 				"jdoe@example.com",
-				1,
+				"",
+				"", // profile_type
+				1,  // id
 			).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectCommit()
@@ -165,6 +174,7 @@ func TestEmployeeRepository_UpdateEmployee(t *testing.T) {
 			FirstName: "John",
 			LastName:  "Doe",
 			Email:     "jdoe@example.com",
+			Username:  "jdoe",
 		}
 
 		err := repo.UpdateEmployee(employee)

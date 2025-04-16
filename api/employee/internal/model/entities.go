@@ -75,3 +75,17 @@ func ProfileTypeFromString(s string) ProfileType {
 func (e *Employee) Role() string {
 	return string(e.ProfileType)
 }
+
+func (e *Employee) UpdateResponseFromEmployee() EmployeeResponse {
+	return EmployeeResponse{
+		ID:             e.ID,
+		Username:       e.Username,
+		FirstName:      e.FirstName,
+		LastName:       e.LastName,
+		Gender:         e.Gender,
+		Phone:          e.Phone,
+		Email:          e.Email,
+		ProfilePicture: e.ProfilePicture,
+		ProfileType:    e.ProfileType.String(),
+	}
+}
