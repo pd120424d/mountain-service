@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 
 export interface VersionInfo {
     version: string;
-    gitSha: string;
+    gitSHA: string;
     uptime: string;
 }
 
