@@ -87,6 +87,10 @@ type RemoveShiftRequest struct {
 	ID uint `json:"id" cinding:"required"`
 }
 
+func (r *RemoveShiftRequest) String() string {
+	return fmt.Sprintf("RemoveShiftRequest { ID: %d }", r.ID)
+}
+
 func (e *EmployeeCreateRequest) ToString() string {
 	return fmt.Sprintf(
 		"EmployeeCreateRequest { FirstName: %s, LastName: %s, Username: %s, Password: %s,"+

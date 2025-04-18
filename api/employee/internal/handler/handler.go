@@ -24,6 +24,7 @@ type EmployeeHandler interface {
 	AssignShift(ctx *gin.Context)
 	GetShifts(ctx *gin.Context)
 	GetShiftsAvailability(ctx *gin.Context)
+	RemoveShift(ctx *gin.Context)
 }
 
 type employeeHandler struct {
@@ -403,7 +404,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 	}
 	h.log.Infof("Successfully retrieved shifts for employee ID %d", employeeID)
 
-	var response []model.ShiftResponse
+	response := make([]model.ShiftResponse, 0)
 	for _, shift := range shifts {
 		response = append(response, model.ShiftResponse{
 			ID:        shift.ID,

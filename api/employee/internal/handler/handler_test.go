@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -770,6 +771,17 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 
+	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
+		handler.DeleteEmployee(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid employee ID")
+	})
+
 	t.Run("it returns an error when employee Lees not exist", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -794,5 +806,221 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "Employee deleted successfully")
+	})
+}
+
+func TestEmployeeHandler_AssignShift(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
+	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
+	log := utils.NewTestLogger()
+	handler := NewEmployeeHandler(log, mockRepo, mockShiftRepo)
+
+	gin.SetMode(gin.TestMode)
+
+	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "invalid employee ID")
+	})
+}
+
+func TestEmployeeHandler_GetShifts(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
+	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
+	log := utils.NewTestLogger()
+	handler := NewEmployeeHandler(log, mockRepo, mockShiftRepo)
+
+	gin.SetMode(gin.TestMode)
+
+	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
+		handler.GetShifts(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid employee ID")
+	})
+
+	t.Run("it returns and empty list when employee does not exist", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		mockShiftRepo.EXPECT().GetShiftsByEmployeeID(uint(1), gomock.Any()).Return(nil).Times(1)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		handler.GetShifts(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, w.Body.String(), "[]")
+	})
+
+	t.Run("it returns an error when it fails to retrieve shifts", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		mockShiftRepo.EXPECT().GetShiftsByEmployeeID(uint(1), gomock.Any()).Return(gorm.ErrRecordNotFound).Times(1)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		handler.GetShifts(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "internal server error")
+	})
+
+	t.Run("it returns a list of shifts for an existing employee", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		shifts := []model.Shift{
+			{ID: 1, ShiftDate: time.Now(), ShiftType: 1},
+			{ID: 2, ShiftDate: time.Now(), ShiftType: 2},
+		}
+		mockShiftRepo.EXPECT().
+			GetShiftsByEmployeeID(uint(1), gomock.Any()).
+			DoAndReturn(func(_ uint, out *[]model.Shift) error {
+				*out = shifts
+				return nil
+			})
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		handler.GetShifts(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "1")
+		assert.Contains(t, w.Body.String(), "2")
+	})
+}
+
+func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
+	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
+	log := utils.NewTestLogger()
+	handler := NewEmployeeHandler(log, mockRepo, mockShiftRepo)
+
+	gin.SetMode(gin.TestMode)
+
+	t.Run("it returns an error when date is invalid", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/shifts?date=invalid", nil)
+		handler.GetShiftsAvailability(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "invalid date format")
+	})
+
+	t.Run("it returns an error when it fails to retrieve shifts availability", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		mockShiftRepo.EXPECT().GetShiftAvailability(gomock.Any()).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/shifts?date=2023-01-01", nil)
+		handler.GetShiftsAvailability(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "internal server error")
+	})
+
+	t.Run("it returns shifts availability for a given date", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		availability := map[int]map[model.ProfileType]int{
+			1: {model.Medic: 2, model.Technical: 4},
+			2: {model.Medic: 2, model.Technical: 4},
+			3: {model.Medic: 2, model.Technical: 4},
+		}
+		mockShiftRepo.EXPECT().GetShiftAvailability(gomock.Any()).Return(availability, nil).Times(1)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/shifts?date=2023-01-01", nil)
+		handler.GetShiftsAvailability(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "1")
+		assert.Contains(t, w.Body.String(), "2")
+		assert.Contains(t, w.Body.String(), "3")
+	})
+}
+
+func TestEmployeeHandler_RemoveShift(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
+	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
+	log := utils.NewTestLogger()
+	handler := NewEmployeeHandler(log, mockRepo, mockShiftRepo)
+
+	gin.SetMode(gin.TestMode)
+
+	t.Run("it returns an error when request payload is invalid", func(t *testing.T) {
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		invalidPayload := `{
+			"
+		}`
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.RemoveShift(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "{\"error\":\"invalid character '\\\\n' in string literal\"}")
+	})
+
+	t.Run("it returns an error when it fails to remove shift", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{"id":1}`
+
+		mockShiftRepo.EXPECT().RemoveEmployeeFromShift(uint(1)).Return(gorm.ErrRecordNotFound).Times(1)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.RemoveShift(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "internal server error")
+	})
+
+	t.Run("it successfully removes shift for an existing employee", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{"id":1}`
+
+		mockShiftRepo.EXPECT().RemoveEmployeeFromShift(uint(1)).Return(nil).Times(1)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.RemoveShift(ctx)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
 	})
 }
