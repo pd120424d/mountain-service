@@ -8,11 +8,6 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
-type AuthClaims struct {
-	ID   uint   `json:"id"`
-	Role string `json:"role"`
-}
-
 func AuthMiddleware(log utils.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
@@ -39,6 +34,5 @@ func AuthMiddleware(log utils.Logger) gin.HandlerFunc {
 		log.Info("JWT validation successful")
 
 		ctx.Next()
-
 	}
 }

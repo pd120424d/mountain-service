@@ -34,7 +34,7 @@ func GenerateJWT(employeeID uint, role string) (string, error) {
 
 // ValidateJWT verifies the token and returns claims
 func ValidateJWT(tokenString string) (*EmployeeClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &EmployeeClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &EmployeeClaims{}, func(token *jwt.Token) (any, error) {
 		jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 		return jwtSecret, nil
 	})
