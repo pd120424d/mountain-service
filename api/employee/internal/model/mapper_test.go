@@ -9,9 +9,9 @@ import (
 func TestMapUpdateRequestToEmployee(t *testing.T) {
 	t.Run("it updates allowed fields from the request into the employee struct", func(t *testing.T) {
 		req := &EmployeeUpdateRequest{
-			FirstName:      "John",
-			LastName:       "Doe",
-			Email:          "jdoe@example.com",
+			FirstName:      "Bruce",
+			LastName:       "Lee",
+			Email:          "test-user@example.com",
 			Gender:         "M",
 			Phone:          "123456789",
 			ProfilePicture: "https://example.com/profile.jpg",
@@ -29,9 +29,9 @@ func TestMapUpdateRequestToEmployee(t *testing.T) {
 
 		MapUpdateRequestToEmployee(req, existing)
 
-		assert.Equal(t, "John", existing.FirstName)
-		assert.Equal(t, "Doe", existing.LastName)
-		assert.Equal(t, "jdoe@example.com", existing.Email)
+		assert.Equal(t, "Bruce", existing.FirstName)
+		assert.Equal(t, "Lee", existing.LastName)
+		assert.Equal(t, "test-user@example.com", existing.Email)
 		assert.Equal(t, "M", existing.Gender)
 		assert.Equal(t, "123456789", existing.Phone)
 		assert.Equal(t, "https://example.com/profile.jpg", existing.ProfilePicture)

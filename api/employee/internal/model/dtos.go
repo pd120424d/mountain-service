@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"net/mail"
 	"strings"
 	"time"
 )
@@ -102,18 +103,18 @@ func (e *EmployeeCreateRequest) ToString() string {
 	)
 }
 
+func (e *EmployeeUpdateRequest) Validate() error {
+	if e.Email == "" {
+		return nil
+	}
+	_, err := mail.ParseAddress(e.Email)
+	return err
+}
+
 // Function to sanitize the password by masking it with asterisks
 func sanitizePassword(password string) string {
 	if password == "" {
 		return ""
 	}
 	return strings.Repeat("*", len(password)) // Replace each character with an asterisk
-}
-
-func (e *EmployeeUpdateRequest) Validate() error {
-	if e.Email != "" && !strings.Contains(e.Email, "@") {
-		return fmt.Errorf("invalid email format")
-	}
-
-	return nil
 }

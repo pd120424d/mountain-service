@@ -39,19 +39,64 @@ func (m *MockShiftRepository) EXPECT() *MockShiftRepositoryMockRecorder {
 	return m.recorder
 }
 
-// AssignEmployee mocks base method.
-func (m *MockShiftRepository) AssignEmployee(shiftDate time.Time, shiftType int, employeeID uint, employeeRole string) (uint, error) {
+// AssignedToShift mocks base method.
+func (m *MockShiftRepository) AssignedToShift(employeeID, shiftID uint) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AssignEmployee", shiftDate, shiftType, employeeID, employeeRole)
+	ret := m.ctrl.Call(m, "AssignedToShift", employeeID, shiftID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AssignedToShift indicates an expected call of AssignedToShift.
+func (mr *MockShiftRepositoryMockRecorder) AssignedToShift(employeeID, shiftID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignedToShift", reflect.TypeOf((*MockShiftRepository)(nil).AssignedToShift), employeeID, shiftID)
+}
+
+// CountAssignmentsByProfile mocks base method.
+func (m *MockShiftRepository) CountAssignmentsByProfile(shiftID uint, profileType string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAssignmentsByProfile", shiftID, profileType)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountAssignmentsByProfile indicates an expected call of CountAssignmentsByProfile.
+func (mr *MockShiftRepositoryMockRecorder) CountAssignmentsByProfile(shiftID, profileType interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAssignmentsByProfile", reflect.TypeOf((*MockShiftRepository)(nil).CountAssignmentsByProfile), shiftID, profileType)
+}
+
+// CreateAssignment mocks base method.
+func (m *MockShiftRepository) CreateAssignment(employeeID, shiftID uint, profileType string) (uint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateAssignment", employeeID, shiftID, profileType)
 	ret0, _ := ret[0].(uint)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AssignEmployee indicates an expected call of AssignEmployee.
-func (mr *MockShiftRepositoryMockRecorder) AssignEmployee(shiftDate, shiftType, employeeID, employeeRole interface{}) *gomock.Call {
+// CreateAssignment indicates an expected call of CreateAssignment.
+func (mr *MockShiftRepositoryMockRecorder) CreateAssignment(employeeID, shiftID, profileType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignEmployee", reflect.TypeOf((*MockShiftRepository)(nil).AssignEmployee), shiftDate, shiftType, employeeID, employeeRole)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAssignment", reflect.TypeOf((*MockShiftRepository)(nil).CreateAssignment), employeeID, shiftID, profileType)
+}
+
+// GetOrCreateShift mocks base method.
+func (m *MockShiftRepository) GetOrCreateShift(shiftDate time.Time, shiftType int) (*model.Shift, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrCreateShift", shiftDate, shiftType)
+	ret0, _ := ret[0].(*model.Shift)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrCreateShift indicates an expected call of GetOrCreateShift.
+func (mr *MockShiftRepositoryMockRecorder) GetOrCreateShift(shiftDate, shiftType interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateShift", reflect.TypeOf((*MockShiftRepository)(nil).GetOrCreateShift), shiftDate, shiftType)
 }
 
 // GetShiftAvailability mocks base method.

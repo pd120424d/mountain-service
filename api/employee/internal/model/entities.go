@@ -55,7 +55,7 @@ func (p ProfileType) String() string {
 	}
 }
 
-func (p ProfileType) IsValid() bool {
+func (p ProfileType) Valid() bool {
 	return p == Medic || p == Technical || p == Administrator
 }
 

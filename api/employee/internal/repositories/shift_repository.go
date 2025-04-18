@@ -3,6 +3,7 @@ package repositories
 //go:generate mockgen -source=shift_repository.go -destination=shift_repository_gomock.go -package=repositories mountain_service/employee/internal/repositories -imports=gomock=go.uber.org/mock/gomock
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,7 +14,10 @@ import (
 )
 
 type ShiftRepository interface {
-	AssignEmployee(shiftDate time.Time, shiftType int, employeeID uint, employeeRole string) (uint, error)
+	GetOrCreateShift(shiftDate time.Time, shiftType int) (*model.Shift, error)
+	AssignedToShift(employeeID, shiftID uint) (bool, error)
+	CountAssignmentsByProfile(shiftID uint, profileType string) (int64, error)
+	CreateAssignment(employeeID, shiftID uint, profileType string) (uint, error)
 	GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error
 	GetShiftAvailability(date time.Time) (map[int]map[model.ProfileType]int, error)
 	RemoveEmployeeFromShift(assignmentID uint) error
@@ -28,48 +32,50 @@ func NewShiftRepository(log utils.Logger, db *gorm.DB) ShiftRepository {
 	return &shiftRepository{log: log.WithName("shiftRepository"), db: db}
 }
 
-func (r *shiftRepository) AssignEmployee(shiftDate time.Time, shiftType int, employeeID uint, profileType string) (uint, error) {
-	// Step 1: Ensure the shift exists or create it
+func (r *shiftRepository) GetOrCreateShift(shiftDate time.Time, shiftType int) (*model.Shift, error) {
 	var shift model.Shift
-	err := r.db.Where("shift_date = ? AND shift_type = ?", shiftDate.Format("2006-01-02"), shiftType).
-		FirstOrCreate(&shift, model.Shift{
-			ShiftDate: shiftDate,
-			ShiftType: shiftType,
-		}).Error
+	err := r.db.FirstOrCreate(&shift, model.Shift{
+		ShiftDate: shiftDate,
+		ShiftType: shiftType,
+	}).Error
 	if err != nil {
-		return 0, fmt.Errorf("failed to find or create shift: %w", err)
+		return nil, fmt.Errorf("failed to find or create shift: %w", err)
 	}
+	return &shift, nil
+}
 
-	// Step 2: Check if the employee is already assigned to this shift
-	var existingAssignment model.EmployeeShift
-	if err := r.db.Where("employee_id = ? AND shift_id = ?", employeeID, shift.ID).First(&existingAssignment).Error; err == nil {
-		return 0, model.ErrAlreadyAssigned
+func (r *shiftRepository) AssignedToShift(employeeID, shiftID uint) (bool, error) {
+	var existing model.EmployeeShift
+	err := r.db.Where("employee_id = ? AND shift_id = ?", employeeID, shiftID).First(&existing).Error
+	if err == nil {
+		return true, nil
 	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	return false, fmt.Errorf("failed to check assignment: %w", err)
+}
 
-	// Step 3: Count current assignments for the given role in this shift
+func (r *shiftRepository) CountAssignmentsByProfile(shiftID uint, profileType string) (int64, error) {
 	var count int64
-	err = r.db.Model(&model.EmployeeShift{}).
-		Where("shift_id = ? AND profile_type = ?", shift.ID, profileType).
+	err := r.db.Model(&model.EmployeeShift{}).
+		Where("shift_id = ? AND profile_type = ?", shiftID, profileType).
 		Count(&count).Error
 	if err != nil {
 		return 0, fmt.Errorf("failed to count assignments: %w", err)
 	}
+	return count, nil
+}
 
-	// Step 4: Enforce role-based limits
-	if (profileType == "Medic" && count >= 2) || (profileType == "Technical" && count >= 4) {
-		return 0, model.ErrCapacityReached
-	}
-
-	// Step 5: Assign the employee to the shift
+func (r *shiftRepository) CreateAssignment(employeeID, shiftID uint, profileType string) (uint, error) {
 	assignment := model.EmployeeShift{
 		EmployeeID:  employeeID,
-		ShiftID:     shift.ID,
+		ShiftID:     shiftID,
 		ProfileType: profileType,
 	}
 	if err := r.db.Create(&assignment).Error; err != nil {
-		return 0, fmt.Errorf("failed to assign employee to shift: %w", err)
+		return 0, fmt.Errorf("failed to create assignment: %w", err)
 	}
-
 	return assignment.ID, nil
 }
 

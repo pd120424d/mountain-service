@@ -87,23 +87,3 @@ func (r *employeeRepository) Delete(id uint) error {
 
 	return nil
 }
-
-// TODO:  Soft delete
-// Delete marks the employee record as deleted by setting the deleted_at timestamp.
-//func (r *employeeRepository) Delete(employeeID uint) error {
-//	// First, check if the employee is already soft-deleted
-//	var employee model.Employee
-//	err := r.db.Select("deleted_at").First(&employee, employeeID).Error
-//	if err != nil {
-//		// Return error if the employee is not found or any other issue occurs
-//		return err
-//	}
-//
-//	if employee.DeletedAt.Valid {
-//		// Return an error if the employee is already soft-deleted
-//		return gorm.ErrRecordNotFound
-//	}
-//
-//	// If not already soft-deleted, mark the employee as deleted
-//	return r.db.Model(&model.Employee{}).Where("id = ?", employeeID).Update("deleted_at", time.Now()).Error
-//}

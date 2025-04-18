@@ -5,7 +5,7 @@
 
 ### Create an employee
 ```
-curl -X POST http://localhost:8082/employees -H "Content-Type: application/json" -d "{\"username\": \"jdoe\", \"password\": \"securepassword\", \"first_name\": \"John\", \"last_name\": \"Doe\", \"gender\": \"M\", \"phone\": \"123-456-7890\", \"email\": \"jdoe@example.com\", \"profile_picture\": \"/path/to/picture.jpg\", \"profile_type\": \"Medic\"}"
+curl -X POST http://localhost:8082/employees -H "Content-Type: application/json" -d "{\"username\": \"test-user\", \"password\": \"securepassword\", \"first_name\": \"Bruce\", \"last_name\": \"Lee\", \"gender\": \"M\", \"phone\": \"123-456-7890\", \"email\": \"test-user@example.com\", \"profile_picture\": \"/path/to/picture.jpg\", \"profile_type\": \"Medic\"}"
 ```
 
 ## Delete an employee (soft-delete)

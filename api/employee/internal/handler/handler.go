@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -58,7 +57,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	h.log.Infof("Creating new employee with data: %s", req.ToString())
 
 	profileType := model.ProfileTypeFromString(req.ProfileType)
-	if !profileType.IsValid() {
+	if !profileType.Valid() {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile type"})
 		return
 	}
@@ -317,45 +316,63 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 		return
 	}
 
-	// Parse and validate request body
 	var req model.AssignShiftRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Parse and validate profile type
 	profileType := model.ProfileTypeFromString(req.ProfileType)
-	if !profileType.IsValid() {
+	if !profileType.Valid() {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid profile type"})
 		return
 	}
 
-	// Parse the shift date
 	shiftDate, err := time.Parse(time.DateOnly, req.ShiftDate)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid shiftDate format, expected YYYY-MM-DD"})
 		return
 	}
 
-	// Call the repository method
-	assignmentId, err := h.shiftsRepo.AssignEmployee(shiftDate, req.ShiftType, uint(employeeID), req.ProfileType)
-	if errors.Is(err, model.ErrCapacityReached) {
-		ctx.JSON(http.StatusConflict, gin.H{"error": "maximum capacity for this role reached in the selected shift"})
-	} else if errors.Is(err, model.ErrAlreadyAssigned) {
-		ctx.JSON(http.StatusConflict, gin.H{"error": "employee is already assigned to this shift"})
-	} else if err != nil {
+	// Step 1: Get or create shift
+	shift, err := h.shiftsRepo.GetOrCreateShift(shiftDate, req.ShiftType)
+	if err != nil {
+		h.log.Errorf("failed to get/create shift: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "could not get or create shift"})
+		return
+	}
+
+	// Step 2: Check existing assignment
+	assigned, err := h.shiftsRepo.AssignedToShift(uint(employeeID), shift.ID)
+	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+	if assigned {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "employee is already assigned to this shift"})
+		return
 	}
 
-	// Return success response
+	// Step 3: Check capacity
+	count, err := h.shiftsRepo.CountAssignmentsByProfile(shift.ID, req.ProfileType)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+	if (profileType.String() == "Medic" && count >= 2) || (profileType.String() == "Technical" && count >= 4) {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "maximum capacity for this role reached in the selected shift"})
+		return
+	}
+
+	// Step 4: Assign
+	assignmentID, err := h.shiftsRepo.CreateAssignment(uint(employeeID), shift.ID, req.ProfileType)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to assign employee"})
+		return
+	}
+
 	h.log.Infof("Successfully assigned shift for employee ID %d", employeeID)
-
-	response := model.AssignShiftResponse{
-		ID: assignmentId,
-	}
-
-	ctx.JSON(http.StatusCreated, response)
+	ctx.JSON(http.StatusCreated, model.AssignShiftResponse{ID: assignmentID})
 }
 
 // GetShifts Дохватање смена за запосленог
