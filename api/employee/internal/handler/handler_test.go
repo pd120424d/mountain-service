@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -829,6 +830,252 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "invalid employee ID")
+	})
+
+	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		invalidPayload := `{
+			"shiftID": 1
+		}`
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "{\"error\":\"Key: 'AssignShiftRequest.ShiftDate' Error:Field validation for 'ShiftDate' failed on the 'required' tag\\nKey: 'AssignShiftRequest.ShiftType' Error:Field validation for 'ShiftType' failed on the 'required' tag\\nKey: 'AssignShiftRequest.ProfileType' Error:Field validation for 'ProfileType' failed on the 'required' tag\"}")
+	})
+
+	t.Run("it returns an error when date is in invalid format", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		invalidPayload := `{
+			"shiftDate": "invalid",
+			"shiftType": 1,
+			"profileType": "Medic"
+		}`
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "{\"error\":\"invalid shiftDate format, expected YYYY-MM-DD\"}")
+	})
+
+	t.Run("it returns an error fetching or creating shift fails", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		invalidPayload := `{
+			"shiftDate": "2023-01-01",
+			"shiftType": 1,
+			"profileType": "Medic"
+		}`
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, emplRepoMock, shiftRepoMock)
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "{\"error\":\"could not get or create shift\"}")
+	})
+
+	t.Run("it returns an error when it fails to check assigned shift", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		invalidPayload := `{
+			"shiftDate": "2023-01-01",
+			"shiftType": 1,
+			"profileType": "Medic"
+		}`
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, gorm.ErrRecordNotFound).Times(1)
+
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, emplRepoMock, shiftRepoMock)
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "{\"error\":\"internal server error\"}")
+	})
+
+	t.Run("it returns an error when employee is already assigned to the requested shift", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		invalidPayload := `{
+			"shiftDate": "2023-01-01",
+			"shiftType": 1,
+			"profileType": "Medic"
+		}`
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, emplRepoMock, shiftRepoMock)
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusConflict, w.Code)
+		assert.Contains(t, w.Body.String(), "{\"error\":\"employee is already assigned to this shift\"}")
+	})
+
+	t.Run("it returns an error when call to count assignments by profile fails", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		invalidPayload := `{
+			"shiftDate": "2023-01-01",
+			"shiftType": 1,
+			"profileType": "Medic"
+		}`
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), gomock.Any()).Return(int64(0), gorm.ErrRecordNotFound).Times(1)
+
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, emplRepoMock, shiftRepoMock)
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "{\"error\":\"internal server error\"}")
+	})
+
+	t.Run("it returns an error when maximum capacity for the requested role is reached", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		invalidPayload := `{
+			"shiftDate": "2023-01-01",
+			"shiftType": 1,
+			"profileType": "Medic"
+		}`
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), gomock.Any()).Return(int64(2), nil).Times(1)
+
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, emplRepoMock, shiftRepoMock)
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusConflict, w.Code)
+		assert.Contains(t, w.Body.String(), "{\"error\":\"maximum capacity for this role reached in the selected shift\"}")
+	})
+
+	t.Run("it returns an error when it fails to assign shift", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		invalidPayload := `{
+			"shiftDate": "2023-01-01",
+			"shiftType": 1,
+			"profileType": "Medic"
+		}`
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
+		shiftRepoMock.EXPECT().CreateAssignment(gomock.Any(), gomock.Any(), gomock.Any()).Return(uint(0), gorm.ErrRecordNotFound).Times(1)
+
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, emplRepoMock, shiftRepoMock)
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "{\"error\":\"failed to assign employee\"}")
+	})
+
+	t.Run("it successfully assigns shift for an existing employee", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		invalidPayload := `{
+			"shiftDate": "2025-01-01",
+			"shiftType": 1,
+			"profileType": "Medic"
+		}`
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 456, ShiftDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC), ShiftType: 1}, nil).Times(1)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
+		shiftRepoMock.EXPECT().CreateAssignment(gomock.Any(), gomock.Any(), gomock.Any()).Return(uint(456), nil).Times(1)
+
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, emplRepoMock, shiftRepoMock)
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+		resp := model.AssignShiftResponse{}
+		err := json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.NoError(t, err)
+		assert.Equal(t, uint(456), resp.ID)
+		assert.Equal(t, "Medic", resp.ProfileType)
+		assert.Equal(t, "2025-01-01", resp.ShiftDate)
+		assert.Equal(t, 1, resp.ShiftType)
 	})
 }
 

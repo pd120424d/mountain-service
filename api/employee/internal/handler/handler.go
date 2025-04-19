@@ -324,10 +324,6 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	}
 
 	profileType := model.ProfileTypeFromString(req.ProfileType)
-	if !profileType.Valid() {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid profile type"})
-		return
-	}
 
 	shiftDate, err := time.Parse(time.DateOnly, req.ShiftDate)
 	if err != nil {
@@ -373,7 +369,13 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	}
 
 	h.log.Infof("Successfully assigned shift for employee ID %d", employeeID)
-	ctx.JSON(http.StatusCreated, model.AssignShiftResponse{ID: assignmentID})
+	resp := model.AssignShiftResponse{
+		ID:          assignmentID,
+		ShiftDate:   shift.ShiftDate.Format(time.DateOnly),
+		ShiftType:   shift.ShiftType,
+		ProfileType: profileType.String(),
+	}
+	ctx.JSON(http.StatusCreated, resp)
 }
 
 // GetShifts Дохватање смена за запосленог

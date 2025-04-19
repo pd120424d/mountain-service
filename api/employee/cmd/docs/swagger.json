@@ -1,14 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Ово је пример API сервиса за запослене.",
         "title": "API Сервис за Запослене",
-        "termsOfService": "http://example.com/terms/",
-        "contact": {
-            "name": "Подршка за API",
-            "url": "http://www.example.com/support",
-            "email": "support@example.com"
-        },
+        "contact": {},
         "license": {
             "name": "MIT",
             "url": "https://opensource.org/licenses/MIT"

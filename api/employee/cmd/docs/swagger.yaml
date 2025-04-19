@@ -126,15 +126,10 @@ definitions:
         type: integer
     type: object
 info:
-  contact:
-    email: support@example.com
-    name: Подршка за API
-    url: http://www.example.com/support
-  description: Ово је пример API сервиса за запослене.
+  contact: {}
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  termsOfService: http://example.com/terms/
   title: API Сервис за Запослене
   version: "1.0"
 paths:
