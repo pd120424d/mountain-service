@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS employee (
     phone VARCHAR(15),
     email VARCHAR(100) UNIQUE NOT NULL,
     profile_picture VARCHAR(255),
-    profile_type VARCHAR(50) CHECK (profile_type IN ('Medic', 'Technical Staff')),
+    profile_type VARCHAR(50) CHECK (profile_type IN ('Medic', 'Technical Staff', 'Administrator')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );

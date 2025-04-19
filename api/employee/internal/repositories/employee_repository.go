@@ -3,6 +3,10 @@ package repositories
 //go:generate mockgen -source=employee_repository.go -destination=employee_repository_gomock.go -package=repositories mountain_service/employee/internal/repositories -imports=gomock=go.uber.org/mock/gomock -typed
 
 import (
+	"fmt"
+	"maps"
+	"slices"
+
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
@@ -57,13 +61,37 @@ func (r *employeeRepository) GetEmployeeByUsername(username string) (*model.Empl
 	return &employee, err
 }
 
-func (r *employeeRepository) ListEmployees(filters map[string]interface{}) ([]model.Employee, error) {
+func (r *employeeRepository) ListEmployees(filters map[string]any) ([]model.Employee, error) {
+	allowedColumns := r.allowedColumns()
 	var employees []model.Employee
 	query := r.db.Model(&model.Employee{})
-	for key, value := range filters {
-		query = query.Where(key+" LIKE ?", "%"+value.(string)+"%")
+
+	// Extract and sort filter keys
+	filterKeys := slices.Collect(maps.Keys(filters))
+	slices.Sort(filterKeys)
+
+	// Apply filters safely
+	for _, key := range filterKeys {
+		// Validate key
+		if _, ok := allowedColumns[key]; !ok {
+			return nil, fmt.Errorf("invalid filter key: %s", key)
+		}
+
+		// Extract value
+		value := filters[key]
+
+		switch v := value.(type) {
+		case string:
+			// Use LIKE for string fields
+			query = query.Where(fmt.Sprintf("%s LIKE ?", key), fmt.Sprintf("%%%s%%", v))
+		case int, int32, int64, float32, float64, bool:
+			// Use exact match for non-string types
+			query = query.Where(fmt.Sprintf("%s = ?", key), v)
+		default:
+			return nil, fmt.Errorf("unsupported type for filter key: %s", key)
+		}
 	}
-	r.log.Infof("query: %v", query)
+
 	err := query.Find(&employees).Error
 	return employees, err
 }
@@ -86,4 +114,17 @@ func (r *employeeRepository) Delete(id uint) error {
 	}
 
 	return nil
+}
+
+func (r *employeeRepository) allowedColumns() map[string]bool {
+	return map[string]bool{
+		"id":           true,
+		"username":     true,
+		"first_name":   true,
+		"last_name":    true,
+		"gender":       true,
+		"phone":        true,
+		"email":        true,
+		"profile_type": true,
+	}
 }
