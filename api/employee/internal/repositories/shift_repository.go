@@ -16,8 +16,8 @@ import (
 type ShiftRepository interface {
 	GetOrCreateShift(shiftDate time.Time, shiftType int) (*model.Shift, error)
 	AssignedToShift(employeeID, shiftID uint) (bool, error)
-	CountAssignmentsByProfile(shiftID uint, profileType string) (int64, error)
-	CreateAssignment(employeeID, shiftID uint, profileType string) (uint, error)
+	CountAssignmentsByProfile(shiftID uint, profileType model.ProfileType) (int64, error)
+	CreateAssignment(employeeID, shiftID uint) (uint, error)
 	GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error
 	GetShiftAvailability(date time.Time) (map[int]map[model.ProfileType]int, error)
 	RemoveEmployeeFromShift(assignmentID uint) error
@@ -56,10 +56,11 @@ func (r *shiftRepository) AssignedToShift(employeeID, shiftID uint) (bool, error
 	return false, fmt.Errorf("failed to check assignment: %w", err)
 }
 
-func (r *shiftRepository) CountAssignmentsByProfile(shiftID uint, profileType string) (int64, error) {
+func (r *shiftRepository) CountAssignmentsByProfile(shiftID uint, profileType model.ProfileType) (int64, error) {
 	var count int64
-	err := r.db.Model(&model.EmployeeShift{}).
-		Where("shift_id = ? AND profile_type = ?", shiftID, profileType).
+	err := r.db.Table("employee_shifts").
+		Joins("JOIN employees ON employee_shifts.employee_id = employees.id").
+		Where("employee_shifts.shift_id = ? AND employees.profile_type = ?", shiftID, profileType).
 		Count(&count).Error
 	if err != nil {
 		return 0, fmt.Errorf("failed to count assignments: %w", err)
@@ -67,11 +68,10 @@ func (r *shiftRepository) CountAssignmentsByProfile(shiftID uint, profileType st
 	return count, nil
 }
 
-func (r *shiftRepository) CreateAssignment(employeeID, shiftID uint, profileType string) (uint, error) {
+func (r *shiftRepository) CreateAssignment(employeeID, shiftID uint) (uint, error) {
 	assignment := model.EmployeeShift{
-		EmployeeID:  employeeID,
-		ShiftID:     shiftID,
-		ProfileType: profileType,
+		EmployeeID: employeeID,
+		ShiftID:    shiftID,
 	}
 	if err := r.db.Create(&assignment).Error; err != nil {
 		return 0, fmt.Errorf("failed to create assignment: %w", err)
@@ -81,7 +81,7 @@ func (r *shiftRepository) CreateAssignment(employeeID, shiftID uint, profileType
 
 func (r *shiftRepository) GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error {
 	return r.db.Table("employee_shifts").
-		Select("employee_shifts.id, shifts.shift_date, shifts.shift_type, employee_shifts.profile_type").
+		Select("employee_shifts.id, shifts.shift_date, shifts.shift_type").
 		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
 		Where("employee_shifts.employee_id = ?", employeeID).
 		Order("shifts.shift_date ASC, shifts.shift_type ASC").
@@ -89,33 +89,39 @@ func (r *shiftRepository) GetShiftsByEmployeeID(employeeID uint, result *[]model
 }
 
 func (r *shiftRepository) GetShiftAvailability(date time.Time) (map[int]map[model.ProfileType]int, error) {
-	// Initialize availability map
+	// Initial availability per shift
 	availability := map[int]map[model.ProfileType]int{
 		1: {model.Medic: 2, model.Technical: 4},
 		2: {model.Medic: 2, model.Technical: 4},
 		3: {model.Medic: 2, model.Technical: 4},
 	}
 
-	// Query current counts
+	// Query assigned employees grouped by shift and role
 	var counts []struct {
 		ShiftType    int
 		EmployeeRole string
 		Count        int
 	}
-	err := r.db.Model(&model.Shift{}).
-		Select("shift_type, profile_type, COUNT(*) AS count").
-		Where("shift_date = ?", date.Format(time.DateOnly)).
-		Group("shift_type, profile_type").
+
+	start := date.Truncate(24 * time.Hour)
+	end := start.Add(24 * time.Hour)
+
+	err := r.db.Table("shifts").
+		Joins("JOIN employee_shifts ON shifts.id = employee_shifts.shift_id").
+		Joins("JOIN employees ON employee_shifts.employee_id = employees.id").
+		Select("shifts.shift_type, employees.profile_type AS employee_role, COUNT(*) AS count").
+		Where("shift_date >= ? AND shift_date < ?", start, end).
+		Group("shifts.shift_type, employees.profile_type").
 		Scan(&counts).Error
 	if err != nil {
 		return nil, err
 	}
 
-	// Deduct current counts from availability
-	for _, count := range counts {
-		role := model.ProfileTypeFromString(count.EmployeeRole)
-		if _, ok := availability[count.ShiftType][role]; ok {
-			availability[count.ShiftType][role] -= count.Count
+	// Deduct current counts from max availability
+	for _, c := range counts {
+		role := model.ProfileTypeFromString(c.EmployeeRole)
+		if _, ok := availability[c.ShiftType][role]; ok {
+			availability[c.ShiftType][role] -= c.Count
 		}
 	}
 

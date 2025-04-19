@@ -24,7 +24,6 @@ CREATE TABLE employee_shifts (
     id SERIAL PRIMARY KEY,
     employee_id INT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
     shift_id INT NOT NULL REFERENCES shifts(id) ON DELETE CASCADE,
-    profile_type VARCHAR(50) NOT NULL, -- "Medic", "Technical", "Administrator"
     UNIQUE (employee_id, shift_id)
 );
 

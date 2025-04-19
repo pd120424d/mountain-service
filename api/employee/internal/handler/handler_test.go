@@ -1031,7 +1031,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
 		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
-		shiftRepoMock.EXPECT().CreateAssignment(gomock.Any(), gomock.Any(), gomock.Any()).Return(uint(0), gorm.ErrRecordNotFound).Times(1)
+		shiftRepoMock.EXPECT().CreateAssignment(gomock.Any(), gomock.Any()).Return(uint(0), gorm.ErrRecordNotFound).Times(1)
 
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
@@ -1060,7 +1060,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 456, ShiftDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC), ShiftType: 1}, nil).Times(1)
 		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
-		shiftRepoMock.EXPECT().CreateAssignment(gomock.Any(), gomock.Any(), gomock.Any()).Return(uint(456), nil).Times(1)
+		shiftRepoMock.EXPECT().CreateAssignment(gomock.Any(), gomock.Any()).Return(uint(456), nil).Times(1)
 
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")

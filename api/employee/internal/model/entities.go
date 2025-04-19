@@ -26,6 +26,7 @@ type Employee struct {
 	Email          string `gorm:"unique;not null"`
 	ProfilePicture string
 	ProfileType    ProfileType `gorm:"not null"`
+	Shifts         []Shift     `gorm:"many2many:employee_shifts;"`
 }
 
 type Shift struct {
@@ -33,13 +34,13 @@ type Shift struct {
 	ShiftDate time.Time `gorm:"not null"`
 	ShiftType int       `gorm:"not null"` // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid
 	CreatedAt time.Time
+	Employees []Employee `gorm:"many2many:employee_shifts;"`
 }
 
 type EmployeeShift struct {
-	ID          uint   `gorm:"primaryKey"`
-	EmployeeID  uint   `gorm:"not null"`
-	ShiftID     uint   `gorm:"not null"`
-	ProfileType string `gorm:"not null"` // e.g., "Medic", "Technical"
+	ID         uint `gorm:"primaryKey"`
+	EmployeeID uint `gorm:"not null"`
+	ShiftID    uint `gorm:"not null"`
 }
 
 func (p ProfileType) String() string {

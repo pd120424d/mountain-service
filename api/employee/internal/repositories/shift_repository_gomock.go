@@ -55,7 +55,7 @@ func (mr *MockShiftRepositoryMockRecorder) AssignedToShift(employeeID, shiftID i
 }
 
 // CountAssignmentsByProfile mocks base method.
-func (m *MockShiftRepository) CountAssignmentsByProfile(shiftID uint, profileType string) (int64, error) {
+func (m *MockShiftRepository) CountAssignmentsByProfile(shiftID uint, profileType model.ProfileType) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountAssignmentsByProfile", shiftID, profileType)
 	ret0, _ := ret[0].(int64)
@@ -70,18 +70,18 @@ func (mr *MockShiftRepositoryMockRecorder) CountAssignmentsByProfile(shiftID, pr
 }
 
 // CreateAssignment mocks base method.
-func (m *MockShiftRepository) CreateAssignment(employeeID, shiftID uint, profileType string) (uint, error) {
+func (m *MockShiftRepository) CreateAssignment(employeeID, shiftID uint) (uint, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAssignment", employeeID, shiftID, profileType)
+	ret := m.ctrl.Call(m, "CreateAssignment", employeeID, shiftID)
 	ret0, _ := ret[0].(uint)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAssignment indicates an expected call of CreateAssignment.
-func (mr *MockShiftRepositoryMockRecorder) CreateAssignment(employeeID, shiftID, profileType interface{}) *gomock.Call {
+func (mr *MockShiftRepositoryMockRecorder) CreateAssignment(employeeID, shiftID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAssignment", reflect.TypeOf((*MockShiftRepository)(nil).CreateAssignment), employeeID, shiftID, profileType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAssignment", reflect.TypeOf((*MockShiftRepository)(nil).CreateAssignment), employeeID, shiftID)
 }
 
 // GetOrCreateShift mocks base method.

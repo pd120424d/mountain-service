@@ -59,6 +59,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 
 	profileType := model.ProfileTypeFromString(req.ProfileType)
 	if !profileType.Valid() {
+		h.log.Errorf("invalid profile type: %s", req.ProfileType)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile type"})
 		return
 	}
@@ -76,38 +77,40 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	}
 
 	// Check for unique username
-	usernameFilter := map[string]interface{}{
+	usernameFilter := map[string]any{
 		"username": employee.Username,
 	}
 	existingEmployees, err := h.emplRepo.ListEmployees(usernameFilter)
 	if err != nil {
-		h.log.Error("Failed to check for existing username", zap.Error(err))
+		h.log.Error("failed to check for existing username", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check for existing username"})
 		return
 	}
 	if len(existingEmployees) > 0 {
+		h.log.Errorf("username %s already exists", employee.Username)
 		ctx.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
 		return
 	}
 
 	// Check for unique email
-	emailFilter := map[string]interface{}{
+	emailFilter := map[string]any{
 		"email": employee.Email,
 	}
 	existingEmployees, err = h.emplRepo.ListEmployees(emailFilter)
 	if err != nil {
-		h.log.Error("Failed to check for existing email", zap.Error(err))
+		h.log.Error("failed to register employee, checking for employee with email failed: %v", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check for existing email"})
 		return
 	}
 	if len(existingEmployees) > 0 {
+		h.log.Errorf("failed to register employee: email %s already exists", employee.Email)
 		ctx.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
 		return
 	}
 
 	// Validate the password
 	if err := utils.ValidatePassword(employee.Password); err != nil {
-		h.log.Errorf("password validation failed: %v", err)
+		h.log.Errorf("failed to validate password: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -236,21 +239,21 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 	id := ctx.Param("id")
 	var employee model.Employee
 	if err := h.emplRepo.GetEmployeeByID(id, &employee); err != nil {
-		h.log.Error("Employee not found", zap.Error(err))
+		h.log.Error("failed to get employee: %v", zap.Error(err))
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
 		return
 	}
 
 	var req model.EmployeeUpdateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		h.log.Error("Invalid employee update payload", zap.Error(err))
+		h.log.Errorf("failed to update employee, invalid employee update payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
 	// Validate here or in middleware
 	if validationErr := req.Validate(); validationErr != nil {
-		h.log.Error("Validation failed", zap.Error(validationErr))
+		h.log.Errorf("failed to update employee, validation failed: %v", validationErr)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 		return
 	}
@@ -258,7 +261,7 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 	model.MapUpdateRequestToEmployee(&req, &employee)
 
 	if err := h.emplRepo.UpdateEmployee(&employee); err != nil {
-		h.log.Error("Failed to update employee", zap.Error(err))
+		h.log.Errorf("failed to update employee: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update employee"})
 		return
 	}
@@ -313,12 +316,14 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {
+		h.log.Errorf("failed to extract url param, invalid employee ID: ", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee ID"})
 		return
 	}
 
 	var req model.AssignShiftRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		h.log.Errorf("failed to assign shift, invalid shift payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -327,6 +332,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 
 	shiftDate, err := time.Parse(time.DateOnly, req.ShiftDate)
 	if err != nil {
+		h.log.Errorf("failed to parse shift date: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid shiftDate format, expected YYYY-MM-DD"})
 		return
 	}
@@ -342,28 +348,33 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	// Step 2: Check existing assignment
 	assigned, err := h.shiftsRepo.AssignedToShift(uint(employeeID), shift.ID)
 	if err != nil {
+		h.log.Errorf("failed to check assignment: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 	if assigned {
+		h.log.Errorf("employee with ID %d is already assigned to the requested shift ID %d", employeeID, shift.ID)
 		ctx.JSON(http.StatusConflict, gin.H{"error": "employee is already assigned to this shift"})
 		return
 	}
 
 	// Step 3: Check capacity
-	count, err := h.shiftsRepo.CountAssignmentsByProfile(shift.ID, req.ProfileType)
+	count, err := h.shiftsRepo.CountAssignmentsByProfile(shift.ID, profileType)
 	if err != nil {
+		h.log.Errorf("failed to count assignments by profile: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 	if (profileType.String() == "Medic" && count >= 2) || (profileType.String() == "Technical" && count >= 4) {
+		h.log.Errorf("failed to assign shift: maximum capacity for role %s reached in the selected shift", profileType.String())
 		ctx.JSON(http.StatusConflict, gin.H{"error": "maximum capacity for this role reached in the selected shift"})
 		return
 	}
 
 	// Step 4: Assign
-	assignmentID, err := h.shiftsRepo.CreateAssignment(uint(employeeID), shift.ID, req.ProfileType)
+	assignmentID, err := h.shiftsRepo.CreateAssignment(uint(employeeID), shift.ID)
 	if err != nil {
+		h.log.Errorf("failed to assign shift: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to assign employee"})
 		return
 	}
@@ -392,7 +403,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {
-		h.log.Error("failed to extract url param: invalid employee ID", zap.Error(err))
+		h.log.Errorf("failed to extract url param, invalid employee ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
@@ -401,6 +412,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 	var shifts []model.Shift
 	err = h.shiftsRepo.GetShiftsByEmployeeID(uint(employeeID), &shifts)
 	if err != nil {
+		h.log.Errorf("failed to get shifts for employee ID %d: %v", employeeID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -438,6 +450,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	if dateParam != "" {
 		date, err = time.Parse(time.DateOnly, dateParam)
 		if err != nil {
+			h.log.Errorf("failed to parse date: %v", err)
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, expected YYYY-MM-DD"})
 			return
 		}
@@ -448,6 +461,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	// Fetch availability from the repository
 	availability, err := h.shiftsRepo.GetShiftAvailability(date)
 	if err != nil {
+		h.log.Errorf("failed to get shifts availability: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -471,6 +485,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 
 	var req model.RemoveShiftRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		h.log.Errorf("failed to remove shift, invalid shift payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -478,6 +493,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 	// Call repository method to remove the shift
 	err := h.shiftsRepo.RemoveEmployeeFromShift(req.ID)
 	if err != nil {
+		h.log.Errorf("failed to remove shift: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}

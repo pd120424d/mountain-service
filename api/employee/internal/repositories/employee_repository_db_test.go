@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -16,6 +18,8 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"gorm.io/gorm/logger"
+
 	_ "modernc.org/sqlite"
 )
 
@@ -27,9 +31,17 @@ func setupSQLiteTestDB(t *testing.T) *gorm.DB {
 		DSN:        dsn,
 	}
 
-	db, err := gorm.Open(dialector, &gorm.Config{})
+	db, err := gorm.Open(dialector, &gorm.Config{
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // Use stdout for logs
+			logger.Config{
+				LogLevel: logger.Info, // Show SQL + params
+			},
+		),
+	})
 	require.NoError(t, err, "failed to open sqlite in-memory db")
 
+	// require.NoError(t, db.Migrator().DropTable(&model.EmployeeShift{}, &model.Shift{}, &model.Employee{}))
 	require.NoError(t, db.AutoMigrate(&model.Employee{}, &model.Shift{}, &model.EmployeeShift{}))
 
 	return db
