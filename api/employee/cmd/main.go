@@ -29,12 +29,6 @@ import (
 
 // @title API Сервис за Запослене
 // @version 1.0
-// @description Ово је пример API сервиса за запослене.
-// @termsOfService http://example.com/terms/
-
-// @contact.name Подршка за API
-// @contact.url http://www.example.com/support
-// @contact.email support@example.com
 
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT

@@ -28,10 +28,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Fetch full git history and tags
+        run: |
+          git fetch --tags --unshallow || git fetch --tags
+
       - name: Get Git tag and SHA
         id: version
         run: |
-          echo "VERSION=$(git describe --tags --abbrev=0 || echo dev)" >> $GITHUB_OUTPUT
+          echo "VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo dev)" >> $GITHUB_OUTPUT
           echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build Docker images

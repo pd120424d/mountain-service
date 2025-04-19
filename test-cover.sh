@@ -27,7 +27,7 @@ go tool cover -func=coverage.out | grep -v '_gomock.go'
 
 # Check if coverage is above threshold
 COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
-THRESHOLD=60.0
+THRESHOLD=80.0
 
 echo "Total coverage: $COVERAGE%"
 if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
