@@ -2,21 +2,16 @@ name: Frontend Deploy to Azure VM
 
 on:
   workflow_run:
-    workflows: ["frontent-test-coverage"]
+    workflows: ["frontend-test-coverage"]
     types:
       - completed
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
-    paths:
-      - 'ui/**'
-      - '.github/workflows/frontend-deploy.yml'
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # only run if the workflow_run was triggered by a push, not a pull_request
+    if: github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
 
     steps:

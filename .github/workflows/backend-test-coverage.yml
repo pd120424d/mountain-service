@@ -2,6 +2,10 @@ name: backend-test-coverage
 
 on:
   push:
+    branches:
+      - main
+    tags:
+      - "v*"
     paths:
       - 'api/**'
       - 'backend-test-cover.sh'

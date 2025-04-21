@@ -5,15 +5,6 @@ on:
     workflows: ["backend-test-coverage"]
     types:
       - completed
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
-    paths:
-      - 'api/**'
-      - 'db/**'
-      - '.github/workflows/backend-deploy.yml'
 
 env:
   REGISTRY: ghcr.io
@@ -22,7 +13,10 @@ env:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # only run if the workflow_run was triggered by a push, not a pull_request
+    if: github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
 
     steps:

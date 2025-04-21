@@ -2,6 +2,10 @@ name: frontend-test-coverage
 
 on:
   push:
+    branches:
+      - main
+    tags:
+      - "v*"
     paths:
       - 'ui/**'
       - 'frontend-test-cover.sh'
@@ -22,21 +26,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Use Node.js 18.19
+      - name: Setup Node.js (20)
         uses: actions/setup-node@v3
         with:
-          node-version: 18.19
+          node-version: '20'
 
-      - name: Cache node modules
+      - name: Cache npm
         uses: actions/cache@v3
         with:
-          path: ui/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('ui/package-lock.json') }}
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('ui/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-npm-
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run frontend coverage script
         run: ../frontend-test-cover.sh
