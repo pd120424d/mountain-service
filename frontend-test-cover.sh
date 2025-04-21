@@ -1,7 +1,13 @@
 #!/bin/bash
 set -e
 
-cd ui
+if pwd | grep -q ui; then
+  echo "Already in ui directory"
+else
+  echo "Navigating to ui directory"
+  cd ui
+fi
+
 npm ci
 npm run test -- --watch=false --code-coverage
 
