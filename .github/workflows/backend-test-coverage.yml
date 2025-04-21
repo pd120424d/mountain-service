@@ -4,14 +4,12 @@ on:
   push:
     paths:
       - 'api/**'
-      - 'db/**'
-      - 'test-cover.sh'
+      - 'backend-test-cover.sh'
       - '.github/workflows/backend-test-coverage.yml'
   pull_request:
     paths:
       - 'api/**'
-      - 'db/**'
-      - 'test-cover.sh'
+      - 'backend-test-cover.sh'
       - '.github/workflows/backend-test-coverage.yml'
 
 jobs:
