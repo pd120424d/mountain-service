@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { VersionBannerComponent } from './version-banner.component';
+import { sharedTestingProviders } from '../test-utils/shared-test-imports';
 
 describe('VersionBannerComponent', () => {
   let component: VersionBannerComponent;
@@ -8,7 +9,8 @@ describe('VersionBannerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VersionBannerComponent]
+      imports: [VersionBannerComponent],
+      providers: [...sharedTestingProviders]
     })
     .compileComponents();
 
