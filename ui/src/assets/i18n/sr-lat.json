@@ -96,5 +96,8 @@
     },
     "LOGOUT": {
         "BUTTON": "Odjava"
+    },
+    "SESSION": {
+        "EXPIRED": "Vaša sesija je istekla. Prijavite se ponovo."
     }
 }

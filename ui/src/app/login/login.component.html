@@ -21,5 +21,9 @@
       {{ 'LOGIN.NO_ACCOUNT' | translate }}
       <a routerLink="/employees/new">{{ 'LOGIN.REGISTER' | translate }}</a>
     </p>
+    
+    <div *ngIf="sessionExpired" class="alert alert-warning">
+      {{ 'SESSION.EXPIRED' | translate }}
+    </div>    
   </div>
 </div>

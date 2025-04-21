@@ -96,5 +96,8 @@
     },
     "LOGOUT": {
         "BUTTON": "Logout"
+    },
+    "SESSION": {
+        "EXPIRED": "Your session has expired. Please log in again."
     }
 }
