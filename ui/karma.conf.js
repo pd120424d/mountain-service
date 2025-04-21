@@ -20,7 +20,8 @@ module.exports = function (config) {
           { type: 'html' },
           { type: 'text-summary' },
           { type: 'json-summary' } // ✅ important for test-cover-ui.sh
-        ]
+        ],
+        fixWebpackSourcePaths: true
       },
       reporters: ['progress', 'kjhtml', 'coverage'],
       port: 9876,
