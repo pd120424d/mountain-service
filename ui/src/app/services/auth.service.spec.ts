@@ -45,7 +45,7 @@ describe('AuthService', () => {
   });
 
   it('should return true if token is valid', () => {
-    localStorage.setItem('token', fakeToken(60)); // expires in 1 min
+    localStorage.setItem('token', fakeToken(300)); // expires in 1 min
     expect(service.isAuthenticated()).toBeTrue();
   });
 

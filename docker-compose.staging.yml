@@ -53,11 +53,24 @@ services:
     networks:
       - web
 
+  version-service:
+    build:
+      context: ./api
+      dockerfile: version-service/Dockerfile
+    image: version-service:latest
+    ports:
+      - "8090:8090"
+    volumes:
+      - /var/log:/var/log
+    networks:
+      - web
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./ui
     ports:
-      - "8080:80"
+      - "4200:80"
     environment:
       - NODE_ENV=staging
     depends_on:

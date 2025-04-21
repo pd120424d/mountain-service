@@ -10,7 +10,7 @@ import { environment } from '../../environments/environment'; // Import environm
 })
 export class AuthService {
   private apiUrl = `${environment.apiUrl}`;
-  private checkInterval = 60 * 1000; // Check every 1 min
+  private checkInterval = 300 * 1000; // Check every 5 minutes
   private intervalSub: Subscription | null = null;
 
   constructor(private http: HttpClient, private router: Router) {
@@ -48,10 +48,14 @@ export class AuthService {
 
   private startPeriodicTokenCheck(): void {
     this.intervalSub = interval(this.checkInterval).subscribe(() => {
-      if (!this.isAuthenticated()) {
+      if (!this.isAuthenticated() && !this.isUnauthorizedRoute()) {
         this.logout();
       }
     });
+  }
+
+  private isUnauthorizedRoute(): boolean {
+    return this.router.url !== '/login' && this.router.url !== '/employees/new'
   }
 
   stopPeriodicCheck(): void {
