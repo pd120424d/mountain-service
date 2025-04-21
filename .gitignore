@@ -21,7 +21,6 @@
 go.work
 go.work.sum
 
-
 ###### Angular ignore section
 
 # Ignore node_modules
@@ -53,8 +52,12 @@ ui/.npm/
 ui/**/*.js
 ui/**/*.js.map
 
+# Exception for Karma config
+!ui/karma.conf.js
+
 # Ignore vendor folder with go third-party dependencies
 api/vendor/**/*.go
 api/employee/secrets/
 api/vendor/*
 ui/coverage/*
+api/coverage.txt
