@@ -28,4 +28,4 @@ jobs:
           go-version: '1.23'
 
       - name: Run test coverage check
-        run: ./bakend-test-cover.sh
+        run: ./backend-test-cover.sh

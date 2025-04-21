@@ -26,4 +26,4 @@ jobs:
           node-version: '16'
 
       - name: Run frontend test coverage
-        run: ./test-cover-ui.sh
+        run: ./frontend-test-cover.sh
