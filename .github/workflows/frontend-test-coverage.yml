@@ -1,0 +1,29 @@
+name: frontend-test-coverage
+
+on:
+  push:
+    paths:
+      - 'ui/**'
+      - 'test-cover-ui.sh'
+      - '.github/workflows/frontend-test-coverage.yml'
+  pull_request:
+    paths:
+      - 'ui/**'
+      - 'test-cover-ui.sh'
+      - '.github/workflows/frontend-test-coverage.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Run frontend test coverage
+        run: ./test-cover-ui.sh

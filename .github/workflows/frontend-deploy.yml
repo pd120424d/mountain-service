@@ -1,0 +1,61 @@
+name: Frontend Deploy to Azure VM
+
+on:
+  workflow_run:
+    workflows: ["frontent-test-coverage"]
+    types:
+      - completed
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - 'ui/**'
+      - '.github/workflows/frontend-deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t frontend:latest -f ./ui/Dockerfile ./ui
+
+      - name: Save Docker image as tarball
+        run: |
+          docker save frontend:latest > frontend.tar
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AZURE_SSH_PRIVATE_KEY }}" > ~/.ssh/github_actions
+          chmod 600 ~/.ssh/github_actions
+          ssh-keyscan -H ${{ secrets.AZURE_VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy Docker image to Azure VM
+        run: |
+          scp -i ~/.ssh/github_actions frontend.tar ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:~
+
+      - name: Load and run Docker container on Azure VM
+        run: |
+          ssh -i ~/.ssh/github_actions ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} '
+            set -e
+
+            docker load < ~/frontend.tar
+            rm ~/frontend.tar
+
+            cd mountain-service
+
+            git pull origin main
+
+            docker compose -f docker-compose.prod.yml down
+            docker compose -f docker-compose.prod.yml up -d
+          '

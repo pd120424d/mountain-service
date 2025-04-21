@@ -1,0 +1,31 @@
+name: backend-test-coverage
+
+on:
+  push:
+    paths:
+      - 'api/**'
+      - 'db/**'
+      - 'test-cover.sh'
+      - '.github/workflows/backend-test-coverage.yml'
+  pull_request:
+    paths:
+      - 'api/**'
+      - 'db/**'
+      - 'test-cover.sh'
+      - '.github/workflows/backend-test-coverage.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Run test coverage check
+        run: ./bakend-test-cover.sh

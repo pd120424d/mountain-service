@@ -57,3 +57,4 @@ ui/**/*.js.map
 api/vendor/**/*.go
 api/employee/secrets/
 api/vendor/*
+ui/coverage/*
