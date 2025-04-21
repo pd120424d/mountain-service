@@ -129,7 +129,11 @@ func (r *shiftRepository) GetShiftAvailability(date time.Time) (map[int]map[mode
 }
 
 func (r *shiftRepository) RemoveEmployeeFromShift(assignmentID uint) error {
-	if err := r.db.Where("id = ?", assignmentID).Delete(&model.EmployeeShift{}).Error; err != nil {
+	err := r.db.First(&model.EmployeeShift{}, assignmentID).Error
+	if err != nil {
+		return fmt.Errorf("failed to find assignment: %w", err)
+	}
+	if err := r.db.Delete(&model.EmployeeShift{}, assignmentID).Error; err != nil {
 		return fmt.Errorf("failed to remove employee from shift: %w", err)
 	}
 	return nil

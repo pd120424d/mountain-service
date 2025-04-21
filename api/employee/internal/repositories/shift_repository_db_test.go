@@ -150,3 +150,25 @@ func TestShiftRepository_GetShiftAvailability(t *testing.T) {
 		assert.Equal(t, 3, availability[1][model.Technical])
 	})
 }
+
+func TestShiftRepository_RemoveEmployeeFromShift(t *testing.T) {
+	log := utils.NewTestLogger()
+
+	gormDB := setupSQLiteTestDB(t)
+	repo := NewShiftRepository(log, gormDB)
+
+	t.Run("it removes an employee from a shift when the assignment exists", func(t *testing.T) {
+		gormDB.Create(&model.Employee{ID: 1, Username: "test-user", FirstName: "Bruce", LastName: "Lee", Email: "test-user@example.com", ProfileType: model.Medic})
+		gormDB.Create(&model.Shift{ID: 1, ShiftDate: time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC), ShiftType: 1})
+		gormDB.Create(&model.EmployeeShift{EmployeeID: 1, ShiftID: 1, ID: 1})
+
+		err := repo.RemoveEmployeeFromShift(1)
+		assert.NoError(t, err)
+	})
+
+	t.Run("it returns an error when the assignment does not exist", func(t *testing.T) {
+		err := repo.RemoveEmployeeFromShift(999)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to find assignment: record not found")
+	})
+}
