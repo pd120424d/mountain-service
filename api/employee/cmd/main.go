@@ -123,10 +123,11 @@ func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
 	db := config.GetEmployeeDB(log, dbStringEmployee)
 
 	// Auto migrate the model
-	err = db.AutoMigrate(&model.Employee{})
+	err = db.AutoMigrate(&model.Employee{}, &model.Shift{}, &model.EmployeeShift{})
 	if err != nil {
-		log.Fatalf("failed to migrate employee model: %v", err)
+		log.Fatalf("failed to migrate employee models: %v", err)
 	}
+	log.Info("Successfully migrated employee models")
 
 	log.Info("Database setup finished")
 	return db
@@ -176,11 +177,11 @@ func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.Employ
 	{
 		authorized.GET("/employees", employeeHandler.ListEmployees)
 		authorized.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
-		authorized.POST("/employees/{id}/shifts", employeeHandler.AssignShift)
-		authorized.PUT("/employees/{id}", employeeHandler.UpdateEmployee)
-		authorized.GET("/employees/{id}/shifts", employeeHandler.GetShifts)
+		authorized.POST("/employees/:id/shifts", employeeHandler.AssignShift)
+		authorized.PUT("/employees/:id", employeeHandler.UpdateEmployee)
+		authorized.GET("/employees/:id/shifts", employeeHandler.GetShifts)
 		authorized.GET("/shifts/availability", employeeHandler.GetShiftsAvailability)
-		authorized.DELETE("/employees/{id}/shifts/{shiftID}", employeeHandler.RemoveShift)
+		authorized.DELETE("/employees/:id/shifts/:shiftID", employeeHandler.RemoveShift)
 	}
 
 	// TODO: Remove this or turn it into the health check

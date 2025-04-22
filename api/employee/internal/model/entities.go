@@ -25,7 +25,7 @@ type Employee struct {
 	Phone          string
 	Email          string `gorm:"unique;not null"`
 	ProfilePicture string
-	ProfileType    ProfileType `gorm:"not null"`
+	ProfileType    ProfileType `gorm:"type:text;not null"`
 	Shifts         []Shift     `gorm:"many2many:employee_shifts;"`
 }
 
