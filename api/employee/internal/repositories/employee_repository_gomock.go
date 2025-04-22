@@ -82,7 +82,7 @@ func (mr *MockEmployeeRepositoryMockRecorder) GetAll() *gomock.Call {
 }
 
 // GetEmployeeByID mocks base method.
-func (m *MockEmployeeRepository) GetEmployeeByID(id string, employee *model.Employee) error {
+func (m *MockEmployeeRepository) GetEmployeeByID(id uint, employee *model.Employee) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEmployeeByID", id, employee)
 	ret0, _ := ret[0].(error)

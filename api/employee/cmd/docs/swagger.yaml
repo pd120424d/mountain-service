@@ -5,11 +5,6 @@ definitions:
     type: object
   model.AssignShiftRequest:
     properties:
-      profileType:
-        enum:
-        - Medic
-        - Technical
-        type: string
       shiftDate:
         type: string
       shiftType:
@@ -17,7 +12,6 @@ definitions:
         minimum: 1
         type: integer
     required:
-    - profileType
     - shiftDate
     - shiftType
     type: object
@@ -25,12 +19,14 @@ definitions:
     properties:
       id:
         type: integer
-      profileType:
-        type: string
       shiftDate:
         type: string
       shiftType:
         type: integer
+    required:
+    - id
+    - shiftDate
+    - shiftType
     type: object
   model.EmployeeCreateRequest:
     properties:
@@ -112,6 +108,8 @@ definitions:
     properties:
       id:
         type: integer
+    required:
+    - id
     type: object
   model.ShiftResponse:
     properties:

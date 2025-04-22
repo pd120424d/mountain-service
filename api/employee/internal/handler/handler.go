@@ -236,11 +236,10 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 	h.log.Info("Received Update Employee request")
 
-	id := ctx.Param("id")
-	var employee model.Employee
-	if err := h.emplRepo.GetEmployeeByID(id, &employee); err != nil {
-		h.log.Error("failed to get employee: %v", zap.Error(err))
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
+	employeeID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		h.log.Errorf("failed to convert employee ID: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
 
@@ -248,6 +247,13 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.log.Errorf("failed to update employee, invalid employee update payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		return
+	}
+
+	var employee model.Employee
+	if err := h.emplRepo.GetEmployeeByID(uint(employeeID), &employee); err != nil {
+		h.log.Error("failed to get employee: %v", zap.Error(err))
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
 		return
 	}
 
@@ -328,7 +334,15 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 		return
 	}
 
-	profileType := model.ProfileTypeFromString(req.ProfileType)
+	employee := &model.Employee{}
+	err = h.emplRepo.GetEmployeeByID(uint(employeeID), employee)
+	if err != nil {
+		h.log.Errorf("failed to assign shift, failed to get employee: %v", err)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	profileType := employee.ProfileType
 
 	shiftDate, err := time.Parse(time.DateOnly, req.ShiftDate)
 	if err != nil {
@@ -381,10 +395,9 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 
 	h.log.Infof("Successfully assigned shift for employee ID %d", employeeID)
 	resp := model.AssignShiftResponse{
-		ID:          assignmentID,
-		ShiftDate:   shift.ShiftDate.Format(time.DateOnly),
-		ShiftType:   shift.ShiftType,
-		ProfileType: profileType.String(),
+		ID:        assignmentID,
+		ShiftDate: shift.ShiftDate.Format(time.DateOnly),
+		ShiftType: shift.ShiftType,
 	}
 	ctx.JSON(http.StatusCreated, resp)
 }

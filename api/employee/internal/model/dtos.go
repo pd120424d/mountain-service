@@ -58,33 +58,31 @@ type EmployeeUpdateRequest struct {
 // ShiftResponse DTO for returning shift data for a certain employee
 // swagger:model
 type ShiftResponse struct {
-	ID        uint      `gorm:"primaryKey"`
-	ShiftDate time.Time `gorm:"not null"`
-	ShiftType int       `gorm:"not null"` // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid
-	CreatedAt time.Time
+	ID        uint      `json:"id"`
+	ShiftDate time.Time `json:"shiftDate"`
+	ShiftType int       `json:"shiftType"` // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 // AssignShiftRequest DTO for assigning a shift to an employee
 // swagger:model
 type AssignShiftRequest struct {
-	ShiftDate   string `json:"shiftDate" binding:"required"`
-	ShiftType   int    `json:"shiftType" binding:"required,min=1,max=3"`
-	ProfileType string `json:"profileType" binding:"required,oneof=Medic Technical"`
+	ShiftDate string `json:"shiftDate" binding:"required"`
+	ShiftType int    `json:"shiftType" binding:"required,min=1,max=3"`
 }
 
 // AssignShiftResponse DTO for returning the shift data after assigning it to an employee
 // swagger:model
 type AssignShiftResponse struct {
-	ID          uint   `json:"id"`
-	ShiftDate   string `json:"shiftDate"`
-	ShiftType   int    `json:"shiftType"`
-	ProfileType string `json:"profileType"`
+	ID        uint   `json:"id"  binding:"required"`
+	ShiftDate string `json:"shiftDate"  binding:"required"`
+	ShiftType int    `json:"shiftType"  binding:"required"`
 }
 
 // RemoveShiftRequest DTO for removing a shift from an employee
 // swagger:model
 type RemoveShiftRequest struct {
-	ID uint `json:"id" cinding:"required"`
+	ID uint `json:"id" binding:"required"`
 }
 
 func (r *RemoveShiftRequest) String() string {

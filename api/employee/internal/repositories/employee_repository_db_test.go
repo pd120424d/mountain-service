@@ -107,7 +107,7 @@ func TestEmployeeRepository_GetEmployeeByID(t *testing.T) {
 		gormDB.Create(&model.Employee{Username: "test-user", FirstName: "Bruce", LastName: "Lee", Password: "Pass123!"})
 
 		var employee model.Employee
-		err := repo.GetEmployeeByID("1", &employee)
+		err := repo.GetEmployeeByID(1, &employee)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "test-user", employee.Username)

@@ -16,7 +16,7 @@ import (
 type EmployeeRepository interface {
 	Create(employee *model.Employee) error
 	GetAll() ([]model.Employee, error)
-	GetEmployeeByID(id string, employee *model.Employee) error
+	GetEmployeeByID(id uint, employee *model.Employee) error
 	GetEmployeeByUsername(username string) (*model.Employee, error)
 	UpdateEmployee(employee *model.Employee) error
 	Delete(employeeID uint) error
@@ -50,7 +50,7 @@ func (r *employeeRepository) GetAll() ([]model.Employee, error) {
 }
 
 // GetEmployeeByID returns employee by its id or error if it cannot be found.
-func (r *employeeRepository) GetEmployeeByID(id string, employee *model.Employee) error {
+func (r *employeeRepository) GetEmployeeByID(id uint, employee *model.Employee) error {
 	return r.db.First(employee, "id = ?", id).Error
 }
 

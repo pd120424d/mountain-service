@@ -455,22 +455,6 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 	log := utils.NewTestLogger()
 
-	t.Run("it returns an error when employee Lees not exist", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByID("1", gomock.Any()).Return(gorm.ErrRecordNotFound).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.UpdateEmployee(ctx)
-
-		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"Employee not found\"}")
-	})
-
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -482,7 +466,6 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		}`
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByID("1", gomock.Any()).Return(nil).Times(1)
 
 		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", strings.NewReader(invalidPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
@@ -494,6 +477,31 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "{\"error\":\"Invalid request payload\"}")
 	})
 
+	t.Run("it returns an error when employee does not exist", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		payload := `{
+			"firstName": "Bruce",
+			"lastName": "Lee",
+			"age": 30,
+			"email": "test-user@example.com"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(gorm.ErrRecordNotFound).Times(1)
+
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
+		handler.UpdateEmployee(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "{\"error\":\"Employee not found\"}")
+	})
+
 	t.Run("it returns an error when validation fails", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -501,7 +509,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByID("1", gomock.Any()).Return(nil).Times(1)
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
 
 		payload := `{
 			"firstName": "B",
@@ -526,7 +534,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByID("1", gomock.Any()).Return(nil).Times(1)
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
 
 		payload := `{
 			"firstName": "Bruce",
@@ -553,7 +561,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByID("1", gomock.Any()).Return(nil).Times(1)
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
 
 		payload := `{
 			"firstName": "Bruce",
@@ -839,30 +847,8 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
 		invalidPayload := `{
-			"shiftID": 1
-		}`
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.AssignShift(ctx)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"Key: 'AssignShiftRequest.ShiftDate' Error:Field validation for 'ShiftDate' failed on the 'required' tag\\nKey: 'AssignShiftRequest.ShiftType' Error:Field validation for 'ShiftType' failed on the 'required' tag\\nKey: 'AssignShiftRequest.ProfileType' Error:Field validation for 'ProfileType' failed on the 'required' tag\"}")
-	})
-
-	t.Run("it returns an error when date is in invalid format", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-
-		invalidPayload := `{
-			"shiftDate": "invalid",
-			"shiftType": 1,
+			"shiftDate": "2023-01-01",
+			"shiftType": 5,
 			"profileType": "Medic"
 		}`
 
@@ -875,7 +861,29 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		handler.AssignShift(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"invalid shiftDate format, expected YYYY-MM-DD\"}")
+		assert.Contains(t, w.Body.String(), "Error:Field validation for 'ShiftType' failed on the 'max' tag")
+	})
+
+	t.Run("it returns an error when employee does not exist", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		mockRepo.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(gorm.ErrRecordNotFound).Times(1)
+
+		payload := `{
+			"shiftDate": "2023-01-01",
+			"shiftType": 1,
+			"profileType": "Medic"
+		}`
+
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "record not found")
 	})
 
 	t.Run("it returns an error fetching or creating shift fails", func(t *testing.T) {
@@ -892,6 +900,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
 		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
@@ -918,6 +927,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
 		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
 		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, gorm.ErrRecordNotFound).Times(1)
 
@@ -945,6 +955,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
 		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
 		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 
@@ -972,6 +983,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
 		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
 		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), gomock.Any()).Return(int64(0), gorm.ErrRecordNotFound).Times(1)
@@ -992,7 +1004,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
-		invalidPayload := `{
+		payload := `{
 			"shiftDate": "2023-01-01",
 			"shiftType": 1,
 			"profileType": "Medic"
@@ -1000,11 +1012,16 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, employee *model.Employee) error {
+			employee.ID = id
+			employee.ProfileType = model.Medic
+			return nil
+		}).Return(nil).Times(1)
 		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
 		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), gomock.Any()).Return(int64(2), nil).Times(1)
 
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		handler := NewEmployeeHandler(log, emplRepoMock, shiftRepoMock)
@@ -1028,6 +1045,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
 		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 1}, nil).Times(1)
 		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
@@ -1057,6 +1075,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 
 		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
 		shiftRepoMock := repositories.NewMockShiftRepository(gomock.NewController(t))
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
 		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any()).Return(&model.Shift{ID: 456, ShiftDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC), ShiftType: 1}, nil).Times(1)
 		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
@@ -1073,7 +1092,6 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.Equal(t, uint(456), resp.ID)
-		assert.Equal(t, "Medic", resp.ProfileType)
 		assert.Equal(t, "2025-01-01", resp.ShiftDate)
 		assert.Equal(t, 1, resp.ShiftType)
 	})

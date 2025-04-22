@@ -382,18 +382,10 @@ const docTemplate = `{
         "model.AssignShiftRequest": {
             "type": "object",
             "required": [
-                "profileType",
                 "shiftDate",
                 "shiftType"
             ],
             "properties": {
-                "profileType": {
-                    "type": "string",
-                    "enum": [
-                        "Medic",
-                        "Technical"
-                    ]
-                },
                 "shiftDate": {
                     "type": "string"
                 },
@@ -406,12 +398,14 @@ const docTemplate = `{
         },
         "model.AssignShiftResponse": {
             "type": "object",
+            "required": [
+                "id",
+                "shiftDate",
+                "shiftType"
+            ],
             "properties": {
                 "id": {
                     "type": "integer"
-                },
-                "profileType": {
-                    "type": "string"
                 },
                 "shiftDate": {
                     "type": "string"
@@ -534,6 +528,9 @@ const docTemplate = `{
         },
         "model.RemoveShiftRequest": {
             "type": "object",
+            "required": [
+                "id"
+            ],
             "properties": {
                 "id": {
                     "type": "integer"
