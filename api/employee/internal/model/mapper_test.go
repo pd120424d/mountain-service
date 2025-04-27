@@ -38,3 +38,24 @@ func TestMapUpdateRequestToEmployee(t *testing.T) {
 		assert.Equal(t, Medic, existing.ProfileType)
 	})
 }
+
+func TestMapShiftsAvailabilityToResponse(t *testing.T) {
+	t.Run("it maps shifts availability to the response format", func(t *testing.T) {
+		availability := &ShiftsAvailability{
+			Availability: map[int]map[ProfileType]int{
+				1: {Medic: 2, Technical: 4},
+				2: {Medic: 2, Technical: 4},
+				3: {Medic: 2, Technical: 4},
+			},
+		}
+
+		response := MapShiftsAvailabilityToResponse(availability)
+
+		assert.Equal(t, 2, response.FirstShift.Medic)
+		assert.Equal(t, 4, response.FirstShift.Technical)
+		assert.Equal(t, 2, response.SecondShift.Medic)
+		assert.Equal(t, 4, response.SecondShift.Technical)
+		assert.Equal(t, 2, response.ThirdShift.Medic)
+		assert.Equal(t, 4, response.ThirdShift.Technical)
+	})
+}

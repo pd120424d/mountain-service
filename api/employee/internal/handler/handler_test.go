@@ -1208,11 +1208,11 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		availability := map[int]map[model.ProfileType]int{
-			1: {model.Medic: 2, model.Technical: 4},
-			2: {model.Medic: 2, model.Technical: 4},
-			3: {model.Medic: 2, model.Technical: 4},
-		}
+		availability := &model.ShiftsAvailability{Availability: map[int]map[model.ProfileType]int{
+			1: {model.Medic: 2, model.Technical: 4}, // First shift
+			2: {model.Medic: 2, model.Technical: 4}, // Second shift
+			3: {model.Medic: 2, model.Technical: 4}, // Third shift
+		}}
 		mockShiftRepo.EXPECT().GetShiftAvailability(gomock.Any()).Return(availability, nil).Times(1)
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/shifts?date=2023-01-01", nil)

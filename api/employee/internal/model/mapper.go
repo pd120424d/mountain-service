@@ -17,3 +17,20 @@ func MapUpdateRequestToEmployee(req *EmployeeUpdateRequest, existing *Employee) 
 	existing.ProfilePicture = req.ProfilePicture
 	existing.ProfileType = ProfileTypeFromString(req.ProfileType)
 }
+
+func MapShiftsAvailabilityToResponse(availability *ShiftsAvailability) *ShiftAvailabilityResponse {
+	return &ShiftAvailabilityResponse{
+		FirstShift: ShiftAvailabilityDto{
+			Medic:     availability.Availability[1][Medic],
+			Technical: availability.Availability[1][Technical],
+		},
+		SecondShift: ShiftAvailabilityDto{
+			Medic:     availability.Availability[2][Medic],
+			Technical: availability.Availability[2][Technical],
+		},
+		ThirdShift: ShiftAvailabilityDto{
+			Medic:     availability.Availability[3][Medic],
+			Technical: availability.Availability[3][Technical],
+		},
+	}
+}

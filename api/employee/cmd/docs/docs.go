@@ -361,7 +361,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/model.ShiftAvailabilityResponse"
                         }
                     },
                     "400": {
@@ -534,6 +534,31 @@ const docTemplate = `{
             "properties": {
                 "id": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.ShiftAvailabilityDto": {
+            "type": "object",
+            "properties": {
+                "Medic": {
+                    "type": "integer"
+                },
+                "Techinical": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.ShiftAvailabilityResponse": {
+            "type": "object",
+            "properties": {
+                "1": {
+                    "$ref": "#/definitions/model.ShiftAvailabilityDto"
+                },
+                "2": {
+                    "$ref": "#/definitions/model.ShiftAvailabilityDto"
+                },
+                "3": {
+                    "$ref": "#/definitions/model.ShiftAvailabilityDto"
                 }
             }
         },

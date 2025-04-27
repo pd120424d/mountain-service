@@ -111,6 +111,22 @@ definitions:
     required:
     - id
     type: object
+  model.ShiftAvailabilityDto:
+    properties:
+      Medic:
+        type: integer
+      Techinical:
+        type: integer
+    type: object
+  model.ShiftAvailabilityResponse:
+    properties:
+      "1":
+        $ref: '#/definitions/model.ShiftAvailabilityDto'
+      "2":
+        $ref: '#/definitions/model.ShiftAvailabilityDto'
+      "3":
+        $ref: '#/definitions/model.ShiftAvailabilityDto'
+    type: object
   model.ShiftResponse:
     properties:
       createdAt:
@@ -345,7 +361,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/gin.H'
+            $ref: '#/definitions/model.ShiftAvailabilityResponse'
         "400":
           description: Bad Request
           schema:

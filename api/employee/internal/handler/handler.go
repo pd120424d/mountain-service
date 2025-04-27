@@ -451,7 +451,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 // @Tags запослени
 // @Security BearerAuth
 // @Param date query string false "Дан за који се проверава доступност смена"
-// @Success 200 {object} gin.H
+// @Success 200 {object} model.ShiftAvailabilityResponse
 // @Failure 400 {object} gin.H
 // @Router /shifts/availability [get]
 func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
@@ -480,7 +480,8 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	}
 
 	h.log.Infof("Successfully retrieved shifts availability for date %s", date.Format(time.DateOnly))
-	ctx.JSON(http.StatusOK, gin.H{"availability": availability})
+	availabilityResponse := model.MapShiftsAvailabilityToResponse(availability)
+	ctx.JSON(http.StatusOK, availabilityResponse)
 }
 
 // RemoveShift Уклањање смене за запосленог

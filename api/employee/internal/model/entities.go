@@ -43,6 +43,10 @@ type EmployeeShift struct {
 	ShiftID    uint `gorm:"not null"`
 }
 
+type ShiftsAvailability struct {
+	Availability map[int]map[ProfileType]int
+}
+
 func (p ProfileType) String() string {
 	switch {
 	case p == Medic:

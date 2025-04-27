@@ -19,7 +19,7 @@ type ShiftRepository interface {
 	CountAssignmentsByProfile(shiftID uint, profileType model.ProfileType) (int64, error)
 	CreateAssignment(employeeID, shiftID uint) (uint, error)
 	GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error
-	GetShiftAvailability(date time.Time) (map[int]map[model.ProfileType]int, error)
+	GetShiftAvailability(date time.Time) (*model.ShiftsAvailability, error)
 	RemoveEmployeeFromShift(assignmentID uint) error
 }
 
@@ -88,12 +88,14 @@ func (r *shiftRepository) GetShiftsByEmployeeID(employeeID uint, result *[]model
 		Scan(result).Error
 }
 
-func (r *shiftRepository) GetShiftAvailability(date time.Time) (map[int]map[model.ProfileType]int, error) {
+func (r *shiftRepository) GetShiftAvailability(date time.Time) (*model.ShiftsAvailability, error) {
 	// Initial availability per shift
-	availability := map[int]map[model.ProfileType]int{
-		1: {model.Medic: 2, model.Technical: 4},
-		2: {model.Medic: 2, model.Technical: 4},
-		3: {model.Medic: 2, model.Technical: 4},
+	availability := model.ShiftsAvailability{
+		Availability: map[int]map[model.ProfileType]int{
+			1: {model.Medic: 2, model.Technical: 4},
+			2: {model.Medic: 2, model.Technical: 4},
+			3: {model.Medic: 2, model.Technical: 4},
+		},
 	}
 
 	// Query assigned employees grouped by shift and role
@@ -120,12 +122,12 @@ func (r *shiftRepository) GetShiftAvailability(date time.Time) (map[int]map[mode
 	// Deduct current counts from max availability
 	for _, c := range counts {
 		role := model.ProfileTypeFromString(c.EmployeeRole)
-		if _, ok := availability[c.ShiftType][role]; ok {
-			availability[c.ShiftType][role] -= c.Count
+		if _, ok := availability.Availability[c.ShiftType][role]; ok {
+			availability.Availability[c.ShiftType][role] -= c.Count
 		}
 	}
 
-	return availability, nil
+	return &availability, nil
 }
 
 func (r *shiftRepository) RemoveEmployeeFromShift(assignmentID uint) error {

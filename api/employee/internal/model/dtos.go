@@ -85,6 +85,29 @@ type RemoveShiftRequest struct {
 	ID uint `json:"id" binding:"required"`
 }
 
+// ShiftAvailabilityResponse DTO for returning the shift availability for a certain date
+// swagger:model
+type ShiftAvailabilityResponse struct {
+	FirstShift  ShiftAvailabilityDto `json:"1"`
+	SecondShift ShiftAvailabilityDto `json:"2"`
+	ThirdShift  ShiftAvailabilityDto `json:"3"`
+}
+
+// ShiftAvailability DTO for returning the shift availability for a certain shift
+// swagger:model
+type ShiftAvailabilityDto struct {
+	Medic     int `json:"Medic"`
+	Technical int `json:"Techinical"`
+}
+
+func EmptyShiftAvailabilityResponse() *ShiftAvailabilityResponse {
+	return &ShiftAvailabilityResponse{
+		FirstShift:  ShiftAvailabilityDto{},
+		SecondShift: ShiftAvailabilityDto{},
+		ThirdShift:  ShiftAvailabilityDto{},
+	}
+}
+
 func (r *RemoveShiftRequest) String() string {
 	return fmt.Sprintf("RemoveShiftRequest { ID: %d }", r.ID)
 }

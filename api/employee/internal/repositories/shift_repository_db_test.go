@@ -122,9 +122,9 @@ func TestShiftRepository_GetShiftAvailability(t *testing.T) {
 		availability, err := repo.GetShiftAvailability(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC))
 		assert.NoError(t, err)
 		assert.NotNil(t, availability)
-		assert.Equal(t, 3, len(availability))
-		assert.Equal(t, 2, availability[1][model.Medic])
-		assert.Equal(t, 4, availability[1][model.Technical])
+		assert.Equal(t, 3, len(availability.Availability))
+		assert.Equal(t, 2, availability.Availability[1][model.Medic])
+		assert.Equal(t, 4, availability.Availability[1][model.Technical])
 	})
 
 	t.Run("it returns shifts availability for a given date when there are assigned employees", func(t *testing.T) {
@@ -145,9 +145,9 @@ func TestShiftRepository_GetShiftAvailability(t *testing.T) {
 		availability, err := repo.GetShiftAvailability(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC))
 		assert.NoError(t, err)
 		assert.NotNil(t, availability)
-		assert.Equal(t, 3, len(availability))
-		assert.Equal(t, 1, availability[1][model.Medic])
-		assert.Equal(t, 3, availability[1][model.Technical])
+		assert.Equal(t, 3, len(availability.Availability))
+		assert.Equal(t, 1, availability.Availability[1][model.Medic])
+		assert.Equal(t, 3, availability.Availability[1][model.Technical])
 	})
 }
 
