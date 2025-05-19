@@ -14,6 +14,6 @@ export const routes: Routes = [
   { path: 'employees', component: EmployeeListComponent, canActivate: [AuthGuard] },
   { path: 'employees/edit/:id', component: EmployeeFormComponent, canActivate: [AuthGuard] },
   { path: 'employees/new', component: EmployeeFormComponent }, // used to register new employees
-  { path: 'shift-management', component: ShiftManagementComponent, canActivate: [AuthGuard] }, // Shift management page
+  { path: 'shifts', component: ShiftManagementComponent, canActivate: [AuthGuard] }, // Shift management page
   { path: '**', component: NotFoundComponent }, // Wildcard route for undefined paths
 ];
