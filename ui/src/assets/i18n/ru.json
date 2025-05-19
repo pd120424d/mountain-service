@@ -99,5 +99,18 @@
     },
     "SESSION": {
         "EXPIRED": "Ваша сессия истекла. Пожалуйста, войдите снова."
+    },
+    "SHIFT_MANAGEMENT": {
+        "TITLE": "Управление сменами",
+        "ASSIGN": "Назначить",
+        "REMOVE": "Удалить",
+        "SHIFT": "Смена",
+        "MEDIC": "Медик",
+        "TECHNICAL": "Технический персонал",
+        "SELECT_EMPLOYEE": "Выберите сотрудника",
+        "TOAST_ASSIGN_SUCCESS": "Успешно назначено!",
+        "TOAST_ASSIGN_ERROR": "Не удалось назначить смену.",
+        "TOAST_REMOVE_SUCCESS": "Успешно удалено!",
+        "TOAST_REMOVE_ERROR": "Не удалось удалить смену."
     }
 }

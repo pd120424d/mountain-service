@@ -99,5 +99,18 @@
   },
   "SESSION": {
     "EXPIRED": "Ваша сесија је истекла. Пријавите се поново."
+  },
+  "SHIFT_MANAGEMENT": {
+    "TITLE": "Управљање сменама",
+    "ASSIGN": "Додели",
+    "REMOVE": "Уклони",
+    "SHIFT": "Смена",
+    "MEDIC": "Медицинар",
+    "TECHNICAL": "Техничко особље",
+    "SELECT_EMPLOYEE": "Изаберите запосленог",
+    "TOAST_ASSIGN_SUCCESS": "Успешно додељено!",
+    "TOAST_ASSIGN_ERROR": "Неуспех при додељивању смене.",
+    "TOAST_REMOVE_SUCCESS": "Успешно уклоњено!",
+    "TOAST_REMOVE_ERROR": "Неуспех при уклањању смене."
   }
 }

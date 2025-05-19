@@ -4,11 +4,12 @@ import { AuthService } from './services/auth.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { VersionBannerComponent } from './version-banner/version-banner.component';
+import { NgxSpinnerModule } from 'ngx-spinner';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterModule, CommonModule, RouterOutlet, TranslateModule, VersionBannerComponent],
+  imports: [RouterModule, CommonModule, RouterOutlet, TranslateModule, VersionBannerComponent, NgxSpinnerModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })

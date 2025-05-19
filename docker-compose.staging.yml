@@ -10,7 +10,7 @@ services:
     volumes:
       - db_data_staging:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "10001:5432"
     networks:
       - web
     healthcheck:

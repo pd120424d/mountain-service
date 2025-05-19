@@ -1,3 +1,5 @@
+import { MedicRole, TechnicalRole } from "../employee/employee.model";
+
 export interface ShiftResponse {
     id: number;
     shiftDate: string; // ISO format date
@@ -6,7 +8,7 @@ export interface ShiftResponse {
   }
   
   export interface AssignShiftRequest {
-    profileType: 'Medic' | 'Technical';
+    profileType: typeof MedicRole | typeof TechnicalRole;
     shiftDate: string;
     shiftType: number;
   }

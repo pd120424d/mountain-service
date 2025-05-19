@@ -1,0 +1,36 @@
+<h2 class="title">{{ 'SHIFT_MANAGEMENT.TITLE' | translate }}</h2>
+
+<div *ngFor="let shiftType of [1, 2, 3]" class="shift-card">
+  <h3 class="shift-title">{{ 'SHIFT_MANAGEMENT.SHIFT' | translate }} {{ shiftType }}</h3>
+
+  <div class="shift-info">
+    <p>{{ 'SHIFT_MANAGEMENT.MEDIC' | translate }}: <strong>{{ shifts[shiftType]?.['Medic'] ?? 0 }}</strong></p>
+    <p>{{ 'SHIFT_MANAGEMENT.TECHNICAL' | translate }}: <strong>{{ shifts[shiftType]?.['Technical'] ?? 0 }}</strong></p>
+  </div>
+
+  <div *ngIf="canModifyOthers()" class="admin-actions">
+    <select #selectedEmployee class="select">
+      <option value="">-- {{ 'SHIFT_MANAGEMENT.SELECT_EMPLOYEE' | translate }} --</option>
+      <option *ngFor="let e of employees" [value]="e.id">
+        {{ e.firstName }} {{ e.lastName }}
+      </option>
+    </select>
+    <button (click)="assignToShift(shiftType, selectedEmployee.value)" [disabled]="!selectedEmployee.value" class="btn assign">
+      {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
+    </button>
+    <button (click)="removeFromShift(shiftType, selectedEmployee.value)" [disabled]="!selectedEmployee.value" class="btn remove">
+      {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
+    </button>
+  </div>
+
+  <div *ngIf="!canModifyOthers()" class="user-actions">
+    <button (click)="assignToShift(shiftType)" class="btn add-me">
+      {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
+    </button>
+    <button (click)="removeFromShift(shiftType)" class="btn remove-me">
+      {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
+    </button>
+  </div>
+
+  <hr />
+</div>

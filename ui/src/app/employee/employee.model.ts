@@ -5,7 +5,7 @@ export interface Employee {
   email: string;
   phoneNumber: string;
   profilePicture?: string; // Optional
-  profileType: 'Medic' | 'Technical';
+  profileType: EmployeeRole;
   username: string;
   gender: string;
 }
@@ -17,7 +17,7 @@ export interface EmployeeCreateRequest {
   phone: string;
   username: string;
   password: string;
-  profileType: 'Medic' | 'Technical';
+  profileType: typeof MedicRole | typeof TechnicalRole;
   gender: string;
   profilePicture?: string; // Optional
 }
@@ -28,3 +28,9 @@ export interface EmployeeUpdateRequest {
   email?: string;
   age?: number; // Optional, per schema
 }
+
+export type EmployeeRole = typeof MedicRole | typeof TechnicalRole | typeof AdministratorRole;
+
+export const MedicRole = 'Medic';
+export const TechnicalRole = 'Technical';
+export const AdministratorRole = 'Administrator';

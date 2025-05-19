@@ -75,7 +75,8 @@
         "PROFILE_TYPE": "Profile",
         "PROFILE_OPTIONS": {
             "MEDIC": "Medic",
-            "TECHNICAL": "Technical Staff"
+            "TECHNICAL": "Technical Staff",
+            "ADMINISTRATOR": "Administrator"
         },
         "SAVE": "Save",
         "CANCEL": "Cancel"
@@ -99,5 +100,18 @@
     },
     "SESSION": {
         "EXPIRED": "Your session has expired. Please log in again."
+    },
+    "SHIFT_MANAGEMENT": {
+        "TITLE": "Shift Management",
+        "ASSIGN": "Assign",
+        "REMOVE": "Remove",
+        "SHIFT": "Shift",
+        "MEDIC": "Medic",
+        "TECHNICAL": "Technical Staff",
+        "SELECT_EMPLOYEE": "Select Employee",
+        "TOAST_ASSIGN_SUCCESS": "Successfully assigned!",
+        "TOAST_ASSIGN_ERROR": "Failed to assign shift.",
+        "TOAST_REMOVE_SUCCESS": "Successfully removed!",
+        "TOAST_REMOVE_ERROR": "Failed to remove shift."
     }
 }

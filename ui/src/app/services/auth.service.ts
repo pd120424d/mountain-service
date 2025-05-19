@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { interval, Observable, Subscription, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment'; // Import environment variables
+import { EmployeeRole, MedicRole } from '../employee/employee.model';
 
 @Injectable({
   providedIn: 'root',
@@ -62,11 +63,19 @@ export class AuthService {
     this.intervalSub?.unsubscribe();
   }
 
-  getRole(): string {
+  getRole(): EmployeeRole {
+    const token = localStorage.getItem('token');
+    if (!token) return MedicRole;
+
+    const payload = JSON.parse(atob(token.split('.')[1])); // Decode JWT payload
+    return payload.role || MedicRole;
+  }
+
+  getUserId(): string {
     const token = localStorage.getItem('token');
     if (!token) return '';
 
     const payload = JSON.parse(atob(token.split('.')[1])); // Decode JWT payload
-    return payload.role || '';
+    return payload.id || '';
   }
 }
