@@ -4,6 +4,7 @@ import { importProvidersFrom } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { ActivatedRoute } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { ToastrModule } from 'ngx-toastr';
 
 export const sharedTestingProviders = [
   provideHttpClient(withInterceptorsFromDi()),
@@ -11,6 +12,7 @@ export const sharedTestingProviders = [
 
   // You can wrap TranslateModule in `importProvidersFrom` like this:
   importProvidersFrom(TranslateModule.forRoot()),
+  importProvidersFrom(ToastrModule.forRoot()), 
   {
     provide: ActivatedRoute,
     useValue: {
