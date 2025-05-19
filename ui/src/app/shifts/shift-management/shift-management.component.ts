@@ -9,6 +9,7 @@ import { EmployeeRole } from "../../employee/employee.model";
 import { ShiftManagementService } from "../shift-management.service";
 import { ToastrService } from "ngx-toastr";
 import { NgxSpinnerService } from "ngx-spinner";
+import { BaseTranslatableComponent } from "../../base-translatable.component";
 
 @Component({
   selector: 'shift-management',
@@ -17,7 +18,7 @@ import { NgxSpinnerService } from "ngx-spinner";
   templateUrl: './shift-management.component.html',
   styleUrls: ['./shift-management.component.css'],
 })
-export class ShiftManagementComponent implements OnInit {
+export class ShiftManagementComponent extends BaseTranslatableComponent implements OnInit {
   shifts: { [key: string]: { [profile: string]: number } } = {};
   userRole: EmployeeRole = MedicRole;
   userId = '';
@@ -27,7 +28,9 @@ export class ShiftManagementComponent implements OnInit {
     private auth: AuthService,
     private toastr: ToastrService,
     private spinner: NgxSpinnerService,
-    private translate: TranslateService) { }
+    translate: TranslateService) {
+    super(translate);
+  }
 
   ngOnInit() {
     this.userRole = this.auth.getRole();

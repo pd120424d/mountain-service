@@ -9,6 +9,7 @@ import { Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { BaseTranslatableComponent } from '../../base-translatable.component';
 
 
 @Component({
@@ -18,7 +19,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
   standalone: true,
   imports: [RouterModule, ReactiveFormsModule, CommonModule, TranslateModule],
 })
-export class EmployeeListComponent implements OnInit {
+export class EmployeeListComponent extends BaseTranslatableComponent implements OnInit {
   showModal = false;
   employeeToDelete: number | null = null;
   employees: Employee[] = [];
@@ -26,8 +27,8 @@ export class EmployeeListComponent implements OnInit {
   constructor(private employeeService: EmployeeService,
     private router: Router,
     private dialog: MatDialog,
-    private translate: TranslateService) {
-    this.translate.setDefaultLang('sr-cyr');
+    translate: TranslateService) {
+    super(translate);
   }
 
   ngOnInit(): void {
@@ -69,9 +70,5 @@ export class EmployeeListComponent implements OnInit {
 
   goBackToHome(): void {
     this.router.navigate(['/']);
-  }
-
-  switchLanguage(language: string): void {
-    this.translate.use(language);
   }
 }

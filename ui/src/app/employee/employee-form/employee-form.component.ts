@@ -7,6 +7,7 @@ import { Employee } from '../employee.model';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { BaseTranslatableComponent } from '../../base-translatable.component';
 
 @Component({
   selector: 'app-employee-form',
@@ -15,7 +16,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
   standalone: true,
   imports: [RouterModule, ReactiveFormsModule, CommonModule, TranslateModule],
 })
-export class EmployeeFormComponent implements OnInit {
+export class EmployeeFormComponent extends BaseTranslatableComponent implements OnInit {
   employeeForm: FormGroup;
   employeeId?: number;
   isEditMode = false; // Flag to check if we're editing
@@ -24,8 +25,10 @@ export class EmployeeFormComponent implements OnInit {
     private fb: FormBuilder,
     private employeeService: EmployeeService,
     private router: Router,
-    private translate: TranslateService,
+    translate: TranslateService,
   ) {
+    super(translate);
+    
     this.employeeForm = this.fb.group({
       username: ['', Validators.required],
       password: ['', Validators.required], // Only relevant in create mode
@@ -53,8 +56,6 @@ export class EmployeeFormComponent implements OnInit {
       this.isEditMode = false; // We're in create mode
       console.log("No employee data passed via state.");
     }
-
-    this.translate.setDefaultLang('sr-cyr');
   }
 
   ngOnInit(): void {
@@ -92,9 +93,5 @@ export class EmployeeFormComponent implements OnInit {
   // Method to handle cancel button click
   cancel(): void {
     this.router.navigate(['/employees']); // Navigate back to the employee list or another appropriate route
-  }
-
-  switchLanguage(language: string): void {
-    this.translate.use(language);
   }
 }
