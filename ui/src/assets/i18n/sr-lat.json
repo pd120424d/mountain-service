@@ -107,6 +107,8 @@
         "SHIFT": "Smena",
         "MEDIC": "Medicinar",
         "TECHNICAL": "Tehničko osoblje",
+        "MEDICS": "Medicinari",
+        "TECHNICALS": "Tehničko osoblje",
         "SELECT_EMPLOYEE": "Izaberi zaposlenog",
         "TOAST_ASSIGN_SUCCESS": "Uspešno dodeljeno!",
         "TOAST_ASSIGN_ERROR": "Neuspeh prilikom dodeljivanja smene.",

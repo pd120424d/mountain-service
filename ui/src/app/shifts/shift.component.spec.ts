@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ShiftManagementComponent } from './shift-management.component';
-import { sharedTestingProviders } from '../../test-utils/shared-test-imports';
+import { ShiftManagementComponent } from './shift.component';
+import { sharedTestingProviders } from '../test-utils/shared-test-imports';
 
 describe('ShiftManagementComponent', () => {
   let component: ShiftManagementComponent;

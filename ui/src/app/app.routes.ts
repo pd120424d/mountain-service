@@ -5,7 +5,7 @@ import { EmployeeFormComponent } from './employee/employee-form/employee-form.co
 import { NotFoundComponent } from './not-found/not-found.component';
 import { LoginComponent } from './login/login.component';
 import { AuthGuard } from './auth.guard';
-import { ShiftManagementComponent } from './shifts/shift-management/shift-management.component';
+import { ShiftManagementComponent } from './shifts/shift.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent }, // Default route that loads HomeComponent

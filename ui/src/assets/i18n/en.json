@@ -108,6 +108,8 @@
         "SHIFT": "Shift",
         "MEDIC": "Medic",
         "TECHNICAL": "Technical Staff",
+        "MEDICS": "Medics",
+        "TECHNICALS": "Technical Staff",
         "SELECT_EMPLOYEE": "Select Employee",
         "TOAST_ASSIGN_SUCCESS": "Successfully assigned!",
         "TOAST_ASSIGN_ERROR": "Failed to assign shift.",

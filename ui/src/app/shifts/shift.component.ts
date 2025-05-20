@@ -1,22 +1,22 @@
 import { Component, OnInit } from "@angular/core";
-import { AdministratorRole, Employee, MedicRole } from "../../employee/employee.model";
-import { AuthService } from "../../services/auth.service";
+import { AdministratorRole, Employee, MedicRole } from "../employee/employee.model";
+import { AuthService } from "../services/auth.service";
 import { TranslateModule, TranslateService } from "@ngx-translate/core";
 import { RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { CommonModule } from "@angular/common";
-import { EmployeeRole } from "../../employee/employee.model";
-import { ShiftManagementService } from "../shift-management.service";
+import { EmployeeRole } from "../employee/employee.model";
+import { ShiftManagementService } from "./shift.service";
 import { ToastrService } from "ngx-toastr";
 import { NgxSpinnerService } from "ngx-spinner";
-import { BaseTranslatableComponent } from "../../base-translatable.component";
+import { BaseTranslatableComponent } from "../base-translatable.component";
 
 @Component({
-  selector: 'shift-management',
+  selector: 'shift',
   standalone: true,
   imports: [RouterModule, FormsModule, TranslateModule, CommonModule],
-  templateUrl: './shift-management.component.html',
-  styleUrls: ['./shift-management.component.css'],
+  templateUrl: './shift.component.html',
+  styleUrls: ['./shift.component.css'],
 })
 export class ShiftManagementComponent extends BaseTranslatableComponent implements OnInit {
   shifts: { [key: string]: { [profile: string]: number } } = {};
@@ -85,5 +85,13 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       error: () => this.toastr.error(this.translate.instant('SHIFT_MANAGEMENT.TOAST_REMOVE_ERROR')),
       complete: () => this.spinner.hide()
     });
+  }
+
+  getAvailableMedics(shiftType: number): number {
+    return this.shifts[shiftType]?.['Medic'] ?? 0;
+  }
+
+  getAvailableTechnicals(shiftType: number): number {
+    return this.shifts[shiftType]?.['Technical'] ?? 0;
   }
 }

@@ -107,6 +107,8 @@
         "SHIFT": "Смена",
         "MEDIC": "Медик",
         "TECHNICAL": "Технический персонал",
+        "MEDICS": "Медики",
+        "TECHNICALS": "Технический персонал",
         "SELECT_EMPLOYEE": "Выберите сотрудника",
         "TOAST_ASSIGN_SUCCESS": "Успешно назначено!",
         "TOAST_ASSIGN_ERROR": "Не удалось назначить смену.",
