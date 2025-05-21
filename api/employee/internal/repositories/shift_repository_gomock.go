@@ -100,18 +100,18 @@ func (mr *MockShiftRepositoryMockRecorder) GetOrCreateShift(shiftDate, shiftType
 }
 
 // GetShiftAvailability mocks base method.
-func (m *MockShiftRepository) GetShiftAvailability(date time.Time) (*model.ShiftsAvailability, error) {
+func (m *MockShiftRepository) GetShiftAvailability(start, end time.Time) (*model.ShiftsAvailabilityRange, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetShiftAvailability", date)
-	ret0, _ := ret[0].(*model.ShiftsAvailability)
+	ret := m.ctrl.Call(m, "GetShiftAvailability", start, end)
+	ret0, _ := ret[0].(*model.ShiftsAvailabilityRange)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetShiftAvailability indicates an expected call of GetShiftAvailability.
-func (mr *MockShiftRepositoryMockRecorder) GetShiftAvailability(date interface{}) *gomock.Call {
+func (mr *MockShiftRepositoryMockRecorder) GetShiftAvailability(start, end interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftAvailability", reflect.TypeOf((*MockShiftRepository)(nil).GetShiftAvailability), date)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftAvailability", reflect.TypeOf((*MockShiftRepository)(nil).GetShiftAvailability), start, end)
 }
 
 // GetShiftsByEmployeeID mocks base method.

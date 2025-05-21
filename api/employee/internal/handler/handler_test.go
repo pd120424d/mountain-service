@@ -1180,22 +1180,22 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 
-	t.Run("it returns an error when date is invalid", func(t *testing.T) {
+	t.Run("it returns an error when days parameter is invalid", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/shifts?date=invalid", nil)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/shifts?days=invalid", nil)
 		handler.GetShiftsAvailability(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "invalid date format")
+		assert.Contains(t, w.Body.String(), "Invalid days parameter")
 	})
 
 	t.Run("it returns an error when it fails to retrieve shifts availability", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		mockShiftRepo.EXPECT().GetShiftAvailability(gomock.Any()).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		mockShiftRepo.EXPECT().GetShiftAvailability(gomock.Any(), gomock.Any()).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/shifts?date=2023-01-01", nil)
 		handler.GetShiftsAvailability(ctx)
@@ -1204,18 +1204,20 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "internal server error")
 	})
 
-	t.Run("it returns shifts availability for a given date", func(t *testing.T) {
+	t.Run("it returns shifts availability for a given number of days", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		availability := &model.ShiftsAvailability{Availability: map[int]map[model.ProfileType]int{
-			1: {model.Medic: 2, model.Technical: 4}, // First shift
-			2: {model.Medic: 2, model.Technical: 4}, // Second shift
-			3: {model.Medic: 2, model.Technical: 4}, // Third shift
+		availability := &model.ShiftsAvailabilityRange{Days: map[time.Time][]map[model.ProfileType]int{
+			time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC): {
+				{model.Medic: 2, model.Technical: 4}, // First shift
+				{model.Medic: 2, model.Technical: 4}, // Second shift
+				{model.Medic: 2, model.Technical: 4}, // Third shift
+			},
 		}}
-		mockShiftRepo.EXPECT().GetShiftAvailability(gomock.Any()).Return(availability, nil).Times(1)
+		mockShiftRepo.EXPECT().GetShiftAvailability(gomock.Any(), gomock.Any()).Return(availability, nil).Times(1)
 
-		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/shifts?date=2023-01-01", nil)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/shifts?days=3", nil)
 		handler.GetShiftsAvailability(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)

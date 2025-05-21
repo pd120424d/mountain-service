@@ -455,31 +455,28 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 // @Failure 400 {object} gin.H
 // @Router /shifts/availability [get]
 func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
-	h.log.Infof("Received Get Shifts Availability request for date %s", ctx.Query("date"))
+	h.log.Infof("Received Get Shifts Availability request for the next %s days", ctx.Query("days"))
 
-	dateParam := ctx.Query("date")
-	var date time.Time
-	var err error
-	if dateParam != "" {
-		date, err = time.Parse(time.DateOnly, dateParam)
-		if err != nil {
-			h.log.Errorf("failed to parse date: %v", err)
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, expected YYYY-MM-DD"})
-			return
-		}
-	} else {
-		date = time.Now() // Default to today
+	daysStr := ctx.DefaultQuery("days", "7")
+	days, err := strconv.Atoi(daysStr)
+	if err != nil || days <= 0 {
+		h.log.Errorf("failed to extract url param, invalid days: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid days parameter"})
+		return
 	}
 
+	start := time.Now().Truncate(24 * time.Hour)
+	end := start.AddDate(0, 0, days)
+
 	// Fetch availability from the repository
-	availability, err := h.shiftsRepo.GetShiftAvailability(date)
+	availability, err := h.shiftsRepo.GetShiftAvailability(start, end)
 	if err != nil {
 		h.log.Errorf("failed to get shifts availability: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	h.log.Infof("Successfully retrieved shifts availability for date %s", date.Format(time.DateOnly))
+	h.log.Infof("Successfully retrieved shifts availability for the next %v days", days)
 	availabilityResponse := model.MapShiftsAvailabilityToResponse(availability)
 	ctx.JSON(http.StatusOK, availabilityResponse)
 }

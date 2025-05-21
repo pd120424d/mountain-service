@@ -10,6 +10,7 @@ import { ShiftManagementService } from "./shift.service";
 import { ToastrService } from "ngx-toastr";
 import { NgxSpinnerService } from "ngx-spinner";
 import { BaseTranslatableComponent } from "../base-translatable.component";
+import { ShiftAvailabilityResponse } from "./shift.model";
 
 @Component({
   selector: 'shift',
@@ -19,10 +20,11 @@ import { BaseTranslatableComponent } from "../base-translatable.component";
   styleUrls: ['./shift.component.css'],
 })
 export class ShiftManagementComponent extends BaseTranslatableComponent implements OnInit {
-  shifts: { [key: string]: { [profile: string]: number } } = {};
+  shiftAvailability: ShiftAvailabilityResponse = { days: {} };
   userRole: EmployeeRole = MedicRole;
   userId = '';
   employees: Employee[] = [];
+  dates: Date[] = [];
 
   constructor(private shiftService: ShiftManagementService,
     private auth: AuthService,
@@ -43,7 +45,10 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
 
   loadShifts() {
     this.shiftService.getShiftAvailability().subscribe(data => {
-      this.shifts = data;
+      this.shiftAvailability = data;
+      this.dates = Object.keys(data.days)
+      .map(d => new Date(d))
+      .sort((a, b) => a.getTime() - b.getTime());
     });
   }
 
@@ -57,12 +62,12 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     return this.userRole === AdministratorRole;
   }
 
-  assignToShift(shiftType: number, employeeId?: string) {
+  assignToShift(shiftType: number, date: Date, employeeId?: string) {
     const idToAssign = employeeId ?? this.userId;
     if (!idToAssign) return;
 
     this.spinner.show();
-    this.shiftService.assignEmployeeToShift(shiftType, idToAssign).subscribe({
+    this.shiftService.assignEmployeeToShift(shiftType, idToAssign, date).subscribe({
       next: () => {
         this.loadShifts();
         this.toastr.success(this.translate.instant('SHIFT_MANAGEMENT.TOAST_ASSIGN_SUCCESS'));
@@ -72,12 +77,12 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     });
   }
 
-  removeFromShift(shiftType: number, employeeId?: string) {
+  removeFromShift(shiftId: number, employeeId?: string) {
     const idToRemove = employeeId ?? this.userId;
     if (!idToRemove) return;
 
     this.spinner.show();
-    this.shiftService.removeEmployeeFromShift(shiftType, idToRemove).subscribe({
+    this.shiftService.removeEmployeeFromShift(idToRemove, shiftId).subscribe({
       next: () => {
         this.loadShifts();
         this.toastr.success(this.translate.instant('SHIFT_MANAGEMENT.TOAST_REMOVE_SUCCESS'));
@@ -86,12 +91,39 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       complete: () => this.spinner.hide()
     });
   }
-
-  getAvailableMedics(shiftType: number): number {
-    return this.shifts[shiftType]?.['Medic'] ?? 0;
+  getAvailableMedics(shiftType: number, date: Date): number {
+    const key = date.toISOString().split('T')[0];
+    const day = this.shiftAvailability?.days?.[key];
+    if (!day) return 0;
+  
+    switch (shiftType) {
+      case 1: return day.firstShift.medic;
+      case 2: return day.secondShift.medic;
+      case 3: return day.thirdShift.medic;
+      default: return 0;
+    }
   }
+  
+  getAvailableTechnicals(shiftType: number, date: Date): number {
+    const key = date.toISOString().split('T')[0];
+    const day = this.shiftAvailability?.days?.[key];
+    if (!day) return 0;
+  
+    switch (shiftType) {
+      case 1: return day.firstShift.technical;
+      case 2: return day.secondShift.technical;
+      case 3: return day.thirdShift.technical;
+      default: return 0;
+    }
+  }
+  
 
-  getAvailableTechnicals(shiftType: number): number {
-    return this.shifts[shiftType]?.['Technical'] ?? 0;
+  getShiftLabel(type: number): string {
+    switch (type) {
+      case 1: return '06:00 - 14:00';
+      case 2: return '14:00 - 22:00';
+      case 3: return '22:00 - 06:00';
+      default: return '';
+    }
   }
 }

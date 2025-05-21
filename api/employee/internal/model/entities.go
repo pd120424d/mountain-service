@@ -43,8 +43,8 @@ type EmployeeShift struct {
 	ShiftID    uint `gorm:"not null"`
 }
 
-type ShiftsAvailability struct {
-	Availability map[int]map[ProfileType]int
+type ShiftsAvailabilityRange struct {
+	Days map[time.Time][]map[ProfileType]int `json:"days"`
 }
 
 func (p ProfileType) String() string {

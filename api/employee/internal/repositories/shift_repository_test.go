@@ -95,15 +95,15 @@ func TestShiftRepositoryMockDB_GetShiftAvailability(t *testing.T) {
 
 	t.Run("it fails to get shifts availability when the query fails", func(t *testing.T) {
 
-		expectedSQL := `SELECT shifts.shift_type, employees.profile_type AS employee_role, COUNT(*) AS count FROM "shifts" JOIN employee_shifts ON shifts.id = employee_shifts.shift_id JOIN employees ON employee_shifts.employee_id = employees.id WHERE shift_date >= $1 AND shift_date < $2 GROUP BY shifts.shift_type, employees.profile_type`
+		expectedSQL := `SELECT shifts.shift_date, shifts.shift_type, employees.profile_type AS employee_role, COUNT(*) AS count FROM "shifts" JOIN employee_shifts ON shifts.id = employee_shifts.shift_id JOIN employees ON employee_shifts.employee_id = employees.id WHERE shift_date >= $1 AND shift_date < $2 GROUP BY shifts.shift_date, shifts.shift_type, employees.profile_type`
 		mock.ExpectQuery(regexp.QuoteMeta(expectedSQL)).
 			WithArgs(
 				time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC),
-				time.Date(2025, 2, 4, 0, 0, 0, 0, time.UTC), // You had the same day twice before!
+				time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC), // You had the same day twice before!
 			).
 			WillReturnError(sqlmock.ErrCancelled)
 
-		_, err := repo.GetShiftAvailability(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC))
+		_, err := repo.GetShiftAvailability(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC), time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC))
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "canceling query due to user request")
 	})

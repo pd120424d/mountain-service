@@ -2,6 +2,7 @@ package model
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -41,21 +42,24 @@ func TestMapUpdateRequestToEmployee(t *testing.T) {
 
 func TestMapShiftsAvailabilityToResponse(t *testing.T) {
 	t.Run("it maps shifts availability to the response format", func(t *testing.T) {
-		availability := &ShiftsAvailability{
-			Availability: map[int]map[ProfileType]int{
-				1: {Medic: 2, Technical: 4},
-				2: {Medic: 2, Technical: 4},
-				3: {Medic: 2, Technical: 4},
+		availability := &ShiftsAvailabilityRange{
+			Days: map[time.Time][]map[ProfileType]int{
+				time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC): {
+					{Medic: 2, Technical: 4},
+					{Medic: 2, Technical: 4},
+					{Medic: 2, Technical: 4},
+				},
 			},
 		}
 
 		response := MapShiftsAvailabilityToResponse(availability)
 
-		assert.Equal(t, 2, response.FirstShift.Medic)
-		assert.Equal(t, 4, response.FirstShift.Technical)
-		assert.Equal(t, 2, response.SecondShift.Medic)
-		assert.Equal(t, 4, response.SecondShift.Technical)
-		assert.Equal(t, 2, response.ThirdShift.Medic)
-		assert.Equal(t, 4, response.ThirdShift.Technical)
+		assert.Equal(t, 1, len(response.Days))
+		assert.Equal(t, 2, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].FirstShift.Medic)
+		assert.Equal(t, 4, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].FirstShift.Technical)
+		assert.Equal(t, 2, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].SecondShift.Medic)
+		assert.Equal(t, 4, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].SecondShift.Technical)
+		assert.Equal(t, 2, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].ThirdShift.Medic)
+		assert.Equal(t, 4, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].ThirdShift.Technical)
 	})
 }

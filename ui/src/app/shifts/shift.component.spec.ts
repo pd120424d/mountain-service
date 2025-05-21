@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ShiftManagementComponent } from './shift.component';
 import { sharedTestingProviders } from '../test-utils/shared-test-imports';
+import { DatePipe } from '@angular/common';
 
 describe('ShiftManagementComponent', () => {
   let component: ShiftManagementComponent;
@@ -10,7 +11,7 @@ describe('ShiftManagementComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ShiftManagementComponent],
-      providers: [...sharedTestingProviders]
+      providers: [...sharedTestingProviders, DatePipe]
     })
     .compileComponents();
 

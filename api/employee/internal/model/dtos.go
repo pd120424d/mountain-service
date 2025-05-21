@@ -88,6 +88,10 @@ type RemoveShiftRequest struct {
 // ShiftAvailabilityResponse DTO for returning the shift availability for a certain date
 // swagger:model
 type ShiftAvailabilityResponse struct {
+	Days map[time.Time]ShiftAvailabilityPerDay `json:"days"`
+}
+
+type ShiftAvailabilityPerDay struct {
 	FirstShift  ShiftAvailabilityDto `json:"1"`
 	SecondShift ShiftAvailabilityDto `json:"2"`
 	ThirdShift  ShiftAvailabilityDto `json:"3"`
@@ -97,14 +101,18 @@ type ShiftAvailabilityResponse struct {
 // swagger:model
 type ShiftAvailabilityDto struct {
 	Medic     int `json:"Medic"`
-	Technical int `json:"Techinical"`
+	Technical int `json:"Technical"`
 }
 
 func EmptyShiftAvailabilityResponse() *ShiftAvailabilityResponse {
 	return &ShiftAvailabilityResponse{
-		FirstShift:  ShiftAvailabilityDto{},
-		SecondShift: ShiftAvailabilityDto{},
-		ThirdShift:  ShiftAvailabilityDto{},
+		Days: map[time.Time]ShiftAvailabilityPerDay{
+			time.Now(): {
+				FirstShift:  ShiftAvailabilityDto{},
+				SecondShift: ShiftAvailabilityDto{},
+				ThirdShift:  ShiftAvailabilityDto{},
+			},
+		},
 	}
 }
 

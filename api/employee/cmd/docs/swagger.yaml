@@ -115,10 +115,10 @@ definitions:
     properties:
       Medic:
         type: integer
-      Techinical:
+      Technical:
         type: integer
     type: object
-  model.ShiftAvailabilityResponse:
+  model.ShiftAvailabilityPerDay:
     properties:
       "1":
         $ref: '#/definitions/model.ShiftAvailabilityDto'
@@ -126,6 +126,13 @@ definitions:
         $ref: '#/definitions/model.ShiftAvailabilityDto'
       "3":
         $ref: '#/definitions/model.ShiftAvailabilityDto'
+    type: object
+  model.ShiftAvailabilityResponse:
+    properties:
+      days:
+        additionalProperties:
+          $ref: '#/definitions/model.ShiftAvailabilityPerDay'
+        type: object
     type: object
   model.ShiftResponse:
     properties:

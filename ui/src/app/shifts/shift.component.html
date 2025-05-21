@@ -1,62 +1,75 @@
 <div class="shift-container">
   <h2 class="title">{{ 'SHIFT_MANAGEMENT.TITLE' | translate }}</h2>
 
-  <div *ngFor="let shiftType of [1, 2, 3]" class="shift-card">
-    <h3 class="shift-title">
-      {{ 'SHIFT_MANAGEMENT.SHIFT' | translate }} {{ shiftType }}
+  <div *ngFor="let day of dates" class="day-section">
+    <h3 class="day-title">
+      {{ day | date: 'fullDate' }}
     </h3>
 
-    <div class="shift-info">
-      <p>
-        {{ 'SHIFT_MANAGEMENT.MEDICS' | translate }}:
-        <strong>{{ getAvailableMedics(shiftType) }}</strong>
-      </p>
-      <p>
-        {{ 'SHIFT_MANAGEMENT.TECHNICALS' | translate }}:
-        <strong>{{ getAvailableTechnicals(shiftType) }}</strong>
-      </p>
-    </div>
+    <div *ngFor="let shiftType of [1, 2, 3]" class="shift-card" [ngClass]="'shift-type-' + shiftType">
+      <h4 class="shift-title">
+        <span class="badge" [ngClass]="'badge-' + shiftType">
+          {{ getShiftLabel(shiftType) }}
+        </span>
+        {{ 'SHIFT_MANAGEMENT.SHIFT' | translate }} {{ shiftType }}
+      </h4>
 
-    <div *ngIf="canModifyOthers()" class="admin-actions">
-      <label for="employeeSelect-{{ shiftType }}">{{ 'SHIFT_MANAGEMENT.SELECT_EMPLOYEE' | translate }}</label>
-      <select #selectedEmployee id="employeeSelect-{{ shiftType }}" class="select">
-        <option value="">-- {{ 'SHIFT_MANAGEMENT.SELECT_EMPLOYEE' | translate }} --</option>
-        <option *ngFor="let e of employees" [value]="e.id">
-          {{ e.firstName }} {{ e.lastName }}
-        </option>
-      </select>
+      <div class="shift-info">
+        <p>
+          {{ 'SHIFT_MANAGEMENT.MEDICS' | translate }}:
+          <strong>{{ getAvailableMedics(shiftType, day) }}</strong>
+        </p>
+        <p>
+          {{ 'SHIFT_MANAGEMENT.TECHNICALS' | translate }}:
+          <strong>{{ getAvailableTechnicals(shiftType, day) }}</strong>
+        </p>
+      </div>
 
-      <div class="button-group">
-        <button
-          class="btn assign"
-          (click)="assignToShift(shiftType, selectedEmployee.value)"
-          [disabled]="!selectedEmployee.value"
+      <div *ngIf="canModifyOthers()" class="admin-actions">
+        <label for="employeeSelect-{{ day.toDateString() }}-{{ shiftType }}">
+          {{ 'SHIFT_MANAGEMENT.SELECT_EMPLOYEE' | translate }}
+        </label>
+        <select
+          #selectedEmployee
+          id="employeeSelect-{{ day.toDateString() }}-{{ shiftType }}"
+          class="select"
         >
-          {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
-        </button>
+          <option value="">-- {{ 'SHIFT_MANAGEMENT.SELECT_EMPLOYEE' | translate }} --</option>
+          <option *ngFor="let e of employees" [value]="e.id">
+            {{ e.firstName }} {{ e.lastName }}
+          </option>
+        </select>
 
-        <button
-          class="btn remove"
-          (click)="removeFromShift(shiftType, selectedEmployee.value)"
-          [disabled]="!selectedEmployee.value"
-        >
-          {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
-        </button>
+        <div class="button-group">
+          <button
+            class="btn assign"
+            (click)="assignToShift(shiftType, day, selectedEmployee.value)"
+            [disabled]="!selectedEmployee.value"
+          >
+            {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
+          </button>
+
+          <button
+            class="btn remove"
+            (click)="removeFromShift(shiftType, selectedEmployee.value)"
+            [disabled]="!selectedEmployee.value"
+          >
+            {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="!canModifyOthers()" class="user-actions">
+        <div class="button-group">
+          <button class="btn add-me" (click)="assignToShift(shiftType, day)">
+            {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
+          </button>
+
+          <button class="btn remove-me" (click)="removeFromShift(shiftType)">
+            {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
+          </button>
+        </div>
       </div>
     </div>
-
-    <div *ngIf="!canModifyOthers()" class="user-actions">
-      <div class="button-group">
-        <button class="btn add-me" (click)="assignToShift(shiftType)">
-          {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
-        </button>
-
-        <button class="btn remove-me" (click)="removeFromShift(shiftType)">
-          {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
-        </button>
-      </div>
-    </div>
-
-    <hr />
   </div>
 </div>

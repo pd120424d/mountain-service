@@ -543,12 +543,12 @@ const docTemplate = `{
                 "Medic": {
                     "type": "integer"
                 },
-                "Techinical": {
+                "Technical": {
                     "type": "integer"
                 }
             }
         },
-        "model.ShiftAvailabilityResponse": {
+        "model.ShiftAvailabilityPerDay": {
             "type": "object",
             "properties": {
                 "1": {
@@ -559,6 +559,17 @@ const docTemplate = `{
                 },
                 "3": {
                     "$ref": "#/definitions/model.ShiftAvailabilityDto"
+                }
+            }
+        },
+        "model.ShiftAvailabilityResponse": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.ShiftAvailabilityPerDay"
+                    }
                 }
             }
         },

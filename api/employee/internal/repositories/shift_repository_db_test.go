@@ -115,19 +115,19 @@ func TestShiftRepository_GetShiftsByEmployeeID(t *testing.T) {
 func TestShiftRepository_GetShiftAvailability(t *testing.T) {
 	log := utils.NewTestLogger()
 
-	t.Run("it returns shifts availability for a given date", func(t *testing.T) {
+	t.Run("it returns shifts availability for a given range of dates", func(t *testing.T) {
 		gormDB := setupSQLiteTestDB(t)
 		repo := NewShiftRepository(log, gormDB)
 
-		availability, err := repo.GetShiftAvailability(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC))
+		availability, err := repo.GetShiftAvailability(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC), time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC))
 		assert.NoError(t, err)
 		assert.NotNil(t, availability)
-		assert.Equal(t, 3, len(availability.Availability))
-		assert.Equal(t, 2, availability.Availability[1][model.Medic])
-		assert.Equal(t, 4, availability.Availability[1][model.Technical])
+		assert.Equal(t, 7, len(availability.Days))
+		assert.Equal(t, 2, availability.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)][1][model.Medic])
+		assert.Equal(t, 4, availability.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)][1][model.Technical])
 	})
 
-	t.Run("it returns shifts availability for a given date when there are assigned employees", func(t *testing.T) {
+	t.Run("it returns shifts availability for a given range of dates when there are shifts with assigned employees", func(t *testing.T) {
 		gormDB := setupSQLiteTestDB(t)
 		repo := NewShiftRepository(log, gormDB)
 
@@ -142,12 +142,12 @@ func TestShiftRepository_GetShiftAvailability(t *testing.T) {
 		tx = gormDB.Create(&model.EmployeeShift{EmployeeID: 2, ShiftID: 1})
 		require.NoError(t, tx.Error)
 
-		availability, err := repo.GetShiftAvailability(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC))
+		availability, err := repo.GetShiftAvailability(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC), time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC))
 		assert.NoError(t, err)
 		assert.NotNil(t, availability)
-		assert.Equal(t, 3, len(availability.Availability))
-		assert.Equal(t, 1, availability.Availability[1][model.Medic])
-		assert.Equal(t, 3, availability.Availability[1][model.Technical])
+		assert.Equal(t, 7, len(availability.Days))
+		assert.Equal(t, 1, availability.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)][0][model.Medic])
+		assert.Equal(t, 3, availability.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)][0][model.Technical])
 	})
 }
 
