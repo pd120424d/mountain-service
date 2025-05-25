@@ -11,6 +11,8 @@ import { ToastrService } from "ngx-toastr";
 import { NgxSpinnerService } from "ngx-spinner";
 import { BaseTranslatableComponent } from "../base-translatable.component";
 import { ShiftAvailabilityResponse } from "./shift.model";
+import { format } from 'date-fns';
+import { enUS, sr, srLatn } from 'date-fns/locale';
 
 @Component({
   selector: 'shift',
@@ -49,6 +51,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       this.dates = Object.keys(data.days)
       .map(d => new Date(d))
       .sort((a, b) => a.getTime() - b.getTime());
+      console.log(this.dates);
     });
   }
 
@@ -126,4 +129,10 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       default: return '';
     }
   }
+
+  getTranslatedDate(date: Date): string {
+  const lang = this.translate.currentLang;
+  const locale = lang === 'sr' ? sr : lang === 'sr-Latn' ? srLatn : enUS;
+  return format(date, 'EEEE, MMMM d, yyyy', { locale });
+}
 }

@@ -113,6 +113,10 @@
         "TOAST_ASSIGN_SUCCESS": "Успешно назначено!",
         "TOAST_ASSIGN_ERROR": "Не удалось назначить смену.",
         "TOAST_REMOVE_SUCCESS": "Успешно удалено!",
-        "TOAST_REMOVE_ERROR": "Не удалось удалить смену."
+        "TOAST_REMOVE_ERROR": "Не удалось удалить смену.",
+        "TOOLTIP_ADD_ME": "Зарезервировать смену",
+        "TOOLTIP_REMOVE_ME": "Отменить смену",
+        "TOOLTIP_ASSIGN": "Назначить выбранного сотрудника на смену",
+        "TOOLTIP_REMOVE": "Удалить выбранного сотрудника из смены"
     }
 }

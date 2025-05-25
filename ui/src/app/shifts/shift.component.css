@@ -1,31 +1,55 @@
+/* 🌤️ Soft general background */
+.shift-container {
+  background-color: #f0f4fa;
+  padding: 2rem;
+  border-radius: 8px;
+}
+
+/* 🗓️ Shift day columns */
+.shift-days-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: space-between;
+}
+
 .day-section {
-  margin-bottom: 3rem;
+  flex: 1 1 300px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #ddd;
 }
 
+/* 📌 Sticky day title */
 .day-title {
-  font-size: 1.3rem;
+  position: sticky;
+  top: 0;
+  background-color: #ffffff;
+  z-index: 10;
+  padding: 0.5rem 0;
+  font-size: 1.25rem;
   font-weight: bold;
-  margin-bottom: 1rem;
   color: #2c3e50;
+  border-bottom: 1px solid #ccc;
 }
 
-/* Shift type coloring */
+/* 🔵 Shift type backgrounds */
 .shift-type-1 {
-  background-color: #e8f4fd; /* light blue for morning */
+  background-color: #e9f6ff;
 }
-
 .shift-type-2 {
-  background-color: #fff8e1; /* light yellow for afternoon */
+  background-color: #fffbea;
 }
-
 .shift-type-3 {
-  background-color: #f4f4f4; /* light gray for night */
+  background-color: #f4f6f8;
 }
 
-/* Badge */
+/* 🟣 Time badge */
 .badge {
   display: inline-block;
-  padding: 0.25rem 0.6rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 12px;
   font-size: 0.75rem;
   margin-right: 0.5rem;
@@ -34,13 +58,55 @@
 }
 
 .badge-1 {
-  background-color: #3498db; /* morning */
+  background-color: #3498db;
 }
-
 .badge-2 {
-  background-color: #f39c12; /* afternoon */
+  background-color: #f39c12;
+}
+.badge-3 {
+  background-color: #7f8c8d;
 }
 
-.badge-3 {
-  background-color: #7f8c8d; /* night */
+/* ✅ Buttons */
+.button-group {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover {
+  background-color: #2980b9;
+}
+
+.btn.remove,
+.btn.remove-me {
+  background-color: #e74c3c;
+}
+.btn.remove:hover,
+.btn.remove-me:hover {
+  background-color: #c0392b;
+}
+
+.btn.add-me {
+  background-color: #2ecc71;
+}
+.btn.add-me:hover {
+  background-color: #27ae60;
 }

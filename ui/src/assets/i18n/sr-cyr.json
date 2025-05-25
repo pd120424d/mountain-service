@@ -113,6 +113,10 @@
     "TOAST_ASSIGN_SUCCESS": "Успешно додељено!",
     "TOAST_ASSIGN_ERROR": "Неуспех при додељивању смене.",
     "TOAST_REMOVE_SUCCESS": "Успешно уклоњено!",
-    "TOAST_REMOVE_ERROR": "Неуспех при уклањању смене."
+    "TOAST_REMOVE_ERROR": "Неуспех при уклањању смене.",
+    "TOOLTIP_ADD_ME": "Резервиши смену",
+    "TOOLTIP_REMOVE_ME": "Откажи смену",
+    "TOOLTIP_ASSIGN": "Додели изабраног запосленог у смену",
+    "TOOLTIP_REMOVE": "Уклони изабраног запосленог из смене"
   }
 }
