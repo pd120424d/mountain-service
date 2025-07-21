@@ -6,6 +6,7 @@ import { AuthService } from '../services/auth.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrService } from 'ngx-toastr';
 import { NgxSpinnerModule } from 'ngx-spinner';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -31,6 +32,7 @@ export class HomeComponent implements OnInit {
 
   currentImageIndex = 0;
   prevImageIndex = 0;
+  isStaging = environment.staging;
 
   constructor(
     private translate: TranslateService,

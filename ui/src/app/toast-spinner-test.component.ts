@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { NgxSpinnerModule } from 'ngx-spinner';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-toast-spinner-test',
   standalone: true,
   imports: [CommonModule, NgxSpinnerModule],
   template: `
-    <div class="test-container">
+    <div class="test-container" *ngIf="isStaging; else notStaging">
       <h2>Toast and Spinner Test</h2>
       <div class="button-group">
         <button (click)="testToastr()" class="btn btn-primary">Test Toastr</button>
@@ -17,6 +18,12 @@ import { NgxSpinnerModule } from 'ngx-spinner';
         <button (click)="testBoth()" class="btn btn-success">Test Both</button>
       </div>
     </div>
+    <ng-template #notStaging>
+      <div class="test-container">
+        <h2>Test Component Not Available</h2>
+        <p>This test component is only available in staging environment.</p>
+      </div>
+    </ng-template>
     <ngx-spinner></ngx-spinner>
   `,
   styles: [`
@@ -40,6 +47,8 @@ import { NgxSpinnerModule } from 'ngx-spinner';
   `]
 })
 export class ToastSpinnerTestComponent {
+  isStaging = environment.staging;
+
   constructor(
     private toastr: ToastrService,
     private spinner: NgxSpinnerService

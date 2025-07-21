@@ -25,13 +25,26 @@ A web application built with Angular for managing mountain rescue service operat
 npm install
 ```
 
-## Development Server
+## Build Commands
 
-Run the development server:
+### Development (staging features visible)
 ```bash
 ng serve
+# or
+ng serve --configuration=development
 ```
-Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+
+### Staging (staging features visible)
+```bash
+ng build --configuration=staging
+ng serve --configuration=staging
+```
+
+### Production (staging features hidden)
+```bash
+ng build --configuration=production
+ng serve --configuration=production
+```
 
 ## Production Build
 

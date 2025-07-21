@@ -33,7 +33,7 @@
   </div>
 </div>
 
-<div class="test-buttons">
+<div class="test-buttons" *ngIf="isStaging">
   <button (click)="testSpinner()">Test Spinner</button>
   <button (click)="testToastr()">Test Toastr</button>
 </div>
