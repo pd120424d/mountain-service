@@ -16,14 +16,24 @@
       <button type="submit" class="login-btn">{{ 'LOGIN.SUBMIT' | translate }}</button>
     </form>
 
-    <!-- Move this outside the form -->
+    <!-- Error message for invalid credentials -->
+    <div *ngIf="loginError" class="alert alert-error">
+      {{ 'LOGIN.INVALID_CREDENTIALS' | translate }}
+    </div>
+
+    <!-- Session expired message -->
+    <div *ngIf="sessionExpired" class="alert alert-warning">
+      {{ 'SESSION.EXPIRED' | translate }}
+    </div>
+
+    <!-- Register and Home links -->
     <p class="register-link">
       {{ 'LOGIN.NO_ACCOUNT' | translate }}
       <a routerLink="/employees/new">{{ 'LOGIN.REGISTER' | translate }}</a>
     </p>
-    
-    <div *ngIf="sessionExpired" class="alert alert-warning">
-      {{ 'SESSION.EXPIRED' | translate }}
-    </div>    
+
+    <p class="home-link">
+      <a routerLink="/">{{ 'LOGIN.GO_HOME' | translate }}</a>
+    </p>
   </div>
 </div>

@@ -93,7 +93,9 @@
         "PASSWORD": "Password",
         "SUBMIT": "Login",
         "NO_ACCOUNT": "Don't have an account?",
-        "REGISTER": "Register here"
+        "REGISTER": "Register here",
+        "INVALID_CREDENTIALS": "Invalid username or password.",
+        "GO_HOME": "Go to Home Page"
     },
     "LOGOUT": {
         "BUTTON": "Logout"

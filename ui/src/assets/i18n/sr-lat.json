@@ -92,7 +92,9 @@
         "PASSWORD": "Lozinka",
         "SUBMIT": "Prijavi se",
         "NO_ACCOUNT": "Nemate nalog?",
-        "REGISTER": "Registrujte se ovde"
+        "REGISTER": "Registrujte se ovde",
+        "INVALID_CREDENTIALS": "Neispravno korisničko ime ili lozinka.",
+        "GO_HOME": "Idite na početnu stranicu"
     },
     "LOGOUT": {
         "BUTTON": "Odjava"
