@@ -77,7 +77,6 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 		ProfileType:    profileType,
 	}
 
-	// Check for unique username
 	usernameFilter := map[string]any{
 		"username": employee.Username,
 	}
@@ -93,7 +92,6 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 		return
 	}
 
-	// Check for unique email
 	emailFilter := map[string]any{
 		"email": employee.Email,
 	}
@@ -109,7 +107,6 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 		return
 	}
 
-	// Validate the password
 	if err := utils.ValidatePassword(employee.Password); err != nil {
 		h.log.Errorf("failed to validate password: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -156,18 +153,15 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		return
 	}
 
-	// Check if this is an admin login attempt
 	if auth.IsAdminLogin(req.Username) {
 		h.log.Info("Admin login attempt detected")
 
-		// Validate admin password
 		if !auth.ValidateAdminPassword(req.Password) {
 			h.log.Error("Invalid admin password")
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 			return
 		}
 
-		// Generate admin JWT token
 		token, err := auth.GenerateAdminJWT()
 		if err != nil {
 			h.log.Errorf("failed to generate admin token: %v", err)
@@ -180,8 +174,6 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		return
 	}
 
-	// Regular employee login
-	// Fetch employee by username
 	employee, err := h.emplRepo.GetEmployeeByUsername(req.Username)
 	if err != nil {
 		h.log.Errorf("failed to retrieve employee: %v", err)
@@ -189,14 +181,12 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		return
 	}
 
-	// Verify password
 	if !auth.CheckPassword(employee.Password, req.Password) {
 		h.log.Error("failed to verify password")
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// Generate JWT token
 	token, err := auth.GenerateJWT(employee.ID, employee.Role())
 	if err != nil {
 		h.log.Errorf("failed to generate token: %v", err)
@@ -447,7 +437,6 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 		return
 	}
 
-	// Fetch shifts from the repository
 	var shifts []model.Shift
 	err = h.shiftsRepo.GetShiftsByEmployeeID(uint(employeeID), &shifts)
 	if err != nil {
@@ -494,7 +483,6 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	start := time.Now().Truncate(24 * time.Hour)
 	end := start.AddDate(0, 0, days)
 
-	// Fetch availability from the repository
 	availability, err := h.shiftsRepo.GetShiftAvailability(start, end)
 	if err != nil {
 		h.log.Errorf("failed to get shifts availability: %v", err)
