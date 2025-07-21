@@ -25,7 +25,7 @@ if [ ! -f "$COVERAGE_FILE" ]; then
 fi
 
 COVERAGE=$(node -e "console.log(require('./$COVERAGE_FILE').total.statements.pct)")
-THRESHOLD=50
+THRESHOLD=70
 
 echo "Total statement coverage: $COVERAGE%"
 if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then

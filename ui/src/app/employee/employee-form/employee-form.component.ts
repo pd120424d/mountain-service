@@ -19,7 +19,7 @@ import { BaseTranslatableComponent } from '../../base-translatable.component';
 export class EmployeeFormComponent extends BaseTranslatableComponent implements OnInit {
   employeeForm: FormGroup;
   employeeId?: number;
-  isEditMode = false; // Flag to check if we're editing
+  isEditMode = false;
 
   constructor(
     private fb: FormBuilder,
@@ -42,7 +42,6 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
       profilePicture: [null],
     });
 
-    // Check if employee data is passed via router state
     const navigation = this.router.getCurrentNavigation();
     const state = navigation?.extras.state as { employee: Employee };
 
@@ -58,11 +57,8 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
     }
   }
 
-  ngOnInit(): void {
+  ngOnInit(): void {}
 
-  }
-
-  // Populate the form with the employee data
   populateForm(employee: Employee): void {
     this.employeeForm.patchValue({
       username: employee.username,
@@ -90,7 +86,6 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
     }
   }
 
-  // Method to handle cancel button click
   cancel(): void {
     this.router.navigate(['/employees']); // Navigate back to the employee list or another appropriate route
   }

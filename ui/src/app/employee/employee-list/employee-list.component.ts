@@ -33,7 +33,6 @@ export class EmployeeListComponent extends BaseTranslatableComponent implements 
 
   ngOnInit(): void {
     this.loadEmployees();
-    console.log('EmployeeListComponent initialized');
   }
 
   loadEmployees(): void {
