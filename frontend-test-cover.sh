@@ -8,8 +8,15 @@ else
   cd ui
 fi
 
-npm ci
-npm run test -- --watch=false --code-coverage
+# Skip npm install if node_modules exists and has packages
+if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then
+  echo "Installing dependencies..."
+  npm install
+else
+  echo "Dependencies already installed, skipping npm install"
+fi
+
+npm run test
 
 COVERAGE_FILE="coverage/ui/coverage-summary.json"
 if [ ! -f "$COVERAGE_FILE" ]; then
