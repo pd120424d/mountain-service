@@ -22,6 +22,11 @@ export interface RemoveShiftRequest {
   id: number;
 }
 
+export interface RemoveShiftByDetailsRequest {
+  shiftDate: string;
+  shiftType: number;
+}
+
 export interface ShiftAvailabilityDto {
   medic: number;
   technical: number;

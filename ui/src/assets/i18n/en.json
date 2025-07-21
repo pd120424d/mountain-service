@@ -117,6 +117,8 @@
         "TOAST_ASSIGN_ERROR": "Failed to assign shift.",
         "TOAST_REMOVE_SUCCESS": "Successfully removed!",
         "TOAST_REMOVE_ERROR": "Failed to remove shift.",
+        "TOAST_LOAD_ERROR": "Failed to load shift data.",
+        "LOADING": "Loading shift data...",
         "TOOLTIP_ADD_ME": "Reserve this shift",
         "TOOLTIP_REMOVE_ME": "Cancel reservation",
         "TOOLTIP_ASSIGN": "Assign selected employee to this shift",

@@ -1,7 +1,15 @@
 <div class="shift-container">
   <h2 class="title">{{ 'SHIFT_MANAGEMENT.TITLE' | translate }}</h2>
 
-  <div class="shift-days-row">
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>{{ 'SHIFT_MANAGEMENT.LOADING' | translate }}</p>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading" class="shift-days-row">
     <div *ngFor="let day of dates" class="day-section">
       <h3 class="day-title">
         {{ getTranslatedDate(day) }}
@@ -41,14 +49,14 @@
           <div class="hover-actions">
             <div class="button-group">
               <button class="btn assign" (click)="assignToShift(shiftType, day, selectedEmployee.value)"
-                [disabled]="!selectedEmployee.value" [title]="'SHIFT_MANAGEMENT.TOOLTIP_ASSIGN' | translate">
-                <i class="fas fa-user-plus"></i>
+                [disabled]="!selectedEmployee.value || isAssigning || isRemoving" [title]="'SHIFT_MANAGEMENT.TOOLTIP_ASSIGN' | translate">
+                <i class="fas" [ngClass]="isAssigning ? 'fa-spinner fa-spin' : 'fa-user-plus'"></i>
                 {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
               </button>
 
-              <button class="btn remove" (click)="removeFromShift(shiftType, selectedEmployee.value)"
-                [disabled]="!selectedEmployee.value" [title]="'SHIFT_MANAGEMENT.TOOLTIP_REMOVE' | translate">
-                <i class="fas fa-user-minus"></i>
+              <button class="btn remove" (click)="removeFromShift(shiftType, selectedEmployee.value, day)"
+                [disabled]="!selectedEmployee.value || isAssigning || isRemoving" [title]="'SHIFT_MANAGEMENT.TOOLTIP_REMOVE' | translate">
+                <i class="fas" [ngClass]="isRemoving ? 'fa-spinner fa-spin' : 'fa-user-minus'"></i>
                 {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
               </button>
             </div>
@@ -60,14 +68,14 @@
           <div class="hover-actions">
             <div class="button-group">
               <button class="btn add-me" (click)="assignToShift(shiftType, day)"
-                [title]="'SHIFT_MANAGEMENT.TOOLTIP_ADD_ME' | translate">
-                <i class="fas fa-user-plus"></i>
+                [disabled]="isAssigning || isRemoving" [title]="'SHIFT_MANAGEMENT.TOOLTIP_ADD_ME' | translate">
+                <i class="fas" [ngClass]="isAssigning ? 'fa-spinner fa-spin' : 'fa-user-plus'"></i>
                 {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
               </button>
 
-              <button class="btn remove-me" (click)="removeFromShift(shiftType)"
-                [title]="'SHIFT_MANAGEMENT.TOOLTIP_REMOVE_ME' | translate">
-                <i class="fas fa-user-minus"></i>
+              <button class="btn remove-me" (click)="removeFromShift(shiftType, undefined, day)"
+                [disabled]="isAssigning || isRemoving" [title]="'SHIFT_MANAGEMENT.TOOLTIP_REMOVE_ME' | translate">
+                <i class="fas" [ngClass]="isRemoving ? 'fa-spinner fa-spin' : 'fa-user-minus'"></i>
                 {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
               </button>
             </div>

@@ -3,23 +3,30 @@
   background-color: #f0f4fa;
   padding: 2rem;
   border-radius: 8px;
+  height: 100vh;
+  overflow-y: auto;
+  max-width: 100%;
 }
 
 /* 🗓️ Shift day columns */
 .shift-days-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 2rem;
-  justify-content: space-between;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  min-height: calc(100vh - 8rem);
 }
 
 .day-section {
-  flex: 1 1 300px;
+  flex: 0 0 350px;
   background-color: #ffffff;
   border-radius: 10px;
   padding: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid #ddd;
+  max-height: calc(100vh - 10rem);
+  overflow-y: auto;
 }
 
 /* 📌 Sticky day title */
@@ -135,4 +142,99 @@
 
 .shift-card:hover .shift-actions {
   display: flex;
+}
+
+/* 📱 Responsive design */
+@media (max-width: 768px) {
+  .shift-days-row {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+
+  .day-section {
+    flex: 1 1 auto;
+    max-height: none;
+  }
+
+  .shift-container {
+    height: auto;
+    padding: 1rem;
+  }
+}
+
+/* 🎨 Custom scrollbar styling */
+.shift-container::-webkit-scrollbar,
+.day-section::-webkit-scrollbar,
+.shift-days-row::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.shift-container::-webkit-scrollbar-track,
+.day-section::-webkit-scrollbar-track,
+.shift-days-row::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.shift-container::-webkit-scrollbar-thumb,
+.day-section::-webkit-scrollbar-thumb,
+.shift-days-row::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.shift-container::-webkit-scrollbar-thumb:hover,
+.day-section::-webkit-scrollbar-thumb:hover,
+.shift-days-row::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 🔄 Loading states */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  margin: 2rem 0;
+}
+
+.loading-spinner {
+  text-align: center;
+  color: #3498db;
+}
+
+.loading-spinner i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.loading-spinner p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* 🚫 Disabled button states */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+  background-color: inherit;
+}
+
+.btn.assign:disabled:hover {
+  background-color: #3498db;
+}
+
+.btn.remove:disabled:hover,
+.btn.remove-me:disabled:hover {
+  background-color: #e74c3c;
+}
+
+.btn.add-me:disabled:hover {
+  background-color: #2ecc71;
 }
