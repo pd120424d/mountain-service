@@ -20,7 +20,7 @@ type ShiftRepository interface {
 	CreateAssignment(employeeID, shiftID uint) (uint, error)
 	GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error
 	GetShiftAvailability(start, end time.Time) (*model.ShiftsAvailabilityRange, error)
-	RemoveEmployeeFromShift(assignmentID uint) error
+	RemoveEmployeeFromShiftByDetails(employeeID uint, shiftDate time.Time, shiftType int) error
 }
 
 type shiftRepository struct {
@@ -136,13 +136,28 @@ func (r *shiftRepository) GetShiftAvailability(start, end time.Time) (*model.Shi
 	return &result, nil
 }
 
-func (r *shiftRepository) RemoveEmployeeFromShift(assignmentID uint) error {
-	err := r.db.First(&model.EmployeeShift{}, assignmentID).Error
+func (r *shiftRepository) RemoveEmployeeFromShiftByDetails(employeeID uint, shiftDate time.Time, shiftType int) error {
+	var shift model.Shift
+	err := r.db.Where("shift_date = ? AND shift_type = ?", shiftDate, shiftType).First(&shift).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("shift not found for date %s and type %d", shiftDate.Format(time.DateOnly), shiftType)
+		}
+		return fmt.Errorf("failed to find shift: %w", err)
+	}
+
+	var assignment model.EmployeeShift
+	err = r.db.Where("employee_id = ? AND shift_id = ?", employeeID, shift.ID).First(&assignment).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("employee is not assigned to this shift")
+		}
 		return fmt.Errorf("failed to find assignment: %w", err)
 	}
-	if err := r.db.Delete(&model.EmployeeShift{}, assignmentID).Error; err != nil {
+
+	if err := r.db.Delete(&assignment).Error; err != nil {
 		return fmt.Errorf("failed to remove employee from shift: %w", err)
 	}
+
 	return nil
 }

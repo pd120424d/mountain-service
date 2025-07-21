@@ -181,7 +181,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.Employ
 		authorized.PUT("/employees/:id", employeeHandler.UpdateEmployee)
 		authorized.GET("/employees/:id/shifts", employeeHandler.GetShifts)
 		authorized.GET("/shifts/availability", employeeHandler.GetShiftsAvailability)
-		authorized.DELETE("/employees/:id/shifts/:shiftID", employeeHandler.RemoveShift)
+		authorized.DELETE("/employees/:id/shifts", employeeHandler.RemoveShift)
 	}
 
 	// TODO: Remove this or turn it into the health check

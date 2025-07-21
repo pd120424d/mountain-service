@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 func TestShiftRepository_GetOrCreateShift(t *testing.T) {
@@ -151,7 +153,7 @@ func TestShiftRepository_GetShiftAvailability(t *testing.T) {
 	})
 }
 
-func TestShiftRepository_RemoveEmployeeFromShift(t *testing.T) {
+func TestShiftRepository_RemoveEmployeeFromShiftByDetails(t *testing.T) {
 	log := utils.NewTestLogger()
 
 	gormDB := setupSQLiteTestDB(t)
@@ -159,16 +161,32 @@ func TestShiftRepository_RemoveEmployeeFromShift(t *testing.T) {
 
 	t.Run("it removes an employee from a shift when the assignment exists", func(t *testing.T) {
 		gormDB.Create(&model.Employee{ID: 1, Username: "test-user", FirstName: "Bruce", LastName: "Lee", Email: "test-user@example.com", ProfileType: model.Medic})
-		gormDB.Create(&model.Shift{ID: 1, ShiftDate: time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC), ShiftType: 1})
+		shiftDate := time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)
+		gormDB.Create(&model.Shift{ID: 1, ShiftDate: shiftDate, ShiftType: 1})
 		gormDB.Create(&model.EmployeeShift{EmployeeID: 1, ShiftID: 1, ID: 1})
 
-		err := repo.RemoveEmployeeFromShift(1)
+		err := repo.RemoveEmployeeFromShiftByDetails(1, shiftDate, 1)
 		assert.NoError(t, err)
+
+		var assignment model.EmployeeShift
+		err = gormDB.Where("employee_id = ? AND shift_id = ?", 1, 1).First(&assignment).Error
+		assert.Error(t, err)
+		assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
 	})
 
-	t.Run("it returns an error when the assignment does not exist", func(t *testing.T) {
-		err := repo.RemoveEmployeeFromShift(999)
+	t.Run("it returns an error when the shift does not exist", func(t *testing.T) {
+		nonExistentDate := time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
+		err := repo.RemoveEmployeeFromShiftByDetails(1, nonExistentDate, 1)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to find assignment: record not found")
+		assert.Contains(t, err.Error(), "shift not found")
+	})
+
+	t.Run("it returns an error when the employee is not assigned to the shift", func(t *testing.T) {
+		shiftDate := time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)
+		gormDB.Create(&model.Shift{ID: 2, ShiftDate: shiftDate, ShiftType: 2})
+
+		err := repo.RemoveEmployeeFromShiftByDetails(1, shiftDate, 2)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "employee is not assigned to this shift")
 	})
 }

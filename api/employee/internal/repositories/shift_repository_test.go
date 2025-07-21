@@ -109,25 +109,61 @@ func TestShiftRepositoryMockDB_GetShiftAvailability(t *testing.T) {
 	})
 }
 
-func TestShiftRepositoryMockDB_RemoveEmployeeFromShift(t *testing.T) {
+func TestShiftRepositoryMockDB_RemoveEmployeeFromShiftByDetails(t *testing.T) {
 	log := utils.NewTestLogger()
 
 	gormDB, mock := setupMockDB(t)
 	repo := NewShiftRepository(log, gormDB)
 	gormDB.Logger = gormDB.Logger.LogMode(logger.Info)
 
-	t.Run("it fails to remove an employee from a shift when the delete query fails", func(t *testing.T) {
+	t.Run("it fails when shift is not found", func(t *testing.T) {
+		shiftDate := time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)
+
+		mock.ExpectQuery(`SELECT \* FROM "shifts"`).
+			WithArgs(shiftDate, 1, 1).
+			WillReturnError(sqlmock.ErrCancelled)
+
+		err := repo.RemoveEmployeeFromShiftByDetails(1, shiftDate, 1)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to find shift")
+	})
+
+	t.Run("it fails when assignment is not found", func(t *testing.T) {
+		shiftDate := time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)
+
+		mock.ExpectQuery(`SELECT \* FROM "shifts"`).
+			WithArgs(shiftDate, 1, 1).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "shift_date", "shift_type", "created_at"}).
+				AddRow(1, shiftDate, 1, time.Now()))
+
 		mock.ExpectQuery(`SELECT \* FROM "employee_shifts"`).
-			WithArgs(int64(123), int64(1)).
-			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(123))
+			WithArgs(1, 1, 1).
+			WillReturnError(sqlmock.ErrCancelled)
+
+		err := repo.RemoveEmployeeFromShiftByDetails(1, shiftDate, 1)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to find assignment")
+	})
+	t.Run("it fails to remove an employee from a shift when the delete query fails", func(t *testing.T) {
+		shiftDate := time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)
+
+		mock.ExpectQuery(`SELECT \* FROM "shifts"`).
+			WithArgs(shiftDate, 1, 1).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "shift_date", "shift_type", "created_at"}).
+				AddRow(1, shiftDate, 1, time.Now()))
+
+		mock.ExpectQuery(`SELECT \* FROM "employee_shifts"`).
+			WithArgs(1, 1, 1).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "employee_id", "shift_id"}).
+				AddRow(1, 1, 1))
 
 		mock.ExpectBegin()
 		mock.ExpectExec(`DELETE FROM "employee_shifts"`).
-			WithArgs(123).
+			WithArgs(1).
 			WillReturnError(sqlmock.ErrCancelled)
 		mock.ExpectRollback()
 
-		err := repo.RemoveEmployeeFromShift(123)
+		err := repo.RemoveEmployeeFromShiftByDetails(1, shiftDate, 1)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "canceling query due to user request")
 	})

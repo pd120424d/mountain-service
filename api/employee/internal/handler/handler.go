@@ -492,7 +492,15 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 // @Failure 400 {object} gin.H
 // @Router /employees/{id}/shifts [delete]
 func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
-	h.log.Infof("Received Remove Shift request for employee ID %s", ctx.Param("id"))
+	employeeIDParam := ctx.Param("id")
+	h.log.Infof("Received Remove Shift request for employee ID %s", employeeIDParam)
+
+	employeeID, err := strconv.Atoi(employeeIDParam)
+	if err != nil || employeeID <= 0 {
+		h.log.Errorf("failed to extract url param, invalid employee ID: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
+		return
+	}
 
 	var req model.RemoveShiftRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -501,14 +509,20 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 		return
 	}
 
-	// Call repository method to remove the shift
-	err := h.shiftsRepo.RemoveEmployeeFromShift(req.ID)
+	shiftDate, err := time.Parse(time.DateOnly, req.ShiftDate)
+	if err != nil {
+		h.log.Errorf("failed to parse shift date: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid shiftDate format, expected YYYY-MM-DD"})
+		return
+	}
+
+	err = h.shiftsRepo.RemoveEmployeeFromShiftByDetails(uint(employeeID), shiftDate, req.ShiftType)
 	if err != nil {
 		h.log.Errorf("failed to remove shift: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	h.log.Infof("Successfully removed shift for employee ID %d", req.ID)
+	h.log.Infof("Successfully removed shift for employee ID %d", employeeID)
 	ctx.JSON(http.StatusNoContent, nil)
 }

@@ -1238,8 +1238,22 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 
-	t.Run("it returns an error when request payload is invalid", func(t *testing.T) {
+	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
 
+		payload := `{"shiftType":1,"shiftDate":"2025-02-03"}`
+		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/invalid/shifts", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.RemoveShift(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid employee ID")
+	})
+
+	t.Run("it returns an error when request payload is invalid", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
@@ -1247,7 +1261,7 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 			"
 		}`
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidPayload))
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", strings.NewReader(invalidPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		handler.RemoveShift(ctx)
@@ -1256,16 +1270,32 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "{\"error\":\"invalid character '\\\\n' in string literal\"}")
 	})
 
+	t.Run("it returns an error when shift date format is invalid", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{"shiftType":1,"shiftDate":"invalid-date"}`
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.RemoveShift(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "invalid shiftDate format")
+	})
+
 	t.Run("it returns an error when it fails to remove shift", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		payload := `{"id":1}`
+		payload := `{"shiftType":1,"shiftDate":"2025-02-03"}`
+		shiftDate, _ := time.Parse(time.DateOnly, "2025-02-03")
 
-		mockShiftRepo.EXPECT().RemoveEmployeeFromShift(uint(1)).Return(gorm.ErrRecordNotFound).Times(1)
+		mockShiftRepo.EXPECT().RemoveEmployeeFromShiftByDetails(uint(1), shiftDate, 1).Return(gorm.ErrRecordNotFound).Times(1)
 
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(payload))
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", strings.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		handler.RemoveShift(ctx)
@@ -1278,12 +1308,13 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		payload := `{"id":1}`
+		payload := `{"shiftType":1,"shiftDate":"2025-02-03"}`
+		shiftDate, _ := time.Parse(time.DateOnly, "2025-02-03")
 
-		mockShiftRepo.EXPECT().RemoveEmployeeFromShift(uint(1)).Return(nil).Times(1)
+		mockShiftRepo.EXPECT().RemoveEmployeeFromShiftByDetails(uint(1), shiftDate, 1).Return(nil).Times(1)
 
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(payload))
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", strings.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		handler.RemoveShift(ctx)
