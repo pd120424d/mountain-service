@@ -68,7 +68,12 @@ export class HomeComponent implements OnInit {
 
   testSpinner() {
     console.log('Spinner clicked');
-    this.spinner.show();
+    this.spinner.show(undefined, {
+      type: 'ball-scale-multiple',
+      size: 'large',
+      bdColor: 'rgba(0, 0, 0, 0.8)',
+      color: '#fff'
+    });
 
     setTimeout(() => {
       this.spinner.hide();
