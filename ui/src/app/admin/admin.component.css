@@ -1,0 +1,98 @@
+.admin-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.admin-header h1 {
+  color: #d32f2f;
+  margin: 0;
+}
+
+.admin-content {
+  margin-top: 20px;
+}
+
+.danger-zone {
+  border: 2px solid #f44336;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: #ffebee;
+}
+
+.danger-zone h2 {
+  color: #d32f2f;
+  margin-top: 0;
+}
+
+.warning-text {
+  color: #d32f2f;
+  font-weight: bold;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #ffcdd2;
+  border-radius: 4px;
+}
+
+.reset-section {
+  margin: 20px 0;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.btn-danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #d32f2f;
+}
+
+.btn-danger:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.alert {
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 4px;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}

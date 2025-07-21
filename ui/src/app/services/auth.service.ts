@@ -3,8 +3,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { interval, Observable, Subscription, tap } from 'rxjs';
 import { Router } from '@angular/router';
-import { environment } from '../../environments/environment'; // Import environment variables
-import { EmployeeRole, MedicRole } from '../employee/employee.model';
+import { environment } from '../../environments/environment';
+import { EmployeeRole, MedicRole, AdministratorRole } from '../employee/employee.model';
 
 @Injectable({
   providedIn: 'root',
@@ -18,6 +18,22 @@ export class AuthService {
     this.startPeriodicTokenCheck();
   }
 
+  private startPeriodicTokenCheck(): void {
+    this.intervalSub = interval(this.checkInterval).subscribe(() => {
+      if (!this.isAuthenticated() && this.isAauthorizedRoute()) {
+        this.logout();
+      }
+    });
+  }
+
+  decodeToken(token: string): any {
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+      return null;
+    }
+  }
+
   login(credentials: { username: string; password: string }): Observable<{ token: string }> {
     return this.http.post<{ token: string }>(`${this.apiUrl}/login`, credentials).pipe(
       tap(response => {
@@ -25,7 +41,7 @@ export class AuthService {
       })
     );
   }
-
+  
   logout(): void {
     localStorage.removeItem('token');
     this.router.navigate(['/login']);
@@ -39,24 +55,10 @@ export class AuthService {
     return payload && payload.exp > Date.now() / 1000;
   }
 
-  private decodeToken(token: string): any {
-    try {
-      return JSON.parse(atob(token.split('.')[1]));
-    } catch (e) {
-      return null;
-    }
-  }
-
-  private startPeriodicTokenCheck(): void {
-    this.intervalSub = interval(this.checkInterval).subscribe(() => {
-      if (!this.isAuthenticated() && !this.isUnauthorizedRoute()) {
-        this.logout();
-      }
-    });
-  }
-
-  private isUnauthorizedRoute(): boolean {
-    return this.router.url !== '/login' && this.router.url !== '/employees/new'
+  private isAauthorizedRoute(): boolean {
+    return this.router.url !== '/home' &&
+     this.router.url !== '/login' &&
+     this.router.url !== '/employees/new';
   }
 
   stopPeriodicCheck(): void {
@@ -67,7 +69,7 @@ export class AuthService {
     const token = localStorage.getItem('token');
     if (!token) return MedicRole;
 
-    const payload = JSON.parse(atob(token.split('.')[1])); // Decode JWT payload
+    const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.role || MedicRole;
   }
 
@@ -75,7 +77,15 @@ export class AuthService {
     const token = localStorage.getItem('token');
     if (!token) return '';
 
-    const payload = JSON.parse(atob(token.split('.')[1])); // Decode JWT payload
-    return payload.id || '';
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return (payload.id).toString() || '';
+  }
+
+  isAdmin(): boolean {
+    return this.getRole() === AdministratorRole;
+  }
+
+  resetAllData(): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/admin/reset`);
   }
 }

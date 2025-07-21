@@ -11,7 +11,6 @@
   </div>
 
 
-  <!-- Navigation Section -->
   <div class="navigation-section">
     <div class="nav-links">
       <button routerLink="/employees" class="nav-button">
@@ -28,6 +27,11 @@
         <i class="fas fa-person-drowning"></i>
         <h3>{{ 'NAV.EMERGENCIES.TITLE' | translate }}</h3>
         <p>{{ 'NAV.EMERGENCIES.DESCRIPTION' | translate }}</p>
+      </a>
+      <a *ngIf="authService.isAdmin()" routerLink="/admin" class="nav-button admin-button">
+        <i class="fas fa-cog"></i>
+        <h3>{{ 'NAV.ADMIN_PANEL.TITLE' | translate }}</h3>
+        <p>{{ 'NAV.ADMIN_PANEL.DESCRIPTION' | translate }}</p>
       </a>
     </div>
   </div>

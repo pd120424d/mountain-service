@@ -7,16 +7,18 @@ import { LoginComponent } from './login/login.component';
 import { AuthGuard } from './auth.guard';
 import { ShiftManagementComponent } from './shifts/shift.component';
 import { ToastSpinnerTestComponent } from './toast-spinner-test.component';
+import { AdminComponent } from './admin/admin.component';
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent }, // Default route that loads HomeComponent
-  { path: 'home', component: HomeComponent }, // /home route
-  { path: 'login', component: LoginComponent }, // used to login existing employees
+  { path: '', component: HomeComponent },
+  { path: 'home', component: HomeComponent },
+  { path: 'login', component: LoginComponent },
   { path: 'employees', component: EmployeeListComponent, canActivate: [AuthGuard] },
   { path: 'employees/edit/:id', component: EmployeeFormComponent, canActivate: [AuthGuard] },
-  { path: 'employees/new', component: EmployeeFormComponent }, // used to register new employees
-  { path: 'shifts', component: ShiftManagementComponent, canActivate: [AuthGuard] }, // Shift management page
+  { path: 'employees/new', component: EmployeeFormComponent },
+  { path: 'shifts', component: ShiftManagementComponent, canActivate: [AuthGuard] },
+  { path: 'admin', component: AdminComponent, canActivate: [AuthGuard] },
   { path: 'test-toast-spinner', component: ToastSpinnerTestComponent },
 
-  { path: '**', component: NotFoundComponent }, // Wildcard route for undefined paths
+  { path: '**', component: NotFoundComponent },
 ];

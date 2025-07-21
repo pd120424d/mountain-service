@@ -26,6 +26,10 @@
             "TITLE": "Report Emergencies",
             "DESCRIPTION": "Quickly report and document emergency situations."
         },
+        "ADMIN_PANEL": {
+            "TITLE": "Admin Panel",
+            "DESCRIPTION": "System administration and data management."
+        },
         "EMPLOYEES": "Employees",
         "SHIFTS": "Shifts"
     },
@@ -75,8 +79,7 @@
         "PROFILE_TYPE": "Profile",
         "PROFILE_OPTIONS": {
             "MEDIC": "Medic",
-            "TECHNICAL": "Technical Staff",
-            "ADMINISTRATOR": "Administrator"
+            "TECHNICAL": "Technical Staff"
         },
         "SAVE": "Save",
         "CANCEL": "Cancel"
@@ -123,5 +126,15 @@
         "TOOLTIP_REMOVE_ME": "Cancel reservation",
         "TOOLTIP_ASSIGN": "Assign selected employee to this shift",
         "TOOLTIP_REMOVE": "Remove selected employee from this shift"
+    },
+    "ADMIN_PANEL": {
+        "TITLE": "Admin Panel",
+        "DANGER_ZONE": "Danger Zone",
+        "RESET_WARNING": "WARNING: This action will permanently delete all data from the system including employees, shifts, and all related information. This action cannot be undone!",
+        "RESET_ALL_DATA": "Reset All Data",
+        "RESETTING": "Resetting",
+        "RESET_SUCCESS": "All data has been successfully reset.",
+        "RESET_ERROR": "Failed to reset data.",
+        "BACK": "Back"
     }
 }

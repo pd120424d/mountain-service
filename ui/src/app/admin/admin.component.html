@@ -1,0 +1,36 @@
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>{{ 'ADMIN_PANEL' | translate }}</h1>
+    <button class="btn btn-secondary" (click)="goBack()">
+      {{ 'BACK' | translate }}
+    </button>
+  </div>
+
+  <div class="admin-content">
+    <div class="danger-zone">
+      <h2>{{ 'DANGER_ZONE' | translate }}</h2>
+      <p class="warning-text">
+        {{ 'RESET_WARNING' | translate }}
+      </p>
+      
+      <div class="reset-section">
+        <button 
+          class="btn btn-danger" 
+          (click)="onResetAllData()" 
+          [disabled]="isResetting"
+        >
+          <span *ngIf="isResetting">{{ 'RESETTING' | translate }}...</span>
+          <span *ngIf="!isResetting">{{ 'RESET_ALL_DATA' | translate }}</span>
+        </button>
+      </div>
+
+      <div *ngIf="resetSuccess" class="alert alert-success">
+        {{ 'RESET_SUCCESS' | translate }}
+      </div>
+
+      <div *ngIf="resetError" class="alert alert-danger">
+        {{ 'RESET_ERROR' | translate }}: {{ errorMessage }}
+      </div>
+    </div>
+  </div>
+</div>

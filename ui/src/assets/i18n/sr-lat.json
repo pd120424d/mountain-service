@@ -26,6 +26,10 @@
             "TITLE": "Prijava Urgentne Situacije",
             "DESCRIPTION": "Brza prijava i dokumentovanje urgentnih situacija."
         },
+        "ADMIN_PANEL": {
+            "TITLE": "Admin Panel",
+            "DESCRIPTION": "Administracija sistema i upravljanje podacima."
+        },
         "EMPLOYEES": "Zaposleni",
         "SHIFTS": "Smene"
     },
@@ -122,5 +126,15 @@
         "TOOLTIP_REMOVE_ME": "Otkaži smenu",
         "TOOLTIP_ASSIGN": "Dodeli izabranog zaposlenog u smenu",
         "TOOLTIP_REMOVE": "Ukloni izabranog zaposlenog iz smene"
+    },
+    "ADMIN_PANEL": {
+        "TITLE": "Admin Panel",
+        "DANGER_ZONE": "Danger Zone",
+        "RESET_WARNING": "WARNING: This action will permanently delete all data from the system including employees, shifts, and all related information. This action cannot be undone!",
+        "RESET_ALL_DATA": "Reset All Data",
+        "RESETTING": "Resetting",
+        "RESET_SUCCESS": "All data has been successfully reset.",
+        "RESET_ERROR": "Failed to reset data.",
+        "BACK": "Back"
     }
 }
