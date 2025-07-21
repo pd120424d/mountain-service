@@ -110,3 +110,29 @@
 .btn.add-me:hover {
   background-color: #27ae60;
 }
+
+
+.shift-card {
+  position: relative;
+  border: 1px solid #ccc;
+  padding: 1rem;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.shift-card:hover {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.shift-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: none;
+  gap: 0.5rem;
+}
+
+.shift-card:hover .shift-actions {
+  display: flex;
+}

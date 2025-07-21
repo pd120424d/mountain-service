@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideTranslate } from './shared/translate-provider';
 import { authInterceptor } from './app/auth.interceptor';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -15,7 +15,7 @@ bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideAnimationsAsync(),
+    provideAnimations(),
     provideTranslate(),
     importProvidersFrom(
       BrowserAnimationsModule,
@@ -24,6 +24,6 @@ bootstrapApplication(AppComponent, {
         timeOut: 3000,
         closeButton: true
       }),
-      NgxSpinnerModule
+      NgxSpinnerModule.forRoot({ type: 'ball-scale-multiple' })
     )]
 }).catch(err => console.error(err));

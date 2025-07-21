@@ -12,7 +12,7 @@ import { NgxSpinnerService } from "ngx-spinner";
 import { BaseTranslatableComponent } from "../base-translatable.component";
 import { ShiftAvailabilityResponse } from "./shift.model";
 import { format } from 'date-fns';
-import { enUS, sr, srLatn } from 'date-fns/locale';
+import { enUS, sr, srLatn, ru } from 'date-fns/locale';
 
 @Component({
   selector: 'shift',
@@ -49,8 +49,8 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     this.shiftService.getShiftAvailability().subscribe(data => {
       this.shiftAvailability = data;
       this.dates = Object.keys(data.days)
-      .map(d => new Date(d))
-      .sort((a, b) => a.getTime() - b.getTime());
+        .map(d => new Date(d))
+        .sort((a, b) => a.getTime() - b.getTime());
       console.log(this.dates);
     });
   }
@@ -73,9 +73,13 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     this.shiftService.assignEmployeeToShift(shiftType, idToAssign, date).subscribe({
       next: () => {
         this.loadShifts();
+        this.spinner.hide();
         this.toastr.success(this.translate.instant('SHIFT_MANAGEMENT.TOAST_ASSIGN_SUCCESS'));
       },
-      error: () => this.toastr.error(this.translate.instant('SHIFT_MANAGEMENT.TOAST_ASSIGN_ERROR')),
+      error: () => {
+        this.spinner.hide();
+        this.toastr.error(this.translate.instant('SHIFT_MANAGEMENT.TOAST_ASSIGN_ERROR'));
+      },
       complete: () => this.spinner.hide()
     });
   }
@@ -88,17 +92,22 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     this.shiftService.removeEmployeeFromShift(idToRemove, shiftId).subscribe({
       next: () => {
         this.loadShifts();
+        this.spinner.hide();
         this.toastr.success(this.translate.instant('SHIFT_MANAGEMENT.TOAST_REMOVE_SUCCESS'));
       },
-      error: () => this.toastr.error(this.translate.instant('SHIFT_MANAGEMENT.TOAST_REMOVE_ERROR')),
+      error: () => {
+        this.spinner.hide();
+        this.toastr.error(this.translate.instant('SHIFT_MANAGEMENT.TOAST_REMOVE_ERROR'));
+      },
       complete: () => this.spinner.hide()
     });
   }
+
   getAvailableMedics(shiftType: number, date: Date): number {
     const key = date.toISOString().split('T')[0];
     const day = this.shiftAvailability?.days?.[key];
     if (!day) return 0;
-  
+
     switch (shiftType) {
       case 1: return day.firstShift.medic;
       case 2: return day.secondShift.medic;
@@ -106,12 +115,12 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       default: return 0;
     }
   }
-  
+
   getAvailableTechnicals(shiftType: number, date: Date): number {
     const key = date.toISOString().split('T')[0];
     const day = this.shiftAvailability?.days?.[key];
     if (!day) return 0;
-  
+
     switch (shiftType) {
       case 1: return day.firstShift.technical;
       case 2: return day.secondShift.technical;
@@ -119,7 +128,6 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       default: return 0;
     }
   }
-  
 
   getShiftLabel(type: number): string {
     switch (type) {
@@ -131,8 +139,13 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   }
 
   getTranslatedDate(date: Date): string {
-  const lang = this.translate.currentLang;
-  const locale = lang === 'sr' ? sr : lang === 'sr-Latn' ? srLatn : enUS;
-  return format(date, 'EEEE, MMMM d, yyyy', { locale });
-}
+    const lang = this.translate.currentLang;
+    switch (lang) {
+      case 'sr-cyr': return format(date, 'EEEE, d. MMMM yyyy', { locale: sr });
+      case 'sr-lat': return format(date, 'EEEE, d. MMMM yyyy', { locale: srLatn });
+      case 'ru': return format(date, 'EEEE, d MMMM yyyy', { locale: ru });
+      case 'en': return format(date, 'EEEE, MMMM d, yyyy', { locale: enUS });
+      default: return format(date, 'EEEE, MMMM d, yyyy', { locale: enUS });
+    }
+  }
 }

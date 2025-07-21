@@ -3,13 +3,16 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../services/auth.service';
+import { NgxSpinnerService } from 'ngx-spinner';
+import { ToastrService } from 'ngx-toastr';
+import { NgxSpinnerModule } from 'ngx-spinner';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
   standalone: true,
-  imports: [RouterModule, CommonModule, TranslateModule]
+  imports: [RouterModule, CommonModule, TranslateModule, NgxSpinnerModule]
 })
 export class HomeComponent implements OnInit {
   images: string[] = [
@@ -29,7 +32,11 @@ export class HomeComponent implements OnInit {
   currentImageIndex = 0;
   prevImageIndex = 0;
 
-  constructor(private translate: TranslateService, public authService: AuthService) {
+  constructor(
+    private translate: TranslateService,
+    public authService: AuthService,
+    private spinner: NgxSpinnerService,
+    private toastr: ToastrService) {
     this.translate.setDefaultLang('sr-cyr')
   }
 
@@ -57,5 +64,20 @@ export class HomeComponent implements OnInit {
 
   switchLanguage(language: string): void {
     this.translate.use(language);
+  }
+
+  testSpinner() {
+    console.log('Spinner clicked');
+    this.spinner.show();
+
+    setTimeout(() => {
+      this.spinner.hide();
+      this.toastr.success('Spinner done!');
+    }, 2000);
+  }
+
+  testToastr() {
+    console.log('Toastr clicked');
+    this.toastr.info('Toastr test!');
   }
 }

@@ -2,13 +2,31 @@
 
 /* Reset browser default margins and paddings */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box; /* Ensures padding and borders are included in element size */
-  }
-  
-  html, body {
-    height: 100%; /* Ensure html and body elements take up the full viewport height */
-    overflow: hidden; /* Prevent scrollbars */
-  }
-  
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  /* Ensures padding and borders are included in element size */
+}
+
+html,
+body {
+  height: 100%;
+  /* Ensure html and body elements take up the full viewport height */
+  overflow: hidden;
+  /* Prevent scrollbars */
+}
+
+/* Force spinner visibility */
+.ngx-spinner {
+  z-index: 9999 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Force toast visibility */
+.toast-container {
+  z-index: 999999 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: all !important;
+}

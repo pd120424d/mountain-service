@@ -37,50 +37,40 @@
               {{ e.firstName }} {{ e.lastName }}
             </option>
           </select>
+          
+          <div class="hover-actions">
+            <div class="button-group">
+              <button class="btn assign" (click)="assignToShift(shiftType, day, selectedEmployee.value)"
+                [disabled]="!selectedEmployee.value" [title]="'SHIFT_MANAGEMENT.TOOLTIP_ASSIGN' | translate">
+                <i class="fas fa-user-plus"></i>
+                {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
+              </button>
 
-          <div class="button-group">
-            <button
-              class="btn assign"
-              (click)="assignToShift(shiftType, day, selectedEmployee.value)"
-              [disabled]="!selectedEmployee.value"
-              [title]="'SHIFT_MANAGEMENT.TOOLTIP_ASSIGN' | translate"
-            >
-              <i class="fas fa-user-plus"></i>
-              {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
-            </button>
-
-            <button
-              class="btn remove"
-              (click)="removeFromShift(shiftType, selectedEmployee.value)"
-              [disabled]="!selectedEmployee.value"
-              [title]="'SHIFT_MANAGEMENT.TOOLTIP_REMOVE' | translate"
-            >
-              <i class="fas fa-user-minus"></i>
-              {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
-            </button>
+              <button class="btn remove" (click)="removeFromShift(shiftType, selectedEmployee.value)"
+                [disabled]="!selectedEmployee.value" [title]="'SHIFT_MANAGEMENT.TOOLTIP_REMOVE' | translate">
+                <i class="fas fa-user-minus"></i>
+                {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- Normal user view -->
         <div *ngIf="!canModifyOthers()" class="user-actions">
-          <div class="button-group">
-            <button
-              class="btn add-me"
-              (click)="assignToShift(shiftType, day)"
-              [title]="'SHIFT_MANAGEMENT.TOOLTIP_ADD_ME' | translate"
-            >
-              <i class="fas fa-user-plus"></i>
-              {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
-            </button>
+          <div class="hover-actions">
+            <div class="button-group">
+              <button class="btn add-me" (click)="assignToShift(shiftType, day)"
+                [title]="'SHIFT_MANAGEMENT.TOOLTIP_ADD_ME' | translate">
+                <i class="fas fa-user-plus"></i>
+                {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
+              </button>
 
-            <button
-              class="btn remove-me"
-              (click)="removeFromShift(shiftType)"
-              [title]="'SHIFT_MANAGEMENT.TOOLTIP_REMOVE_ME' | translate"
-            >
-              <i class="fas fa-user-minus"></i>
-              {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
-            </button>
+              <button class="btn remove-me" (click)="removeFromShift(shiftType)"
+                [title]="'SHIFT_MANAGEMENT.TOOLTIP_REMOVE_ME' | translate">
+                <i class="fas fa-user-minus"></i>
+                {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
