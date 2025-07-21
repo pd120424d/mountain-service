@@ -82,6 +82,7 @@ jobs:
             echo "SWAGGER_API_URL=${{ secrets.SWAGGER_API_URL }}" > .env
             echo "CORS_ALLOWED_ORIGINS=http://${{ secrets.AZURE_VM_HOST }}:9082" >> .env
             echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ steps.version.outputs.VERSION }}" >> .env
+            echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
 
             git pull origin main
 

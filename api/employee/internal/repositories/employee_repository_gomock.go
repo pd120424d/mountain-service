@@ -9,8 +9,9 @@
 package repositories
 
 import (
-	model "github.com/pd120424d/mountain-service/api/employee/internal/model"
 	reflect "reflect"
+
+	model "github.com/pd120424d/mountain-service/api/employee/internal/model"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -137,4 +138,18 @@ func (m *MockEmployeeRepository) UpdateEmployee(employee *model.Employee) error 
 func (mr *MockEmployeeRepositoryMockRecorder) UpdateEmployee(employee interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmployee", reflect.TypeOf((*MockEmployeeRepository)(nil).UpdateEmployee), employee)
+}
+
+// ResetAllData mocks base method.
+func (m *MockEmployeeRepository) ResetAllData() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetAllData")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResetAllData indicates an expected call of ResetAllData.
+func (mr *MockEmployeeRepositoryMockRecorder) ResetAllData() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockEmployeeRepository)(nil).ResetAllData))
 }

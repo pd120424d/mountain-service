@@ -25,6 +25,7 @@ type EmployeeHandler interface {
 	GetShifts(ctx *gin.Context)
 	GetShiftsAvailability(ctx *gin.Context)
 	RemoveShift(ctx *gin.Context)
+	ResetAllData(ctx *gin.Context)
 }
 
 type employeeHandler struct {
@@ -155,6 +156,31 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		return
 	}
 
+	// Check if this is an admin login attempt
+	if auth.IsAdminLogin(req.Username) {
+		h.log.Info("Admin login attempt detected")
+
+		// Validate admin password
+		if !auth.ValidateAdminPassword(req.Password) {
+			h.log.Error("Invalid admin password")
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+			return
+		}
+
+		// Generate admin JWT token
+		token, err := auth.GenerateAdminJWT()
+		if err != nil {
+			h.log.Errorf("failed to generate admin token: %v", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+			return
+		}
+
+		h.log.Info("Successfully authenticated admin user")
+		ctx.JSON(http.StatusOK, gin.H{"token": token})
+		return
+	}
+
+	// Regular employee login
 	// Fetch employee by username
 	employee, err := h.emplRepo.GetEmployeeByUsername(req.Username)
 	if err != nil {
@@ -525,4 +551,28 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 
 	h.log.Infof("Successfully removed shift for employee ID %d", employeeID)
 	ctx.JSON(http.StatusNoContent, nil)
+}
+
+// ResetAllData Ресетовање свих података (само за админе)
+// @Summary Ресетовање свих података
+// @Description Брише све запослене, смене и повезане податке из система (само за админе)
+// @Tags админ
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} gin.H
+// @Failure 403 {object} gin.H
+// @Failure 500 {object} gin.H
+// @Router /admin/reset [delete]
+func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
+	h.log.Warn("Admin data reset request received")
+
+	err := h.emplRepo.ResetAllData()
+	if err != nil {
+		h.log.Errorf("Failed to reset all data: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset data"})
+		return
+	}
+
+	h.log.Info("Successfully reset all system data")
+	ctx.JSON(http.StatusOK, gin.H{"message": "All data has been successfully reset"})
 }

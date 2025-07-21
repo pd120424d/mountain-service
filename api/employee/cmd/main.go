@@ -184,6 +184,12 @@ func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.Employ
 		authorized.DELETE("/employees/:id/shifts", employeeHandler.RemoveShift)
 	}
 
+	// Admin-only routes
+	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log))
+	{
+		admin.DELETE("/reset", employeeHandler.ResetAllData)
+	}
+
 	// TODO: Remove this or turn it into the health check
 	r.GET("/ping", func(c *gin.Context) {
 		log.Info("Ping route hit")

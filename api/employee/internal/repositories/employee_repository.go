@@ -21,6 +21,7 @@ type EmployeeRepository interface {
 	UpdateEmployee(employee *model.Employee) error
 	Delete(employeeID uint) error
 	ListEmployees(filters map[string]interface{}) ([]model.Employee, error)
+	ResetAllData() error
 }
 
 type employeeRepository struct {
@@ -72,12 +73,10 @@ func (r *employeeRepository) ListEmployees(filters map[string]any) ([]model.Empl
 
 	// Apply filters safely
 	for _, key := range filterKeys {
-		// Validate key
 		if _, ok := allowedColumns[key]; !ok {
 			return nil, fmt.Errorf("invalid filter key: %s", key)
 		}
 
-		// Extract value
 		value := filters[key]
 
 		switch v := value.(type) {
@@ -100,15 +99,12 @@ func (r *employeeRepository) UpdateEmployee(employee *model.Employee) error {
 	return r.db.Save(employee).Error
 }
 
-// Delete marks the employee record as deleted by setting the deleted_at timestamp.
 func (r *employeeRepository) Delete(id uint) error {
-	// Start by fetching the employee to ensure it exists
 	var employee model.Employee
 	if err := r.db.First(&employee, id).Error; err != nil {
 		return err
 	}
 
-	// Permanently delete the employee
 	if err := r.db.Unscoped().Delete(&employee).Error; err != nil {
 		return err
 	}
@@ -127,4 +123,29 @@ func (r *employeeRepository) allowedColumns() map[string]bool {
 		"email":        true,
 		"profile_type": true,
 	}
+}
+
+func (r *employeeRepository) ResetAllData() error {
+	r.log.Warn("Resetting all employee and shift data - this action cannot be undone")
+
+	if err := r.db.Unscoped().Delete(&model.EmployeeShift{}, "1=1").Error; err != nil {
+		r.log.Errorf("Failed to delete employee-shift associations: %v", err)
+		return err
+	}
+	r.log.Info("Successfully deleted all employee-shift associations")
+
+	if err := r.db.Unscoped().Delete(&model.Shift{}, "1=1").Error; err != nil {
+		r.log.Errorf("Failed to delete shifts: %v", err)
+		return err
+	}
+	r.log.Info("Successfully deleted all shifts")
+
+	if err := r.db.Unscoped().Delete(&model.Employee{}, "1=1").Error; err != nil {
+		r.log.Errorf("Failed to delete employees: %v", err)
+		return err
+	}
+	r.log.Info("Successfully deleted all employees")
+
+	r.log.Info("Successfully reset all employee and shift data")
+	return nil
 }

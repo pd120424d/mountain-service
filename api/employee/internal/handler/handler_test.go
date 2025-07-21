@@ -2,8 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -396,6 +398,48 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "token")
+	})
+
+	t.Run("it returns a JWT token when admin login is successful", func(t *testing.T) {
+		os.Setenv("ADMIN_PASSWORD", "admin123")
+		defer os.Unsetenv("ADMIN_PASSWORD")
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{
+			"username": "admin",
+			"password": "admin123"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, nil, nil)
+		handler.LoginEmployee(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "token")
+	})
+
+	t.Run("it returns error when admin password is wrong", func(t *testing.T) {
+		os.Setenv("ADMIN_PASSWORD", "admin123")
+		defer os.Unsetenv("ADMIN_PASSWORD")
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{
+			"username": "admin",
+			"password": "wrongpassword"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewEmployeeHandler(log, nil, nil)
+		handler.LoginEmployee(ctx)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid credentials")
 	})
 
 }
@@ -1320,5 +1364,39 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		handler.RemoveShift(ctx)
 
 		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
+}
+
+func TestEmployeeHandler_ResetAllData(t *testing.T) {
+	log := utils.NewTestLogger()
+
+	t.Run("it successfully resets all data", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/admin/reset", nil)
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+		emplRepoMock.EXPECT().ResetAllData().Return(nil).Times(1)
+
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
+		handler.ResetAllData(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "successfully reset")
+	})
+
+	t.Run("it returns error when reset fails", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/admin/reset", nil)
+
+		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
+		emplRepoMock.EXPECT().ResetAllData().Return(errors.New("database error")).Times(1)
+
+		handler := NewEmployeeHandler(log, emplRepoMock, nil)
+		handler.ResetAllData(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "Failed to reset data")
 	})
 }
