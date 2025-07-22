@@ -14,6 +14,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gorilla/handlers"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
+	_ "github.com/pd120424d/mountain-service/api/urgency/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/urgency/config"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/auth"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/handler"
@@ -144,17 +145,30 @@ func setupCORS(log utils.Logger, r *gin.Engine) http.Handler {
 
 	r.Use(cors.New(corsConfig))
 
-	// Add Swagger documentation
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.Use(gin.Recovery())
+	r.GET("/swagger/*any", func(c *gin.Context) {
+		log.Infof("Swagger request: %s %s from %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
+		ginSwagger.WrapHandler(swaggerFiles.Handler,
+			ginSwagger.URL("/swagger.json"),
+		)(c)
+	})
+	r.GET("/swagger.json", func(c *gin.Context) {
+		c.File("./cmd/docs/swagger.json")
+	})
 
-	corsHandler := handlers.CORS(
-		handlers.AllowedOrigins([]string{"*"}),
-		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
-		handlers.AllowedHeaders([]string{"*"}),
-	)(r)
+	// CORS setup
+	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+
+	corsOriginsEnv := os.Getenv("CORS_ALLOWED_ORIGINS")
+	corsOrigins := strings.Split(corsOriginsEnv, ",")
+	origins := handlers.AllowedOrigins(corsOrigins)
+
+	log.Infof("Allowed CORS origins: %s", os.Getenv("CORS_ALLOWED_ORIGINS"))
 
 	log.Info("CORS setup finished")
-	return corsHandler
+
+	return handlers.CORS(origins, headers, methods)(r)
 }
 
 func setupRoutes(log utils.Logger, r *gin.Engine, urgencyHandler handler.UrgencyHandler) {

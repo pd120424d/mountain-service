@@ -55,3 +55,9 @@ lint:
 	@echo "Linting the code..."
 	@golangci-lint run ./...
 	@echo "Linting complete."
+
+# Generate Swagger documentation
+swagger:
+	@echo "Generating Swagger documentation..."
+	@swag init -g cmd/main.go -o cmd/docs
+	@echo "Swagger documentation generated."

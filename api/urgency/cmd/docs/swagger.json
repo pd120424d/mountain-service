@@ -10,7 +10,312 @@
         "version": "1.0"
     },
     "basePath": "/api/v1",
-    "paths": {},
+    "paths": {
+        "/admin/urgencies/reset": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Брисање свих ургентних ситуација (само за администраторе)",
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Ресетовање свих података",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/urgencies": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Извлачење свих ургентних ситуација",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Извлачење листе ургентних ситуација",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/model.UrgencyResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Креирање нове ургентне ситуације са свим потребним подацима",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Креирање нове ургентне ситуације",
+                "parameters": [
+                    {
+                        "description": "Urgency data",
+                        "name": "urgency",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UrgencyCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.UrgencyResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/urgencies/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Извлачење ургентне ситуације по њеном ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Извлачење ургентне ситуације по ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Urgency ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.UrgencyResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Ажурирање постојеће ургентне ситуације",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Ажурирање ургентне ситуације",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Urgency ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated urgency data",
+                        "name": "urgency",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UrgencyUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.UrgencyResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Брисање ургентне ситуације по ID",
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Брисање ургентне ситуације",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Urgency ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.Status": {
+            "type": "string",
+            "enum": [
+                "Open",
+                "In Progress",
+                "Resolved",
+                "Closed"
+            ],
+            "x-enum-varnames": [
+                "Open",
+                "InProgress",
+                "Resolved",
+                "Closed"
+            ]
+        },
+        "model.UrgencyCreateRequest": {
+            "type": "object",
+            "required": [
+                "contactPhone",
+                "description",
+                "email",
+                "name"
+            ],
+            "properties": {
+                "contactPhone": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "level": {
+                    "$ref": "#/definitions/model.UrgencyLevel"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UrgencyLevel": {
+            "type": "string",
+            "enum": [
+                "Low",
+                "Medium",
+                "High",
+                "Critical"
+            ],
+            "x-enum-varnames": [
+                "Low",
+                "Medium",
+                "High",
+                "Critical"
+            ]
+        },
+        "model.UrgencyResponse": {
+            "type": "object",
+            "properties": {
+                "contactPhone": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "level": {
+                    "$ref": "#/definitions/model.UrgencyLevel"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.Status"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UrgencyUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "contactPhone": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "level": {
+                    "$ref": "#/definitions/model.UrgencyLevel"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.Status"
+                }
+            }
+        }
+    },
     "securityDefinitions": {
         "BearerAuth": {
             "type": "apiKey",

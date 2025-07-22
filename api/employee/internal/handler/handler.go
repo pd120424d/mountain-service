@@ -46,7 +46,7 @@ func NewEmployeeHandler(log utils.Logger, emplRepo repositories.EmployeeReposito
 // @Produce  json
 // @Param employee body model.EmployeeCreateRequest true "Подаци о новом запосленом"
 // @Success 201 {object} model.EmployeeResponse
-// @Failure 400 {object} gin.H
+// @Failure 400 {object} model.ErrorResponse
 // @Router /employees [post]
 func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	h.log.Info("Received Register Employee request")
@@ -141,8 +141,8 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param employee body model.EmployeeLogin true "Корисничко име и лозинка"
-// @Success 200 {object} gin.H
-// @Failure 401 {object} gin.H
+// @Success 200 {object} model.TokenResponse
+// @Failure 401 {object} model.ErrorResponse
 // @Router /login [post]
 func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	var req model.EmployeeLogin
@@ -245,9 +245,9 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 // @Param id path int true "ID запосленог"
 // @Param employee body model.EmployeeUpdateRequest true "Подаци за ажурирање запосленог"
 // @Success 200 {object} model.EmployeeResponse
-// @Failure 400 {object} gin.H
-// @Failure 404 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /employees/{id} [put]
 func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 	h.log.Info("Received Update Employee request")
@@ -299,7 +299,7 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 // @Security BearerAuth
 // @Param id path int true "ID запосленог"
 // @Success 204
-// @Failure 404 {object} gin.H
+// @Failure 404 {object} model.ErrorResponse
 // @Router /employees/{id} [delete]
 func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 	h.log.Info("Received Delete Employee request")
@@ -330,7 +330,7 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 // @Param id path int true "ID запосленог"
 // @Param shift body model.AssignShiftRequest true "Подаци о смени"
 // @Success 201 {object} model.AssignShiftResponse
-// @Failure 400 {object} gin.H
+// @Failure 400 {object} model.ErrorResponse
 // @Router /employees/{id}/shifts [post]
 func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
@@ -467,7 +467,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 // @Security BearerAuth
 // @Param date query string false "Дан за који се проверава доступност смена"
 // @Success 200 {object} model.ShiftAvailabilityResponse
-// @Failure 400 {object} gin.H
+// @Failure 400 {object} model.ErrorResponse
 // @Router /shifts/availability [get]
 func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	h.log.Infof("Received Get Shifts Availability request for the next %s days", ctx.Query("days"))
@@ -503,7 +503,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 // @Param id path int true "ID запосленог"
 // @Param shift body model.RemoveShiftRequest true "Подаци о смени"
 // @Success 204
-// @Failure 400 {object} gin.H
+// @Failure 400 {object} model.ErrorResponse
 // @Router /employees/{id}/shifts [delete]
 func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
@@ -547,9 +547,9 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 // @Tags админ
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {object} gin.H
-// @Failure 403 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Success 200 {object} model.MessageResponse
+// @Failure 403 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /admin/reset [delete]
 func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 	h.log.Warn("Admin data reset request received")

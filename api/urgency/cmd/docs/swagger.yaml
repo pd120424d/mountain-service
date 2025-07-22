@@ -1,4 +1,83 @@
 basePath: /api/v1
+definitions:
+  model.Status:
+    enum:
+    - Open
+    - In Progress
+    - Resolved
+    - Closed
+    type: string
+    x-enum-varnames:
+    - Open
+    - InProgress
+    - Resolved
+    - Closed
+  model.UrgencyCreateRequest:
+    properties:
+      contactPhone:
+        type: string
+      description:
+        type: string
+      email:
+        type: string
+      level:
+        $ref: '#/definitions/model.UrgencyLevel'
+      name:
+        type: string
+    required:
+    - contactPhone
+    - description
+    - email
+    - name
+    type: object
+  model.UrgencyLevel:
+    enum:
+    - Low
+    - Medium
+    - High
+    - Critical
+    type: string
+    x-enum-varnames:
+    - Low
+    - Medium
+    - High
+    - Critical
+  model.UrgencyResponse:
+    properties:
+      contactPhone:
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      level:
+        $ref: '#/definitions/model.UrgencyLevel'
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/model.Status'
+      updatedAt:
+        type: string
+    type: object
+  model.UrgencyUpdateRequest:
+    properties:
+      contactPhone:
+        type: string
+      description:
+        type: string
+      email:
+        type: string
+      level:
+        $ref: '#/definitions/model.UrgencyLevel'
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/model.Status'
+    type: object
 info:
   contact: {}
   license:
@@ -6,7 +85,125 @@ info:
     url: https://opensource.org/licenses/MIT
   title: API Сервис за Хитности
   version: "1.0"
-paths: {}
+paths:
+  /admin/urgencies/reset:
+    delete:
+      description: Брисање свих ургентних ситуација (само за администраторе)
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Ресетовање свих података
+      tags:
+      - urgency
+  /urgencies:
+    get:
+      description: Извлачење свих ургентних ситуација
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/model.UrgencyResponse'
+              type: array
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Извлачење листе ургентних ситуација
+      tags:
+      - urgency
+    post:
+      consumes:
+      - application/json
+      description: Креирање нове ургентне ситуације са свим потребним подацима
+      parameters:
+      - description: Urgency data
+        in: body
+        name: urgency
+        required: true
+        schema:
+          $ref: '#/definitions/model.UrgencyCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.UrgencyResponse'
+      security:
+      - BearerAuth: []
+      summary: Креирање нове ургентне ситуације
+      tags:
+      - urgency
+  /urgencies/{id}:
+    delete:
+      description: Брисање ургентне ситуације по ID
+      parameters:
+      - description: Urgency ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Брисање ургентне ситуације
+      tags:
+      - urgency
+    get:
+      description: Извлачење ургентне ситуације по њеном ID
+      parameters:
+      - description: Urgency ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UrgencyResponse'
+      security:
+      - BearerAuth: []
+      summary: Извлачење ургентне ситуације по ID
+      tags:
+      - urgency
+    put:
+      consumes:
+      - application/json
+      description: Ажурирање постојеће ургентне ситуације
+      parameters:
+      - description: Urgency ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated urgency data
+        in: body
+        name: urgency
+        required: true
+        schema:
+          $ref: '#/definitions/model.UrgencyUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UrgencyResponse'
+      security:
+      - BearerAuth: []
+      summary: Ажурирање ургентне ситуације
+      tags:
+      - urgency
 securityDefinitions:
   BearerAuth:
     in: header

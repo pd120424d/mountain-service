@@ -145,6 +145,24 @@ func (e *EmployeeUpdateRequest) Validate() error {
 	return err
 }
 
+// ErrorResponse DTO for returning an error message
+// swagger:model
+type ErrorResponse struct {
+	Error string `json:"error" example:"Error message"`
+}
+
+// MessageResponse DTO for returning a success message
+// swagger:model
+type MessageResponse struct {
+	Message string `json:"message" example:"Success message"`
+}
+
+// TokenResponse DTO for returning a JWT token
+// swagger:model
+type TokenResponse struct {
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+}
+
 // Function to sanitize the password by masking it with asterisks
 func sanitizePassword(password string) string {
 	if password == "" {
