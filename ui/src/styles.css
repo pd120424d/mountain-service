@@ -12,8 +12,10 @@ html,
 body {
   height: 100%;
   /* Ensure html and body elements take up the full viewport height */
-  overflow: hidden;
-  /* Prevent scrollbars */
+  overflow-x: hidden;
+  /* Prevent horizontal scrollbars only */
+  overflow-y: auto;
+  /* Allow vertical scrolling */
 }
 
 /* Force spinner visibility */
