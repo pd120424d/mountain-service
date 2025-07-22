@@ -13,12 +13,12 @@
 
   <div class="navigation-section">
     <div class="nav-links">
-      <button routerLink="/employees" class="nav-button">
+      <button *ngIf="authService.isAuthenticated()" routerLink="/employees" class="nav-button">
         <i class="fas fa-users"></i>
         <h3>{{ 'NAV.EMPLOYEE_MANAGEMENT.TITLE' | translate }}</h3>
         <p>{{ 'NAV.EMPLOYEE_MANAGEMENT.DESCRIPTION' | translate }}</p>
       </button>
-      <a routerLink="/shifts" class="nav-button">
+      <a *ngIf="authService.isAuthenticated()" routerLink="/shifts" class="nav-button">
         <i class="fas fa-briefcase"></i>
         <h3>{{ 'NAV.SHIFT_MANAGEMENT.TITLE' | translate }}</h3>
         <p>{{ 'NAV.SHIFT_MANAGEMENT.DESCRIPTION' | translate }}</p>
