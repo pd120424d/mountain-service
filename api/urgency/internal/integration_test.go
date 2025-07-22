@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,10 +17,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	_ "modernc.org/sqlite"
 
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/auth"
-	"github.com/pd120424d/mountain-service/api/urgency/internal/handler"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
 )
@@ -236,7 +237,10 @@ func TestIntegration_HealthCheck(t *testing.T) {
 func setupIntegrationTest(t *testing.T) (*gin.Engine, *gorm.DB, func()) {
 	os.Setenv("JWT_SECRET", "test-secret-key")
 
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	sqlDB, err := sql.Open("sqlite", ":memory:")
+	require.NoError(t, err)
+
+	db, err := gorm.Open(sqlite.Dialector{Conn: sqlDB}, &gorm.Config{})
 	require.NoError(t, err)
 
 	err = db.AutoMigrate(&model.Urgency{})
@@ -244,8 +248,8 @@ func setupIntegrationTest(t *testing.T) (*gin.Engine, *gorm.DB, func()) {
 
 	log := utils.NewTestLogger()
 
-	repo := repositories.NewUrgencyRepository(log, db)
-	urgencyHandler := handler.NewUrgencyHandler(log, repo)
+	svc := NewUrgencyService(repositories.NewUrgencyRepository(log, db))
+	urgencyHandler := NewUrgencyHandler(log, svc)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()

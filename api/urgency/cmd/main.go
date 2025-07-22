@@ -16,8 +16,8 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	_ "github.com/pd120424d/mountain-service/api/urgency/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/urgency/config"
+	"github.com/pd120424d/mountain-service/api/urgency/internal"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/auth"
-	"github.com/pd120424d/mountain-service/api/urgency/internal/handler"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
 	swaggerFiles "github.com/swaggo/files"
@@ -63,7 +63,8 @@ func main() {
 	db := initDb(log, dbHost, dbPort, dbName)
 
 	urgencyRepo := repositories.NewUrgencyRepository(log, db)
-	urgencyHandler := handler.NewUrgencyHandler(log, urgencyRepo)
+	urgencySvc := internal.NewUrgencyService(urgencyRepo)
+	urgencyHandler := internal.NewUrgencyHandler(log, urgencySvc)
 
 	r := gin.Default()
 
@@ -171,7 +172,7 @@ func setupCORS(log utils.Logger, r *gin.Engine) http.Handler {
 	return handlers.CORS(origins, headers, methods)(r)
 }
 
-func setupRoutes(log utils.Logger, r *gin.Engine, urgencyHandler handler.UrgencyHandler) {
+func setupRoutes(log utils.Logger, r *gin.Engine, urgencyHandler internal.UrgencyHandler) {
 	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log))
 	{
 		authorized.POST("/urgencies", urgencyHandler.CreateUrgency)

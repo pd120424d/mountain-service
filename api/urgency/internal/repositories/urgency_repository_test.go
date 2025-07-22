@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/pd120424d/mountain-service/api/shared/utils"
@@ -9,10 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	_ "modernc.org/sqlite"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	// Use pure Go SQLite driver (modernc.org/sqlite) instead of CGO-based mattn/go-sqlite3
+	// Create a custom SQLite connection using the pure Go driver
+	sqlDB, err := sql.Open("sqlite", ":memory:")
+	require.NoError(t, err)
+
+	db, err := gorm.Open(sqlite.Dialector{Conn: sqlDB}, &gorm.Config{})
 	require.NoError(t, err)
 
 	err = db.AutoMigrate(&model.Urgency{})

@@ -1,4 +1,4 @@
-package handler
+package internal
 
 import (
 	"net/http"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
-	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
 )
 
 type UrgencyHandler interface {
@@ -21,12 +20,12 @@ type UrgencyHandler interface {
 }
 
 type urgencyHandler struct {
-	log  utils.Logger
-	repo repositories.UrgencyRepository
+	log utils.Logger
+	svc UrgencyService
 }
 
-func NewUrgencyHandler(log utils.Logger, repo repositories.UrgencyRepository) UrgencyHandler {
-	return &urgencyHandler{log: log.WithName("urgencyHandler"), repo: repo}
+func NewUrgencyHandler(log utils.Logger, svc UrgencyService) UrgencyHandler {
+	return &urgencyHandler{log: log.WithName("urgencyHandler"), svc: svc}
 }
 
 // CreateUrgency Креирање нове ургентне ситуације
@@ -61,10 +60,10 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 		ContactPhone: req.ContactPhone,
 		Description:  req.Description,
 		Level:        req.Level,
-		Status:       "Open",
+		Status:       model.Open,
 	}
 
-	if err := h.repo.Create(&urgency); err != nil {
+	if err := h.svc.CreateUrgency(&urgency); err != nil {
 		h.log.Errorf("failed to create urgency: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -86,7 +85,7 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 	h.log.Info("Received List Urgencies request")
 
-	urgencies, err := h.repo.GetAll()
+	urgencies, err := h.svc.GetAllUrgencies()
 	if err != nil {
 		h.log.Errorf("failed to retrieve urgencies: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -122,8 +121,8 @@ func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 		return
 	}
 
-	var urgency model.Urgency
-	if err := h.repo.GetByID(uint(urgencyID), &urgency); err != nil {
+	urgency, err := h.svc.GetUrgencyByID(uint(urgencyID))
+	if err != nil {
 		h.log.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
 		return
@@ -169,8 +168,8 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 		return
 	}
 
-	var urgency model.Urgency
-	if err := h.repo.GetByID(uint(urgencyID), &urgency); err != nil {
+	urgency, err := h.svc.GetUrgencyByID(uint(urgencyID))
+	if err != nil {
 		h.log.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
 		return
@@ -196,7 +195,7 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 		urgency.Status = req.Status
 	}
 
-	if err := h.repo.Update(&urgency); err != nil {
+	if err := h.svc.UpdateUrgency(urgency); err != nil {
 		h.log.Errorf("failed to update urgency: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -226,15 +225,7 @@ func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
 		return
 	}
 
-	// Check if urgency exists
-	var urgency model.Urgency
-	if err := h.repo.GetByID(uint(urgencyID), &urgency); err != nil {
-		h.log.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
-		return
-	}
-
-	if err := h.repo.Delete(uint(urgencyID)); err != nil {
+	if err := h.svc.DeleteUrgency(uint(urgencyID)); err != nil {
 		h.log.Errorf("failed to delete urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -254,7 +245,7 @@ func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
 func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
 	h.log.Info("Received Reset All Data request")
 
-	if err := h.repo.ResetAllData(); err != nil {
+	if err := h.svc.ResetAllData(); err != nil {
 		h.log.Errorf("failed to reset all data: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

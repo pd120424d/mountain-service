@@ -1,4 +1,4 @@
-package handler
+package internal
 
 import (
 	"bytes"
@@ -17,29 +17,28 @@ import (
 
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
-	mock_repositories "github.com/pd120424d/mountain-service/api/urgency/internal/repositories/mocks"
 )
 
-func setupTestHandler(t *testing.T) (*urgencyHandler, *mock_repositories.MockUrgencyRepository, *gin.Engine) {
+func setupTestHandler(t *testing.T) (*urgencyHandler, *MockUrgencyService, *gin.Engine) {
 	ctrl := gomock.NewController(t)
-	mockRepo := mock_repositories.NewMockUrgencyRepository(ctrl)
+	mockSvc := NewMockUrgencyService(ctrl)
 	log := utils.NewTestLogger()
 
 	handler := &urgencyHandler{
-		log:  log,
-		repo: mockRepo,
+		log: log,
+		svc: mockSvc,
 	}
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 
-	return handler, mockRepo, router
+	return handler, mockSvc, router
 }
 
 func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 	t.Parallel()
 
-	handler, mockRepo, router := setupTestHandler(t)
+	handler, mockSvc, router := setupTestHandler(t)
 	router.POST("/urgencies", handler.CreateUrgency)
 
 	t.Run("it creates a new urgency successfully", func(t *testing.T) {
@@ -51,7 +50,7 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 			Level:        model.High,
 		}
 
-		mockRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
+		mockSvc.EXPECT().CreateUrgency(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
 			urgency.ID = 1
 			urgency.CreatedAt = time.Now()
 			urgency.UpdatedAt = time.Now()
@@ -115,7 +114,7 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 			Level:        model.High,
 		}
 
-		mockRepo.EXPECT().Create(gomock.Any()).Return(errors.New("database error"))
+		mockSvc.EXPECT().CreateUrgency(gomock.Any()).Return(errors.New("database error"))
 
 		body, _ := json.Marshal(req)
 		w := httptest.NewRecorder()
@@ -132,7 +131,7 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 	t.Parallel()
 
-	handler, mockRepo, router := setupTestHandler(t)
+	handler, mockSvc, router := setupTestHandler(t)
 	router.GET("/urgencies", handler.ListUrgencies)
 
 	t.Run("it lists all urgencies successfully", func(t *testing.T) {
@@ -161,7 +160,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		urgencies[1].CreatedAt = time.Now()
 		urgencies[1].UpdatedAt = time.Now()
 
-		mockRepo.EXPECT().GetAll().Return(urgencies, nil)
+		mockSvc.EXPECT().GetAllUrgencies().Return(urgencies, nil)
 
 		w := httptest.NewRecorder()
 		httpReq, _ := http.NewRequest("GET", "/urgencies", nil)
@@ -179,7 +178,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 	})
 
 	t.Run("it lists an empty list when no urgencies exist", func(t *testing.T) {
-		mockRepo.EXPECT().GetAll().Return([]model.Urgency{}, nil)
+		mockSvc.EXPECT().GetAllUrgencies().Return([]model.Urgency{}, nil)
 
 		w := httptest.NewRecorder()
 		httpReq, _ := http.NewRequest("GET", "/urgencies", nil)
@@ -195,7 +194,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 	})
 
 	t.Run("it returns an error when repository fails", func(t *testing.T) {
-		mockRepo.EXPECT().GetAll().Return(nil, errors.New("database error"))
+		mockSvc.EXPECT().GetAllUrgencies().Return(nil, errors.New("database error"))
 
 		w := httptest.NewRecorder()
 		httpReq, _ := http.NewRequest("GET", "/urgencies", nil)
@@ -210,7 +209,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 func TestUrgencyHandler_GetUrgency(t *testing.T) {
 	t.Parallel()
 
-	handler, mockRepo, router := setupTestHandler(t)
+	handler, mockSvc, router := setupTestHandler(t)
 	router.GET("/urgencies/:id", handler.GetUrgency)
 
 	t.Run("it gets an urgency successfully", func(t *testing.T) {
@@ -226,17 +225,19 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 		urgency.CreatedAt = time.Now()
 		urgency.UpdatedAt = time.Now()
 
-		mockRepo.EXPECT().GetByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, urgency *model.Urgency) error {
-			urgency.ID = 1
-			urgency.Name = "Test Urgency"
-			urgency.Email = "test@example.com"
-			urgency.ContactPhone = "123456789"
-			urgency.Description = "Test description"
-			urgency.Level = model.High
-			urgency.Status = model.Open
+		mockSvc.EXPECT().GetUrgencyByID(uint(1)).DoAndReturn(func(id uint) (*model.Urgency, error) {
+			urgency := &model.Urgency{
+				ID:           1,
+				Name:         "Test Urgency",
+				Email:        "test@example.com",
+				ContactPhone: "123456789",
+				Description:  "Test description",
+				Level:        model.High,
+				Status:       model.Open,
+			}
 			urgency.CreatedAt = time.Now()
 			urgency.UpdatedAt = time.Now()
-			return nil
+			return urgency, nil
 		})
 
 		w := httptest.NewRecorder()
@@ -264,7 +265,7 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 	})
 
 	t.Run("it returns an error when urgency is not found", func(t *testing.T) {
-		mockRepo.EXPECT().GetByID(uint(999), gomock.Any()).Return(gorm.ErrRecordNotFound)
+		mockSvc.EXPECT().GetUrgencyByID(uint(999)).Return(nil, gorm.ErrRecordNotFound)
 
 		w := httptest.NewRecorder()
 		httpReq, _ := http.NewRequest("GET", "/urgencies/999", nil)
@@ -279,7 +280,7 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 	t.Parallel()
 
-	handler, mockRepo, router := setupTestHandler(t)
+	handler, mockSvc, router := setupTestHandler(t)
 	router.PUT("/urgencies/:id", handler.UpdateUrgency)
 
 	t.Run("it updates an urgency successfully", func(t *testing.T) {
@@ -301,12 +302,11 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 		existingUrgency.CreatedAt = time.Now()
 		existingUrgency.UpdatedAt = time.Now()
 
-		mockRepo.EXPECT().GetByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, urgency *model.Urgency) error {
-			*urgency = existingUrgency
-			return nil
+		mockSvc.EXPECT().GetUrgencyByID(uint(1)).DoAndReturn(func(id uint) (*model.Urgency, error) {
+			return &existingUrgency, nil
 		})
 
-		mockRepo.EXPECT().Update(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
+		mockSvc.EXPECT().UpdateUrgency(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
 			urgency.UpdatedAt = time.Now()
 			return nil
 		})
@@ -374,7 +374,7 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 			Email: "valid@example.com", // Include valid email
 		}
 
-		mockRepo.EXPECT().GetByID(uint(999), gomock.Any()).Return(gorm.ErrRecordNotFound)
+		mockSvc.EXPECT().GetUrgencyByID(uint(999)).Return(nil, gorm.ErrRecordNotFound)
 
 		body, _ := json.Marshal(req)
 		w := httptest.NewRecorder()
@@ -394,11 +394,10 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 		}
 
 		existingUrgency := model.Urgency{ID: 1, Name: "Original"}
-		mockRepo.EXPECT().GetByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, urgency *model.Urgency) error {
-			*urgency = existingUrgency
-			return nil
+		mockSvc.EXPECT().GetUrgencyByID(uint(1)).DoAndReturn(func(id uint) (*model.Urgency, error) {
+			return &existingUrgency, nil
 		})
-		mockRepo.EXPECT().Update(gomock.Any()).Return(errors.New("database error"))
+		mockSvc.EXPECT().UpdateUrgency(gomock.Any()).Return(errors.New("database error"))
 
 		body, _ := json.Marshal(req)
 		w := httptest.NewRecorder()
@@ -415,16 +414,11 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 func TestUrgencyHandler_DeleteUrgency(t *testing.T) {
 	t.Parallel()
 
-	handler, mockRepo, router := setupTestHandler(t)
+	handler, mockSvc, router := setupTestHandler(t)
 	router.DELETE("/urgencies/:id", handler.DeleteUrgency)
 
 	t.Run("it deletes an urgency successfully", func(t *testing.T) {
-		existingUrgency := model.Urgency{ID: 1, Name: "Test"}
-		mockRepo.EXPECT().GetByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, urgency *model.Urgency) error {
-			*urgency = existingUrgency
-			return nil
-		})
-		mockRepo.EXPECT().Delete(uint(1)).Return(nil)
+		mockSvc.EXPECT().DeleteUrgency(uint(1)).Return(nil)
 
 		w := httptest.NewRecorder()
 		httpReq, _ := http.NewRequest("DELETE", "/urgencies/1", nil)
@@ -446,24 +440,19 @@ func TestUrgencyHandler_DeleteUrgency(t *testing.T) {
 	})
 
 	t.Run("it returns an error when urgency is not found", func(t *testing.T) {
-		mockRepo.EXPECT().GetByID(uint(999), gomock.Any()).Return(gorm.ErrRecordNotFound)
+		mockSvc.EXPECT().DeleteUrgency(uint(999)).Return(gorm.ErrRecordNotFound)
 
 		w := httptest.NewRecorder()
 		httpReq, _ := http.NewRequest("DELETE", "/urgencies/999", nil)
 
 		router.ServeHTTP(w, httpReq)
 
-		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "urgency not found")
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "record not found")
 	})
 
 	t.Run("it returns an error when repository fails", func(t *testing.T) {
-		existingUrgency := model.Urgency{ID: 1, Name: "Test"}
-		mockRepo.EXPECT().GetByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, urgency *model.Urgency) error {
-			*urgency = existingUrgency
-			return nil
-		})
-		mockRepo.EXPECT().Delete(uint(1)).Return(errors.New("database error"))
+		mockSvc.EXPECT().DeleteUrgency(uint(1)).Return(errors.New("database error"))
 
 		w := httptest.NewRecorder()
 		httpReq, _ := http.NewRequest("DELETE", "/urgencies/1", nil)
@@ -478,11 +467,11 @@ func TestUrgencyHandler_DeleteUrgency(t *testing.T) {
 func TestUrgencyHandler_ResetAllData(t *testing.T) {
 	t.Parallel()
 
-	handler, mockRepo, router := setupTestHandler(t)
+	handler, mockSvc, router := setupTestHandler(t)
 	router.DELETE("/admin/urgencies/reset", handler.ResetAllData)
 
 	t.Run("it resets all urgencies successfully", func(t *testing.T) {
-		mockRepo.EXPECT().ResetAllData().Return(nil)
+		mockSvc.EXPECT().ResetAllData().Return(nil)
 
 		w := httptest.NewRecorder()
 		httpReq, _ := http.NewRequest("DELETE", "/admin/urgencies/reset", nil)
@@ -494,7 +483,7 @@ func TestUrgencyHandler_ResetAllData(t *testing.T) {
 	})
 
 	t.Run("it returns an error when repository fails", func(t *testing.T) {
-		mockRepo.EXPECT().ResetAllData().Return(errors.New("database error"))
+		mockSvc.EXPECT().ResetAllData().Return(errors.New("database error"))
 
 		w := httptest.NewRecorder()
 		httpReq, _ := http.NewRequest("DELETE", "/admin/urgencies/reset", nil)
@@ -509,9 +498,9 @@ func TestUrgencyHandler_ResetAllData(t *testing.T) {
 func TestNewUrgencyHandler(t *testing.T) {
 	log := utils.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	mockRepo := mock_repositories.NewMockUrgencyRepository(ctrl)
+	mockSvc := NewMockUrgencyService(ctrl)
 
-	handler := NewUrgencyHandler(log, mockRepo)
+	handler := NewUrgencyHandler(log, mockSvc)
 
 	assert.NotNil(t, handler)
 	assert.IsType(t, &urgencyHandler{}, handler)

@@ -1,6 +1,6 @@
 package repositories
 
-//go:generate mockgen -source=urgency_repository.go -destination=mocks/urgency_repository_mock.go
+//go:generate mockgen -source=urgency_repository.go -destination=urgency_repository_gomock.go -package=repositories mountain_service/urgency/internal/repositories -imports=gomock=go.uber.org/mock/gomock -typed
 
 import (
 	"fmt"
