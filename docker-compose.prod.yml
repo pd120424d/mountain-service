@@ -38,7 +38,7 @@ services:
     restart: unless-stopped
 
   employee-service:
-    image: employee-service:latest
+    image: ${EMPLOYEE_SERVICE_IMAGE}
     environment:
       - DB_HOST=employee-db
       - DB_PORT=5432
@@ -64,9 +64,7 @@ services:
     restart: unless-stopped
 
   urgency-service:
-    build:
-      context: ./api
-      dockerfile: urgency/Dockerfile
+    image: ${URGENCY_SERVICE_IMAGE}
     environment:
       - DB_HOST=urgency-db
       - DB_PORT=5432

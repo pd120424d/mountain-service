@@ -2,6 +2,7 @@
     "swagger": "2.0",
     "info": {
         "title": "API Сервис за Хитности",
+        "contact": {},
         "license": {
             "name": "MIT",
             "url": "https://opensource.org/licenses/MIT"
@@ -10,7 +11,6 @@
     },
     "basePath": "/api/v1",
     "paths": {},
-    "definitions": {},
     "securityDefinitions": {
         "BearerAuth": {
             "type": "apiKey",

@@ -8,8 +8,12 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  EMPLOYEE_IMAGE_NAME: employee-service
+  URGENCY_IMAGE_NAME: urgency-service
   VERSION_IMAGE_NAME: version-service
-  GHCR_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/version-service
+  GHCR_EMPLOYEE_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/employee-service
+  GHCR_URGENCY_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/urgency-service
+  GHCR_VERSION_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/version-service
 
 jobs:
   deploy:
@@ -50,15 +54,25 @@ jobs:
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Tag and Push version-service image
+      - name: Tag and Push all images to GHCR
         run: |
-          docker tag version-service:latest ghcr.io/${{ github.repository_owner }}/version-service:${{ steps.version.outputs.VERSION }}
-          docker push ghcr.io/${{ github.repository_owner }}/version-service:${{ steps.version.outputs.VERSION }}
+          # Tag and push employee-service
+          docker tag employee-service:latest ${{ env.GHCR_EMPLOYEE_IMAGE_NAME }}:latest
+          docker tag employee-service:latest ${{ env.GHCR_EMPLOYEE_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          docker push ${{ env.GHCR_EMPLOYEE_IMAGE_NAME }}:latest
+          docker push ${{ env.GHCR_EMPLOYEE_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
 
-      - name: Save Docker images as tarballs
-        run: |
-          docker save employee-service:latest > employee.tar
-          docker save urgency-service:latest > urgency.tar
+          # Tag and push urgency-service
+          docker tag urgency-service:latest ${{ env.GHCR_URGENCY_IMAGE_NAME }}:latest
+          docker tag urgency-service:latest ${{ env.GHCR_URGENCY_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          docker push ${{ env.GHCR_URGENCY_IMAGE_NAME }}:latest
+          docker push ${{ env.GHCR_URGENCY_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+
+          # Tag and push version-service
+          docker tag version-service:latest ${{ env.GHCR_VERSION_IMAGE_NAME }}:latest
+          docker tag version-service:latest ${{ env.GHCR_VERSION_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          docker push ${{ env.GHCR_VERSION_IMAGE_NAME }}:latest
+          docker push ${{ env.GHCR_VERSION_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
 
       - name: Set up SSH
         run: |
@@ -67,25 +81,18 @@ jobs:
           chmod 600 ~/.ssh/github_actions
           ssh-keyscan -H ${{ secrets.AZURE_VM_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Copy Docker images to Azure VM
-        run: |
-          scp -i ~/.ssh/github_actions employee.tar ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:~
-          scp -i ~/.ssh/github_actions urgency.tar ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:~
-
-      - name: Load and run Docker containers on Azure VM
+      - name: Deploy Docker containers on Azure VM
         run: |
           ssh -i ~/.ssh/github_actions ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} '
             set -e
-
-            docker load < ~/employee.tar
-            docker load < ~/urgency.tar
-            rm ~/employee.tar ~/urgency.tar
 
             cd mountain-service
 
             echo "EMPLOYEE_SWAGGER_API_URL=${{ secrets.EMPLOYEE_SWAGGER_API_URL }}" > .env
             echo "URGENCY_SWAGGER_API_URL=${{ secrets.URGENCY_SWAGGER_API_URL }}" >> .env
             echo "CORS_ALLOWED_ORIGINS=http://${{ secrets.AZURE_VM_HOST }}:9082" >> .env
+            echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ steps.version.outputs.VERSION }}" >> .env
+            echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ steps.version.outputs.VERSION }}" >> .env
             echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ steps.version.outputs.VERSION }}" >> .env
             echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
 
@@ -93,7 +100,10 @@ jobs:
 
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            docker pull $(grep VERSION_SERVICE_IMAGE .env | cut -d "=" -f2)
+            # Pull all images from GHCR
+            docker pull ghcr.io/${{ github.repository_owner }}/employee-service:${{ steps.version.outputs.VERSION }}
+            docker pull ghcr.io/${{ github.repository_owner }}/urgency-service:${{ steps.version.outputs.VERSION }}
+            docker pull ghcr.io/${{ github.repository_owner }}/version-service:${{ steps.version.outputs.VERSION }}
 
             docker compose -f docker-compose.prod.yml down
             docker compose -f docker-compose.prod.yml up -d

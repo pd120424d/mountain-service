@@ -1,6 +1,6 @@
 basePath: /api/v1
-definitions: {}
 info:
+  contact: {}
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT

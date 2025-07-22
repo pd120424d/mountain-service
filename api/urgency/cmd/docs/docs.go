@@ -19,7 +19,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {},
-    "definitions": {},
     "securityDefinitions": {
         "BearerAuth": {
             "type": "apiKey",
