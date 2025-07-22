@@ -2,7 +2,7 @@ import { Component, OnInit } from "@angular/core";
 import { AdministratorRole, Employee, MedicRole } from "../employee/employee.model";
 import { AuthService } from "../services/auth.service";
 import { TranslateModule, TranslateService } from "@ngx-translate/core";
-import { RouterModule } from "@angular/router";
+import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { CommonModule } from "@angular/common";
 import { EmployeeRole } from "../employee/employee.model";
@@ -35,6 +35,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     private auth: AuthService,
     private toastr: ToastrService,
     private spinner: NgxSpinnerService,
+    private router: Router,
     translate: TranslateService) {
     super(translate);
   }
@@ -198,5 +199,9 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       case 'en': return format(date, 'EEEE, MMMM d, yyyy', { locale: enUS });
       default: return format(date, 'EEEE, MMMM d, yyyy', { locale: enUS });
     }
+  }
+
+  goBack(): void {
+    this.router.navigate(['/']);
   }
 }

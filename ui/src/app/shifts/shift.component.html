@@ -1,5 +1,11 @@
 <div class="shift-container">
-  <h2 class="title">{{ 'SHIFT_MANAGEMENT.TITLE' | translate }}</h2>
+  <div class="header-section">
+    <button class="btn btn-secondary back-button" (click)="goBack()">
+      <i class="fas fa-arrow-left"></i>
+      {{ 'GO_HOME' | translate }}
+    </button>
+    <h2 class="title">{{ 'SHIFT_MANAGEMENT.TITLE' | translate }}</h2>
+  </div>
 
   <!-- Loading state -->
   <div *ngIf="isLoading" class="loading-container">
