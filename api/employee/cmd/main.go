@@ -70,9 +70,9 @@ func main() {
 
 	r.Use(log.RequestLogger())
 
-	corsHandler := setupCORS(log, r)
-
 	setupRoutes(log, r, employeeHandler)
+
+	corsHandler := setupCORS(log, r)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%v", config.ServerPort),
@@ -105,14 +105,14 @@ func main() {
 
 func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
 	log.Info("Setting up database...")
-	dbUser, err := readSecret(os.Getenv("DB_USER_FILE"))
+	dbUser, err := readSecret(os.Getenv("EMPLOYEE_DB_USER_FILE"))
 	if err != nil {
-		log.Fatalf("Failed to read DB_USER: %v", err)
+		log.Fatalf("Failed to read EMPLOYEE_DB_USER: %v", err)
 	}
 
-	dbPassword, err := readSecret(os.Getenv("DB_PASSWORD_FILE"))
+	dbPassword, err := readSecret(os.Getenv("EMPLOYEE_DB_PASSWORD_FILE"))
 	if err != nil {
-		log.Fatalf("Failed to read DB_PASSWORD: %v", err)
+		log.Fatalf("Failed to read EMPLOYEE_DB_PASSWORD: %v", err)
 	}
 
 	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
@@ -190,7 +190,6 @@ func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.Employ
 		admin.DELETE("/reset", employeeHandler.ResetAllData)
 	}
 
-	// TODO: Remove this or turn it into the health check
 	r.GET("/ping", func(c *gin.Context) {
 		log.Info("Ping route hit")
 		c.JSON(200, gin.H{"message": "pong"})

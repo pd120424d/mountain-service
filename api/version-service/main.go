@@ -34,9 +34,10 @@ func main() {
 	r.Use(log.RequestLogger())
 
 	r.GET("/api/v1/version", versionHandler)
-	r.GET("/api/v1/health", func(c *gin.Context) {
-		// TODO: check health of all other services
-		c.Status(http.StatusOK)
+
+	r.GET("/ping", func(c *gin.Context) {
+		log.Info("Ping route hit")
+		c.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
 
 	srv := &http.Server{

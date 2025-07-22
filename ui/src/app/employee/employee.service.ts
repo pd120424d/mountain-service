@@ -1,8 +1,8 @@
 // src/app/employee/employee.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, Observable, throwError } from 'rxjs';
-import { Employee } from './employee.model';
+import { Employee, EmployeeCreateRequest } from './employee.model';
 import { LoggingService } from '../services/logging.service';
 import { environment } from '../../environments/environment'; // Import environment variables
 
@@ -38,8 +38,8 @@ export class EmployeeService {
     );
   }
 
-  addEmployee(employee: Employee): Observable<Employee> {
-    return this.http.post<Employee>(this.employeeApiUrl, employee).pipe(
+  addEmployee(employeeCreateRequest: EmployeeCreateRequest): Observable<Employee> {
+    return this.http.post<Employee>(this.employeeApiUrl, employeeCreateRequest).pipe(
       catchError(this.handleError)
     );
   }
@@ -56,8 +56,26 @@ export class EmployeeService {
     );
   }
 
-  private handleError(error: any): Observable<never> {
+  private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('An error occurred:', error);
-    return throwError(() => new Error('Something went wrong; please try again later.'));
+
+    let errorMessage = 'Something went wrong; please try again later.';
+
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = `Client error: ${error.error.message}`;
+    } else {
+      // Server-side error
+      if (error.status === 409) {
+        errorMessage = error.error?.error || 'Conflict: Resource already exists';
+      } else if (error.status === 400) {
+        errorMessage = error.error?.error || 'Invalid data provided';
+      } else {
+        errorMessage = `Server error: ${error.status} - ${error.message}`;
+      }
+    }
+
+    this.logger.error(`Employee service error: ${errorMessage}`);
+    return throwError(() => new Error(errorMessage));
   }
 }

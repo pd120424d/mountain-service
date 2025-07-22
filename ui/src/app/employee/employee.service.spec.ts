@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { EmployeeService } from './employee.service';
-import { Employee, MedicRole, TechnicalRole } from './employee.model';
+import { Employee, EmployeeCreateRequest, MedicRole, TechnicalRole } from './employee.model';
 import { environment } from '../../environments/environment';
 import { LoggingService } from '../services/logging.service';
 
@@ -98,7 +98,18 @@ describe('EmployeeService', () => {
   });
 
   it('should add employee', () => {
-    const mockEmployee: Employee = {
+    const mockEmployeeCreateRequest: EmployeeCreateRequest = {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      phone: '+1234567890',
+      profileType: MedicRole,
+      username: 'johndoe',
+      password: 'password123',
+      gender: 'Male'
+    };
+
+    const mockEmployeeResponse: Employee = {
       id: 1,
       firstName: 'John',
       lastName: 'Doe',
@@ -109,14 +120,14 @@ describe('EmployeeService', () => {
       gender: 'Male'
     };
 
-    service.addEmployee(mockEmployee).subscribe(employee => {
-      expect(employee).toEqual(mockEmployee);
+    service.addEmployee(mockEmployeeCreateRequest).subscribe(employee => {
+      expect(employee).toEqual(mockEmployeeResponse);
     });
 
     const req = httpMock.expectOne(expectedEmployeeUrl);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual(mockEmployee);
-    req.flush(mockEmployee);
+    expect(req.request.body).toEqual(mockEmployeeCreateRequest);
+    req.flush(mockEmployeeResponse);
   });
 
   it('should update employee', () => {

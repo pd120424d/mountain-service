@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { EmployeeService } from '../employee.service';
-import { Employee } from '../employee.model';
+import { Employee, EmployeeCreateRequest } from '../employee.model';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -36,7 +36,7 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       gender: ['', Validators.required],
-      phone: ['', Validators.required],
+      phoneNumber: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       profileType: ['', Validators.required],
       profilePicture: [null],
@@ -65,7 +65,7 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
       firstName: employee.firstName,
       lastName: employee.lastName,
       gender: employee.gender,
-      phone: employee.phoneNumber,
+      phoneNumber: employee.phoneNumber,
       email: employee.email,
       profileType: employee.profileType,
     });
@@ -73,14 +73,37 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
 
   onSubmit(): void {
     if (this.employeeForm.valid) {
-      const employee: Employee = this.employeeForm.value;
+      const formValue = this.employeeForm.value;
+
       if (this.employeeId) {
-        this.employeeService.updateEmployee(this.employeeId, employee).subscribe(() => {
-          this.router.navigate(['/employees']);
+        const employee: Employee = {
+          id: this.employeeId,
+          ...formValue
+        };
+
+        this.employeeService.updateEmployee(this.employeeId, employee).subscribe({
+          next: () => {
+            this.router.navigate(['/employees']);
+          },
+          error: (error) => {
+            console.error('Error updating employee:', error);
+            alert(`Error updating employee: ${error.message}`);
+          }
         });
       } else {
-        this.employeeService.addEmployee(employee).subscribe(() => {
-          this.router.navigate(['/employees']);
+        const employeeCreateRequest: EmployeeCreateRequest = {
+          ...formValue,
+          phone: formValue.phoneNumber
+        };
+
+        this.employeeService.addEmployee(employeeCreateRequest).subscribe({
+          next: () => {
+            this.router.navigate(['/employees']);
+          },
+          error: (error) => {
+            console.error('Error creating employee:', error);
+            alert(`Error creating employee: ${error.message}`);
+          }
         });
       }
     }

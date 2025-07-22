@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { EmployeeFormComponent } from './employee-form.component';
 import { sharedTestingProviders } from '../../test-utils/shared-test-imports';
-import { Employee, MedicRole } from '../employee.model';
+import { Employee, EmployeeCreateRequest, MedicRole } from '../employee.model';
 import { of } from 'rxjs';
 
 describe('EmployeeFormComponent', () => {
@@ -91,15 +91,15 @@ describe('EmployeeFormComponent', () => {
       firstName: 'John',
       lastName: 'Doe',
       gender: 'Male',
-      phone: '+1234567890',
+      phoneNumber: '+1234567890',
       email: 'john.doe@example.com',
       profileType: MedicRole,
-      profilePicture: null
+      profilePicture: undefined
     });
   });
 
   it('should submit form and navigate back to employee list', () => {
-    const mockEmployee: Employee = {
+    const mockEmployeeResponse: Employee = {
       id: 1,
       firstName: 'John',
       lastName: 'Doe',
@@ -109,7 +109,7 @@ describe('EmployeeFormComponent', () => {
       username: 'johndoe',
       gender: 'Male'
     };
-    spyOn(component['employeeService'], 'addEmployee').and.returnValue(of(mockEmployee));
+    spyOn(component['employeeService'], 'addEmployee').and.returnValue(of(mockEmployeeResponse));
     spyOn(component['router'], 'navigate');
 
     component.employeeForm.setValue({
@@ -119,14 +119,27 @@ describe('EmployeeFormComponent', () => {
       firstName: 'John',
       lastName: 'Doe',
       gender: 'Male',
-      phone: '+1234567890',
+      phoneNumber: '+1234567890',
       email: 'john.doe@example.com',
       profileType: MedicRole,
-      profilePicture: null
+      profilePicture: undefined
     });
 
     component.onSubmit();
-    expect(component['employeeService'].addEmployee).toHaveBeenCalled();
+
+    const expectedCreateRequest: EmployeeCreateRequest = {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      phone: '+1234567890',
+      username: 'johndoe',
+      password: 'password',
+      profileType: MedicRole,
+      gender: 'Male',
+      profilePicture: undefined
+    };
+
+    expect(component['employeeService'].addEmployee).toHaveBeenCalledWith(expectedCreateRequest);
     expect(component['router'].navigate).toHaveBeenCalledWith(['/employees']);
   });
 

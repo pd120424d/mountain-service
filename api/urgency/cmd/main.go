@@ -68,9 +68,9 @@ func main() {
 
 	r.Use(log.RequestLogger())
 
-	corsHandler := setupCORS(log, r)
-
 	setupRoutes(log, r, urgencyHandler)
+
+	corsHandler := setupCORS(log, r)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%v", config.ServerPort),
@@ -103,14 +103,14 @@ func main() {
 
 func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
 	log.Info("Setting up database...")
-	dbUser, err := readSecret(os.Getenv("DB_USER_FILE"))
+	dbUser, err := readSecret(os.Getenv("URGENCY_DB_USER_FILE"))
 	if err != nil {
-		log.Fatalf("Failed to read DB_USER: %v", err)
+		log.Fatalf("Failed to read URGENCY_DB_USER: %v", err)
 	}
 
-	dbPassword, err := readSecret(os.Getenv("DB_PASSWORD_FILE"))
+	dbPassword, err := readSecret(os.Getenv("URGENCY_DB_PASSWORD_FILE"))
 	if err != nil {
-		log.Fatalf("Failed to read DB_PASSWORD: %v", err)
+		log.Fatalf("Failed to read URGENCY_DB_PASSWORD: %v", err)
 	}
 
 	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
