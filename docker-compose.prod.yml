@@ -119,6 +119,8 @@ services:
       - NODE_ENV=production
     depends_on:
       - employee-service
+      - urgency-service
+      - version-service
     networks:
       - web
     volumes:
