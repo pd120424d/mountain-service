@@ -35,7 +35,7 @@ describe('EmployeeFormComponent', () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      phoneNumber: '+1234567890',
+      phone: '+1234567890',
       profileType: MedicRole,
       username: 'johndoe',
       gender: 'Male'
@@ -76,7 +76,7 @@ describe('EmployeeFormComponent', () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      phoneNumber: '+1234567890',
+      phone: '+1234567890',
       profileType: MedicRole,
       username: 'johndoe',
       gender: 'Male'
@@ -94,7 +94,7 @@ describe('EmployeeFormComponent', () => {
       phoneNumber: '+1234567890',
       email: 'john.doe@example.com',
       profileType: MedicRole,
-      profilePicture: undefined
+      profilePicture: null
     });
   });
 
@@ -104,7 +104,7 @@ describe('EmployeeFormComponent', () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      phoneNumber: '+1234567890',
+      phone: '+1234567890',
       profileType: MedicRole,
       username: 'johndoe',
       gender: 'Male'
@@ -122,7 +122,7 @@ describe('EmployeeFormComponent', () => {
       phoneNumber: '+1234567890',
       email: 'john.doe@example.com',
       profileType: MedicRole,
-      profilePicture: undefined
+      profilePicture: null
     });
 
     component.onSubmit();

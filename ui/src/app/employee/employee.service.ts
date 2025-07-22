@@ -56,26 +56,26 @@ export class EmployeeService {
     );
   }
 
-  private handleError(error: HttpErrorResponse): Observable<never> {
+  private handleError = (error: HttpErrorResponse): Observable<never> => {
     console.error('An error occurred:', error);
 
-    let errorMessage = 'Something went wrong; please try again later.';
+    let errorMessage = 'Something went wrong. Please try again later.';
 
     if (error.error instanceof ErrorEvent) {
       // Client-side error
       errorMessage = `Client error: ${error.error.message}`;
     } else {
-      // Server-side error
+      // Server-side error - only show specific messages for certain status codes
       if (error.status === 409) {
         errorMessage = error.error?.error || 'Conflict: Resource already exists';
       } else if (error.status === 400) {
         errorMessage = error.error?.error || 'Invalid data provided';
-      } else {
-        errorMessage = `Server error: ${error.status} - ${error.message}`;
       }
     }
 
-    this.logger.error(`Employee service error: ${errorMessage}`);
+    if (this.logger) {
+      this.logger.error(`Employee service error: ${errorMessage}`);
+    }
     return throwError(() => new Error(errorMessage));
   }
 }

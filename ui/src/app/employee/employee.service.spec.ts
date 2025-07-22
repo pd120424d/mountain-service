@@ -49,7 +49,7 @@ describe('EmployeeService', () => {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
-        phoneNumber: '+1234567890',
+        phone: '+1234567890',
         profileType: MedicRole,
         username: 'johndoe',
         gender: 'Male'
@@ -59,7 +59,7 @@ describe('EmployeeService', () => {
         firstName: 'Jane',
         lastName: 'Smith',
         email: 'jane.smith@example.com',
-        phoneNumber: '+1234567891',
+        phone: '+1234567891',
         profileType: TechnicalRole,
         username: 'janesmith',
         gender: 'Female'
@@ -81,7 +81,7 @@ describe('EmployeeService', () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      phoneNumber: '+1234567890',
+      phone: '+1234567890',
       profileType: MedicRole,
       username: 'johndoe',
       gender: 'Male'
@@ -114,7 +114,7 @@ describe('EmployeeService', () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      phoneNumber: '+1234567890',
+      phone: '+1234567890',
       profileType: MedicRole,
       username: 'johndoe',
       gender: 'Male'
@@ -136,7 +136,7 @@ describe('EmployeeService', () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      phoneNumber: '+1234567890',
+      phone: '+1234567890',
       profileType: MedicRole,
       username: 'johndoe',
       gender: 'Male'
@@ -168,7 +168,7 @@ describe('EmployeeService', () => {
     service.getEmployees().subscribe({
       next: () => fail('Expected an error'),
       error: (error) => {
-        expect(error.message).toBe('Something went wrong; please try again later.');
+        expect(error.message).toBe('Something went wrong. Please try again later.');
       }
     });
 
@@ -182,7 +182,7 @@ describe('EmployeeService', () => {
     service.getEmployeeById(999).subscribe({
       next: () => fail('Expected an error'),
       error: (error) => {
-        expect(error.message).toBe('Something went wrong; please try again later.');
+        expect(error.message).toBe('Something went wrong. Please try again later.');
       }
     });
 

@@ -65,7 +65,7 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
       firstName: employee.firstName,
       lastName: employee.lastName,
       gender: employee.gender,
-      phoneNumber: employee.phoneNumber,
+      phoneNumber: employee.phone,
       email: employee.email,
       profileType: employee.profileType,
     });
@@ -78,7 +78,14 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
       if (this.employeeId) {
         const employee: Employee = {
           id: this.employeeId,
-          ...formValue
+          firstName: formValue.firstName,
+          lastName: formValue.lastName,
+          email: formValue.email,
+          phone: formValue.phoneNumber,
+          username: formValue.username,
+          profileType: formValue.profileType,
+          gender: formValue.gender,
+          profilePicture: formValue.profilePicture || undefined
         };
 
         this.employeeService.updateEmployee(this.employeeId, employee).subscribe({
@@ -92,8 +99,15 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
         });
       } else {
         const employeeCreateRequest: EmployeeCreateRequest = {
-          ...formValue,
-          phone: formValue.phoneNumber
+          firstName: formValue.firstName,
+          lastName: formValue.lastName,
+          email: formValue.email,
+          phone: formValue.phoneNumber,
+          username: formValue.username,
+          password: formValue.password,
+          profileType: formValue.profileType,
+          gender: formValue.gender,
+          profilePicture: formValue.profilePicture || undefined
         };
 
         this.employeeService.addEmployee(employeeCreateRequest).subscribe({

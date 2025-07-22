@@ -3,7 +3,7 @@ export interface Employee {
   firstName: string;
   lastName: string;
   email: string;
-  phoneNumber: string;
+  phone: string;
   profilePicture?: string; // Optional
   profileType: EmployeeRole;
   username: string;

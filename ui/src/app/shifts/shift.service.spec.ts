@@ -37,7 +37,7 @@ describe('ShiftManagementService', () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      phoneNumber: '+1234567890',
+      phone: '+1234567890',
       profileType: MedicRole,
       username: 'johndoe',
       gender: 'Male'
@@ -47,7 +47,7 @@ describe('ShiftManagementService', () => {
       firstName: 'Jane',
       lastName: 'Smith',
       email: 'jane.smith@example.com',
-      phoneNumber: '+1234567891',
+      phone: '+1234567891',
       profileType: TechnicalRole,
       username: 'janesmith',
       gender: 'Female'
