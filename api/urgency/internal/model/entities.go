@@ -6,9 +6,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type UrgencyLevel string
+type (
+	Status       string
+	UrgencyLevel string
+)
 
 const (
+	Open       Status = "Open"
+	InProgress Status = "In Progress"
+	Resolved   Status = "Resolved"
+	Closed     Status = "Closed"
+
 	Low      UrgencyLevel = "Low"
 	Medium   UrgencyLevel = "Medium"
 	High     UrgencyLevel = "High"
@@ -23,7 +31,7 @@ type Urgency struct {
 	ContactPhone string       `gorm:"not null"`
 	Description  string       `gorm:"not null"`
 	Level        UrgencyLevel `gorm:"type:text;not null;default:'Medium'"`
-	Status       string       `gorm:"type:text;not null;default:'Open'"`
+	Status       Status       `gorm:"type:text;not null;default:'Open'"`
 }
 
 func (u UrgencyLevel) String() string {
@@ -37,12 +45,17 @@ func (u UrgencyLevel) String() string {
 	case Critical:
 		return "Critical"
 	default:
-		return "Medium"
+		return string(u)
 	}
 }
 
 func (u UrgencyLevel) Valid() bool {
-	return u == Low || u == Medium || u == High || u == Critical
+	for _, v := range []UrgencyLevel{Low, Medium, High, Critical} {
+		if v == u {
+			return true
+		}
+	}
+	return false
 }
 
 func UrgencyLevelFromString(s string) UrgencyLevel {
@@ -67,9 +80,18 @@ func (u *Urgency) ToResponse() UrgencyResponse {
 		Email:        u.Email,
 		ContactPhone: u.ContactPhone,
 		Description:  u.Description,
-		Level:        u.Level.String(),
+		Level:        u.Level,
 		Status:       u.Status,
 		CreatedAt:    u.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:    u.UpdatedAt.Format(time.RFC3339),
 	}
+}
+
+func (s Status) Valid() bool {
+	for _, v := range []Status{Open, InProgress, Resolved, Closed} {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }

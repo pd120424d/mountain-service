@@ -8,6 +8,8 @@ import (
 )
 
 func TestUrgencyLevel_String(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		level    UrgencyLevel
 		expected string
@@ -16,7 +18,7 @@ func TestUrgencyLevel_String(t *testing.T) {
 		{Medium, "Medium"},
 		{High, "High"},
 		{Critical, "Critical"},
-		{UrgencyLevel("invalid"), "Medium"},
+		{"invalid", "invalid"},
 	}
 
 	for _, test := range tests {
@@ -28,6 +30,8 @@ func TestUrgencyLevel_String(t *testing.T) {
 }
 
 func TestUrgencyLevel_Valid(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		level    UrgencyLevel
 		expected bool
@@ -49,6 +53,8 @@ func TestUrgencyLevel_Valid(t *testing.T) {
 }
 
 func TestUrgencyLevelFromString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		input    string
 		expected UrgencyLevel

@@ -7,20 +7,22 @@ import (
 )
 
 func TestUrgencyCreateRequest_Validate(t *testing.T) {
-	t.Run("valid request", func(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns no error for a valid request", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Description:  "Test description",
-			Level:        "High",
+			Level:        High,
 		}
 
 		err := req.Validate()
 		assert.NoError(t, err)
 	})
 
-	t.Run("missing name", func(t *testing.T) {
+	t.Run("it returns an error for a missing name", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
 			Name:         "",
 			Email:        "test@example.com",
@@ -33,7 +35,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 		assert.Contains(t, err.Error(), "name is required")
 	})
 
-	t.Run("missing email", func(t *testing.T) {
+	t.Run("it returns an error for a missing email", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
 			Name:         "Test Urgency",
 			Email:        "",
@@ -46,7 +48,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 		assert.Contains(t, err.Error(), "email is required")
 	})
 
-	t.Run("invalid email", func(t *testing.T) {
+	t.Run("it returns an error for an invalid email", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
 			Name:         "Test Urgency",
 			Email:        "invalid-email",
@@ -59,7 +61,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 		assert.Contains(t, err.Error(), "invalid email format")
 	})
 
-	t.Run("missing contact phone", func(t *testing.T) {
+	t.Run("it returns an error for a missing contact phone", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
@@ -72,7 +74,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 		assert.Contains(t, err.Error(), "contact phone is required")
 	})
 
-	t.Run("missing description", func(t *testing.T) {
+	t.Run("it returns an error for a missing description", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
@@ -85,13 +87,13 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 		assert.Contains(t, err.Error(), "description is required")
 	})
 
-	t.Run("invalid urgency level", func(t *testing.T) {
+	t.Run("it returns an error for an invalid urgency level", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Description:  "Test description",
-			Level:        "Invalid",
+			Level:        "Invalid Level",
 		}
 
 		err := req.Validate()
@@ -101,21 +103,23 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 }
 
 func TestUrgencyUpdateRequest_Validate(t *testing.T) {
-	t.Run("valid request", func(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns no error for a valid request", func(t *testing.T) {
 		req := &UrgencyUpdateRequest{
 			Name:         "Updated Urgency",
 			Email:        "updated@example.com",
 			ContactPhone: "987654321",
 			Description:  "Updated description",
-			Level:        "Critical",
-			Status:       "In Progress",
+			Level:        Critical,
+			Status:       InProgress,
 		}
 
 		err := req.Validate()
 		assert.NoError(t, err)
 	})
 
-	t.Run("invalid email", func(t *testing.T) {
+	t.Run("it returns an error for an invalid email", func(t *testing.T) {
 		req := &UrgencyUpdateRequest{
 			Email: "invalid-email",
 		}
@@ -125,9 +129,9 @@ func TestUrgencyUpdateRequest_Validate(t *testing.T) {
 		assert.Contains(t, err.Error(), "invalid email format")
 	})
 
-	t.Run("invalid urgency level", func(t *testing.T) {
+	t.Run("it returns an error for an invalid urgency level", func(t *testing.T) {
 		req := &UrgencyUpdateRequest{
-			Level: "Invalid",
+			Level: "Invalid Level",
 		}
 
 		err := req.Validate()
@@ -135,9 +139,9 @@ func TestUrgencyUpdateRequest_Validate(t *testing.T) {
 		assert.Contains(t, err.Error(), "invalid urgency level")
 	})
 
-	t.Run("invalid status", func(t *testing.T) {
+	t.Run("it returns an error for an invalid status", func(t *testing.T) {
 		req := &UrgencyUpdateRequest{
-			Status: "Invalid Status",
+			Status: "Invalid",
 		}
 
 		err := req.Validate()
@@ -146,22 +150,24 @@ func TestUrgencyUpdateRequest_Validate(t *testing.T) {
 	})
 }
 
-func TestIsValidStatus(t *testing.T) {
+func TestStatus_Valid(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
-		status   string
+		status   Status
 		expected bool
 	}{
-		{"Open", true},
-		{"In Progress", true},
-		{"Resolved", true},
-		{"Closed", true},
-		{"Invalid", false},
-		{"", false},
+		{Open, true},
+		{InProgress, true},
+		{Resolved, true},
+		{Closed, true},
+		{Status("Invalid"), false},
+		{Status(""), false},
 	}
 
 	for _, test := range tests {
-		t.Run(test.status, func(t *testing.T) {
-			result := isValidStatus(test.status)
+		t.Run(string(test.status), func(t *testing.T) {
+			result := test.status.Valid()
 			assert.Equal(t, test.expected, result)
 		})
 	}

@@ -60,7 +60,7 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 		Email:        req.Email,
 		ContactPhone: req.ContactPhone,
 		Description:  req.Description,
-		Level:        model.UrgencyLevelFromString(req.Level),
+		Level:        req.Level,
 		Status:       "Open",
 	}
 
@@ -190,7 +190,7 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 		urgency.Description = req.Description
 	}
 	if req.Level != "" {
-		urgency.Level = model.UrgencyLevelFromString(req.Level)
+		urgency.Level = req.Level
 	}
 	if req.Status != "" {
 		urgency.Status = req.Status
