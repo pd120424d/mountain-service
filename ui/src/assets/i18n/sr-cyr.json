@@ -156,5 +156,27 @@
     "MEDIUM": "Средњак",
     "HIGH": "Висок",
     "CRITICAL": "Критичан"
+  },
+  "URGENCY_STATUS": {
+    "OPEN": "Отворено",
+    "IN_PROGRESS": "У Току",
+    "RESOLVED": "Решено",
+    "CLOSED": "Затворено"
+  },
+  "URGENCY_LIST": {
+    "TITLE": "Ургентне Ситуације",
+    "LOADING": "Учитавање ургентних ситуација...",
+    "RETRY": "Покушајте поново",
+    "NO_URGENCIES": "Нема ургентних ситуација.",
+    "TABLE_HEADERS": {
+      "ID": "ID",
+      "NAME": "Име",
+      "LOCATION": "Локација",
+      "LEVEL": "Ниво",
+      "STATUS": "Статус",
+      "CREATED_AT": "Креирано",
+      "ACTIONS": "Акције"
+    },
+    "VIEW": "Погледај"
   }
 }

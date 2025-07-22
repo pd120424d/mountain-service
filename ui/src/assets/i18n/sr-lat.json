@@ -156,5 +156,27 @@
         "MEDIUM": "Srednji",
         "HIGH": "Visok",
         "CRITICAL": "Kritičan"
+    },
+    "URGENCY_STATUS": {
+        "OPEN": "Otvoren",
+        "IN_PROGRESS": "U toku",
+        "RESOLVED": "Rešen",
+        "CLOSED": "Zatvoren"
+    },
+    "URGENCY_LIST": {
+        "TITLE": "Urgentne Situacije",
+        "LOADING": "Učitavanje urgentnih situacija...",
+        "RETRY": "Pokušaj ponovo",
+        "NO_URGENCIES": "Nema urgentnih situacija.",
+        "TABLE_HEADERS": {
+            "ID": "ID",
+            "NAME": "Naziv",
+            "LOCATION": "Lokacija",
+            "LEVEL": "Nivo",
+            "STATUS": "Status",
+            "CREATED_AT": "Kreirano",
+            "ACTIONS": "Akcije"
+        },
+        "VIEW": "Prikaži detalje"
     }
 }

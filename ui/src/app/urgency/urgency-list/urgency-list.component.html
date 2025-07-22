@@ -1,0 +1,61 @@
+<div class="urgency-list-container">
+  <div class="header">
+    <h2>{{ 'URGENCY_LIST.TITLE' | translate }}</h2>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ 'URGENCY_LIST.LOADING' | translate }}</p>
+  </div>
+
+  <div *ngIf="error && !isLoading" class="error-message">
+    <p>{{ error }}</p>
+    <button class="btn btn-secondary" (click)="loadUrgencies()">
+      {{ 'URGENCY_LIST.RETRY' | translate }}
+    </button>
+  </div>
+
+  <div *ngIf="!isLoading && !error && urgencies.length === 0" class="empty-state">
+    <p>{{ 'URGENCY_LIST.NO_URGENCIES' | translate }}</p>
+  </div>
+
+  <div *ngIf="!isLoading && !error && urgencies.length > 0" class="urgencies-table">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.ID' | translate }}</th>
+          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.NAME' | translate }}</th>
+          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.LOCATION' | translate }}</th>
+          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.LEVEL' | translate }}</th>
+          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.STATUS' | translate }}</th>
+          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.CREATED_AT' | translate }}</th>
+          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.ACTIONS' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let urgency of urgencies" class="urgency-row">
+          <td>{{ urgency.id }}</td>
+          <td>{{ urgency.name }}</td>
+          <td>{{ urgency.location }}</td>
+          <td>
+            <span class="level-badge" [ngClass]="getLevelClass(urgency.level)">
+              {{ 'URGENCY_LEVEL.' + urgency.level.toUpperCase() | translate }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(urgency.status)">
+              {{ 'URGENCY_STATUS.' + urgency.status.toUpperCase().replace(' ', '_') | translate }}
+            </span>
+          </td>
+          <td>{{ formatDate(urgency.createdAt) }}</td>
+          <td class="actions">
+            <button class="btn btn-sm btn-info" (click)="viewUrgency(urgency.id)"
+              [title]="'URGENCY_LIST.VIEW' | translate">
+              {{ 'URGENCY_LIST.VIEW' | translate }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -158,5 +158,27 @@
         "MEDIUM": "Medium",
         "HIGH": "High",
         "CRITICAL": "Critical"
+    },
+    "URGENCY_STATUS": {
+        "OPEN": "Open",
+        "IN_PROGRESS": "In Progress",
+        "RESOLVED": "Resolved",
+        "CLOSED": "Closed"
+    },
+    "URGENCY_LIST": {
+        "TITLE": "Emergency Reports",
+        "LOADING": "Loading emergencies...",
+        "RETRY": "Retry",
+        "NO_URGENCIES": "No emergency reports found.",
+        "TABLE_HEADERS": {
+            "ID": "ID",
+            "NAME": "Reporter Name",
+            "LOCATION": "Location",
+            "LEVEL": "Urgency Level",
+            "STATUS": "Status",
+            "CREATED_AT": "Reported At",
+            "ACTIONS": "Actions"
+        },
+        "VIEW": "View Details"
     }
 }
