@@ -1,0 +1,110 @@
+<div class="urgency-container">
+  <h2>{{ 'URGENCY_FORM.TITLE' | translate }}</h2>
+
+  <form [formGroup]="urgencyForm" (ngSubmit)="onSubmit()">
+    <!-- Name Field -->
+    <div class="form-group">
+      <label for="name">{{ 'URGENCY_FORM.NAME' | translate }}:</label>
+      <input
+        id="name"
+        formControlName="name"
+        type="text"
+        [class.error]="isFieldInvalid('name')"
+        placeholder="{{ 'URGENCY_FORM.NAME_PLACEHOLDER' | translate }}">
+      <div *ngIf="isFieldInvalid('name')" class="error-message">
+        {{ getFieldError('name') | translate }}
+      </div>
+    </div>
+
+    <!-- Email Field -->
+    <div class="form-group">
+      <label for="email">{{ 'URGENCY_FORM.EMAIL' | translate }}:</label>
+      <input
+        id="email"
+        formControlName="email"
+        type="email"
+        [class.error]="isFieldInvalid('email')"
+        placeholder="{{ 'URGENCY_FORM.EMAIL_PLACEHOLDER' | translate }}">
+      <div *ngIf="isFieldInvalid('email')" class="error-message">
+        {{ getFieldError('email') | translate }}
+      </div>
+    </div>
+
+    <!-- Contact Phone Field -->
+    <div class="form-group">
+      <label for="contactPhone">{{ 'URGENCY_FORM.CONTACT_PHONE' | translate }}:</label>
+      <input
+        id="contactPhone"
+        formControlName="contactPhone"
+        type="tel"
+        [class.error]="isFieldInvalid('contactPhone')"
+        placeholder="{{ 'URGENCY_FORM.CONTACT_PHONE_PLACEHOLDER' | translate }}">
+      <div *ngIf="isFieldInvalid('contactPhone')" class="error-message">
+        {{ getFieldError('contactPhone') | translate }}
+      </div>
+    </div>
+
+    <!-- Location Field -->
+    <div class="form-group">
+      <label for="location">{{ 'URGENCY_FORM.LOCATION' | translate }}:</label>
+      <input
+        id="location"
+        formControlName="location"
+        type="text"
+        [class.error]="isFieldInvalid('location')"
+        placeholder="{{ 'URGENCY_FORM.LOCATION_PLACEHOLDER' | translate }}">
+      <div *ngIf="isFieldInvalid('location')" class="error-message">
+        {{ getFieldError('location') | translate }}
+      </div>
+    </div>
+
+    <!-- Description Field -->
+    <div class="form-group">
+      <label for="description">{{ 'URGENCY_FORM.DESCRIPTION' | translate }}:</label>
+      <textarea
+        id="description"
+        formControlName="description"
+        [class.error]="isFieldInvalid('description')"
+        placeholder="{{ 'URGENCY_FORM.DESCRIPTION_PLACEHOLDER' | translate }}"
+        rows="4"></textarea>
+      <div *ngIf="isFieldInvalid('description')" class="error-message">
+        {{ getFieldError('description') | translate }}
+      </div>
+    </div>
+
+    <!-- Urgency Level Field -->
+    <div class="form-group">
+      <label for="level">{{ 'URGENCY_FORM.LEVEL' | translate }}:</label>
+      <select
+        id="level"
+        formControlName="level"
+        [class.error]="isFieldInvalid('level')">
+        <option *ngFor="let level of urgencyLevels" [value]="level">
+          {{ 'URGENCY_LEVEL.' + level.toUpperCase() | translate }}
+        </option>
+      </select>
+      <div *ngIf="isFieldInvalid('level')" class="error-message">
+        {{ getFieldError('level') | translate }}
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        [disabled]="urgencyForm.invalid || isSubmitting"
+        class="btn btn-primary">
+        <span *ngIf="isSubmitting">{{ 'URGENCY_FORM.SUBMITTING' | translate }}</span>
+        <span *ngIf="!isSubmitting">{{ 'URGENCY_FORM.SAVE' | translate }}</span>
+      </button>
+      <button
+        type="button"
+        (click)="cancel()"
+        class="btn btn-secondary"
+        [disabled]="isSubmitting">
+        {{ 'URGENCY_FORM.CANCEL' | translate }}
+      </button>
+    </div>
+  </form>
+</div>
+

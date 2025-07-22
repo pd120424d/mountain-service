@@ -132,5 +132,31 @@
         "RESETTING": "Resetting",
         "RESET_SUCCESS": "All data has been successfully reset",
         "RESET_ERROR": "Failed to reset data"
+    },
+    "URGENCY_FORM": {
+        "TITLE": "Report Emergency",
+        "NAME": "Full Name",
+        "NAME_PLACEHOLDER": "Enter your full name",
+        "EMAIL": "Email Address",
+        "EMAIL_PLACEHOLDER": "Enter your email address",
+        "CONTACT_PHONE": "Contact Phone",
+        "CONTACT_PHONE_PLACEHOLDER": "Enter your phone number",
+        "LOCATION": "Location",
+        "LOCATION_PLACEHOLDER": "Enter the emergency location",
+        "DESCRIPTION": "Description",
+        "DESCRIPTION_PLACEHOLDER": "Describe the emergency situation in detail",
+        "LEVEL": "Urgency Level",
+        "SAVE": "Submit Emergency Report",
+        "CANCEL": "Cancel",
+        "SUBMITTING": "Submitting...",
+        "REQUIRED": "This field is required",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "MIN_LENGTH": "This field is too short"
+    },
+    "URGENCY_LEVEL": {
+        "LOW": "Low",
+        "MEDIUM": "Medium",
+        "HIGH": "High",
+        "CRITICAL": "Critical"
     }
 }

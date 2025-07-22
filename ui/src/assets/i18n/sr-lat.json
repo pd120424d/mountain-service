@@ -132,5 +132,29 @@
         "RESETTING": "Resetovanje",
         "RESET_SUCCESS": "Svi podaci su uspešno resetovani",
         "RESET_ERROR": "Greška pri resetovanju podataka"
+    },
+    "URGENCY": {
+        "TITLE": "Urgentna Situacija",
+        "NAME": "Naziv",
+        "EMAIL": "E-mail",
+        "CONTACT_PHONE": "Kontakt telefon",
+        "LOCATION": "Lokacija",
+        "DESCRIPTION": "Opis",
+        "LEVEL": "Nivo",
+        "STATUS": "Status",
+        "CREATED_AT": "Kreirano",
+        "UPDATED_AT": "Ažurirano",
+        "SAVE": "Sačuvaj",
+        "CANCEL": "Otkaži",
+        "SUBMITTING": "Slanje...",
+        "REQUIRED": "Ovo polje je obavezno",
+        "INVALID_EMAIL": "Molimo unesite ispravan e-mail",
+        "MIN_LENGTH": "Ovo polje je prekratko"
+    },
+    "URGENCY_LEVEL": {
+        "LOW": "Nisak",
+        "MEDIUM": "Srednji",
+        "HIGH": "Visok",
+        "CRITICAL": "Kritičan"
     }
 }
