@@ -4,7 +4,7 @@
     "ADD_EMPLOYEE": "Dodaj zaposlenog",
     "EDIT_EMPLOYEE": "Izmeni zaposlenog",
     "DELETE_EMPLOYEE": "Obriši zaposlenog",
-    "GO_BACK": "Nazad",
+    "GO_HOME": "Vratite se na početnu stranicu",
     "LANGUAGE": {
         "ENGLISH": "Engleski",
         "SERBIAN": "Srpski"
@@ -59,8 +59,7 @@
         "DELETE": "Obriši",
         "EDIT": "Izmeni",
         "EDIT_DISABLED": "Izmena nije podržana",
-        "ADD_NEW_EMPLOYEE": "Dodaj novog zaposlenog",
-        "GO_BACK": "Nazad na početnu stranicu"
+        "ADD_NEW_EMPLOYEE": "Dodaj novog zaposlenog"
     },
     "EMPLOYEE_FORM": {
         "USERNAME": "Korisničko ime",
@@ -86,8 +85,7 @@
     },
     "NOT_FOUND": {
         "TITLE": "Stranica nije pronađena",
-        "DESCRIPTION": "Izgleda da stranica koju tražite ne postoji.",
-        "GO_HOME": "Vratite se na početnu stranicu"
+        "DESCRIPTION": "Izgleda da stranica koju tražite ne postoji."
     },
     "LOGIN": {
         "BUTTON": "Prijava",
@@ -97,8 +95,7 @@
         "SUBMIT": "Prijavi se",
         "NO_ACCOUNT": "Nemate nalog?",
         "REGISTER": "Registrujte se ovde",
-        "INVALID_CREDENTIALS": "Neispravno korisničko ime ili lozinka.",
-        "GO_HOME": "Idite na početnu stranicu"
+        "INVALID_CREDENTIALS": "Neispravno korisničko ime ili lozinka."
     },
     "LOGOUT": {
         "BUTTON": "Odjava"
@@ -129,12 +126,11 @@
     },
     "ADMIN_PANEL": {
         "TITLE": "Admin Panel",
-        "DANGER_ZONE": "Danger Zone",
-        "RESET_WARNING": "WARNING: This action will permanently delete all data from the system including employees, shifts, and all related information. This action cannot be undone!",
-        "RESET_ALL_DATA": "Reset All Data",
-        "RESETTING": "Resetting",
-        "RESET_SUCCESS": "All data has been successfully reset.",
-        "RESET_ERROR": "Failed to reset data.",
-        "BACK": "Back"
+        "DANGER_ZONE": "Opasna zona",
+        "RESET_WARNING": "PAŽNJA: Ova akcija će trajno izbrisati sve podatke iz sistema, uključujući zaposlene, smene i sve povezane informacije. Ova akcija se ne može poništiti!",
+        "RESET_ALL_DATA": "Resetuj sve podatke",
+        "RESETTING": "Resetovanje",
+        "RESET_SUCCESS": "Svi podaci su uspešno resetovani.",
+        "RESET_ERROR": "Greška pri resetovanju podataka"
     }
 }

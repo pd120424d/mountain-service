@@ -4,7 +4,7 @@
     "ADD_EMPLOYEE": "Add Employee",
     "EDIT_EMPLOYEE": "Edit Employee",
     "DELETE_EMPLOYEE": "Delete Employee",
-    "GO_BACK": "Go Back",
+    "GO_HOME": "Return to Home Page",
     "LANGUAGE": {
         "ENGLISH": "English",
         "SERBIAN": "Serbian"
@@ -59,8 +59,7 @@
         "DELETE": "Delete",
         "EDIT": "Edit",
         "EDIT_DISABLED": "Editing is not supported",
-        "ADD_NEW_EMPLOYEE": "Add New Employee",
-        "GO_BACK": "Back to Home"
+        "ADD_NEW_EMPLOYEE": "Add New Employee"
     },
     "EMPLOYEE_FORM": {
         "USERNAME": "Username",
@@ -86,8 +85,7 @@
     },
     "NOT_FOUND": {
         "TITLE": "Page Not Found",
-        "DESCRIPTION": "It looks like the page you are looking for does not exist.",
-        "GO_HOME": "Return to Home Page"
+        "DESCRIPTION": "It looks like the page you are looking for does not exist."
     },
     "LOGIN": {
         "BUTTON": "Login",
@@ -97,8 +95,7 @@
         "SUBMIT": "Login",
         "NO_ACCOUNT": "Don't have an account?",
         "REGISTER": "Register here",
-        "INVALID_CREDENTIALS": "Invalid username or password.",
-        "GO_HOME": "Go to Home Page"
+        "INVALID_CREDENTIALS": "Invalid username or password."
     },
     "LOGOUT": {
         "BUTTON": "Logout"
@@ -134,7 +131,6 @@
         "RESET_ALL_DATA": "Reset All Data",
         "RESETTING": "Resetting",
         "RESET_SUCCESS": "All data has been successfully reset.",
-        "RESET_ERROR": "Failed to reset data.",
-        "BACK": "Back"
+        "RESET_ERROR": "Failed to reset data."
     }
 }
