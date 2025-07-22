@@ -39,6 +39,7 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 			Name:         "Mountain Rescue Emergency",
 			Email:        "rescue@example.com",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Hiker injured on mountain trail",
 			Level:        model.Critical,
 		}
@@ -57,6 +58,7 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 		err := json.Unmarshal(w.Body.Bytes(), &createResponse)
 		require.NoError(t, err)
 		assert.Equal(t, "Mountain Rescue Emergency", createResponse.Name)
+		assert.Equal(t, "N 43.401123 E 22.662756", createResponse.Location)
 		assert.Equal(t, "Open", string(createResponse.Status))
 		urgencyID := createResponse.ID
 

@@ -46,6 +46,7 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 			Level:        model.High,
 		}
@@ -71,6 +72,7 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, uint(1), response.ID)
 		assert.Equal(t, "Test Urgency", response.Name)
+		assert.Equal(t, "N 43.401123 E 22.662756", response.Location)
 		assert.Equal(t, "Open", string(response.Status))
 	})
 
@@ -90,6 +92,7 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 			Name:         "", // Missing required field
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 			Level:        model.High,
 		}
@@ -110,6 +113,7 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 			Level:        model.High,
 		}
@@ -141,6 +145,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 				Name:         "Urgency 1",
 				Email:        "test1@example.com",
 				ContactPhone: "123456789",
+				Location:     "N 43.401123 E 22.662756",
 				Description:  "Description 1",
 				Level:        model.High,
 				Status:       model.Open,
@@ -150,6 +155,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 				Name:         "Urgency 2",
 				Email:        "test2@example.com",
 				ContactPhone: "987654321",
+				Location:     "N 43.401123 E 22.662756",
 				Description:  "Description 2",
 				Level:        model.Medium,
 				Status:       model.InProgress,
@@ -218,6 +224,7 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 			Level:        model.High,
 			Status:       model.Open,
@@ -231,6 +238,7 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 				Name:         "Test Urgency",
 				Email:        "test@example.com",
 				ContactPhone: "123456789",
+				Location:     "N 43.401123 E 22.662756",
 				Description:  "Test description",
 				Level:        model.High,
 				Status:       model.Open,
@@ -252,6 +260,7 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, uint(1), response.ID)
 		assert.Equal(t, "Test Urgency", response.Name)
+		assert.Equal(t, "N 43.401123 E 22.662756", response.Location)
 	})
 
 	t.Run("it returns an error when ID is invalid", func(t *testing.T) {
@@ -295,6 +304,7 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 			Name:         "Original Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 			Level:        model.High,
 			Status:       model.Open,

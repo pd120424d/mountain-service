@@ -22,12 +22,15 @@ definitions:
         type: string
       level:
         $ref: '#/definitions/model.UrgencyLevel'
+      location:
+        type: string
       name:
         type: string
     required:
     - contactPhone
     - description
     - email
+    - location
     - name
     type: object
   model.UrgencyLevel:
@@ -56,6 +59,8 @@ definitions:
         type: integer
       level:
         $ref: '#/definitions/model.UrgencyLevel'
+      location:
+        type: string
       name:
         type: string
       status:
@@ -73,6 +78,8 @@ definitions:
         type: string
       level:
         $ref: '#/definitions/model.UrgencyLevel'
+      location:
+        type: string
       name:
         type: string
       status:

@@ -12,6 +12,7 @@ type UrgencyCreateRequest struct {
 	Name         string       `json:"name" binding:"required"`
 	Email        string       `json:"email" binding:"required,email"`
 	ContactPhone string       `json:"contactPhone" binding:"required"`
+	Location     string       `json:"location" binding:"required"`
 	Description  string       `json:"description" binding:"required"`
 	Level        UrgencyLevel `json:"level"`
 }
@@ -22,6 +23,7 @@ type UrgencyUpdateRequest struct {
 	Name         string       `json:"name"`
 	Email        string       `json:"email" binding:"email"`
 	ContactPhone string       `json:"contactPhone"`
+	Location     string       `json:"location"`
 	Description  string       `json:"description"`
 	Level        UrgencyLevel `json:"level"`
 	Status       Status       `json:"status"`
@@ -34,6 +36,7 @@ type UrgencyResponse struct {
 	Name         string       `json:"name"`
 	Email        string       `json:"email"`
 	ContactPhone string       `json:"contactPhone"`
+	Location     string       `json:"location"`
 	Description  string       `json:"description"`
 	Level        UrgencyLevel `json:"level"`
 	Status       Status       `json:"status"`
@@ -59,6 +62,9 @@ func (r *UrgencyCreateRequest) Validate() error {
 	}
 	if strings.TrimSpace(r.ContactPhone) == "" {
 		return fmt.Errorf("contact phone is required")
+	}
+	if strings.TrimSpace(r.Location) == "" {
+		return fmt.Errorf("location is required")
 	}
 	if strings.TrimSpace(r.Description) == "" {
 		return fmt.Errorf("description is required")

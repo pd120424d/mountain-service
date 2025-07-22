@@ -225,6 +225,7 @@
                 "contactPhone",
                 "description",
                 "email",
+                "location",
                 "name"
             ],
             "properties": {
@@ -239,6 +240,9 @@
                 },
                 "level": {
                     "$ref": "#/definitions/model.UrgencyLevel"
+                },
+                "location": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -281,6 +285,9 @@
                 "level": {
                     "$ref": "#/definitions/model.UrgencyLevel"
                 },
+                "location": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -306,6 +313,9 @@
                 },
                 "level": {
                     "$ref": "#/definitions/model.UrgencyLevel"
+                },
+                "location": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"

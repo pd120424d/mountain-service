@@ -29,6 +29,7 @@ type Urgency struct {
 	Name         string       `gorm:"not null"`
 	Email        string       `gorm:"not null"`
 	ContactPhone string       `gorm:"not null"`
+	Location     string       `gorm:"not null"`
 	Description  string       `gorm:"not null"`
 	Level        UrgencyLevel `gorm:"type:text;not null;default:'Medium'"`
 	Status       Status       `gorm:"type:text;not null;default:'Open'"`
@@ -79,6 +80,7 @@ func (u *Urgency) ToResponse() UrgencyResponse {
 		Name:         u.Name,
 		Email:        u.Email,
 		ContactPhone: u.ContactPhone,
+		Location:     u.Location,
 		Description:  u.Description,
 		Level:        u.Level,
 		Status:       u.Status,

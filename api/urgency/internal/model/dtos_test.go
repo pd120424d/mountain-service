@@ -14,6 +14,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 			Level:        High,
 		}
@@ -27,6 +28,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 			Name:         "",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 		}
 
@@ -40,6 +42,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 			Name:         "Test Urgency",
 			Email:        "",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 		}
 
@@ -53,6 +56,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 			Name:         "Test Urgency",
 			Email:        "invalid-email",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 		}
 
@@ -66,6 +70,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 		}
 
@@ -79,6 +84,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "",
 		}
 
@@ -92,6 +98,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
 			Level:        "Invalid Level",
 		}

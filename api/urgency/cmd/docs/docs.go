@@ -233,6 +233,7 @@ const docTemplate = `{
                 "contactPhone",
                 "description",
                 "email",
+                "location",
                 "name"
             ],
             "properties": {
@@ -247,6 +248,9 @@ const docTemplate = `{
                 },
                 "level": {
                     "$ref": "#/definitions/model.UrgencyLevel"
+                },
+                "location": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -289,6 +293,9 @@ const docTemplate = `{
                 "level": {
                     "$ref": "#/definitions/model.UrgencyLevel"
                 },
+                "location": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -314,6 +321,9 @@ const docTemplate = `{
                 },
                 "level": {
                     "$ref": "#/definitions/model.UrgencyLevel"
+                },
+                "location": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
