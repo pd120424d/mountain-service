@@ -1,13 +1,28 @@
-# /service1/Dockerfile
-FROM golang:1.20-alpine
+# Step 1: Build
+FROM golang:1.23-alpine AS build
 
 WORKDIR /app
 
-COPY ../.. .
-
+# Copy module files
+COPY go.mod go.sum ./
 RUN go mod download
-RUN go build -o main ./cmd/urgency
 
-EXPOSE 8081
+# Copy the urgency service and shared code (relative to context ./api)
+COPY urgency/ ./urgency/
+COPY shared/ ./shared/
 
-CMD ["./main"]
+# Copy Swagger docs
+COPY urgency/cmd/docs/ ./docs/
+
+# Build the urgency service
+RUN go build -v -o /urgency-service ./urgency/cmd/main.go
+
+# Step 2: Slim runtime image
+FROM alpine:latest
+
+WORKDIR /root/
+COPY --from=build /urgency-service .
+COPY --from=build /app/docs /docs
+
+EXPOSE 8083
+CMD ["./urgency-service"]
