@@ -57,7 +57,7 @@ ui/**/*.js.map
 
 # Ignore vendor folder with go third-party dependencies
 api/vendor/**/*.go
-api/employee/secrets/
+api/**/secrets/
 api/vendor/*
 ui/coverage/*
 api/coverage.txt

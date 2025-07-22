@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   employee-db:
     image: postgres:15-alpine
@@ -11,6 +9,25 @@ services:
       - db_data_prod:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  urgency-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: etf
+      POSTGRES_DB: urgency_service
+    volumes:
+      - urgency_db_data_prod:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
     networks:
       - web
     healthcheck:
@@ -46,12 +63,50 @@ services:
       - db_password
     restart: unless-stopped
 
-  swagger-ui:
+  urgency-service:
+    build:
+      context: ./api
+      dockerfile: urgency/Dockerfile
+    environment:
+      - DB_HOST=urgency-db
+      - DB_PORT=5432
+      - DB_USER_FILE=/run/secrets/urgency_db_user
+      - DB_PASSWORD_FILE=/run/secrets/urgency_db_password
+      - DB_NAME=urgency_service
+      - APP_ENV=production
+      - JWT_SECRET=super-secret-prod-key
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+    depends_on:
+      urgency-db:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    volumes:
+      - /var/log:/var/log
+    networks:
+      - web
+    secrets:
+      - urgency_db_user
+      - urgency_db_password
+    restart: unless-stopped
+
+  employee-swagger-ui:
     image: swaggerapi/swagger-ui
     ports:
       - "9082:8080"
     environment:
-      API_URL: "${SWAGGER_API_URL}"
+      API_URL: "${EMPLOYEE_SWAGGER_API_URL:-http://employee-service:8082/swagger.json}"
+    networks:
+      - web
+    restart: unless-stopped
+
+  urgency-swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "9083:8080"
+    environment:
+      API_URL: "${URGENCY_SWAGGER_API_URL:-http://urgency-service:8083/swagger.json}"
     networks:
       - web
     restart: unless-stopped
@@ -85,9 +140,14 @@ networks:
 
 volumes:
   db_data_prod:
+  urgency_db_data_prod:
 
 secrets:
   db_user:
     file: ./api/employee/secrets/db_user.txt
   db_password:
     file: ./api/employee/secrets/db_password.txt
+  urgency_db_user:
+    file: ./api/urgency/secrets/db_user.txt
+  urgency_db_password:
+    file: ./api/urgency/secrets/db_password.txt

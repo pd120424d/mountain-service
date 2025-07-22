@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   employee-db:
     image: postgres:15-alpine
@@ -11,6 +9,24 @@ services:
       - db_data_staging:/var/lib/postgresql/data
     ports:
       - "10001:5432"
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  urgency-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: etf
+      POSTGRES_DB: urgency_service
+    volumes:
+      - urgency_db_data_staging:/var/lib/postgresql/data
+    ports:
+      - "10002:5432"
     networks:
       - web
     healthcheck:
@@ -45,12 +61,47 @@ services:
       - db_password
     restart: unless-stopped
 
-  swagger-ui:
+  urgency-service:
+    build:
+      context: ./api
+      dockerfile: urgency/Dockerfile
+    environment:
+      - DB_HOST=urgency-db
+      - DB_PORT=5432
+      - DB_USER_FILE=/run/secrets/urgency_db_user
+      - DB_PASSWORD_FILE=/run/secrets/urgency_db_password
+      - DB_NAME=urgency_service
+      - APP_ENV=staging
+      - JWT_SECRET=super-secret-staging-key
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123!@#}
+      - CORS_ALLOWED_ORIGINS=http://localhost:4200
+    depends_on:
+      urgency-db:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    networks:
+      - web
+    secrets:
+      - urgency_db_user
+      - urgency_db_password
+    restart: unless-stopped
+
+  employee-swagger-ui:
     image: swaggerapi/swagger-ui
     ports:
-      - "9082:9082"
+      - "9082:8080"
     environment:
       API_URL: "http://employee-service:8082/swagger.json"
+    networks:
+      - web
+
+  urgency-swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "9083:8080"
+    environment:
+      API_URL: "http://urgency-service:8083/swagger.json"
     networks:
       - web
 
@@ -85,9 +136,14 @@ networks:
 
 volumes:
   db_data_staging:
+  urgency_db_data_staging:
 
 secrets:
   db_user:
     file: ./api/employee/secrets/db_user.txt
   db_password:
     file: ./api/employee/secrets/db_password.txt
+  urgency_db_user:
+    file: ./api/urgency/secrets/db_user.txt
+  urgency_db_password:
+    file: ./api/urgency/secrets/db_password.txt

@@ -39,6 +39,7 @@ jobs:
       - name: Build Docker images
         run: |
           docker build -t employee-service:latest -f ./api/employee/Dockerfile ./api
+          docker build -t urgency-service:latest -f ./api/urgency/Dockerfile ./api
           docker build \
             -f api/version-service/Dockerfile \
             -t version-service:latest \
@@ -57,6 +58,7 @@ jobs:
       - name: Save Docker images as tarballs
         run: |
           docker save employee-service:latest > employee.tar
+          docker save urgency-service:latest > urgency.tar
 
       - name: Set up SSH
         run: |
@@ -68,6 +70,7 @@ jobs:
       - name: Copy Docker images to Azure VM
         run: |
           scp -i ~/.ssh/github_actions employee.tar ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:~
+          scp -i ~/.ssh/github_actions urgency.tar ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:~
 
       - name: Load and run Docker containers on Azure VM
         run: |
@@ -75,11 +78,13 @@ jobs:
             set -e
 
             docker load < ~/employee.tar
-            rm ~/employee.tar
+            docker load < ~/urgency.tar
+            rm ~/employee.tar ~/urgency.tar
 
             cd mountain-service
 
-            echo "SWAGGER_API_URL=${{ secrets.SWAGGER_API_URL }}" > .env
+            echo "EMPLOYEE_SWAGGER_API_URL=${{ secrets.EMPLOYEE_SWAGGER_API_URL }}" > .env
+            echo "URGENCY_SWAGGER_API_URL=${{ secrets.URGENCY_SWAGGER_API_URL }}" >> .env
             echo "CORS_ALLOWED_ORIGINS=http://${{ secrets.AZURE_VM_HOST }}:9082" >> .env
             echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ steps.version.outputs.VERSION }}" >> .env
             echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
