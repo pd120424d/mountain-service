@@ -11,24 +11,24 @@
     },
     "HOME": {
         "WELCOME": "Dobrodošli u Sistem Upravljanja Gorske Službe",
-        "DESCRIPTION": "Platforma za efikasno upravljanje smenama i hitnim situacijama."
+        "DESCRIPTION": "Platforma za efikasno upravljanje smenama i hitnim situacijama"
     },
     "NAV": {
         "EMPLOYEE_MANAGEMENT": {
             "TITLE": "Upravljanje Zaposlenima",
-            "DESCRIPTION": "Pregled, dodavanje i izmena podataka o zaposlenima."
+            "DESCRIPTION": "Pregled, dodavanje i izmena podataka o zaposlenima"
         },
         "SHIFT_MANAGEMENT": {
             "TITLE": "Organizacija Smena",
-            "DESCRIPTION": "Planiranje i upravljanje smenama."
+            "DESCRIPTION": "Planiranje i upravljanje smenama"
         },
         "EMERGENCIES": {
             "TITLE": "Prijava Urgentne Situacije",
-            "DESCRIPTION": "Brza prijava i dokumentovanje urgentnih situacija."
+            "DESCRIPTION": "Brza prijava i dokumentovanje urgentnih situacija"
         },
         "ADMIN_PANEL": {
             "TITLE": "Admin Panel",
-            "DESCRIPTION": "Administracija sistema i upravljanje podacima."
+            "DESCRIPTION": "Administracija sistema i upravljanje podacima"
         },
         "EMPLOYEES": "Zaposleni",
         "SHIFTS": "Smene"
@@ -85,7 +85,7 @@
     },
     "NOT_FOUND": {
         "TITLE": "Stranica nije pronađena",
-        "DESCRIPTION": "Izgleda da stranica koju tražite ne postoji."
+        "DESCRIPTION": "Izgleda da stranica koju tražite ne postoji"
     },
     "LOGIN": {
         "BUTTON": "Prijava",
@@ -95,13 +95,13 @@
         "SUBMIT": "Prijavi se",
         "NO_ACCOUNT": "Nemate nalog?",
         "REGISTER": "Registrujte se ovde",
-        "INVALID_CREDENTIALS": "Neispravno korisničko ime ili lozinka."
+        "INVALID_CREDENTIALS": "Neispravno korisničko ime ili lozinka"
     },
     "LOGOUT": {
         "BUTTON": "Odjava"
     },
     "SESSION": {
-        "EXPIRED": "Vaša sesija je istekla. Prijavite se ponovo."
+        "EXPIRED": "Vaša sesija je istekla. Prijavite se ponovo"
     },
     "SHIFT_MANAGEMENT": {
         "TITLE": "Upravljanje smenama",
@@ -114,10 +114,10 @@
         "TECHNICALS": "Tehničko osoblje",
         "SELECT_EMPLOYEE": "Izaberi zaposlenog",
         "TOAST_ASSIGN_SUCCESS": "Uspešno dodeljeno!",
-        "TOAST_ASSIGN_ERROR": "Neuspeh prilikom dodeljivanja smene.",
+        "TOAST_ASSIGN_ERROR": "Neuspeh prilikom dodeljivanja smene",
         "TOAST_REMOVE_SUCCESS": "Uspešno uklonjeno!",
-        "TOAST_REMOVE_ERROR": "Neuspeh prilikom uklanjanja smene.",
-        "TOAST_LOAD_ERROR": "Neuspeh prilikom učitavanja podataka o smenama.",
+        "TOAST_REMOVE_ERROR": "Neuspeh prilikom uklanjanja smene",
+        "TOAST_LOAD_ERROR": "Neuspeh prilikom učitavanja podataka o smenama",
         "LOADING": "Učitavanje podataka o smenama...",
         "TOOLTIP_ADD_ME": "Rezerviši smenu",
         "TOOLTIP_REMOVE_ME": "Otkaži smenu",
@@ -130,7 +130,7 @@
         "RESET_WARNING": "PAŽNJA: Ova akcija će trajno izbrisati sve podatke iz sistema, uključujući zaposlene, smene i sve povezane informacije. Ova akcija se ne može poništiti!",
         "RESET_ALL_DATA": "Resetuj sve podatke",
         "RESETTING": "Resetovanje",
-        "RESET_SUCCESS": "Svi podaci su uspešno resetovani.",
+        "RESET_SUCCESS": "Svi podaci su uspešno resetovani",
         "RESET_ERROR": "Greška pri resetovanju podataka"
     }
 }

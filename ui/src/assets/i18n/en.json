@@ -11,24 +11,24 @@
     },
     "HOME": {
         "WELCOME": "Welcome to the Mountain Rescue Management System",
-        "DESCRIPTION": "A platform for efficient shift management and handling emergencies."
+        "DESCRIPTION": "A platform for efficient shift management and handling emergencies"
     },
     "NAV": {
         "EMPLOYEE_MANAGEMENT": {
             "TITLE": "Employee Management",
-            "DESCRIPTION": "View, add, and update employee details."
+            "DESCRIPTION": "View, add, and update employee details"
         },
         "SHIFT_MANAGEMENT": {
             "TITLE": "Shift Management",
-            "DESCRIPTION": "Plan and manage shifts effectively."
+            "DESCRIPTION": "Plan and manage shifts effectively"
         },
         "EMERGENCIES": {
             "TITLE": "Report Emergencies",
-            "DESCRIPTION": "Quickly report and document emergency situations."
+            "DESCRIPTION": "Quickly report and document emergency situations"
         },
         "ADMIN_PANEL": {
             "TITLE": "Admin Panel",
-            "DESCRIPTION": "System administration and data management."
+            "DESCRIPTION": "System administration and data management"
         },
         "EMPLOYEES": "Employees",
         "SHIFTS": "Shifts"
@@ -85,7 +85,7 @@
     },
     "NOT_FOUND": {
         "TITLE": "Page Not Found",
-        "DESCRIPTION": "It looks like the page you are looking for does not exist."
+        "DESCRIPTION": "It looks like the page you are looking for does not exist"
     },
     "LOGIN": {
         "BUTTON": "Login",
@@ -95,13 +95,13 @@
         "SUBMIT": "Login",
         "NO_ACCOUNT": "Don't have an account?",
         "REGISTER": "Register here",
-        "INVALID_CREDENTIALS": "Invalid username or password."
+        "INVALID_CREDENTIALS": "Invalid username or password"
     },
     "LOGOUT": {
         "BUTTON": "Logout"
     },
     "SESSION": {
-        "EXPIRED": "Your session has expired. Please log in again."
+        "EXPIRED": "Your session has expired. Please log in again"
     },
     "SHIFT_MANAGEMENT": {
         "TITLE": "Shift Management",
@@ -114,10 +114,10 @@
         "TECHNICALS": "Technical Staff",
         "SELECT_EMPLOYEE": "Select Employee",
         "TOAST_ASSIGN_SUCCESS": "Successfully assigned!",
-        "TOAST_ASSIGN_ERROR": "Failed to assign shift.",
+        "TOAST_ASSIGN_ERROR": "Failed to assign shift",
         "TOAST_REMOVE_SUCCESS": "Successfully removed!",
-        "TOAST_REMOVE_ERROR": "Failed to remove shift.",
-        "TOAST_LOAD_ERROR": "Failed to load shift data.",
+        "TOAST_REMOVE_ERROR": "Failed to remove shift",
+        "TOAST_LOAD_ERROR": "Failed to load shift data",
         "LOADING": "Loading shift data...",
         "TOOLTIP_ADD_ME": "Reserve this shift",
         "TOOLTIP_REMOVE_ME": "Cancel reservation",
@@ -130,7 +130,7 @@
         "RESET_WARNING": "WARNING: This action will permanently delete all data from the system including employees, shifts, and all related information. This action cannot be undone!",
         "RESET_ALL_DATA": "Reset All Data",
         "RESETTING": "Resetting",
-        "RESET_SUCCESS": "All data has been successfully reset.",
-        "RESET_ERROR": "Failed to reset data."
+        "RESET_SUCCESS": "All data has been successfully reset",
+        "RESET_ERROR": "Failed to reset data"
     }
 }
