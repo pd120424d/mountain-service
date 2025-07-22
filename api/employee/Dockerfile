@@ -20,6 +20,9 @@ RUN go build -v -o /employee-service ./employee/cmd/main.go
 # Step 2: Slim runtime image
 FROM alpine:latest
 
+# Install wget for health checks
+RUN apk --no-cache add wget
+
 WORKDIR /root/
 COPY --from=build /employee-service .
 COPY --from=build /app/docs /docs

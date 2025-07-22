@@ -58,8 +58,18 @@ func (z *zapLogger) rotate() error {
 		_ = z.file.Close()
 	}
 
+	logDir := os.Getenv("LOG_DIR")
+	if logDir == "" {
+		logDir = "/var/log"
+	}
+
+	// Create log directory if it doesn't exist
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		return err
+	}
+
 	// New log file
-	filename := fmt.Sprintf("/var/log/%s.%s.log", z.svcName, currentDate)
+	filename := fmt.Sprintf("%s/%s.%s.log", logDir, z.svcName, currentDate)
 	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err

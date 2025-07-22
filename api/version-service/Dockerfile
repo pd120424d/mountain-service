@@ -18,6 +18,9 @@ RUN go build -ldflags "-X main.Version=${VERSION} -X main.GitSHA=${GIT_SHA}" \
 
 FROM debian:bookworm-slim
 
+# Install wget for health checks
+RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /version-service /version-service
 
 EXPOSE 8090
