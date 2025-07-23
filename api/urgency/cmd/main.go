@@ -150,11 +150,11 @@ func setupCORS(log utils.Logger, r *gin.Engine) http.Handler {
 	r.GET("/swagger/*any", func(c *gin.Context) {
 		log.Infof("Swagger request: %s %s from %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
 		ginSwagger.WrapHandler(swaggerFiles.Handler,
-			ginSwagger.URL("/swagger.json"),
+			ginSwagger.URL("/urgency-swagger.json"),
 		)(c)
 	})
 	r.GET("/swagger.json", func(c *gin.Context) {
-		c.File("./cmd/docs/swagger.json")
+		c.File("/docs/swagger.json")
 	})
 
 	// CORS setup
