@@ -12,6 +12,7 @@ import (
 
 	"gorm.io/gorm"
 
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
@@ -500,6 +501,7 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 }
 
 func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
+	t.Parallel()
 	log := utils.NewTestLogger()
 
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
@@ -561,7 +563,6 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		payload := `{
 			"firstName": "B",
 			"lastName": "L",
-			"age": 10,
 			"email": "invalid-email.com"
 		}`
 		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", strings.NewReader(payload))
@@ -773,6 +774,7 @@ func TestEmployeeHandler_CreateEmployee(t *testing.T) {
 }
 
 func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -819,6 +821,7 @@ func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
 }
 
 func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -868,6 +871,7 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 }
 
 func TestEmployeeHandler_AssignShift(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -1137,7 +1141,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		handler.AssignShift(ctx)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
-		resp := model.AssignShiftResponse{}
+		resp := employeeV1.AssignShiftResponse{}
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.Equal(t, uint(456), resp.ID)
@@ -1221,6 +1225,8 @@ func TestEmployeeHandler_GetShifts(t *testing.T) {
 }
 
 func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -1279,6 +1285,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 }
 
 func TestEmployeeHandler_RemoveShift(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +31,7 @@ func TestEmployeeUpdateRequest_Validate(t *testing.T) {
 		req := &employeeV1.EmployeeUpdateRequest{
 			Email: "invalid-email",
 		}
-		err := req.Validate()
+		err := utils.ValidateOptionalEmail(req.Email)
 		assert.Error(t, err)
 		assert.EqualError(t, err, "mail: missing '@' or angle-addr")
 	})
@@ -39,7 +40,7 @@ func TestEmployeeUpdateRequest_Validate(t *testing.T) {
 		req := &employeeV1.EmployeeUpdateRequest{
 			Email: "test-user@example.com",
 		}
-		err := req.Validate()
+		err := utils.ValidateOptionalEmail(req.Email)
 		assert.NoError(t, err)
 	})
 
@@ -47,21 +48,9 @@ func TestEmployeeUpdateRequest_Validate(t *testing.T) {
 		req := &employeeV1.EmployeeUpdateRequest{
 			Email: "",
 		}
-		err := req.Validate()
+		err := utils.ValidateOptionalEmail(req.Email)
 		assert.NoError(t, err)
 	})
 }
 
-func TestSanitizePassword(t *testing.T) {
-	t.Run("it masks the password with asterisks", func(t *testing.T) {
-		password := "Pass123!"
-		sanitized := sanitizePassword(password)
-		assert.Equal(t, "********", sanitized)
-	})
-
-	t.Run("it returns an empty string when password is empty", func(t *testing.T) {
-		password := ""
-		sanitized := sanitizePassword(password)
-		assert.Equal(t, "", sanitized)
-	})
-}
+// TestSanitizePassword moved to shared/utils/validators_test.go

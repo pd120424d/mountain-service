@@ -2,8 +2,8 @@ package v1
 
 import (
 	"fmt"
-	"net/mail"
-	"strings"
+
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
 // UrgencyLevel represents the urgency level
@@ -30,7 +30,7 @@ const (
 // swagger:model
 type UrgencyCreateRequest struct {
 	Name         string       `json:"name" binding:"required"`
-	Email        string       `json:"email" binding:"required,email"`
+	Email        string       `json:"email" binding:"required"`
 	ContactPhone string       `json:"contactPhone" binding:"required"`
 	Location     string       `json:"location" binding:"required"`
 	Description  string       `json:"description" binding:"required"`
@@ -41,7 +41,7 @@ type UrgencyCreateRequest struct {
 // swagger:model
 type UrgencyUpdateRequest struct {
 	Name         string       `json:"name"`
-	Email        string       `json:"email" binding:"email"`
+	Email        string       `json:"email"`
 	ContactPhone string       `json:"contactPhone"`
 	Location     string       `json:"location"`
 	Description  string       `json:"description"`
@@ -140,23 +140,20 @@ func (s Status) Valid() bool {
 }
 
 func (r *UrgencyCreateRequest) Validate() error {
-	if strings.TrimSpace(r.Name) == "" {
-		return fmt.Errorf("name is required")
+	if err := utils.ValidateRequiredField(r.Name, "name"); err != nil {
+		return err
 	}
-	if strings.TrimSpace(r.Email) == "" {
-		return fmt.Errorf("email is required")
+	if err := utils.ValidateEmail(r.Email); err != nil {
+		return err
 	}
-	if _, err := mail.ParseAddress(r.Email); err != nil {
-		return fmt.Errorf("invalid email format")
+	if err := utils.ValidateRequiredField(r.ContactPhone, "contact phone"); err != nil {
+		return err
 	}
-	if strings.TrimSpace(r.ContactPhone) == "" {
-		return fmt.Errorf("contact phone is required")
+	if err := utils.ValidateRequiredField(r.Location, "location"); err != nil {
+		return err
 	}
-	if strings.TrimSpace(r.Location) == "" {
-		return fmt.Errorf("location is required")
-	}
-	if strings.TrimSpace(r.Description) == "" {
-		return fmt.Errorf("description is required")
+	if err := utils.ValidateRequiredField(r.Description, "description"); err != nil {
+		return err
 	}
 	if r.Level != "" && !r.Level.Valid() {
 		return fmt.Errorf("invalid urgency level")
@@ -165,10 +162,8 @@ func (r *UrgencyCreateRequest) Validate() error {
 }
 
 func (r *UrgencyUpdateRequest) Validate() error {
-	if r.Email != "" {
-		if _, err := mail.ParseAddress(r.Email); err != nil {
-			return fmt.Errorf("invalid email format")
-		}
+	if err := utils.ValidateOptionalEmail(r.Email); err != nil {
+		return fmt.Errorf("invalid email format")
 	}
 	if r.Level != "" && !r.Level.Valid() {
 		return fmt.Errorf("invalid urgency level")

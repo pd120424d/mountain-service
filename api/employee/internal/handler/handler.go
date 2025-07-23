@@ -284,7 +284,7 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 	}
 
 	// Validate here or in middleware
-	if validationErr := req.Validate(); validationErr != nil {
+	if validationErr := utils.ValidateOptionalEmail(req.Email); validationErr != nil {
 		h.log.Errorf("failed to update employee, validation failed: %v", validationErr)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 		return

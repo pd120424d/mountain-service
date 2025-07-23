@@ -2,9 +2,9 @@ package v1
 
 import (
 	"fmt"
-	"net/mail"
-	"strings"
 	"time"
+
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
 // Common response types
@@ -62,7 +62,7 @@ type EmployeeUpdateRequest struct {
 	FirstName      string `json:"firstName"`
 	LastName       string `json:"lastName"`
 	Username       string `json:"username"`
-	Email          string `json:"email" binding:"email"`
+	Email          string `json:"email"`
 	Gender         string `json:"gender"`
 	Phone          string `json:"phone"`
 	ProfilePicture string `json:"profilePicture"`
@@ -158,26 +158,11 @@ func (e *EmployeeCreateRequest) ToString() string {
 		e.FirstName,
 		e.LastName,
 		e.Username,
-		sanitizePassword(e.Password),
+		utils.SanitizePassword(e.Password),
 		e.Email,
 		e.Gender,
 		e.Phone,
 		e.ProfilePicture,
 		e.ProfileType,
 	)
-}
-
-func (e *EmployeeUpdateRequest) Validate() error {
-	if e.Email == "" {
-		return nil
-	}
-	_, err := mail.ParseAddress(e.Email)
-	return err
-}
-
-func sanitizePassword(password string) string {
-	if strings.TrimSpace(password) == "" {
-		return ""
-	}
-	return "********"
 }

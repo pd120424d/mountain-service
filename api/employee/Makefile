@@ -27,7 +27,7 @@ generate:
 # Generate mocks
 mocks:
 	@echo "Generating mocks..."
-	set GOFLAGS=-mod=mod && go generate ./internal/repositories
+	set GOFLAGS=-mod=mod && go generate ./internal/
 	@echo "Mocks generated successfully."
 
 # Run tests
