@@ -1,4 +1,4 @@
-package model
+package v1
 
 import (
 	"fmt"
@@ -43,16 +43,17 @@ type EmployeeCreateRequest struct {
 	ProfileType    string `json:"profileType"`
 }
 
-// EmployeeUpdateRequest DTO for updating an existing employee
+// EmployeeUpdateRequest DTO for updating an employee
 // swagger:model
 type EmployeeUpdateRequest struct {
-	FirstName      string `json:"firstName,omitempty"`
-	LastName       string `json:"lastName,omitempty"`
-	Email          string `json:"email,omitempty"`
-	Gender         string `json:"gender,omitempty"`
-	Phone          string `json:"phone,omitempty"`
-	ProfilePicture string `json:"profilePicture,omitempty"`
-	ProfileType    string `json:"profileType,omitempty"`
+	FirstName      string `json:"firstName"`
+	LastName       string `json:"lastName"`
+	Username       string `json:"username"`
+	Email          string `json:"email" binding:"email"`
+	Gender         string `json:"gender"`
+	Phone          string `json:"phone"`
+	ProfilePicture string `json:"profilePicture"`
+	ProfileType    string `json:"profileType"`
 }
 
 // ShiftResponse DTO for returning shift data for a certain employee
@@ -92,30 +93,46 @@ type ShiftAvailabilityResponse struct {
 	Days map[time.Time]ShiftAvailabilityPerDay `json:"days"`
 }
 
+// ShiftAvailabilityPerDay DTO for returning the shift availability for a certain day
+// swagger:model
 type ShiftAvailabilityPerDay struct {
-	FirstShift  ShiftAvailabilityDto `json:"1"`
-	SecondShift ShiftAvailabilityDto `json:"2"`
-	ThirdShift  ShiftAvailabilityDto `json:"3"`
+	Shift1 ShiftAvailability `json:"shift1"`
+	Shift2 ShiftAvailability `json:"shift2"`
+	Shift3 ShiftAvailability `json:"shift3"`
 }
 
 // ShiftAvailability DTO for returning the shift availability for a certain shift
 // swagger:model
-type ShiftAvailabilityDto struct {
-	Medic     int `json:"Medic"`
-	Technical int `json:"Technical"`
+type ShiftAvailability struct {
+	Available bool     `json:"available"`
+	Employees []string `json:"employees"`
 }
 
-func EmptyShiftAvailabilityResponse() *ShiftAvailabilityResponse {
-	return &ShiftAvailabilityResponse{
-		Days: map[time.Time]ShiftAvailabilityPerDay{
-			time.Now(): {
-				FirstShift:  ShiftAvailabilityDto{},
-				SecondShift: ShiftAvailabilityDto{},
-				ThirdShift:  ShiftAvailabilityDto{},
-			},
-		},
-	}
+// OnCallEmployeesResponse DTO for returning on-call employees
+// swagger:model
+type OnCallEmployeesResponse struct {
+	Employees []EmployeeResponse `json:"employees"`
 }
+
+// AllEmployeesResponse DTO for returning all employees
+// swagger:model
+type AllEmployeesResponse struct {
+	Employees []EmployeeResponse `json:"employees"`
+}
+
+// TokenResponse DTO for returning a JWT token
+// swagger:model
+type TokenResponse struct {
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+}
+
+// ActiveEmergenciesResponse DTO for returning active emergencies status
+// swagger:model
+type ActiveEmergenciesResponse struct {
+	HasActiveEmergencies bool `json:"hasActiveEmergencies"`
+}
+
+// Helper methods
 
 func (r *RemoveShiftRequest) String() string {
 	return fmt.Sprintf("RemoveShiftRequest { ShiftType: %d, ShiftDate: %s }", r.ShiftType, r.ShiftDate)
@@ -145,40 +162,9 @@ func (e *EmployeeUpdateRequest) Validate() error {
 	return err
 }
 
-// ErrorResponse DTO for returning an error message
-// swagger:model
-type ErrorResponse struct {
-	Error string `json:"error" example:"Error message"`
-}
-
-// MessageResponse DTO for returning a success message
-// swagger:model
-type MessageResponse struct {
-	Message string `json:"message" example:"Success message"`
-}
-
-// TokenResponse DTO for returning a JWT token
-// swagger:model
-type TokenResponse struct {
-	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
-}
-
-// OnCallEmployeesResponse DTO for returning on-call employees
-// swagger:model
-type OnCallEmployeesResponse struct {
-	Employees []EmployeeResponse `json:"employees"`
-}
-
-// ActiveEmergenciesResponse DTO for returning active emergencies status
-// swagger:model
-type ActiveEmergenciesResponse struct {
-	HasActiveEmergencies bool `json:"hasActiveEmergencies"`
-}
-
-// Function to sanitize the password by masking it with asterisks
 func sanitizePassword(password string) string {
-	if password == "" {
+	if strings.TrimSpace(password) == "" {
 		return ""
 	}
-	return strings.Repeat("*", len(password)) // Replace each character with an asterisk
+	return "********"
 }
