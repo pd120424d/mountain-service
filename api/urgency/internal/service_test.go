@@ -1,0 +1,226 @@
+package internal
+
+import (
+	"testing"
+
+	"github.com/pd120424d/mountain-service/api/shared/utils"
+	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
+	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
+)
+
+func TestUrgencyService_CreateUrgency(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it successfully creates an urgency", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		err := svc.CreateUrgency(&model.Urgency{})
+		assert.NoError(t, err)
+	})
+
+	t.Run("it returns an error when repository call fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		err := svc.CreateUrgency(&model.Urgency{})
+		assert.Error(t, err)
+	})
+}
+
+func TestUrgencyService_GetAllUrgencies(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it successfully retrieves all urgencies", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().GetAll().Return([]model.Urgency{}, nil)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		urgencies, err := svc.GetAllUrgencies()
+		assert.NoError(t, err)
+		assert.Len(t, urgencies, 0)
+	})
+
+	t.Run("it returns an error when repository call fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().GetAll().Return(nil, assert.AnError)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		_, err := svc.GetAllUrgencies()
+		assert.Error(t, err)
+	})
+}
+
+func TestUrgencyService_GetUrgencyByID(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it successfully retrieves an urgency by ID", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+
+		mockRepo.EXPECT().GetByID(gomock.Any(), gomock.Any()).DoAndReturn(func(id uint, urgency *model.Urgency) error {
+			*urgency = model.Urgency{ID: id}
+			return nil
+		})
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		urgency, err := svc.GetUrgencyByID(1)
+		assert.NoError(t, err)
+
+		assert.Equal(t, uint(1), urgency.ID)
+	})
+
+	t.Run("it returns an error when repository call fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(assert.AnError)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		_, err := svc.GetUrgencyByID(1)
+		assert.Error(t, err)
+	})
+}
+
+func TestUrgencyService_UpdateUrgency(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it successfully updates an urgency", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().Update(gomock.Any()).Return(nil)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		err := svc.UpdateUrgency(&model.Urgency{})
+		assert.NoError(t, err)
+	})
+
+	t.Run("it returns an error when repository call fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().Update(gomock.Any()).Return(assert.AnError)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		err := svc.UpdateUrgency(&model.Urgency{})
+		assert.Error(t, err)
+	})
+}
+
+func TestUrgencyService_DeleteUrgency(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it successfully deletes an urgency", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().Delete(gomock.Any()).Return(nil)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		err := svc.DeleteUrgency(1)
+		assert.NoError(t, err)
+	})
+
+	t.Run("it returns an error when repository call fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().Delete(gomock.Any()).Return(assert.AnError)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		err := svc.DeleteUrgency(1)
+		assert.Error(t, err)
+	})
+}
+
+func TestUrgencyService_ResetAllData(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it successfully resets all data", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().ResetAllData().Return(nil)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		err := svc.ResetAllData()
+		assert.NoError(t, err)
+	})
+
+	t.Run("it returns an error when repository call fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockRepo.EXPECT().ResetAllData().Return(assert.AnError)
+
+		svc := &urgencyService{log: log, repo: mockRepo}
+
+		err := svc.ResetAllData()
+		assert.Error(t, err)
+	})
+}
+
+func TestNewUrgencyService(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it creates a new urgency service", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+
+		svc := NewUrgencyService(log, mockRepo)
+		assert.NotNil(t, svc)
+		assert.IsType(t, &urgencyService{}, svc)
+	})
+}
