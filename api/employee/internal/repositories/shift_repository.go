@@ -21,6 +21,7 @@ type ShiftRepository interface {
 	GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error
 	GetShiftAvailability(start, end time.Time) (*model.ShiftsAvailabilityRange, error)
 	RemoveEmployeeFromShiftByDetails(employeeID uint, shiftDate time.Time, shiftType int) error
+	GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]model.Employee, error)
 }
 
 type shiftRepository struct {
@@ -160,4 +161,110 @@ func (r *shiftRepository) RemoveEmployeeFromShiftByDetails(employeeID uint, shif
 	}
 
 	return nil
+}
+
+// GetOnCallEmployees returns all emloyees who are assigned to the current shift with one exception:
+// If the current shift is ending soon (within the shiftBuffer), we also include employees assigned to the next shift
+// If the shiftBuffer is 0, we only include employees assigned to the current shift
+func (r *shiftRepository) GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]model.Employee, error) {
+	r.log.Infof("Getting on-call employees at %v with buffer %v", currentTime, shiftBuffer)
+
+	currentShiftType := r.getShiftTypeForTime(currentTime)
+	currentDate := currentTime.Truncate(24 * time.Hour)
+
+	var employees []model.Employee
+	var shiftDates []time.Time
+	var shiftTypes []int
+
+	shiftDates = append(shiftDates, currentDate)
+	shiftTypes = append(shiftTypes, currentShiftType)
+
+	// if buffer is defined we may need to include the following shift as well
+	if shiftBuffer > 0 {
+		timeUntilShiftEnd := r.getTimeUntilShiftEnd(currentTime, currentShiftType)
+		if timeUntilShiftEnd <= shiftBuffer {
+			r.log.Infof("Including next shift due to buffer: timeUntilShiftEnd=%v, buffer=%v", timeUntilShiftEnd, shiftBuffer)
+
+			nextShiftType, nextShiftDate := r.getNextShift(currentShiftType, currentDate)
+			shiftDates = append(shiftDates, nextShiftDate)
+			shiftTypes = append(shiftTypes, nextShiftType)
+		}
+	}
+
+	query := r.db.Distinct().
+		Select("employees.*").
+		Table("employees").
+		Joins("JOIN employee_shifts ON employees.id = employee_shifts.employee_id").
+		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
+		Where("(shifts.shift_date = ? AND shifts.shift_type = ?)", shiftDates[0], shiftTypes[0])
+
+	for i := 1; i < len(shiftDates); i++ {
+		query = query.Or("(shifts.shift_date = ? AND shifts.shift_type = ?)", shiftDates[i], shiftTypes[i])
+	}
+
+	if err := query.Find(&employees).Error; err != nil {
+		r.log.Errorf("Failed to get on-call employees: %v", err)
+		return nil, fmt.Errorf("failed to get on-call employees: %w", err)
+	}
+
+	r.log.Infof("Successfully retrieved on-call employees: count=%d", len(employees))
+	return employees, nil
+}
+
+func (r *shiftRepository) getShiftTypeForTime(currentTime time.Time) int {
+	hour := currentTime.Hour()
+
+	// Shift types: 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am
+	if hour >= 6 && hour < 14 {
+		return 1
+	} else if hour >= 14 && hour < 22 {
+		return 2
+	}
+	return 3
+}
+
+func (r *shiftRepository) getTimeUntilShiftEnd(currentTime time.Time, shiftType int) time.Duration {
+	hour := currentTime.Hour()
+	minute := currentTime.Minute()
+	second := currentTime.Second()
+
+	currentMinutes := hour*60 + minute
+	currentSeconds := currentMinutes*60 + second
+
+	var shiftEndSeconds int
+	switch shiftType {
+	case 1: // 6am-2pm, ends at 14:00
+		shiftEndSeconds = 14 * 3600
+	case 2: // 2pm-10pm, ends at 22:00
+		shiftEndSeconds = 22 * 3600
+	case 3: // 10pm-6am, ends at 6:00 next day
+		if hour >= 22 {
+			// Same day, ends at 6am next day
+			shiftEndSeconds = 24*3600 + 6*3600
+		} else {
+			// Next day, ends at 6am
+			shiftEndSeconds = 6 * 3600
+		}
+	default:
+		return 0
+	}
+
+	remainingSeconds := shiftEndSeconds - currentSeconds
+	if remainingSeconds < 0 {
+		remainingSeconds += 24 * 3600 // Add 24 hours for overnight shifts
+	}
+
+	return time.Duration(remainingSeconds) * time.Second
+}
+
+func (r *shiftRepository) getNextShift(currentShiftType int, currentDate time.Time) (int, time.Time) {
+	nextShiftType := currentShiftType + 1
+	shiftDate := currentDate
+
+	// if we are in the last shift, the next one is the first one and is on the next day
+	if nextShiftType > 3 {
+		return 1, currentDate.Add(24 * time.Hour)
+	}
+
+	return nextShiftType, shiftDate
 }

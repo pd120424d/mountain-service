@@ -180,3 +180,84 @@ func TestEmployeeRepositoryMockDB_Delete(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
+
+func TestEmployeeRepositoryMockDB_ResetAllData(t *testing.T) {
+	t.Parallel()
+
+	log := utils.NewTestLogger()
+
+	gormDB, mock := setupMockDB(t)
+	repo := NewEmployeeRepository(log, gormDB)
+
+	t.Run("it returns an error when it fails to delete employee-shift associations", func(t *testing.T) {
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM "employee_shifts" WHERE 1=1`).
+			WillReturnError(sqlmock.ErrCancelled)
+		mock.ExpectRollback()
+
+		err := repo.ResetAllData()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "canceling query due to user request")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("it returns an error when it fails to delete shifts", func(t *testing.T) {
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM "employee_shifts" WHERE 1=1`).
+			WillReturnResult(sqlmock.NewResult(0, 5))
+		mock.ExpectCommit()
+
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM "shifts" WHERE 1=1`).
+			WillReturnError(sqlmock.ErrCancelled)
+		mock.ExpectRollback()
+
+		err := repo.ResetAllData()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "canceling query due to user request")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("it returns an error when it fails to delete employees", func(t *testing.T) {
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM "employee_shifts" WHERE 1=1`).
+			WillReturnResult(sqlmock.NewResult(0, 5))
+		mock.ExpectCommit()
+
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM "shifts" WHERE 1=1`).
+			WillReturnResult(sqlmock.NewResult(0, 3))
+		mock.ExpectCommit()
+
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM "employees" WHERE 1=1`).
+			WillReturnError(sqlmock.ErrCancelled)
+		mock.ExpectRollback()
+
+		err := repo.ResetAllData()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "canceling query due to user request")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("it successfully resets all data", func(t *testing.T) {
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM "employee_shifts" WHERE 1=1`).
+			WillReturnResult(sqlmock.NewResult(0, 5))
+		mock.ExpectCommit()
+
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM "shifts" WHERE 1=1`).
+			WillReturnResult(sqlmock.NewResult(0, 3))
+		mock.ExpectCommit()
+
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM "employees" WHERE 1=1`).
+			WillReturnResult(sqlmock.NewResult(0, 2))
+		mock.ExpectCommit()
+
+		err := repo.ResetAllData()
+		assert.NoError(t, err)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}

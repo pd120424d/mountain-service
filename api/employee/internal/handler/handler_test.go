@@ -22,6 +22,8 @@ import (
 )
 
 func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
+	t.Parallel()
+
 	log := utils.NewTestLogger()
 
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
@@ -318,6 +320,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 }
 
 func TestEmployeeHandler_LoginEmployee(t *testing.T) {
+	t.Parallel()
 	log := utils.NewTestLogger()
 
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
@@ -628,6 +631,8 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 }
 
 func TestEmployeeHandler_CreateEmployee(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -1142,6 +1147,8 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 }
 
 func TestEmployeeHandler_GetShifts(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -1368,6 +1375,8 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 }
 
 func TestEmployeeHandler_ResetAllData(t *testing.T) {
+	t.Parallel()
+
 	log := utils.NewTestLogger()
 
 	t.Run("it successfully resets all data", func(t *testing.T) {

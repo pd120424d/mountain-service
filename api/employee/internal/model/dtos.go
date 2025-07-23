@@ -163,6 +163,18 @@ type TokenResponse struct {
 	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
+// OnCallEmployeesResponse DTO for returning on-call employees
+// swagger:model
+type OnCallEmployeesResponse struct {
+	Employees []EmployeeResponse `json:"employees"`
+}
+
+// ActiveEmergenciesResponse DTO for returning active emergencies status
+// swagger:model
+type ActiveEmergenciesResponse struct {
+	HasActiveEmergencies bool `json:"hasActiveEmergencies"`
+}
+
 // Function to sanitize the password by masking it with asterisks
 func sanitizePassword(password string) string {
 	if password == "" {

@@ -16,15 +16,24 @@ import (
 )
 
 type EmployeeHandler interface {
+	// Crud operations, Register is create
 	RegisterEmployee(ctx *gin.Context)
 	LoginEmployee(ctx *gin.Context)
 	ListEmployees(ctx *gin.Context)
 	UpdateEmployee(ctx *gin.Context)
 	DeleteEmployee(ctx *gin.Context)
+
+	// Shift operations
 	AssignShift(ctx *gin.Context)
 	GetShifts(ctx *gin.Context)
 	GetShiftsAvailability(ctx *gin.Context)
 	RemoveShift(ctx *gin.Context)
+
+	// Emergency operations
+	GetOnCallEmployees(ctx *gin.Context)
+	CheckActiveEmergencies(ctx *gin.Context)
+
+	// Admin operations
 	ResetAllData(ctx *gin.Context)
 }
 
@@ -563,4 +572,90 @@ func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 
 	h.log.Info("Successfully reset all system data")
 	ctx.JSON(http.StatusOK, gin.H{"message": "All data has been successfully reset"})
+}
+
+// GetOnCallEmployees Претрага запослених који су тренутно на дужности
+// @Summary Претрага запослених који су тренутно на дужности
+// @Description Враћа листу запослених који су тренутно на дужности, са опционим бафером у случају да се близу крај тренутне смене
+// @Tags запослени
+// @Accept  json
+// @Produce  json
+// @Param shift_buffer query string false "Бафер време пре краја смене (нпр. '1h')"
+// @Success 200 {object} model.OnCallEmployeesResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /employees/on-call [get]
+func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
+	h.log.Info("Getting on-call employees")
+
+	var shiftBuffer time.Duration
+	if bufferStr := ctx.Query("shift_buffer"); bufferStr != "" {
+		var err error
+		shiftBuffer, err = time.ParseDuration(bufferStr)
+		if err != nil {
+			h.log.Errorf("Invalid shift_buffer parameter: %v", err)
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid shift_buffer format. Use format like '1h', '30m'"})
+			return
+		}
+	}
+
+	employees, err := h.shiftsRepo.GetOnCallEmployees(time.Now(), shiftBuffer)
+	if err != nil {
+		h.log.Errorf("Failed to get on-call employees: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve on-call employees"})
+		return
+	}
+
+	var employeeResponses []model.EmployeeResponse
+	for _, emp := range employees {
+		employeeResponses = append(employeeResponses, emp.UpdateResponseFromEmployee())
+	}
+
+	response := model.OnCallEmployeesResponse{
+		Employees: employeeResponses,
+	}
+
+	h.log.Infof("Successfully retrieved %d on-call employees", len(employeeResponses))
+	ctx.JSON(http.StatusOK, response)
+}
+
+// CheckActiveEmergencies Провера активних хитних случајева за запосленог
+// @Summary Провера активних хитних случајева за запосленог
+// @Description Проверава да ли запослени има активне хитне случајеве
+// @Tags запослени
+// @Accept  json
+// @Produce  json
+// @Param id path int true "ID запосленог"
+// @Success 200 {object} model.ActiveEmergenciesResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /employees/{id}/active-emergencies [get]
+func (h *employeeHandler) CheckActiveEmergencies(ctx *gin.Context) {
+	employeeIDStr := ctx.Param("id")
+	employeeID, err := strconv.ParseUint(employeeIDStr, 10, 32)
+	if err != nil {
+		h.log.Errorf("Invalid employee ID: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
+		return
+	}
+
+	h.log.Infof("Checking active emergencies for employee %d", employeeID)
+
+	// Check if employee exists
+	var employee model.Employee
+	if err := h.emplRepo.GetEmployeeByID(uint(employeeID), &employee); err != nil {
+		h.log.Errorf("Employee not found: %v", err)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
+		return
+	}
+
+	// TODO: This will be implemented in the scope of integration with urgency service
+	// For now, return false as placeholder
+	response := model.ActiveEmergenciesResponse{
+		HasActiveEmergencies: false,
+	}
+
+	h.log.Infof("Employee %d has active emergencies: %v", employeeID, response.HasActiveEmergencies)
+	ctx.JSON(http.StatusOK, response)
 }

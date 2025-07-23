@@ -182,6 +182,10 @@ func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.Employ
 		authorized.GET("/employees/:id/shifts", employeeHandler.GetShifts)
 		authorized.GET("/shifts/availability", employeeHandler.GetShiftsAvailability)
 		authorized.DELETE("/employees/:id/shifts", employeeHandler.RemoveShift)
+
+		// Service-to-service endpoints (for now using regular auth, will add service auth later)
+		authorized.GET("/employees/on-call", employeeHandler.GetOnCallEmployees)
+		authorized.GET("/employees/:id/active-emergencies", employeeHandler.CheckActiveEmergencies)
 	}
 
 	// Admin-only routes
