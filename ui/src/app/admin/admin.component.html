@@ -7,6 +7,44 @@
   </div>
 
   <div class="admin-content">
+    <!-- API Overview Section -->
+    <div class="api-overview-section">
+      <h2>{{ 'ADMIN_PANEL.API_OVERVIEW.TITLE' | translate }}</h2>
+      <p class="section-description">
+        {{ 'ADMIN_PANEL.API_OVERVIEW.DESCRIPTION' | translate }}
+      </p>
+
+      <div class="api-cards">
+        <div class="api-card">
+          <div class="api-card-header">
+            <i class="fas fa-users"></i>
+            <h3>{{ 'ADMIN_PANEL.API_OVERVIEW.EMPLOYEE_API' | translate }}</h3>
+          </div>
+          <p class="api-card-description">
+            {{ 'ADMIN_PANEL.API_OVERVIEW.EMPLOYEE_API_DESC' | translate }}
+          </p>
+          <a href="/swagger/index.html" target="_blank" class="btn btn-primary">
+            <i class="fas fa-external-link-alt"></i>
+            Open Swagger UI
+          </a>
+        </div>
+
+        <div class="api-card">
+          <div class="api-card-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>{{ 'ADMIN_PANEL.API_OVERVIEW.URGENCY_API' | translate }}</h3>
+          </div>
+          <p class="api-card-description">
+            {{ 'ADMIN_PANEL.API_OVERVIEW.URGENCY_API_DESC' | translate }}
+          </p>
+          <a href="/urgency-swagger/index.html" target="_blank" class="btn btn-primary">
+            <i class="fas fa-external-link-alt"></i>
+            Open Swagger UI
+          </a>
+        </div>
+      </div>
+    </div>
+
     <div class="danger-zone">
       <h2>{{ 'ADMIN_PANEL.DANGER_ZONE' | translate }}</h2>
       <p class="warning-text">

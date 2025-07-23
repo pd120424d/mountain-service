@@ -126,6 +126,14 @@
     },
     "ADMIN_PANEL": {
         "TITLE": "Admin Panel",
+        "API_OVERVIEW": {
+            "TITLE": "Pregled API-ja",
+            "DESCRIPTION": "Pristup dokumentaciji API-ja i interfejsima za testiranje",
+            "EMPLOYEE_API": "API Servisa za Zaposlene",
+            "EMPLOYEE_API_DESC": "Upravljanje zaposlenima, smenama i autentifikacijom",
+            "URGENCY_API": "API Servisa za Hitnosti",
+            "URGENCY_API_DESC": "Rukovanje izveštajima o hitnim slučajevima i upravljanje incidentima"
+        },
         "DANGER_ZONE": "Opasna zona",
         "RESET_WARNING": "PAŽNJA: Ova akcija će trajno izbrisati sve podatke iz sistema, uključujući zaposlene, smene i sve povezane informacije. Ova akcija se ne može poništiti!",
         "RESET_ALL_DATA": "Resetuj sve podatke",
