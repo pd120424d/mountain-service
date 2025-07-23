@@ -146,6 +146,7 @@
         "SAVE": "Submit Emergency Report",
         "CANCEL": "Cancel",
         "SUBMITTING": "Submitting...",
+        "SUCCESS_MESSAGE": "Emergency case has been accepted! Someone will contact you very soon.",
         "REQUIRED": "This field is required",
         "INVALID_EMAIL": "Please enter a valid email address",
         "MIN_LENGTH": "This field is too short"

@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { ToastrService } from 'ngx-toastr';
 
 import { UrgencyFormComponent } from './urgency-form.component';
 
@@ -11,6 +12,8 @@ describe('UrgencyFormComponent', () => {
   let fixture: ComponentFixture<UrgencyFormComponent>;
 
   beforeEach(async () => {
+    const toastrSpy = jasmine.createSpyObj('ToastrService', ['success', 'error', 'info', 'warning']);
+
     await TestBed.configureTestingModule({
       imports: [
         UrgencyFormComponent,
@@ -20,7 +23,8 @@ describe('UrgencyFormComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        TranslateService
+        TranslateService,
+        { provide: ToastrService, useValue: toastrSpy }
       ]
     })
     .compileComponents();

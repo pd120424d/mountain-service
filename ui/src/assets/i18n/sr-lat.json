@@ -159,6 +159,7 @@
         "SAVE": "Sačuvaj",
         "CANCEL": "Otkaži",
         "SUBMITTING": "Slanje...",
+        "SUCCESS_MESSAGE": "Prijavljen incident je prihvaćen! Nešto će vas kontaktirati uskoro.",
         "NAME_PLACEHOLDER": "Unesite ime prijavioca",
         "EMAIL_PLACEHOLDER": "Unesite e-mail adresu",
         "CONTACT_PHONE_PLACEHOLDER": "Unesite kontakt telefon",

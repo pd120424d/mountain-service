@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { ToastrService } from 'ngx-toastr';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
 import { UrgencyCreateRequest, UrgencyLevel } from '../urgency.model';
@@ -23,6 +24,7 @@ export class UrgencyFormComponent extends BaseTranslatableComponent implements O
     private fb: FormBuilder,
     private urgencyService: UrgencyService,
     private router: Router,
+    private toastr: ToastrService,
     translate: TranslateService
   ) {
     super(translate);
@@ -51,7 +53,8 @@ export class UrgencyFormComponent extends BaseTranslatableComponent implements O
       this.urgencyService.addUrgency(urgencyRequest).subscribe({
         next: (response) => {
           console.log('Urgency created successfully:', response);
-          this.router.navigate(['/urgencies']);
+          this.toastr.success(this.translate.instant('URGENCY_FORM.SUCCESS_MESSAGE'));
+          this.router.navigate(['/']);
         },
         error: (error) => {
           console.error('Error creating urgency:', error);
@@ -64,7 +67,7 @@ export class UrgencyFormComponent extends BaseTranslatableComponent implements O
   }
 
   cancel(): void {
-    this.router.navigate(['/urgencies']);
+    this.router.navigate(['/']);
   }
 
   private markFormGroupTouched(): void {
