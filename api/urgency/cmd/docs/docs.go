@@ -61,7 +61,7 @@ const docTemplate = `{
                             "items": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/definitions/model.UrgencyResponse"
+                                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse"
                                 }
                             }
                         }
@@ -92,7 +92,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.UrgencyCreateRequest"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyCreateRequest"
                         }
                     }
                 ],
@@ -100,7 +100,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/model.UrgencyResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse"
                         }
                     }
                 }
@@ -134,7 +134,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.UrgencyResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse"
                         }
                     }
                 }
@@ -170,7 +170,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.UrgencyUpdateRequest"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyUpdateRequest"
                         }
                     }
                 ],
@@ -178,7 +178,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.UrgencyResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse"
                         }
                     }
                 }
@@ -212,22 +212,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.Status": {
-            "type": "string",
-            "enum": [
-                "Open",
-                "In Progress",
-                "Resolved",
-                "Closed"
-            ],
-            "x-enum-varnames": [
-                "Open",
-                "InProgress",
-                "Resolved",
-                "Closed"
-            ]
-        },
-        "model.UrgencyCreateRequest": {
+        "github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyCreateRequest": {
             "type": "object",
             "required": [
                 "contactPhone",
@@ -247,7 +232,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "level": {
-                    "$ref": "#/definitions/model.UrgencyLevel"
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
                 },
                 "location": {
                     "type": "string"
@@ -257,13 +242,13 @@ const docTemplate = `{
                 }
             }
         },
-        "model.UrgencyLevel": {
+        "github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel": {
             "type": "string",
             "enum": [
-                "Low",
-                "Medium",
-                "High",
-                "Critical"
+                "low",
+                "medium",
+                "high",
+                "critical"
             ],
             "x-enum-varnames": [
                 "Low",
@@ -272,7 +257,7 @@ const docTemplate = `{
                 "Critical"
             ]
         },
-        "model.UrgencyResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse": {
             "type": "object",
             "properties": {
                 "contactPhone": {
@@ -291,7 +276,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "level": {
-                    "$ref": "#/definitions/model.UrgencyLevel"
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
                 },
                 "location": {
                     "type": "string"
@@ -300,14 +285,29 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/model.Status"
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus"
                 },
                 "updatedAt": {
                     "type": "string"
                 }
             }
         },
-        "model.UrgencyUpdateRequest": {
+        "github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus": {
+            "type": "string",
+            "enum": [
+                "open",
+                "in_progress",
+                "resolved",
+                "closed"
+            ],
+            "x-enum-varnames": [
+                "Open",
+                "InProgress",
+                "Resolved",
+                "Closed"
+            ]
+        },
+        "github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyUpdateRequest": {
             "type": "object",
             "properties": {
                 "contactPhone": {
@@ -320,7 +320,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "level": {
-                    "$ref": "#/definitions/model.UrgencyLevel"
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
                 },
                 "location": {
                     "type": "string"
@@ -329,7 +329,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/model.Status"
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus"
                 }
             }
         }
@@ -349,7 +349,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "API Сервис за Хитности",
+	Title:            "API Сервис за Ургентне ситуације",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

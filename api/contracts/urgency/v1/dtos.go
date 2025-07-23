@@ -16,14 +16,14 @@ const (
 	Critical UrgencyLevel = "critical"
 )
 
-// Status represents the urgency status
-type Status string
+// UrgencyStatus represents the urgency status
+type UrgencyStatus string
 
 const (
-	Open       Status = "open"
-	InProgress Status = "in_progress"
-	Resolved   Status = "resolved"
-	Closed     Status = "closed"
+	Open       UrgencyStatus = "open"
+	InProgress UrgencyStatus = "in_progress"
+	Resolved   UrgencyStatus = "resolved"
+	Closed     UrgencyStatus = "closed"
 )
 
 // UrgencyCreateRequest DTO for creating a new urgency
@@ -40,28 +40,28 @@ type UrgencyCreateRequest struct {
 // UrgencyUpdateRequest DTO for updating an urgency
 // swagger:model
 type UrgencyUpdateRequest struct {
-	Name         string       `json:"name"`
-	Email        string       `json:"email"`
-	ContactPhone string       `json:"contactPhone"`
-	Location     string       `json:"location"`
-	Description  string       `json:"description"`
-	Level        UrgencyLevel `json:"level"`
-	Status       Status       `json:"status"`
+	Name         string        `json:"name"`
+	Email        string        `json:"email"`
+	ContactPhone string        `json:"contactPhone"`
+	Location     string        `json:"location"`
+	Description  string        `json:"description"`
+	Level        UrgencyLevel  `json:"level"`
+	Status       UrgencyStatus `json:"status"`
 }
 
 // UrgencyResponse DTO for returning an urgency
 // swagger:model
 type UrgencyResponse struct {
-	ID           uint         `json:"id"`
-	Name         string       `json:"name"`
-	Email        string       `json:"email"`
-	ContactPhone string       `json:"contactPhone"`
-	Location     string       `json:"location"`
-	Description  string       `json:"description"`
-	Level        UrgencyLevel `json:"level"`
-	Status       Status       `json:"status"`
-	CreatedAt    string       `json:"createdAt"`
-	UpdatedAt    string       `json:"updatedAt"`
+	ID           uint          `json:"id"`
+	Name         string        `json:"name"`
+	Email        string        `json:"email"`
+	ContactPhone string        `json:"contactPhone"`
+	Location     string        `json:"location"`
+	Description  string        `json:"description"`
+	Level        UrgencyLevel  `json:"level"`
+	Status       UrgencyStatus `json:"status"`
+	CreatedAt    string        `json:"createdAt"`
+	UpdatedAt    string        `json:"updatedAt"`
 }
 
 // UrgencyList DTO for returning a list of urgencies
@@ -130,8 +130,8 @@ func (l UrgencyLevel) Valid() bool {
 	return false
 }
 
-func (s Status) Valid() bool {
-	for _, v := range []Status{Open, InProgress, Resolved, Closed} {
+func (s UrgencyStatus) Valid() bool {
+	for _, v := range []UrgencyStatus{Open, InProgress, Resolved, Closed} {
 		if s == v {
 			return true
 		}

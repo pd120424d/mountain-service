@@ -199,15 +199,15 @@ func TestStatus_Valid(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		status   Status
+		status   UrgencyStatus
 		expected bool
 	}{
 		{Open, true},
 		{InProgress, true},
 		{Resolved, true},
 		{Closed, true},
-		{Status("Invalid"), false},
-		{Status(""), false},
+		{UrgencyStatus("Invalid"), false},
+		{UrgencyStatus(""), false},
 	}
 
 	for _, test := range tests {

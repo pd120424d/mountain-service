@@ -1,18 +1,6 @@
 basePath: /api/v1
 definitions:
-  model.Status:
-    enum:
-    - Open
-    - In Progress
-    - Resolved
-    - Closed
-    type: string
-    x-enum-varnames:
-    - Open
-    - InProgress
-    - Resolved
-    - Closed
-  model.UrgencyCreateRequest:
+  github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyCreateRequest:
     properties:
       contactPhone:
         type: string
@@ -21,7 +9,7 @@ definitions:
       email:
         type: string
       level:
-        $ref: '#/definitions/model.UrgencyLevel'
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel'
       location:
         type: string
       name:
@@ -33,19 +21,19 @@ definitions:
     - location
     - name
     type: object
-  model.UrgencyLevel:
+  github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel:
     enum:
-    - Low
-    - Medium
-    - High
-    - Critical
+    - low
+    - medium
+    - high
+    - critical
     type: string
     x-enum-varnames:
     - Low
     - Medium
     - High
     - Critical
-  model.UrgencyResponse:
+  github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse:
     properties:
       contactPhone:
         type: string
@@ -58,17 +46,29 @@ definitions:
       id:
         type: integer
       level:
-        $ref: '#/definitions/model.UrgencyLevel'
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel'
       location:
         type: string
       name:
         type: string
       status:
-        $ref: '#/definitions/model.Status'
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus'
       updatedAt:
         type: string
     type: object
-  model.UrgencyUpdateRequest:
+  github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus:
+    enum:
+    - open
+    - in_progress
+    - resolved
+    - closed
+    type: string
+    x-enum-varnames:
+    - Open
+    - InProgress
+    - Resolved
+    - Closed
+  github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyUpdateRequest:
     properties:
       contactPhone:
         type: string
@@ -77,13 +77,13 @@ definitions:
       email:
         type: string
       level:
-        $ref: '#/definitions/model.UrgencyLevel'
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel'
       location:
         type: string
       name:
         type: string
       status:
-        $ref: '#/definitions/model.Status'
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus'
     type: object
 info:
   contact: {}
@@ -115,7 +115,7 @@ paths:
           schema:
             items:
               items:
-                $ref: '#/definitions/model.UrgencyResponse'
+                $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse'
               type: array
             type: array
       security:
@@ -133,14 +133,14 @@ paths:
         name: urgency
         required: true
         schema:
-          $ref: '#/definitions/model.UrgencyCreateRequest'
+          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/model.UrgencyResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse'
       security:
       - BearerAuth: []
       summary: Креирање нове ургентне ситуације
@@ -177,7 +177,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.UrgencyResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse'
       security:
       - BearerAuth: []
       summary: Извлачење ургентне ситуације по ID
@@ -198,14 +198,14 @@ paths:
         name: urgency
         required: true
         schema:
-          $ref: '#/definitions/model.UrgencyUpdateRequest'
+          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.UrgencyResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse'
       security:
       - BearerAuth: []
       summary: Ажурирање ургентне ситуације

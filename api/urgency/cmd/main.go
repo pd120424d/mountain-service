@@ -24,10 +24,14 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 
+	// Import contracts for Swagger documentation
+	_ "github.com/pd120424d/mountain-service/api/contracts/common/v1"
+	_ "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
+
 	"github.com/gin-gonic/gin"
 )
 
-// @title API Сервис за Хитности
+// @title API Сервис за Ургентне ситуације
 // @version 1.0
 
 // @license.name MIT
@@ -122,8 +126,8 @@ func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
 	// Create the urgency_service database if it doesn't exist
 	db := config.GetUrgencyDB(log, dbStringUrgency)
 
-	// Auto migrate the model
-	err = db.AutoMigrate(&model.Urgency{})
+	// Auto migrate the models
+	err = db.AutoMigrate(&model.Urgency{}, &model.EmergencyAssignment{}, &model.Notification{})
 	if err != nil {
 		log.Fatalf("failed to migrate urgency models: %v", err)
 	}
