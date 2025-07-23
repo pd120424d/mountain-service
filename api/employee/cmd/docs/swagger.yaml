@@ -1,5 +1,10 @@
 basePath: /api/v1
 definitions:
+  model.ActiveEmergenciesResponse:
+    properties:
+      hasActiveEmergencies:
+        type: boolean
+    type: object
   model.AssignShiftRequest:
     properties:
       shiftDate:
@@ -112,6 +117,13 @@ definitions:
       message:
         example: Success message
         type: string
+    type: object
+  model.OnCallEmployeesResponse:
+    properties:
+      employees:
+        items:
+          $ref: '#/definitions/model.EmployeeResponse'
+        type: array
     type: object
   model.RemoveShiftRequest:
     properties:
@@ -299,6 +311,39 @@ paths:
       summary: Ажурирање запосленог
       tags:
       - запослени
+  /employees/{id}/active-emergencies:
+    get:
+      consumes:
+      - application/json
+      description: Проверава да ли запослени има активне хитне случајеве
+      parameters:
+      - description: ID запосленог
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ActiveEmergenciesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Провера активних хитних случајева за запосленог
+      tags:
+      - запослени
   /employees/{id}/shifts:
     delete:
       description: Уклањање смене за запосленог по ID-ју и подацима о смени
@@ -372,6 +417,35 @@ paths:
       security:
       - BearerAuth: []
       summary: Додељује смену запосленом
+      tags:
+      - запослени
+  /employees/on-call:
+    get:
+      consumes:
+      - application/json
+      description: Враћа листу запослених који су тренутно на дужности, са опционим
+        бафером у случају да се близу крај тренутне смене
+      parameters:
+      - description: Бафер време пре краја смене (нпр. '1h')
+        in: query
+        name: shift_buffer
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.OnCallEmployeesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Претрага запослених који су тренутно на дужности
       tags:
       - запослени
   /login:

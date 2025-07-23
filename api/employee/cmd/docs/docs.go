@@ -125,6 +125,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/employees/on-call": {
+            "get": {
+                "description": "Враћа листу запослених који су тренутно на дужности, са опционим бафером у случају да се близу крај тренутне смене",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Претрага запослених који су тренутно на дужности",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Бафер време пре краја смене (нпр. '1h')",
+                        "name": "shift_buffer",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.OnCallEmployeesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/employees/{id}": {
             "put": {
                 "security": [
@@ -208,6 +251,56 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/{id}/active-emergencies": {
+            "get": {
+                "description": "Проверава да ли запослени има активне хитне случајеве",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Провера активних хитних случајева за запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ActiveEmergenciesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.ErrorResponse"
                         }
@@ -412,6 +505,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "model.ActiveEmergenciesResponse": {
+            "type": "object",
+            "properties": {
+                "hasActiveEmergencies": {
+                    "type": "boolean"
+                }
+            }
+        },
         "model.AssignShiftRequest": {
             "type": "object",
             "required": [
@@ -574,6 +675,17 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Success message"
+                }
+            }
+        },
+        "model.OnCallEmployeesResponse": {
+            "type": "object",
+            "properties": {
+                "employees": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.EmployeeResponse"
+                    }
                 }
             }
         },
