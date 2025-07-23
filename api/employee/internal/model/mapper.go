@@ -1,10 +1,13 @@
 // model/mapper.go
 package model
 
-import "time"
+import (
+	"time"
 
-// MapUpdateRequestToEmployee updates allowed fields from the request into the employee struct.
-func MapUpdateRequestToEmployee(req *EmployeeUpdateRequest, existing *Employee) {
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
+)
+
+func MapUpdateRequestToEmployee(req *employeeV1.EmployeeUpdateRequest, existing *Employee) {
 	if req.FirstName != "" {
 		existing.FirstName = req.FirstName
 	}
@@ -20,28 +23,28 @@ func MapUpdateRequestToEmployee(req *EmployeeUpdateRequest, existing *Employee) 
 	existing.ProfileType = ProfileTypeFromString(req.ProfileType)
 }
 
-func MapShiftsAvailabilityToResponse(availability *ShiftsAvailabilityRange) *ShiftAvailabilityResponse {
-	response := &ShiftAvailabilityResponse{
-		Days: make(map[time.Time]ShiftAvailabilityPerDay),
+func MapShiftsAvailabilityToResponse(availability *ShiftsAvailabilityRange) *employeeV1.ShiftAvailabilityResponse {
+	response := &employeeV1.ShiftAvailabilityResponse{
+		Days: make(map[time.Time]employeeV1.ShiftAvailabilityPerDay),
 	}
 
 	for date, day := range availability.Days {
 		if len(day) < 3 {
-			continue // skip incomplete days, ideally should never be the case
+			continue
 		}
 
-		response.Days[date] = ShiftAvailabilityPerDay{
-			FirstShift: ShiftAvailabilityDto{
-				Medic:     day[0][Medic],
-				Technical: day[0][Technical],
+		response.Days[date] = employeeV1.ShiftAvailabilityPerDay{
+			Shift1: employeeV1.ShiftAvailability{
+				Available: day[0][Medic] > 0 || day[0][Technical] > 0,
+				Employees: []string{},
 			},
-			SecondShift: ShiftAvailabilityDto{
-				Medic:     day[1][Medic],
-				Technical: day[1][Technical],
+			Shift2: employeeV1.ShiftAvailability{
+				Available: day[1][Medic] > 0 || day[1][Technical] > 0,
+				Employees: []string{},
 			},
-			ThirdShift: ShiftAvailabilityDto{
-				Medic:     day[2][Medic],
-				Technical: day[2][Technical],
+			Shift3: employeeV1.ShiftAvailability{
+				Available: day[2][Medic] > 0 || day[2][Technical] > 0,
+				Employees: []string{},
 			},
 		}
 	}

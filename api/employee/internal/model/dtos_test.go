@@ -3,11 +3,12 @@ package model
 import (
 	"testing"
 
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEmployeeCreateRequest_ToString(t *testing.T) {
-	req := &EmployeeCreateRequest{
+	req := &employeeV1.EmployeeCreateRequest{
 		FirstName:      "Bruce",
 		LastName:       "Lee",
 		Username:       "test-user",
@@ -26,7 +27,7 @@ func TestEmployeeCreateRequest_ToString(t *testing.T) {
 
 func TestEmployeeUpdateRequest_Validate(t *testing.T) {
 	t.Run("it returns an error when email is invalid", func(t *testing.T) {
-		req := &EmployeeUpdateRequest{
+		req := &employeeV1.EmployeeUpdateRequest{
 			Email: "invalid-email",
 		}
 		err := req.Validate()
@@ -35,7 +36,7 @@ func TestEmployeeUpdateRequest_Validate(t *testing.T) {
 	})
 
 	t.Run("it returns no error when email is valid", func(t *testing.T) {
-		req := &EmployeeUpdateRequest{
+		req := &employeeV1.EmployeeUpdateRequest{
 			Email: "test-user@example.com",
 		}
 		err := req.Validate()
@@ -43,7 +44,7 @@ func TestEmployeeUpdateRequest_Validate(t *testing.T) {
 	})
 
 	t.Run("it returns no error when email is empty", func(t *testing.T) {
-		req := &EmployeeUpdateRequest{
+		req := &employeeV1.EmployeeUpdateRequest{
 			Email: "",
 		}
 		err := req.Validate()

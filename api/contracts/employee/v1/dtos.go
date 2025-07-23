@@ -7,6 +7,19 @@ import (
 	"time"
 )
 
+// Common response types
+// ErrorResponse represents an error response
+// swagger:model
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+// MessageResponse represents a simple message response
+// swagger:model
+type MessageResponse struct {
+	Message string `json:"message"`
+}
+
 // EmployeeLogin DTO for employee login
 // swagger:model
 type EmployeeLogin struct {

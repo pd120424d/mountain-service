@@ -4,12 +4,13 @@ import (
 	"testing"
 	"time"
 
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMapUpdateRequestToEmployee(t *testing.T) {
 	t.Run("it updates allowed fields from the request into the employee struct", func(t *testing.T) {
-		req := &EmployeeUpdateRequest{
+		req := &employeeV1.EmployeeUpdateRequest{
 			FirstName:      "Bruce",
 			LastName:       "Lee",
 			Email:          "test-user@example.com",
@@ -55,11 +56,14 @@ func TestMapShiftsAvailabilityToResponse(t *testing.T) {
 		response := MapShiftsAvailabilityToResponse(availability)
 
 		assert.Equal(t, 1, len(response.Days))
-		assert.Equal(t, 2, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].FirstShift.Medic)
-		assert.Equal(t, 4, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].FirstShift.Technical)
-		assert.Equal(t, 2, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].SecondShift.Medic)
-		assert.Equal(t, 4, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].SecondShift.Technical)
-		assert.Equal(t, 2, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].ThirdShift.Medic)
-		assert.Equal(t, 4, response.Days[time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)].ThirdShift.Technical)
+		testDate := time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)
+
+		assert.True(t, response.Days[testDate].Shift1.Available)
+		assert.True(t, response.Days[testDate].Shift2.Available)
+		assert.True(t, response.Days[testDate].Shift3.Available)
+
+		assert.NotNil(t, response.Days[testDate].Shift1.Employees)
+		assert.NotNil(t, response.Days[testDate].Shift2.Employees)
+		assert.NotNil(t, response.Days[testDate].Shift3.Employees)
 	})
 }

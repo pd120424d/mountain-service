@@ -3,6 +3,7 @@ package model
 import (
 	"testing"
 
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -88,7 +89,7 @@ func TestEmployee_UpdateResponseFromEmployee(t *testing.T) {
 	}
 
 	response := employee.UpdateResponseFromEmployee()
-	assert.Equal(t, EmployeeResponse{
+	assert.Equal(t, employeeV1.EmployeeResponse{
 		ID:             1,
 		Username:       "test-user",
 		FirstName:      "Bruce",

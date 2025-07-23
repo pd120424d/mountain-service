@@ -3,6 +3,7 @@ package model
 import (
 	"time"
 
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"gorm.io/gorm"
 )
 
@@ -81,8 +82,8 @@ func (e *Employee) Role() string {
 	return string(e.ProfileType)
 }
 
-func (e *Employee) UpdateResponseFromEmployee() EmployeeResponse {
-	return EmployeeResponse{
+func (e *Employee) UpdateResponseFromEmployee() employeeV1.EmployeeResponse {
+	return employeeV1.EmployeeResponse{
 		ID:             e.ID,
 		Username:       e.Username,
 		FirstName:      e.FirstName,

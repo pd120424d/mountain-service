@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/pd120424d/mountain-service/api/employee/internal/auth"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
@@ -59,7 +60,7 @@ func NewEmployeeHandler(log utils.Logger, emplRepo repositories.EmployeeReposito
 // @Router /employees [post]
 func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	h.log.Info("Received Register Employee request")
-	req := &model.EmployeeCreateRequest{}
+	req := &employeeV1.EmployeeCreateRequest{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
 		return
@@ -128,7 +129,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 		return
 	}
 
-	response := model.EmployeeResponse{
+	response := employeeV1.EmployeeResponse{
 		ID:             employee.ID,
 		Username:       employee.Username,
 		FirstName:      employee.FirstName,
@@ -154,7 +155,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 // @Failure 401 {object} model.ErrorResponse
 // @Router /login [post]
 func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
-	var req model.EmployeeLogin
+	var req employeeV1.EmployeeLogin
 	h.log.Info("Received Login Employee request")
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -226,9 +227,9 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 	}
 
 	h.log.Infof("Successfully retrieved %d employees", len(employees))
-	response := make([]model.EmployeeResponse, 0)
+	response := make([]employeeV1.EmployeeResponse, 0)
 	for _, emp := range employees {
-		response = append(response, model.EmployeeResponse{
+		response = append(response, employeeV1.EmployeeResponse{
 			ID:             emp.ID,
 			Username:       emp.Username,
 			FirstName:      emp.FirstName,
@@ -268,7 +269,7 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 		return
 	}
 
-	var req model.EmployeeUpdateRequest
+	var req employeeV1.EmployeeUpdateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.log.Errorf("failed to update employee, invalid employee update payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
@@ -352,7 +353,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 		return
 	}
 
-	var req model.AssignShiftRequest
+	var req employeeV1.AssignShiftRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.log.Errorf("failed to assign shift, invalid shift payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -419,7 +420,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	}
 
 	h.log.Infof("Successfully assigned shift for employee ID %d", employeeID)
-	resp := model.AssignShiftResponse{
+	resp := employeeV1.AssignShiftResponse{
 		ID:        assignmentID,
 		ShiftDate: shift.ShiftDate.Format(time.DateOnly),
 		ShiftType: shift.ShiftType,
@@ -455,12 +456,13 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 	}
 	h.log.Infof("Successfully retrieved shifts for employee ID %d", employeeID)
 
-	response := make([]model.ShiftResponse, 0)
+	response := make([]employeeV1.ShiftResponse, 0)
 	for _, shift := range shifts {
-		response = append(response, model.ShiftResponse{
+		response = append(response, employeeV1.ShiftResponse{
 			ID:        shift.ID,
 			ShiftDate: shift.ShiftDate,
 			ShiftType: shift.ShiftType,
+			CreatedAt: shift.CreatedAt,
 		})
 	}
 
@@ -525,7 +527,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 		return
 	}
 
-	var req model.RemoveShiftRequest
+	var req employeeV1.RemoveShiftRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.log.Errorf("failed to remove shift, invalid shift payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -606,12 +608,12 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 		return
 	}
 
-	var employeeResponses []model.EmployeeResponse
+	var employeeResponses []employeeV1.EmployeeResponse
 	for _, emp := range employees {
 		employeeResponses = append(employeeResponses, emp.UpdateResponseFromEmployee())
 	}
 
-	response := model.OnCallEmployeesResponse{
+	response := employeeV1.OnCallEmployeesResponse{
 		Employees: employeeResponses,
 	}
 
@@ -652,7 +654,7 @@ func (h *employeeHandler) CheckActiveEmergencies(ctx *gin.Context) {
 
 	// TODO: This will be implemented in the scope of integration with urgency service
 	// For now, return false as placeholder
-	response := model.ActiveEmergenciesResponse{
+	response := employeeV1.ActiveEmergenciesResponse{
 		HasActiveEmergencies: false,
 	}
 

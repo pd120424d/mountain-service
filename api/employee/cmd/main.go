@@ -19,6 +19,10 @@ import (
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
+	// Import contracts for Swagger documentation
+	_ "github.com/pd120424d/mountain-service/api/contracts/common/v1"
+	_ "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/handlers"

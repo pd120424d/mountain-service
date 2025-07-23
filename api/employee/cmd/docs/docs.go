@@ -524,19 +524,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "shiftType": {
-                    "type": "integer",
-                    "maximum": 3,
-                    "minimum": 1
+                    "type": "string"
                 }
             }
         },
         "model.AssignShiftResponse": {
             "type": "object",
-            "required": [
-                "id",
-                "shiftDate",
-                "shiftType"
-            ],
             "properties": {
                 "id": {
                     "type": "integer"
@@ -545,7 +538,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "shiftType": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
@@ -623,7 +616,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "profilePicture": {
-                    "description": "this may be represented as a byte array if we read the picture from somewhere for an example",
                     "type": "string"
                 },
                 "profileType": {
@@ -664,8 +656,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
-                    "type": "string",
-                    "example": "Error message"
+                    "type": "string"
                 }
             }
         },
@@ -673,8 +664,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string",
-                    "example": "Success message"
+                    "type": "string"
                 }
             }
         },
@@ -700,34 +690,21 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "shiftType": {
-                    "type": "integer",
-                    "maximum": 3,
-                    "minimum": 1
-                }
-            }
-        },
-        "model.ShiftAvailabilityDto": {
-            "type": "object",
-            "properties": {
-                "Medic": {
-                    "type": "integer"
-                },
-                "Technical": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
         "model.ShiftAvailabilityPerDay": {
             "type": "object",
             "properties": {
-                "1": {
-                    "$ref": "#/definitions/model.ShiftAvailabilityDto"
+                "available": {
+                    "type": "boolean"
                 },
-                "2": {
-                    "$ref": "#/definitions/model.ShiftAvailabilityDto"
-                },
-                "3": {
-                    "$ref": "#/definitions/model.ShiftAvailabilityDto"
+                "employees": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -737,7 +714,18 @@ const docTemplate = `{
                 "days": {
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/model.ShiftAvailabilityPerDay"
+                        "type": "object",
+                        "properties": {
+                            "shift1": {
+                                "$ref": "#/definitions/model.ShiftAvailabilityPerDay"
+                            },
+                            "shift2": {
+                                "$ref": "#/definitions/model.ShiftAvailabilityPerDay"
+                            },
+                            "shift3": {
+                                "$ref": "#/definitions/model.ShiftAvailabilityPerDay"
+                            }
+                        }
                     }
                 }
             }
@@ -755,8 +743,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "shiftType": {
-                    "description": "1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, \u003c 1 or \u003e 3: invalid",
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
@@ -764,8 +751,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "token": {
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    "type": "string"
                 }
             }
         }
