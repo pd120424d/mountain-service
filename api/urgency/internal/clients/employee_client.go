@@ -14,6 +14,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// HTTPClient interface defines the HTTP operations needed by the employee client
+type HTTPClient interface {
+	Get(ctx context.Context, endpoint string) (*http.Response, error)
+	Post(ctx context.Context, endpoint string, body interface{}) (*http.Response, error)
+	Put(ctx context.Context, endpoint string, body interface{}) (*http.Response, error)
+	Delete(ctx context.Context, endpoint string) (*http.Response, error)
+}
+
 // EmployeeClient interface for communicating with the employee service
 type EmployeeClient interface {
 	GetOnCallEmployees(ctx context.Context, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error)
@@ -24,7 +32,7 @@ type EmployeeClient interface {
 
 // employeeClient implements the EmployeeClient interface
 type employeeClient struct {
-	httpClient *client.HTTPClient
+	httpClient HTTPClient
 	logger     utils.Logger
 }
 
@@ -49,9 +57,15 @@ func NewEmployeeClient(config EmployeeClientConfig) EmployeeClient {
 		Logger:      config.Logger,
 	})
 
+	return NewEmployeeClientWithHTTPClient(httpClient, config.Logger)
+}
+
+// NewEmployeeClientWithHTTPClient creates a new employee service client with a custom HTTP client
+// This constructor is useful for testing as it allows dependency injection
+func NewEmployeeClientWithHTTPClient(httpClient HTTPClient, logger utils.Logger) EmployeeClient {
 	return &employeeClient{
 		httpClient: httpClient,
-		logger:     config.Logger.WithName("employeeClient"),
+		logger:     logger.WithName("employeeClient"),
 	}
 }
 

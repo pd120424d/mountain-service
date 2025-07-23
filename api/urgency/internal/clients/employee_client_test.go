@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,89 +14,56 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-// HTTPClientInterface defines the interface for HTTP client operations
-type HTTPClientInterface interface {
-	Get(ctx context.Context, endpoint string) (*http.Response, error)
-	Post(ctx context.Context, endpoint string, body interface{}) (*http.Response, error)
-	Put(ctx context.Context, endpoint string, body interface{}) (*http.Response, error)
-	Delete(ctx context.Context, endpoint string) (*http.Response, error)
-}
-
-// MockHTTPClient is a mock implementation of the HTTPClientInterface
+// MockHTTPClient implements the HTTPClient interface for testing
 type MockHTTPClient struct {
-	GetResponse    *http.Response
-	GetError       error
-	PostResponse   *http.Response
-	PostError      error
-	PutResponse    *http.Response
-	PutError       error
-	DeleteResponse *http.Response
-	DeleteError    error
+	GetFunc    func(ctx context.Context, endpoint string) (*http.Response, error)
+	PostFunc   func(ctx context.Context, endpoint string, body interface{}) (*http.Response, error)
+	PutFunc    func(ctx context.Context, endpoint string, body interface{}) (*http.Response, error)
+	DeleteFunc func(ctx context.Context, endpoint string) (*http.Response, error)
+	
+	// Track calls for verification
+	GetCalls    []string
+	PostCalls   []string
+	PutCalls    []string
+	DeleteCalls []string
 }
 
 func (m *MockHTTPClient) Get(ctx context.Context, endpoint string) (*http.Response, error) {
-	return m.GetResponse, m.GetError
+	m.GetCalls = append(m.GetCalls, endpoint)
+	if m.GetFunc != nil {
+		return m.GetFunc(ctx, endpoint)
+	}
+	return nil, fmt.Errorf("mock not configured for GET %s", endpoint)
 }
 
 func (m *MockHTTPClient) Post(ctx context.Context, endpoint string, body interface{}) (*http.Response, error) {
-	return m.PostResponse, m.PostError
+	m.PostCalls = append(m.PostCalls, endpoint)
+	if m.PostFunc != nil {
+		return m.PostFunc(ctx, endpoint, body)
+	}
+	return nil, fmt.Errorf("mock not configured for POST %s", endpoint)
 }
 
 func (m *MockHTTPClient) Put(ctx context.Context, endpoint string, body interface{}) (*http.Response, error) {
-	return m.PutResponse, m.PutError
+	m.PutCalls = append(m.PutCalls, endpoint)
+	if m.PutFunc != nil {
+		return m.PutFunc(ctx, endpoint, body)
+	}
+	return nil, fmt.Errorf("mock not configured for PUT %s", endpoint)
 }
 
 func (m *MockHTTPClient) Delete(ctx context.Context, endpoint string) (*http.Response, error) {
-	return m.DeleteResponse, m.DeleteError
-}
-
-// testEmployeeClient is a test version of employeeClient that accepts the mock interface
-type testEmployeeClient struct {
-	httpClient HTTPClientInterface
-	logger     utils.Logger
-}
-
-func (c *testEmployeeClient) GetOnCallEmployees(ctx context.Context, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error) {
-	endpoint := "/api/v1/employees/on-call"
-	if shiftBuffer > 0 {
-		endpoint += "?shift_buffer=" + shiftBuffer.String()
+	m.DeleteCalls = append(m.DeleteCalls, endpoint)
+	if m.DeleteFunc != nil {
+		return m.DeleteFunc(ctx, endpoint)
 	}
-
-	resp, err := c.httpClient.Get(ctx, endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get on-call employees: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("employee service returned status %d", resp.StatusCode)
-	}
-
-	var response employeeV1.OnCallEmployeesResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return response.Employees, nil
+	return nil, fmt.Errorf("mock not configured for DELETE %s", endpoint)
 }
 
-func (c *testEmployeeClient) GetAllEmployees(ctx context.Context) ([]employeeV1.EmployeeResponse, error) {
-	// Implementation for testing - simplified
-	return nil, nil
-}
-
-func (c *testEmployeeClient) GetEmployeeByID(ctx context.Context, employeeID uint) (*employeeV1.EmployeeResponse, error) {
-	// Implementation for testing - simplified
-	return nil, nil
-}
-
-func (c *testEmployeeClient) CheckActiveEmergencies(ctx context.Context, employeeID uint) (bool, error) {
-	// Implementation for testing - simplified
-	return false, nil
-}
-
+// Helper function to create a mock HTTP response
 func createMockResponse(statusCode int, body interface{}) *http.Response {
 	jsonBody, _ := json.Marshal(body)
 	return &http.Response{
@@ -106,10 +72,15 @@ func createMockResponse(statusCode int, body interface{}) *http.Response {
 	}
 }
 
+// Helper function to create an employee client with mock HTTP client for testing
+func createTestEmployeeClient(mockHTTPClient *MockHTTPClient) EmployeeClient {
+	return NewEmployeeClientWithHTTPClient(mockHTTPClient, utils.NewTestLogger())
+}
+
 func TestNewEmployeeClient(t *testing.T) {
 	t.Parallel()
 
-	t.Run("it creates a new employee client with default timeout", func(t *testing.T) {
+	t.Run("creates a new employee client with default timeout", func(t *testing.T) {
 		config := EmployeeClientConfig{
 			BaseURL:     "http://localhost:8080",
 			ServiceAuth: &auth.ServiceAuth{},
@@ -121,7 +92,7 @@ func TestNewEmployeeClient(t *testing.T) {
 		assert.IsType(t, &employeeClient{}, client)
 	})
 
-	t.Run("it creates a new employee client with custom timeout", func(t *testing.T) {
+	t.Run("creates a new employee client with custom timeout", func(t *testing.T) {
 		config := EmployeeClientConfig{
 			BaseURL:     "http://localhost:8080",
 			ServiceAuth: &auth.ServiceAuth{},
@@ -133,12 +104,86 @@ func TestNewEmployeeClient(t *testing.T) {
 		assert.NotNil(t, client)
 		assert.IsType(t, &employeeClient{}, client)
 	})
+
+	t.Run("creates a new employee client with zero timeout defaults to 30 seconds", func(t *testing.T) {
+		config := EmployeeClientConfig{
+			BaseURL:     "http://localhost:8080",
+			ServiceAuth: &auth.ServiceAuth{},
+			Logger:      utils.NewTestLogger(),
+			Timeout:     0, // Should default to 30 seconds
+		}
+
+		client := NewEmployeeClient(config)
+		assert.NotNil(t, client)
+		assert.IsType(t, &employeeClient{}, client)
+	})
+}
+
+func TestNewEmployeeClientWithHTTPClient(t *testing.T) {
+	t.Parallel()
+
+	t.Run("creates a new employee client with injected HTTP client", func(t *testing.T) {
+		mockHTTPClient := &MockHTTPClient{}
+		logger := utils.NewTestLogger()
+
+		client := NewEmployeeClientWithHTTPClient(mockHTTPClient, logger)
+		
+		assert.NotNil(t, client)
+		assert.IsType(t, &employeeClient{}, client)
+	})
 }
 
 func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 	t.Parallel()
 
-	t.Run("it successfully retrieves on-call employees", func(t *testing.T) {
+	t.Run("successfully retrieves on-call employees without shift buffer", func(t *testing.T) {
+		mockResponse := employeeV1.OnCallEmployeesResponse{
+			Employees: []employeeV1.EmployeeResponse{
+				{
+					ID:          1,
+					FirstName:   "John",
+					LastName:    "Doe",
+					Email:       "john@example.com",
+					Username:    "johndoe",
+					Gender:      "Male",
+					Phone:       "+1234567890",
+					ProfileType: "Medic",
+				},
+				{
+					ID:          2,
+					FirstName:   "Jane",
+					LastName:    "Smith",
+					Email:       "jane@example.com",
+					Username:    "janesmith",
+					Gender:      "Female",
+					Phone:       "+1234567891",
+					ProfileType: "Technical",
+				},
+			},
+		}
+
+		mockHTTPClient := &MockHTTPClient{
+			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
+				assert.Equal(t, "/api/v1/employees/on-call", endpoint)
+				return createMockResponse(http.StatusOK, mockResponse), nil
+			},
+		}
+
+		client := createTestEmployeeClient(mockHTTPClient)
+		employees, err := client.GetOnCallEmployees(context.Background(), 0)
+		
+		require.NoError(t, err)
+		assert.Len(t, employees, 2)
+		assert.Equal(t, uint(1), employees[0].ID)
+		assert.Equal(t, "John", employees[0].FirstName)
+		assert.Equal(t, "Doe", employees[0].LastName)
+		assert.Equal(t, uint(2), employees[1].ID)
+		assert.Equal(t, "Jane", employees[1].FirstName)
+		assert.Equal(t, "Smith", employees[1].LastName)
+		assert.Len(t, mockHTTPClient.GetCalls, 1)
+	})
+
+	t.Run("successfully retrieves on-call employees with shift buffer", func(t *testing.T) {
 		mockResponse := employeeV1.OnCallEmployeesResponse{
 			Employees: []employeeV1.EmployeeResponse{
 				{
@@ -148,69 +193,71 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 					Email:     "john@example.com",
 					Username:  "johndoe",
 				},
-				{
-					ID:        2,
-					FirstName: "Jane",
-					LastName:  "Smith",
-					Email:     "jane@example.com",
-					Username:  "janesmith",
-				},
 			},
 		}
 
 		mockHTTPClient := &MockHTTPClient{
-			GetResponse: createMockResponse(http.StatusOK, mockResponse),
-			GetError:    nil,
+			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
+				assert.Equal(t, "/api/v1/employees/on-call?shift_buffer=1h0m0s", endpoint)
+				return createMockResponse(http.StatusOK, mockResponse), nil
+			},
 		}
 
-		// Create a test client with the mock
-		client := &testEmployeeClient{
-			httpClient: mockHTTPClient,
-			logger:     utils.NewTestLogger(),
-		}
-
-		employees, err := client.GetOnCallEmployees(context.Background(), 0)
-		assert.NoError(t, err)
-		assert.Len(t, employees, 2)
+		client := createTestEmployeeClient(mockHTTPClient)
+		employees, err := client.GetOnCallEmployees(context.Background(), time.Hour)
+		
+		require.NoError(t, err)
+		assert.Len(t, employees, 1)
 		assert.Equal(t, uint(1), employees[0].ID)
-		assert.Equal(t, "John", employees[0].FirstName)
-		assert.Equal(t, "Doe", employees[0].LastName)
-		assert.Equal(t, uint(2), employees[1].ID)
-		assert.Equal(t, "Jane", employees[1].FirstName)
-		assert.Equal(t, "Smith", employees[1].LastName)
+		assert.Len(t, mockHTTPClient.GetCalls, 1)
 	})
 
-	t.Run("it handles HTTP client error", func(t *testing.T) {
+	t.Run("handles HTTP client error", func(t *testing.T) {
 		mockHTTPClient := &MockHTTPClient{
-			GetResponse: nil,
-			GetError:    errors.New("network error"),
+			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
+				return nil, fmt.Errorf("network error")
+			},
 		}
 
-		client := &testEmployeeClient{
-			httpClient: mockHTTPClient,
-			logger:     utils.NewTestLogger(),
-		}
-
+		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetOnCallEmployees(context.Background(), 0)
+		
 		assert.Error(t, err)
 		assert.Nil(t, employees)
 		assert.Contains(t, err.Error(), "failed to get on-call employees")
+		assert.Contains(t, err.Error(), "network error")
 	})
 
-	t.Run("it handles non-200 status code", func(t *testing.T) {
+	t.Run("handles non-200 status code", func(t *testing.T) {
 		mockHTTPClient := &MockHTTPClient{
-			GetResponse: createMockResponse(http.StatusInternalServerError, nil),
-			GetError:    nil,
+			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
+				return createMockResponse(http.StatusInternalServerError, nil), nil
+			},
 		}
 
-		client := &testEmployeeClient{
-			httpClient: mockHTTPClient,
-			logger:     utils.NewTestLogger(),
-		}
-
+		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetOnCallEmployees(context.Background(), 0)
+		
 		assert.Error(t, err)
 		assert.Nil(t, employees)
 		assert.Contains(t, err.Error(), "employee service returned status 500")
+	})
+
+	t.Run("handles JSON decode error", func(t *testing.T) {
+		mockHTTPClient := &MockHTTPClient{
+			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader([]byte("invalid json"))),
+				}, nil
+			},
+		}
+
+		client := createTestEmployeeClient(mockHTTPClient)
+		employees, err := client.GetOnCallEmployees(context.Background(), 0)
+		
+		assert.Error(t, err)
+		assert.Nil(t, employees)
+		assert.Contains(t, err.Error(), "failed to decode response")
 	})
 }
