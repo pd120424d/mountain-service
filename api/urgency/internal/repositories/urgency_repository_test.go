@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
+	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -38,8 +39,8 @@ func TestUrgencyRepository_Create(t *testing.T) {
 		Email:        "test@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description",
-		Level:        model.High,
-		Status:       model.Open,
+		Level:        urgencyV1.High,
+		Status:       urgencyV1.Open,
 	}
 
 	err := repo.Create(urgency)
@@ -58,16 +59,16 @@ func TestUrgencyRepository_GetAll(t *testing.T) {
 		Email:        "test1@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description 1",
-		Level:        model.High,
-		Status:       "Open",
+		Level:        urgencyV1.High,
+		Status:       urgencyV1.Open,
 	}
 	urgency2 := &model.Urgency{
 		Name:         "Test Urgency 2",
 		Email:        "test2@example.com",
 		ContactPhone: "987654321",
 		Description:  "Test description 2",
-		Level:        model.Medium,
-		Status:       "In Progress",
+		Level:        urgencyV1.Medium,
+		Status:       urgencyV1.InProgress,
 	}
 
 	err := repo.Create(urgency1)
@@ -90,8 +91,8 @@ func TestUrgencyRepository_GetByID(t *testing.T) {
 		Email:        "test@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description",
-		Level:        model.High,
-		Status:       "Open",
+		Level:        urgencyV1.High,
+		Status:       urgencyV1.Open,
 	}
 
 	err := repo.Create(urgency)
@@ -114,15 +115,15 @@ func TestUrgencyRepository_Update(t *testing.T) {
 		Email:        "test@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description",
-		Level:        model.High,
-		Status:       model.Open,
+		Level:        urgencyV1.High,
+		Status:       urgencyV1.Open,
 	}
 
 	err := repo.Create(urgency)
 	require.NoError(t, err)
 
 	urgency.Name = "Updated Urgency"
-	urgency.Status = model.InProgress
+	urgency.Status = urgencyV1.InProgress
 
 	err = repo.Update(urgency)
 	assert.NoError(t, err)
@@ -131,7 +132,7 @@ func TestUrgencyRepository_Update(t *testing.T) {
 	err = repo.GetByID(urgency.ID, &updated)
 	require.NoError(t, err)
 	assert.Equal(t, "Updated Urgency", updated.Name)
-	assert.Equal(t, model.InProgress, updated.Status)
+	assert.Equal(t, urgencyV1.InProgress, updated.Status)
 }
 
 func TestUrgencyRepository_Delete(t *testing.T) {
@@ -144,8 +145,8 @@ func TestUrgencyRepository_Delete(t *testing.T) {
 		Email:        "test@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description",
-		Level:        model.High,
-		Status:       "Open",
+		Level:        urgencyV1.High,
+		Status:       urgencyV1.Open,
 	}
 
 	err := repo.Create(urgency)
@@ -171,24 +172,24 @@ func TestUrgencyRepository_List(t *testing.T) {
 		Email:        "rescue@example.com",
 		ContactPhone: "123456789",
 		Description:  "Mountain rescue needed",
-		Level:        model.Critical,
-		Status:       model.Open,
+		Level:        urgencyV1.Critical,
+		Status:       urgencyV1.Open,
 	}
 	urgency2 := &model.Urgency{
 		Name:         "Medical Help",
 		Email:        "medical@example.com",
 		ContactPhone: "987654321",
 		Description:  "Medical assistance required",
-		Level:        model.High,
-		Status:       model.InProgress,
+		Level:        urgencyV1.High,
+		Status:       urgencyV1.InProgress,
 	}
 	urgency3 := &model.Urgency{
 		Name:         "Equipment Issue",
 		Email:        "equipment@example.com",
 		ContactPhone: "555666777",
 		Description:  "Equipment malfunction",
-		Level:        model.Medium,
-		Status:       model.Resolved,
+		Level:        urgencyV1.Medium,
+		Status:       urgencyV1.Resolved,
 	}
 
 	require.NoError(t, repo.Create(urgency1))
@@ -292,16 +293,16 @@ func TestUrgencyRepository_ResetAllData(t *testing.T) {
 		Email:        "test1@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description 1",
-		Level:        model.High,
-		Status:       model.Open,
+		Level:        urgencyV1.High,
+		Status:       urgencyV1.Open,
 	}
 	urgency2 := &model.Urgency{
 		Name:         "Test Urgency 2",
 		Email:        "test2@example.com",
 		ContactPhone: "987654321",
 		Description:  "Test description 2",
-		Level:        model.Medium,
-		Status:       model.InProgress,
+		Level:        urgencyV1.Medium,
+		Status:       urgencyV1.InProgress,
 	}
 
 	require.NoError(t, repo.Create(urgency1))

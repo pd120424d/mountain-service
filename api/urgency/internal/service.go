@@ -3,6 +3,7 @@ package internal
 //go:generate mockgen -source=service.go -destination=service_gomock.go -package=internal mountain_service/urgency/internal -imports=gomock=go.uber.org/mock/gomock -typed
 
 import (
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
 )
@@ -17,15 +18,28 @@ type UrgencyService interface {
 }
 
 type urgencyService struct {
+	log  utils.Logger
 	repo repositories.UrgencyRepository
 }
 
-func NewUrgencyService(repo repositories.UrgencyRepository) UrgencyService {
-	return &urgencyService{repo: repo}
+func NewUrgencyService(log utils.Logger, repo repositories.UrgencyRepository) UrgencyService {
+	return &urgencyService{log: log.WithName("urgencyService"), repo: repo}
 }
 
 func (s *urgencyService) CreateUrgency(urgency *model.Urgency) error {
-	return s.repo.Create(urgency)
+	s.log.Infof("Creating urgency: %s", urgency.Name)
+	err := s.repo.Create(urgency)
+
+	if err != nil {
+		s.log.Errorf("Failed to create urgency: %v", err)
+		return err
+	}
+
+	// TODO: Fetch employees which are on call from the employee service
+	// TODO: Create assignments for the urgency and assign them to the employee
+	// TODO: Try to send notifications for the assignments
+
+	return nil
 }
 
 func (s *urgencyService) GetAllUrgencies() ([]model.Urgency, error) {

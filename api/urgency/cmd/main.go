@@ -13,11 +13,11 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gorilla/handlers"
+	"github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	_ "github.com/pd120424d/mountain-service/api/urgency/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/urgency/config"
 	"github.com/pd120424d/mountain-service/api/urgency/internal"
-	"github.com/pd120424d/mountain-service/api/urgency/internal/auth"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
 	swaggerFiles "github.com/swaggo/files"
@@ -67,7 +67,7 @@ func main() {
 	db := initDb(log, dbHost, dbPort, dbName)
 
 	urgencyRepo := repositories.NewUrgencyRepository(log, db)
-	urgencySvc := internal.NewUrgencyService(urgencyRepo)
+	urgencySvc := internal.NewUrgencyService(log, urgencyRepo)
 	urgencyHandler := internal.NewUrgencyHandler(log, urgencySvc)
 
 	r := gin.Default()

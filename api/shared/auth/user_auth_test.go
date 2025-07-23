@@ -83,11 +83,19 @@ func TestHashPassword(t *testing.T) {
 }
 
 func TestCheckPassword(t *testing.T) {
-	t.Run("It returns true when password matches", func(t *testing.T) {
+	t.Run("It returns true for correct password", func(t *testing.T) {
 		hashedPassword, err := HashPassword("password")
 		assert.NoError(t, err)
 
-		match := CheckPassword(hashedPassword, "password")
-		assert.True(t, match)
+		result := CheckPassword(hashedPassword, "password")
+		assert.True(t, result)
+	})
+
+	t.Run("It returns false for incorrect password", func(t *testing.T) {
+		hashedPassword, err := HashPassword("password")
+		assert.NoError(t, err)
+
+		result := CheckPassword(hashedPassword, "wrongpassword")
+		assert.False(t, result)
 	})
 }

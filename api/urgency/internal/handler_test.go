@@ -15,6 +15,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
+	urgencyv1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 )
@@ -42,13 +43,13 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 	router.POST("/urgencies", handler.CreateUrgency)
 
 	t.Run("it creates a new urgency successfully", func(t *testing.T) {
-		req := model.UrgencyCreateRequest{
+		req := urgencyv1.UrgencyCreateRequest{
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
-			Level:        model.High,
+			Level:        urgencyv1.High,
 		}
 
 		mockSvc.EXPECT().CreateUrgency(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
@@ -67,13 +68,13 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, w.Code)
 
-		var response model.UrgencyResponse
+		var response urgencyv1.UrgencyResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Equal(t, uint(1), response.ID)
 		assert.Equal(t, "Test Urgency", response.Name)
 		assert.Equal(t, "N 43.401123 E 22.662756", response.Location)
-		assert.Equal(t, "Open", string(response.Status))
+		assert.Equal(t, "open", string(response.Status))
 	})
 
 	t.Run("it returns an error when JSON is invalid", func(t *testing.T) {
@@ -88,13 +89,13 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 	})
 
 	t.Run("it returns an error when validation fails", func(t *testing.T) {
-		req := model.UrgencyCreateRequest{
+		req := urgencyv1.UrgencyCreateRequest{
 			Name:         "", // Missing required field
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
-			Level:        model.High,
+			Level:        urgencyv1.High,
 		}
 
 		body, _ := json.Marshal(req)
@@ -109,13 +110,13 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 	})
 
 	t.Run("it returns an error when repository fails", func(t *testing.T) {
-		req := model.UrgencyCreateRequest{
+		req := urgencyv1.UrgencyCreateRequest{
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
-			Level:        model.High,
+			Level:        urgencyv1.High,
 		}
 
 		mockSvc.EXPECT().CreateUrgency(gomock.Any()).Return(errors.New("database error"))
@@ -147,8 +148,8 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 				ContactPhone: "123456789",
 				Location:     "N 43.401123 E 22.662756",
 				Description:  "Description 1",
-				Level:        model.High,
-				Status:       model.Open,
+				Level:        urgencyv1.High,
+				Status:       urgencyv1.Open,
 			},
 			{
 				ID:           2,
@@ -157,8 +158,8 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 				ContactPhone: "987654321",
 				Location:     "N 43.401123 E 22.662756",
 				Description:  "Description 2",
-				Level:        model.Medium,
-				Status:       model.InProgress,
+				Level:        urgencyv1.Medium,
+				Status:       urgencyv1.InProgress,
 			},
 		}
 		urgencies[0].CreatedAt = time.Now()
@@ -175,7 +176,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response []model.UrgencyResponse
+		var response []urgencyv1.UrgencyResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Len(t, response, 2)
@@ -193,7 +194,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response []model.UrgencyResponse
+		var response []urgencyv1.UrgencyResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Len(t, response, 0)
@@ -226,8 +227,8 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
-			Level:        model.High,
-			Status:       model.Open,
+			Level:        urgencyv1.High,
+			Status:       urgencyv1.Open,
 		}
 		urgency.CreatedAt = time.Now()
 		urgency.UpdatedAt = time.Now()
@@ -240,8 +241,8 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 				ContactPhone: "123456789",
 				Location:     "N 43.401123 E 22.662756",
 				Description:  "Test description",
-				Level:        model.High,
-				Status:       model.Open,
+				Level:        urgencyv1.High,
+				Status:       urgencyv1.Open,
 			}
 			urgency.CreatedAt = time.Now()
 			urgency.UpdatedAt = time.Now()
@@ -255,7 +256,7 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response model.UrgencyResponse
+		var response urgencyv1.UrgencyResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Equal(t, uint(1), response.ID)
@@ -293,10 +294,10 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 	router.PUT("/urgencies/:id", handler.UpdateUrgency)
 
 	t.Run("it updates an urgency successfully", func(t *testing.T) {
-		req := model.UrgencyUpdateRequest{
+		req := urgencyv1.UrgencyUpdateRequest{
 			Name:   "Updated Urgency",
 			Email:  "updated@example.com", // Include valid email to avoid Gin validation error
-			Status: model.InProgress,
+			Status: urgencyv1.InProgress,
 		}
 
 		existingUrgency := model.Urgency{
@@ -306,8 +307,8 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
-			Level:        model.High,
-			Status:       model.Open,
+			Level:        urgencyv1.High,
+			Status:       urgencyv1.Open,
 		}
 		existingUrgency.CreatedAt = time.Now()
 		existingUrgency.UpdatedAt = time.Now()
@@ -330,15 +331,15 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response model.UrgencyResponse
+		var response urgencyv1.UrgencyResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Equal(t, "Updated Urgency", response.Name)
-		assert.Equal(t, "In Progress", string(response.Status))
+		assert.Equal(t, "in_progress", string(response.Status))
 	})
 
 	t.Run("it returns an error when ID is invalid", func(t *testing.T) {
-		req := model.UrgencyUpdateRequest{Name: "Updated"}
+		req := urgencyv1.UrgencyUpdateRequest{Name: "Updated"}
 		body, _ := json.Marshal(req)
 
 		w := httptest.NewRecorder()
@@ -363,7 +364,7 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 	})
 
 	t.Run("it returns an error when validation fails", func(t *testing.T) {
-		req := model.UrgencyUpdateRequest{
+		req := urgencyv1.UrgencyUpdateRequest{
 			Email: "invalid-email", // Invalid email format
 		}
 
@@ -379,7 +380,7 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 	})
 
 	t.Run("it returns an error when urgency is not found", func(t *testing.T) {
-		req := model.UrgencyUpdateRequest{
+		req := urgencyv1.UrgencyUpdateRequest{
 			Name:  "Updated",
 			Email: "valid@example.com", // Include valid email
 		}
@@ -398,7 +399,7 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 	})
 
 	t.Run("it returns an error when repository fails", func(t *testing.T) {
-		req := model.UrgencyUpdateRequest{
+		req := urgencyv1.UrgencyUpdateRequest{
 			Name:  "Updated",
 			Email: "valid@example.com", // Include valid email
 		}

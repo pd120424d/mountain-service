@@ -7,9 +7,10 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the urgency service and shared code (relative to context ./api)
+# Copy the urgency service, shared code, and contracts (relative to context ./api)
 COPY urgency/ ./urgency/
 COPY shared/ ./shared/
+COPY contracts/ ./contracts/
 
 # Copy Swagger docs
 COPY urgency/cmd/docs/ ./docs/

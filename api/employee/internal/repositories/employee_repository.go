@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
+	"github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	"gorm.io/gorm"
@@ -35,7 +36,7 @@ func NewEmployeeRepository(log utils.Logger, db *gorm.DB) EmployeeRepository {
 
 // Create creates and employee with the hashed version of its password.
 func (r *employeeRepository) Create(employee *model.Employee) error {
-	hashedPassword, err := utils.HashPassword(employee.Password)
+	hashedPassword, err := auth.HashPassword(employee.Password)
 	if err != nil {
 		return err
 	}

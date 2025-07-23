@@ -7,9 +7,10 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the employee service and shared code (relative to context ./api)
+# Copy the employee service, shared code, and contracts (relative to context ./api)
 COPY employee/ ./employee/
 COPY shared/ ./shared/
+COPY contracts/ ./contracts/
 
 # Copy Swagger docs
 COPY employee/cmd/docs/ ./docs/

@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
+// AuthMiddleware creates a middleware that validates user JWT tokens
 func AuthMiddleware(log utils.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
@@ -38,6 +38,7 @@ func AuthMiddleware(log utils.Logger) gin.HandlerFunc {
 	}
 }
 
+// AdminMiddleware creates a middleware that validates admin JWT tokens
 func AdminMiddleware(log utils.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")

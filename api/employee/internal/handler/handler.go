@@ -10,9 +10,9 @@ import (
 	"go.uber.org/zap"
 
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
-	"github.com/pd120424d/mountain-service/api/employee/internal/auth"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
+	sharedAuth "github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
@@ -163,16 +163,16 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		return
 	}
 
-	if auth.IsAdminLogin(req.Username) {
+	if sharedAuth.IsAdminLogin(req.Username) {
 		h.log.Info("Admin login attempt detected")
 
-		if !auth.ValidateAdminPassword(req.Password) {
+		if !sharedAuth.ValidateAdminPassword(req.Password) {
 			h.log.Error("Invalid admin password")
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 			return
 		}
 
-		token, err := auth.GenerateAdminJWT()
+		token, err := sharedAuth.GenerateAdminJWT()
 		if err != nil {
 			h.log.Errorf("failed to generate admin token: %v", err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
@@ -191,13 +191,13 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		return
 	}
 
-	if !auth.CheckPassword(employee.Password, req.Password) {
+	if !sharedAuth.CheckPassword(employee.Password, req.Password) {
 		h.log.Error("failed to verify password")
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	token, err := auth.GenerateJWT(employee.ID, employee.Role())
+	token, err := sharedAuth.GenerateJWT(employee.ID, employee.Role())
 	if err != nil {
 		h.log.Errorf("failed to generate token: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})

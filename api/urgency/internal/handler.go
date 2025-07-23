@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 )
@@ -35,13 +36,13 @@ func NewUrgencyHandler(log utils.Logger, svc UrgencyService) UrgencyHandler {
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
-// @Param urgency body model.UrgencyCreateRequest true "Urgency data"
-// @Success 201 {object} model.UrgencyResponse
+// @Param urgency body urgencyV1.UrgencyCreateRequest true "Urgency data"
+// @Success 201 {object} urgencyV1.UrgencyResponse
 // @Router /urgencies [post]
 func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 	h.log.Info("Received Create Urgency request")
 
-	var req model.UrgencyCreateRequest
+	var req urgencyV1.UrgencyCreateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.log.Errorf("failed to bind JSON: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -60,8 +61,8 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 		ContactPhone: req.ContactPhone,
 		Location:     req.Location,
 		Description:  req.Description,
-		Level:        req.Level,
-		Status:       model.Open,
+		Level:        urgencyV1.High,
+		Status:       urgencyV1.Open,
 	}
 
 	if err := h.svc.CreateUrgency(&urgency); err != nil {
@@ -81,7 +82,7 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 // @Tags urgency
 // @Security BearerAuth
 // @Produce  json
-// @Success 200 {array} []model.UrgencyResponse
+// @Success 200 {array} []urgencyV1.UrgencyResponse
 // @Router /urgencies [get]
 func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 	h.log.Info("Received List Urgencies request")
@@ -93,7 +94,7 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 		return
 	}
 
-	response := make([]model.UrgencyResponse, 0)
+	response := make([]urgencyV1.UrgencyResponse, 0)
 	for _, urgency := range urgencies {
 		response = append(response, urgency.ToResponse())
 	}
@@ -109,7 +110,7 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 // @Security BearerAuth
 // @Produce  json
 // @Param id path int true "Urgency ID"
-// @Success 200 {object} model.UrgencyResponse
+// @Success 200 {object} urgencyV1.UrgencyResponse
 // @Router /urgencies/{id} [get]
 func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 	h.log.Info("Received Get Urgency request")
@@ -142,8 +143,8 @@ func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "Urgency ID"
-// @Param urgency body model.UrgencyUpdateRequest true "Updated urgency data"
-// @Success 200 {object} model.UrgencyResponse
+// @Param urgency body urgencyV1.UrgencyUpdateRequest true "Updated urgency data"
+// @Success 200 {object} urgencyV1.UrgencyResponse
 // @Router /urgencies/{id} [put]
 func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 	h.log.Info("Received Update Urgency request")
@@ -156,7 +157,7 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 		return
 	}
 
-	var req model.UrgencyUpdateRequest
+	var req urgencyV1.UrgencyUpdateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.log.Errorf("failed to bind JSON: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -193,10 +194,10 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 		urgency.Description = req.Description
 	}
 	if req.Level != "" {
-		urgency.Level = req.Level
+		urgency.Level = urgencyV1.UrgencyLevel(req.Level)
 	}
 	if req.Status != "" {
-		urgency.Status = req.Status
+		urgency.Status = urgencyV1.UrgencyStatus(req.Status)
 	}
 
 	if err := h.svc.UpdateUrgency(urgency); err != nil {

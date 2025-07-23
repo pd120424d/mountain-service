@@ -13,10 +13,10 @@ import (
 
 	_ "github.com/pd120424d/mountain-service/api/employee/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/employee/config"
-	"github.com/pd120424d/mountain-service/api/employee/internal/auth"
 	"github.com/pd120424d/mountain-service/api/employee/internal/handler"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
+	"github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	// Import contracts for Swagger documentation
