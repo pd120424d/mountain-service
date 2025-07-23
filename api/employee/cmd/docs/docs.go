@@ -38,19 +38,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.MessageResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.MessageResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     }
                 }
@@ -79,7 +79,7 @@ const docTemplate = `{
                             "items": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/definitions/model.EmployeeResponse"
+                                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse"
                                 }
                             }
                         }
@@ -105,7 +105,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.EmployeeCreateRequest"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeCreateRequest"
                         }
                     }
                 ],
@@ -113,13 +113,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/model.EmployeeResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     }
                 }
@@ -150,19 +150,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.OnCallEmployeesResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.OnCallEmployeesResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     }
                 }
@@ -194,7 +194,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.EmployeeUpdateRequest"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeUpdateRequest"
                         }
                     }
                 ],
@@ -202,25 +202,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.EmployeeResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     }
                 }
@@ -252,7 +252,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     }
                 }
@@ -284,25 +284,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.ActiveEmergenciesResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ActiveEmergenciesResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     }
                 }
@@ -335,7 +335,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.ShiftResponse"
+                                "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftResponse"
                             }
                         }
                     }
@@ -366,7 +366,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.AssignShiftRequest"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.AssignShiftRequest"
                         }
                     }
                 ],
@@ -374,13 +374,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/model.AssignShiftResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.AssignShiftResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     }
                 }
@@ -410,7 +410,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.RemoveShiftRequest"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.RemoveShiftRequest"
                         }
                     }
                 ],
@@ -421,7 +421,7 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     }
                 }
@@ -447,7 +447,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.EmployeeLogin"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeLogin"
                         }
                     }
                 ],
@@ -455,13 +455,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.TokenResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.TokenResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     }
                 }
@@ -491,13 +491,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.ShiftAvailabilityResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
                         }
                     }
                 }
@@ -505,7 +505,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.ActiveEmergenciesResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ActiveEmergenciesResponse": {
             "type": "object",
             "properties": {
                 "hasActiveEmergencies": {
@@ -513,7 +513,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.AssignShiftRequest": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.AssignShiftRequest": {
             "type": "object",
             "required": [
                 "shiftDate",
@@ -524,12 +524,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "shiftType": {
-                    "type": "string"
+                    "type": "integer",
+                    "maximum": 3,
+                    "minimum": 1
                 }
             }
         },
-        "model.AssignShiftResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.AssignShiftResponse": {
             "type": "object",
+            "required": [
+                "id",
+                "shiftDate",
+                "shiftType"
+            ],
             "properties": {
                 "id": {
                     "type": "integer"
@@ -538,11 +545,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "shiftType": {
-                    "type": "string"
+                    "type": "integer"
                 }
             }
         },
-        "model.EmployeeCreateRequest": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeCreateRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -583,7 +590,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.EmployeeLogin": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeLogin": {
             "type": "object",
             "properties": {
                 "password": {
@@ -594,7 +601,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.EmployeeResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse": {
             "type": "object",
             "properties": {
                 "email": {
@@ -616,6 +623,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "profilePicture": {
+                    "description": "this may be represented as a byte array if we read the picture from somewhere for an example",
                     "type": "string"
                 },
                 "profileType": {
@@ -626,7 +634,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.EmployeeUpdateRequest": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeUpdateRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -649,10 +657,13 @@ const docTemplate = `{
                 },
                 "profileType": {
                     "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
-        "model.ErrorResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -660,7 +671,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.MessageResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.MessageResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -668,18 +679,18 @@ const docTemplate = `{
                 }
             }
         },
-        "model.OnCallEmployeesResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.OnCallEmployeesResponse": {
             "type": "object",
             "properties": {
                 "employees": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.EmployeeResponse"
+                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse"
                     }
                 }
             }
         },
-        "model.RemoveShiftRequest": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.RemoveShiftRequest": {
             "type": "object",
             "required": [
                 "shiftDate",
@@ -690,11 +701,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "shiftType": {
-                    "type": "string"
+                    "type": "integer",
+                    "maximum": 3,
+                    "minimum": 1
                 }
             }
         },
-        "model.ShiftAvailabilityPerDay": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability": {
             "type": "object",
             "properties": {
                 "available": {
@@ -708,29 +721,32 @@ const docTemplate = `{
                 }
             }
         },
-        "model.ShiftAvailabilityResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay": {
+            "type": "object",
+            "properties": {
+                "shift1": {
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
+                },
+                "shift2": {
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
+                },
+                "shift3": {
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityResponse": {
             "type": "object",
             "properties": {
                 "days": {
                     "type": "object",
                     "additionalProperties": {
-                        "type": "object",
-                        "properties": {
-                            "shift1": {
-                                "$ref": "#/definitions/model.ShiftAvailabilityPerDay"
-                            },
-                            "shift2": {
-                                "$ref": "#/definitions/model.ShiftAvailabilityPerDay"
-                            },
-                            "shift3": {
-                                "$ref": "#/definitions/model.ShiftAvailabilityPerDay"
-                            }
-                        }
+                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay"
                     }
                 }
             }
         },
-        "model.ShiftResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftResponse": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -743,15 +759,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "shiftType": {
-                    "type": "string"
+                    "description": "1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, \u003c 1 or \u003e 3: invalid",
+                    "type": "integer"
                 }
             }
         },
-        "model.TokenResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.TokenResponse": {
             "type": "object",
             "properties": {
                 "token": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 }
             }
         }
