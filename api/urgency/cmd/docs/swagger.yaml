@@ -90,7 +90,7 @@ info:
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  title: API Сервис за Хитности
+  title: API Сервис за Ургентне ситуације
   version: "1.0"
 paths:
   /admin/urgencies/reset:

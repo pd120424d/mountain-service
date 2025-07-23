@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "title": "API Сервис за Хитности",
+        "title": "API Сервис за Ургентне ситуације",
         "contact": {},
         "license": {
             "name": "MIT",

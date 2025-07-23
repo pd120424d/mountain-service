@@ -1,14 +1,5 @@
 {
-    "TITLE": "Upravljanje zaposlenima",
-    "EMPLOYEES": "Zaposleni",
-    "ADD_EMPLOYEE": "Dodaj zaposlenog",
-    "EDIT_EMPLOYEE": "Izmeni zaposlenog",
-    "DELETE_EMPLOYEE": "Obriši zaposlenog",
     "GO_HOME": "Vratite se na početnu stranicu",
-    "LANGUAGE": {
-        "ENGLISH": "Engleski",
-        "SERBIAN": "Srpski"
-    },
     "HOME": {
         "WELCOME": "Dobrodošli u Sistem Upravljanja Gorske Službe",
         "DESCRIPTION": "Platforma za efikasno upravljanje smenama i hitnim situacijama"
@@ -29,9 +20,7 @@
         "ADMIN_PANEL": {
             "TITLE": "Admin Panel",
             "DESCRIPTION": "Administracija sistema i upravljanje podacima"
-        },
-        "EMPLOYEES": "Zaposleni",
-        "SHIFTS": "Smene"
+        }
     },
     "EMPLOYEE_LIST": {
         "TITLE": "Spisak zaposlenih",
@@ -158,6 +147,23 @@
         "REQUIRED": "Ovo polje je obavezno",
         "INVALID_EMAIL": "Molimo unesite ispravan e-mail",
         "MIN_LENGTH": "Ovo polje je prekratko"
+    },
+    "URGENCY_FORM": {
+        "TITLE": "Urgentna Situacija",
+        "NAME": "Naziv",
+        "EMAIL": "E-mail",
+        "CONTACT_PHONE": "Kontakt telefon",
+        "LOCATION": "Lokacija",
+        "DESCRIPTION": "Opis",
+        "LEVEL": "Nivo urgentnosti",
+        "SAVE": "Sačuvaj",
+        "CANCEL": "Otkaži",
+        "SUBMITTING": "Slanje...",
+        "NAME_PLACEHOLDER": "Unesite ime prijavioca",
+        "EMAIL_PLACEHOLDER": "Unesite e-mail adresu",
+        "CONTACT_PHONE_PLACEHOLDER": "Unesite kontakt telefon",
+        "LOCATION_PLACEHOLDER": "Unesite lokaciju incidenta",
+        "DESCRIPTION_PLACEHOLDER": "Opišite situaciju detaljno"
     },
     "URGENCY_LEVEL": {
         "LOW": "Nisak",

@@ -1,14 +1,5 @@
 {
-    "TITLE": "Employee Management",
-    "EMPLOYEES": "Employees",
-    "ADD_EMPLOYEE": "Add Employee",
-    "EDIT_EMPLOYEE": "Edit Employee",
-    "DELETE_EMPLOYEE": "Delete Employee",
     "GO_HOME": "Return to Home Page",
-    "LANGUAGE": {
-        "ENGLISH": "English",
-        "SERBIAN": "Serbian"
-    },
     "HOME": {
         "WELCOME": "Welcome to the Mountain Rescue Management System",
         "DESCRIPTION": "A platform for efficient shift management and handling emergencies"
@@ -29,9 +20,7 @@
         "ADMIN_PANEL": {
             "TITLE": "Admin Panel",
             "DESCRIPTION": "System administration and data management"
-        },
-        "EMPLOYEES": "Employees",
-        "SHIFTS": "Shifts"
+        }
     },
     "EMPLOYEE_LIST": {
         "TITLE": "Employee List",
