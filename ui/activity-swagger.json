@@ -1,0 +1,237 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Activity Service API",
+    "version": "1.0.0",
+    "description": "Mountain Rescue Activity Logging API"
+  },
+  "host": "localhost:8084",
+  "basePath": "/api/v1",
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "definitions": {
+    "ActivityType": {
+      "type": "string",
+      "enum": [
+        "employee_created",
+        "employee_updated", 
+        "employee_deleted",
+        "employee_login",
+        "shift_assigned",
+        "shift_removed",
+        "urgency_created",
+        "urgency_updated",
+        "urgency_deleted",
+        "emergency_assigned",
+        "emergency_accepted",
+        "emergency_declined",
+        "notification_sent",
+        "notification_failed",
+        "system_reset"
+      ]
+    },
+    "ActivityLevel": {
+      "type": "string",
+      "enum": ["info", "warning", "error", "critical"]
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "MessageResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "ActivityResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "type": {
+          "$ref": "#/definitions/ActivityType"
+        },
+        "level": {
+          "$ref": "#/definitions/ActivityLevel"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "actorId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "actorName": {
+          "type": "string"
+        },
+        "targetId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "targetType": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ActivityCreateRequest": {
+      "type": "object",
+      "required": ["type", "level", "title", "description"],
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/ActivityType"
+        },
+        "level": {
+          "$ref": "#/definitions/ActivityLevel"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "actorId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "actorName": {
+          "type": "string"
+        },
+        "targetId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "targetType": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "string"
+        }
+      }
+    },
+    "ActivityListRequest": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/ActivityType"
+        },
+        "level": {
+          "$ref": "#/definitions/ActivityLevel"
+        },
+        "actorId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "targetId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "targetType": {
+          "type": "string"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "page": {
+          "type": "integer"
+        },
+        "pageSize": {
+          "type": "integer"
+        }
+      }
+    },
+    "ActivityListResponse": {
+      "type": "object",
+      "properties": {
+        "activities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ActivityResponse"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "page": {
+          "type": "integer"
+        },
+        "pageSize": {
+          "type": "integer"
+        },
+        "totalPages": {
+          "type": "integer"
+        }
+      }
+    },
+    "ActivityStatsResponse": {
+      "type": "object",
+      "properties": {
+        "totalActivities": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "activitiesByType": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "activitiesByLevel": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "recentActivities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ActivityResponse"
+          }
+        },
+        "activitiesLast24h": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "activitiesLast7Days": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "activitiesLast30Days": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    }
+  }
+}

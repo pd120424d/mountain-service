@@ -4,7 +4,8 @@ import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
-import { Urgency, UrgencyLevel, Status } from '../urgency.model';
+import { Urgency } from '../../shared/models';
+import { UrgencyLevel as GeneratedUrgencyLevel, UrgencyStatus as GeneratedUrgencyStatus } from '../../shared/models/generated/urgency';
 
 @Component({
   selector: 'app-urgency-list',
@@ -18,8 +19,8 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   isLoading = true;
   error: string | null = null;
 
-  UrgencyLevel = UrgencyLevel;
-  Status = Status;
+  UrgencyLevel = GeneratedUrgencyLevel;
+  Status = GeneratedUrgencyStatus;
 
   constructor(
     private urgencyService: UrgencyService,
@@ -54,30 +55,30 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
     console.log('Viewing urgency:', id);
   }
 
-  getStatusClass(status: Status): string {
+  getStatusClass(status: GeneratedUrgencyStatus): string {
     switch (status) {
-      case Status.OPEN:
+      case GeneratedUrgencyStatus.Open:
         return 'status-open';
-      case Status.IN_PROGRESS:
+      case GeneratedUrgencyStatus.InProgress:
         return 'status-in-progress';
-      case Status.RESOLVED:
+      case GeneratedUrgencyStatus.Resolved:
         return 'status-resolved';
-      case Status.CLOSED:
+      case GeneratedUrgencyStatus.Closed:
         return 'status-closed';
       default:
         return '';
     }
   }
 
-  getLevelClass(level: UrgencyLevel): string {
+  getLevelClass(level: GeneratedUrgencyLevel): string {
     switch (level) {
-      case UrgencyLevel.LOW:
+      case GeneratedUrgencyLevel.Low:
         return 'level-low';
-      case UrgencyLevel.MEDIUM:
+      case GeneratedUrgencyLevel.Medium:
         return 'level-medium';
-      case UrgencyLevel.HIGH:
+      case GeneratedUrgencyLevel.High:
         return 'level-high';
-      case UrgencyLevel.CRITICAL:
+      case GeneratedUrgencyLevel.Critical:
         return 'level-critical';
       default:
         return '';

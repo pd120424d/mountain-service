@@ -30,7 +30,7 @@
           <span *ngIf="!employee.profilePicture">{{ 'EMPLOYEE_LIST.NO_PICTURE' | translate }}</span>
         </td>
         <td>
-          <button (click)="openDeleteDialog(employee.id)">{{ 'EMPLOYEE_LIST.DELETE' | translate }}</button>
+          <button (click)="openDeleteDialog(employee.id!)">{{ 'EMPLOYEE_LIST.DELETE' | translate }}</button>
           <button [disabled]=true title="{{ 'EMPLOYEE_LIST.EDIT_DISABLED' | translate }}">{{ 'EMPLOYEE_LIST.EDIT' | translate }}</button>
         </td>
       </tr>

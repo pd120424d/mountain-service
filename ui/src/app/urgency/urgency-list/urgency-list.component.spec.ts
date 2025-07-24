@@ -7,7 +7,8 @@ import { of, throwError } from 'rxjs';
 
 import { UrgencyListComponent } from './urgency-list.component';
 import { UrgencyService } from '../urgency.service';
-import { Urgency, UrgencyLevel, Status } from '../urgency.model';
+import { Urgency } from '../../shared/models';
+import { UrgencyLevel, UrgencyStatus } from '../../shared/models/generated/urgency';
 
 describe('UrgencyListComponent', () => {
   let component: UrgencyListComponent;
@@ -22,8 +23,8 @@ describe('UrgencyListComponent', () => {
       contactPhone: '1234567890',
       location: 'Test Location 1',
       description: 'Test Description 1',
-      level: UrgencyLevel.HIGH,
-      status: Status.OPEN,
+      level: UrgencyLevel.High,
+      status: UrgencyStatus.Open,
       createdAt: '2024-01-15T10:00:00Z',
       updatedAt: '2024-01-15T10:00:00Z'
     },
@@ -34,8 +35,8 @@ describe('UrgencyListComponent', () => {
       contactPhone: '0987654321',
       location: 'Test Location 2',
       description: 'Test Description 2',
-      level: UrgencyLevel.CRITICAL,
-      status: Status.IN_PROGRESS,
+      level: UrgencyLevel.Critical,
+      status: UrgencyStatus.InProgress,
       createdAt: '2024-01-16T11:00:00Z',
       updatedAt: '2024-01-16T11:00:00Z'
     }
@@ -98,16 +99,16 @@ describe('UrgencyListComponent', () => {
   });
 
   it('should return correct status class', () => {
-    expect(component.getStatusClass(Status.OPEN)).toBe('status-open');
-    expect(component.getStatusClass(Status.IN_PROGRESS)).toBe('status-in-progress');
-    expect(component.getStatusClass(Status.RESOLVED)).toBe('status-resolved');
-    expect(component.getStatusClass(Status.CLOSED)).toBe('status-closed');
+    expect(component.getStatusClass(UrgencyStatus.Open)).toBe('status-open');
+    expect(component.getStatusClass(UrgencyStatus.InProgress)).toBe('status-in-progress');
+    expect(component.getStatusClass(UrgencyStatus.Resolved)).toBe('status-resolved');
+    expect(component.getStatusClass(UrgencyStatus.Closed)).toBe('status-closed');
   });
 
   it('should return correct level class', () => {
-    expect(component.getLevelClass(UrgencyLevel.LOW)).toBe('level-low');
-    expect(component.getLevelClass(UrgencyLevel.MEDIUM)).toBe('level-medium');
-    expect(component.getLevelClass(UrgencyLevel.HIGH)).toBe('level-high');
-    expect(component.getLevelClass(UrgencyLevel.CRITICAL)).toBe('level-critical');
+    expect(component.getLevelClass(UrgencyLevel.Low)).toBe('level-low');
+    expect(component.getLevelClass(UrgencyLevel.Medium)).toBe('level-medium');
+    expect(component.getLevelClass(UrgencyLevel.High)).toBe('level-high');
+    expect(component.getLevelClass(UrgencyLevel.Critical)).toBe('level-critical');
   });
 });

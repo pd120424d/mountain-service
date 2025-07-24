@@ -9,7 +9,11 @@
     "test": "ng test --watch=false --code-coverage --browsers=ChromeHeadlessNoSandbox",
     "generate-models": "node scripts/generate-models.js",
     "generate-employee-models": "swagger-typescript-api generate -p http://localhost:8082/swagger.json -o src/app/shared/models/generated/employee --modular",
-    "generate-employee-models-local": "swagger-typescript-api generate -p employee-swagger.json -o src/app/shared/models/generated/employee --modular"
+    "generate-employee-models-local": "swagger-typescript-api generate -p employee-swagger.json -o src/app/shared/models/generated/employee --modular",
+    "generate-urgency-models": "swagger-typescript-api generate -p http://localhost:8083/swagger.json -o src/app/shared/models/generated/urgency --modular",
+    "generate-urgency-models-local": "swagger-typescript-api generate -p urgency-swagger.json -o src/app/shared/models/generated/urgency --modular",
+    "generate-activity-models": "swagger-typescript-api generate -p http://localhost:8084/swagger.json -o src/app/shared/models/generated/activity --modular",
+    "generate-activity-models-local": "swagger-typescript-api generate -p activity-swagger.json -o src/app/shared/models/generated/activity --modular"
   },
   "private": true,
   "dependencies": {

@@ -6,7 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
-import { UrgencyCreateRequest, UrgencyLevel } from '../urgency.model';
+import { UrgencyCreateRequest, UrgencyLevel } from '../../shared/models';
 
 @Component({
   selector: 'app-urgency-form',

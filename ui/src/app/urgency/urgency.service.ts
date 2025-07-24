@@ -4,7 +4,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Urgency, UrgencyCreateRequest, UrgencyUpdateRequest } from './urgency.model';
+import { Urgency, UrgencyCreateRequest, UrgencyUpdateRequest } from '../shared/models';
 
 @Injectable({
   providedIn: 'root',

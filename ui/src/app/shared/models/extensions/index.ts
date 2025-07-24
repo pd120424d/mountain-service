@@ -3,3 +3,9 @@
 
 // Employee extensions
 export * from './employee-extensions';
+
+// Urgency extensions
+export * from './urgency-extensions';
+
+// Activity extensions
+export * from './activity-extensions';

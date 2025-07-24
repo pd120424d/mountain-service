@@ -38,18 +38,18 @@
           <td>{{ urgency.name }}</td>
           <td>{{ urgency.location }}</td>
           <td>
-            <span class="level-badge" [ngClass]="getLevelClass(urgency.level)">
-              {{ 'URGENCY_LEVEL.' + urgency.level.toUpperCase() | translate }}
+            <span class="level-badge" [ngClass]="getLevelClass(urgency.level!)">
+              {{ 'URGENCY_LEVEL.' + urgency.level?.toUpperCase() | translate }}
             </span>
           </td>
           <td>
-            <span class="status-badge" [ngClass]="getStatusClass(urgency.status)">
-              {{ 'URGENCY_STATUS.' + urgency.status.toUpperCase().replace(' ', '_') | translate }}
+            <span class="status-badge" [ngClass]="getStatusClass(urgency.status!)">
+              {{ 'URGENCY_STATUS.' + (urgency.status?.toUpperCase()?.replace(' ', '_') || 'UNKNOWN') | translate }}
             </span>
           </td>
-          <td>{{ formatDate(urgency.createdAt) }}</td>
+          <td>{{ formatDate(urgency.createdAt!) }}</td>
           <td class="actions">
-            <button class="btn btn-sm btn-info" (click)="viewUrgency(urgency.id)"
+            <button class="btn btn-sm btn-info" (click)="viewUrgency(urgency.id!)"
               [title]="'URGENCY_LIST.VIEW' | translate">
               {{ 'URGENCY_LIST.VIEW' | translate }}
             </button>

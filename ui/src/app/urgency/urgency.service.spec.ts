@@ -3,7 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { UrgencyService } from './urgency.service';
-import { Urgency, UrgencyCreateRequest, UrgencyUpdateRequest, UrgencyLevel, Status } from './urgency.model';
+import { Urgency, UrgencyCreateRequest, UrgencyUpdateRequest } from '../shared/models';
+import { UrgencyLevel as GeneratedUrgencyLevel, UrgencyStatus as GeneratedUrgencyStatus } from '../shared/models/generated/urgency';
 import { environment } from '../../environments/environment';
 
 describe('UrgencyService', () => {
@@ -44,8 +45,8 @@ describe('UrgencyService', () => {
         contactPhone: '1234567890',
         location: 'Location 1',
         description: 'Description 1',
-        level: UrgencyLevel.MEDIUM,
-        status: Status.OPEN,
+        level: GeneratedUrgencyLevel.Medium,
+        status: GeneratedUrgencyStatus.Open,
         createdAt: '2024-01-15',
         updatedAt: '2024-01-15'
       },
@@ -56,8 +57,8 @@ describe('UrgencyService', () => {
         contactPhone: '0987654321',
         location: 'Location 2',
         description: 'Description 2',
-        level: UrgencyLevel.HIGH,
-        status: Status.IN_PROGRESS,
+        level: GeneratedUrgencyLevel.High,
+        status: GeneratedUrgencyStatus.InProgress,
         createdAt: '2024-01-16',
         updatedAt: '2024-01-16'
       }
@@ -80,8 +81,8 @@ describe('UrgencyService', () => {
       contactPhone: '1234567890',
       location: 'Location 1',
       description: 'Description 1',
-      level: UrgencyLevel.MEDIUM,
-      status: Status.OPEN,
+      level: GeneratedUrgencyLevel.Medium,
+      status: GeneratedUrgencyStatus.Open,
       createdAt: '2024-01-15',
       updatedAt: '2024-01-15'
     };
@@ -102,7 +103,7 @@ describe('UrgencyService', () => {
       contactPhone: '1234567890',
       location: 'Location 1',
       description: 'Description 1',
-      level: UrgencyLevel.MEDIUM
+      level: GeneratedUrgencyLevel.Medium
     };
 
     const mockUrgencyResponse: Urgency = {
@@ -112,8 +113,8 @@ describe('UrgencyService', () => {
       contactPhone: '1234567890',
       location: 'Location 1',
       description: 'Description 1',
-      level: UrgencyLevel.MEDIUM,
-      status: Status.OPEN,
+      level: GeneratedUrgencyLevel.Medium,
+      status: GeneratedUrgencyStatus.Open,
       createdAt: '2024-01-15',
       updatedAt: '2024-01-15'
     };
@@ -135,19 +136,19 @@ describe('UrgencyService', () => {
       contactPhone: '1234567890',
       location: 'Location 1',
       description: 'Description 1',
-      level: UrgencyLevel.MEDIUM,
-      status: Status.IN_PROGRESS
+      level: GeneratedUrgencyLevel.Medium,
+      status: GeneratedUrgencyStatus.InProgress
     };
 
     const mockUrgencyResponse: Urgency = {
       id: 1,
       name: 'Urgency 1',
-      email: 'urgency1@example.com',    
+      email: 'urgency1@example.com',
       contactPhone: '1234567890',
       location: 'Location 1',
       description: 'Description 1',
-      level: UrgencyLevel.MEDIUM,
-      status: Status.IN_PROGRESS,
+      level: GeneratedUrgencyLevel.Medium,
+      status: GeneratedUrgencyStatus.InProgress,
       createdAt: '2024-01-15',
       updatedAt: '2024-01-15'
     };
