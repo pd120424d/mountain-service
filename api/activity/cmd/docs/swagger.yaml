@@ -1,0 +1,340 @@
+basePath: /
+definitions:
+  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityCreateRequest:
+    properties:
+      actorId:
+        type: integer
+      actorName:
+        type: string
+      description:
+        type: string
+      level:
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityLevel'
+      metadata:
+        type: string
+      targetId:
+        type: integer
+      targetType:
+        type: string
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityType'
+    required:
+    - description
+    - level
+    - title
+    - type
+    type: object
+  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityLevel:
+    enum:
+    - info
+    - warning
+    - error
+    - critical
+    type: string
+    x-enum-varnames:
+    - ActivityLevelInfo
+    - ActivityLevelWarning
+    - ActivityLevelError
+    - ActivityLevelCritical
+  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityListResponse:
+    properties:
+      activities:
+        items:
+          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      total:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse:
+    properties:
+      actorId:
+        description: ID of the user who performed the action
+        type: integer
+      actorName:
+        description: Name of the user who performed the action
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      level:
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityLevel'
+      metadata:
+        description: JSON string with additional data
+        type: string
+      targetId:
+        description: ID of the target entity
+        type: integer
+      targetType:
+        description: Type of the target entity (employee, urgency, etc.)
+        type: string
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityType'
+      updatedAt:
+        type: string
+    type: object
+  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityStatsResponse:
+    properties:
+      activitiesByLevel:
+        additionalProperties:
+          type: integer
+        type: object
+      activitiesByType:
+        additionalProperties:
+          type: integer
+        type: object
+      activitiesLast7Days:
+        type: integer
+      activitiesLast24h:
+        type: integer
+      activitiesLast30Days:
+        type: integer
+      recentActivities:
+        items:
+          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse'
+        type: array
+      totalActivities:
+        type: integer
+    type: object
+  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityType:
+    enum:
+    - employee_created
+    - employee_updated
+    - employee_deleted
+    - employee_login
+    - shift_assigned
+    - shift_removed
+    - urgency_created
+    - urgency_updated
+    - urgency_deleted
+    - emergency_assigned
+    - emergency_accepted
+    - emergency_declined
+    - notification_sent
+    - notification_failed
+    - system_reset
+    type: string
+    x-enum-varnames:
+    - ActivityEmployeeCreated
+    - ActivityEmployeeUpdated
+    - ActivityEmployeeDeleted
+    - ActivityEmployeeLogin
+    - ActivityShiftAssigned
+    - ActivityShiftRemoved
+    - ActivityUrgencyCreated
+    - ActivityUrgencyUpdated
+    - ActivityUrgencyDeleted
+    - ActivityEmergencyAssigned
+    - ActivityEmergencyAccepted
+    - ActivityEmergencyDeclined
+    - ActivityNotificationSent
+    - ActivityNotificationFailed
+    - ActivitySystemReset
+host: localhost:8083
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: Activity tracking and audit service for the Mountain Emergency Management
+    System
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Activity Service API
+  version: "1.0"
+paths:
+  /activities:
+    get:
+      description: Get a paginated list of activities with optional filtering
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Activity type filter
+        in: query
+        name: type
+        type: string
+      - description: Activity level filter
+        in: query
+        name: level
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List activities
+      tags:
+      - activities
+    post:
+      consumes:
+      - application/json
+      description: Create a new activity in the system
+      parameters:
+      - description: Activity data
+        in: body
+        name: activity
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new activity
+      tags:
+      - activities
+  /activities/{id}:
+    delete:
+      description: Delete a specific activity by its ID
+      parameters:
+      - description: Activity ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete activity
+      tags:
+      - activities
+    get:
+      description: Get a specific activity by its ID
+      parameters:
+      - description: Activity ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get activity by ID
+      tags:
+      - activities
+  /activities/reset:
+    delete:
+      description: Delete all activities from the system
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Reset all activity data
+      tags:
+      - activities
+  /activities/stats:
+    get:
+      description: Get comprehensive activity statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityStatsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get activity statistics
+      tags:
+      - activities
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

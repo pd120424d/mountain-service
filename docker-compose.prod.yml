@@ -82,6 +82,12 @@ services:
       - employee_db_user
       - employee_db_password
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8082/api/v1/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   urgency-service:
     image: ${URGENCY_SERVICE_IMAGE}
@@ -111,6 +117,12 @@ services:
       - urgency_db_user
       - urgency_db_password
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8083/api/v1/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   activity-service:
     image: ${ACTIVITY_SERVICE_IMAGE}
@@ -138,6 +150,12 @@ services:
       - activity_db_user
       - activity_db_password
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8084/api/v1/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   employee-swagger-ui:
     image: swaggerapi/swagger-ui
@@ -176,9 +194,14 @@ services:
     environment:
       - NODE_ENV=production
     depends_on:
-      - employee-service
-      - urgency-service
-      - version-service
+      employee-service:
+        condition: service_healthy
+      urgency-service:
+        condition: service_healthy
+      activity-service:
+        condition: service_healthy
+      version-service:
+        condition: service_healthy
     networks:
       - web
     volumes:
@@ -194,6 +217,12 @@ services:
     networks:
       - web
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8090/api/v1/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
 networks:
   web:

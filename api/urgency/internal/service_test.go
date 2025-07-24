@@ -9,7 +9,6 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
-	mock_repositories "github.com/pd120424d/mountain-service/api/urgency/internal/repositories/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -42,8 +41,8 @@ func TestUrgencyService_CreateUrgency(t *testing.T) {
 		defer mockCtrl.Finish()
 
 		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
-		mockAssignmentRepo := mock_repositories.NewMockAssignmentRepository(mockCtrl)
-		mockNotificationRepo := mock_repositories.NewMockNotificationRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
 		mockEmployeeClient := &mockEmployeeClientForTest{}
 
 		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
@@ -62,8 +61,8 @@ func TestUrgencyService_CreateUrgency(t *testing.T) {
 		defer mockCtrl.Finish()
 
 		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
-		mockAssignmentRepo := mock_repositories.NewMockAssignmentRepository(mockCtrl)
-		mockNotificationRepo := mock_repositories.NewMockNotificationRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
 		mockEmployeeClient := &mockEmployeeClientForTest{}
 
 		mockRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError)
@@ -251,8 +250,8 @@ func TestNewUrgencyService(t *testing.T) {
 		defer mockCtrl.Finish()
 
 		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
-		mockAssignmentRepo := mock_repositories.NewMockAssignmentRepository(mockCtrl)
-		mockNotificationRepo := mock_repositories.NewMockNotificationRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
 		mockEmployeeClient := &mockEmployeeClientForTest{}
 
 		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)

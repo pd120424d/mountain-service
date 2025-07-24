@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"gorm.io/gorm"
 	_ "modernc.org/sqlite"
 
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	urgencyv1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
@@ -26,6 +28,26 @@ import (
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
 )
+
+// mockEmployeeClient is a simple mock implementation for testing
+type mockEmployeeClient struct{}
+
+func (m *mockEmployeeClient) GetOnCallEmployees(ctx context.Context, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error) {
+	// Return empty list for integration tests
+	return []employeeV1.EmployeeResponse{}, nil
+}
+
+func (m *mockEmployeeClient) GetAllEmployees(ctx context.Context) ([]employeeV1.EmployeeResponse, error) {
+	return []employeeV1.EmployeeResponse{}, nil
+}
+
+func (m *mockEmployeeClient) GetEmployeeByID(ctx context.Context, employeeID uint) (*employeeV1.EmployeeResponse, error) {
+	return nil, fmt.Errorf("employee not found")
+}
+
+func (m *mockEmployeeClient) CheckActiveEmergencies(ctx context.Context, employeeID uint) (bool, error) {
+	return false, nil
+}
 
 func TestIntegration_UrgencyLifecycle(t *testing.T) {
 	router, _, cleanup := setupIntegrationTest(t)
@@ -226,14 +248,14 @@ func TestIntegration_HealthCheck(t *testing.T) {
 	router, _, cleanup := setupIntegrationTest(t)
 	defer cleanup()
 
-	t.Run("it returns pong for health check endpoint", func(t *testing.T) {
+	t.Run("it returns `Service is healthy` for health check endpoint", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/ping", nil)
+		req := httptest.NewRequest("GET", "/api/v1/health", nil)
 
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "pong")
+		assert.Contains(t, w.Body.String(), "Service is healthy")
 	})
 }
 
@@ -252,7 +274,15 @@ func setupIntegrationTest(t *testing.T) (*gin.Engine, *gorm.DB, func()) {
 
 	log := utils.NewTestLogger()
 
-	svc := NewUrgencyService(log, repositories.NewUrgencyRepository(log, db))
+	// Initialize all repositories
+	urgencyRepo := repositories.NewUrgencyRepository(log, db)
+	assignmentRepo := repositories.NewAssignmentRepository(log, db)
+	notificationRepo := repositories.NewNotificationRepository(log, db)
+
+	// Create a mock employee client for testing
+	mockEmployeeClient := &mockEmployeeClient{}
+
+	svc := NewUrgencyService(log, urgencyRepo, assignmentRepo, notificationRepo, mockEmployeeClient)
 	urgencyHandler := NewUrgencyHandler(log, svc)
 
 	gin.SetMode(gin.TestMode)
@@ -272,8 +302,9 @@ func setupIntegrationTest(t *testing.T) (*gin.Engine, *gorm.DB, func()) {
 		admin.DELETE("/urgencies/reset", urgencyHandler.ResetAllData)
 	}
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
+	router.GET("/api/v1/health", func(c *gin.Context) {
+		log.Info("Health endpoint hit")
+		c.JSON(200, gin.H{"message": "Service is healthy", "service": "urgency"})
 	})
 
 	cleanup := func() {
