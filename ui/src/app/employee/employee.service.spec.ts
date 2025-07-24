@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { EmployeeService } from './employee.service';
-import { Employee, EmployeeCreateRequest, MedicRole, TechnicalRole } from './employee.model';
+import { Employee, EmployeeCreateRequest, MedicRole, TechnicalRole } from '../shared/models';
 import { environment } from '../../environments/environment';
 import { LoggingService } from '../services/logging.service';
 

@@ -1,7 +1,7 @@
 // src/app/employee/employee-list/employee-list.component.ts
 import { Component, OnInit } from '@angular/core';
 import { EmployeeService } from '../employee.service';
-import { Employee } from '../employee.model';
+import { Employee } from '../../shared/models';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common'
 import { RouterModule } from '@angular/router';

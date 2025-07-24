@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { interval, Observable, Subscription, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { EmployeeRole, MedicRole, AdministratorRole } from '../employee/employee.model';
+import { EmployeeRole, MedicRole, AdministratorRole } from '../shared/models';
 
 @Injectable({
   providedIn: 'root',

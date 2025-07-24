@@ -9,7 +9,7 @@ import {
   RemoveShiftRequest, 
   RemoveShiftByDetailsRequest 
 } from './shift.model';
-import { Employee, MedicRole, TechnicalRole } from '../employee/employee.model';
+import { Employee, MedicRole, TechnicalRole } from '../shared/models';
 
 describe('ShiftManagementService', () => {
   let service: ShiftManagementService;

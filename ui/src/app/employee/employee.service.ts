@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, Observable, throwError } from 'rxjs';
-import { Employee, EmployeeCreateRequest } from './employee.model';
+import { Employee, EmployeeCreateRequest, EmployeeUpdateRequest } from '../shared/models';
 import { LoggingService } from '../services/logging.service';
 import { environment } from '../../environments/environment'; // Import environment variables
 
@@ -44,8 +44,8 @@ export class EmployeeService {
     );
   }
 
-  updateEmployee(id: number, employee: Employee): Observable<Employee> {
-    return this.http.put<Employee>(`${this.employeeApiUrl}/${id}`, employee).pipe(
+  updateEmployee(id: number, employeeUpdate: EmployeeUpdateRequest): Observable<Employee> {
+    return this.http.put<Employee>(`${this.employeeApiUrl}/${id}`, employeeUpdate).pipe(
       catchError(this.handleError)
     );
   }

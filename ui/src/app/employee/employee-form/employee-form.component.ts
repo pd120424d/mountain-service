@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { EmployeeService } from '../employee.service';
-import { Employee, EmployeeCreateRequest } from '../employee.model';
+import { Employee, EmployeeCreateRequest, EmployeeUpdateRequest } from '../../shared/models';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -76,8 +76,7 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
       const formValue = this.employeeForm.value;
 
       if (this.employeeId) {
-        const employee: Employee = {
-          id: this.employeeId,
+        const employeeUpdate: EmployeeUpdateRequest = {
           firstName: formValue.firstName,
           lastName: formValue.lastName,
           email: formValue.email,
@@ -88,7 +87,7 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
           profilePicture: formValue.profilePicture || undefined
         };
 
-        this.employeeService.updateEmployee(this.employeeId, employee).subscribe({
+        this.employeeService.updateEmployee(this.employeeId, employeeUpdate).subscribe({
           next: () => {
             this.router.navigate(['/employees']);
           },

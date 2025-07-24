@@ -1,11 +1,10 @@
 import { Component, OnInit } from "@angular/core";
-import { AdministratorRole, Employee, MedicRole } from "../employee/employee.model";
+import { AdministratorRole, Employee, MedicRole, EmployeeRole } from "../shared/models";
 import { AuthService } from "../services/auth.service";
 import { TranslateModule, TranslateService } from "@ngx-translate/core";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { CommonModule } from "@angular/common";
-import { EmployeeRole } from "../employee/employee.model";
 import { ShiftManagementService } from "./shift.service";
 import { ToastrService } from "ngx-toastr";
 import { NgxSpinnerService } from "ngx-spinner";

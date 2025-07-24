@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { EmployeeFormComponent } from './employee-form.component';
 import { sharedTestingProviders } from '../../test-utils/shared-test-imports';
-import { Employee, EmployeeCreateRequest, MedicRole } from '../employee.model';
+import { Employee, EmployeeCreateRequest, MedicRole } from '../../shared/models';
 import { of } from 'rxjs';
 
 describe('EmployeeFormComponent', () => {

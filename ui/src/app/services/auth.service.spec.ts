@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { sharedTestingProviders } from '../test-utils/shared-test-imports';
 import { of } from 'rxjs';
-import { MedicRole, TechnicalRole } from '../employee/employee.model';
+import { MedicRole, TechnicalRole } from '../shared/models';
 
 describe('AuthService', () => {
   let service: AuthService;

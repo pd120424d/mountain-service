@@ -1,0 +1,151 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Employee Service API",
+    "version": "1.0.0",
+    "description": "Mountain Rescue Employee Management API"
+  },
+  "host": "localhost:8082",
+  "basePath": "/api/v1",
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "definitions": {
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "MessageResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "EmployeeLogin": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "EmployeeResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "username": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "profilePicture": {
+          "type": "string"
+        },
+        "profileType": {
+          "type": "string",
+          "enum": ["Medic", "Technical", "Administrator"]
+        }
+      }
+    },
+    "EmployeeCreateRequest": {
+      "type": "object",
+      "required": ["firstName", "lastName", "username", "password", "email", "gender", "phone"],
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "profilePicture": {
+          "type": "string"
+        },
+        "profileType": {
+          "type": "string",
+          "enum": ["Medic", "Technical", "Administrator"]
+        }
+      }
+    },
+    "EmployeeUpdateRequest": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "profilePicture": {
+          "type": "string"
+        },
+        "profileType": {
+          "type": "string",
+          "enum": ["Medic", "Technical", "Administrator"]
+        }
+      }
+    },
+    "TokenResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        }
+      }
+    }
+  }
+}

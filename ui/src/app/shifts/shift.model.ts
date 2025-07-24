@@ -1,5 +1,3 @@
-import { MedicRole, TechnicalRole } from "../employee/employee.model";
-
 export interface ShiftResponse {
   id: number;
   shiftDate: string; // ISO format date

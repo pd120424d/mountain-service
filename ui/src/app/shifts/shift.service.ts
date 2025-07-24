@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-import { Employee } from '../employee/employee.model';
+import { Employee } from '../shared/models';
 import { DatePipe } from '@angular/common';
 import { ShiftAvailabilityResponse, AssignShiftRequest, AssignShiftResponse, RemoveShiftRequest, RemoveShiftByDetailsRequest } from './shift.model';
 
