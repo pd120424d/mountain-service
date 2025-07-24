@@ -1,13 +1,13 @@
 package repositories
 
-//go:generate mockgen -source=activity_repository.go -destination=mocks/activity_repository_mock.go -package=mock_repositories mountain_service/activity/internal/repositories -imports=gomock=go.uber.org/mock/gomock -typed
+//go:generate mockgen -source=activity_repository.go -destination=activity_repository_gomock.go -package=repositories mountain_service/activity/internal/repositories -imports=gomock=go.uber.org/mock/gomock -typed
 
 import (
 	"fmt"
 	"time"
 
-	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
+	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"gorm.io/gorm"
 )
@@ -168,7 +168,7 @@ func (r *activityRepository) GetStats() (*model.ActivityStats, error) {
 
 	// Get activities for different time periods
 	now := time.Now()
-	
+
 	// Last 24 hours
 	if err := r.db.Model(&model.Activity{}).
 		Where("created_at >= ?", now.Add(-24*time.Hour)).

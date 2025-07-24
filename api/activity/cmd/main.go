@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/activity/config"
+	"github.com/pd120424d/mountain-service/api/activity/internal"
 	"github.com/pd120424d/mountain-service/api/activity/internal/handler"
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
@@ -41,8 +42,8 @@ import (
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host localhost:8083
-// @BasePath /
+// @host
+// @BasePath /api/v1
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
@@ -78,7 +79,7 @@ func main() {
 	activityRepo := repositories.NewActivityRepository(log, db)
 
 	// Initialize service
-	activitySvc := handler.NewActivityService(log, activityRepo)
+	activitySvc := internal.NewActivityService(log, activityRepo)
 	activityHandler := handler.NewActivityHandler(log, activitySvc)
 
 	r := gin.Default()

@@ -11,7 +11,7 @@ fi
 # Move into the api folder
 cd api
 
-SERVICES=("employee" "urgency")
+SERVICES=("employee" "urgency" "activity")
 THRESHOLD=80.0
 OVERALL_SUCCESS=true
 

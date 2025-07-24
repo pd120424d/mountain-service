@@ -53,7 +53,6 @@ func TestUrgencyRepository_GetAll(t *testing.T) {
 	log := utils.NewTestLogger()
 	repo := NewUrgencyRepository(log, db)
 
-	// Create test urgencies
 	urgency1 := &model.Urgency{
 		Name:         "Test Urgency 1",
 		Email:        "test1@example.com",

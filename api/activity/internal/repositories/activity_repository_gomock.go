@@ -2,7 +2,7 @@
 // Source: activity_repository.go
 
 // Package mock_repositories is a generated GoMock package.
-package mock_repositories
+package repositories
 
 import (
 	reflect "reflect"
