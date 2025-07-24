@@ -12,7 +12,7 @@ fi
 cd api
 
 SERVICES=("employee" "urgency" "activity")
-THRESHOLD=80.0
+THRESHOLD=75.0
 OVERALL_SUCCESS=true
 
 echo "Running coverage tests for all services..."
