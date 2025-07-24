@@ -1,518 +1,704 @@
 package internal
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
-	urgencyv1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
+	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 )
 
-func setupTestHandler(t *testing.T) (*urgencyHandler, *MockUrgencyService, *gin.Engine) {
-	ctrl := gomock.NewController(t)
-	mockSvc := NewMockUrgencyService(ctrl)
-	log := utils.NewTestLogger()
-
-	handler := &urgencyHandler{
-		log: log,
-		svc: mockSvc,
-	}
-
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-
-	return handler, mockSvc, router
-}
-
 func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 	t.Parallel()
 
-	handler, mockSvc, router := setupTestHandler(t)
-	router.POST("/urgencies", handler.CreateUrgency)
+	log := utils.NewTestLogger()
 
-	t.Run("it creates a new urgency successfully", func(t *testing.T) {
-		req := urgencyv1.UrgencyCreateRequest{
-			Name:         "Test Urgency",
-			Email:        "test@example.com",
-			ContactPhone: "123456789",
-			Location:     "N 43.401123 E 22.662756",
-			Description:  "Test description",
-			Level:        urgencyv1.High,
-		}
-
-		mockSvc.EXPECT().CreateUrgency(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
-			urgency.ID = 1
-			urgency.CreatedAt = time.Now()
-			urgency.UpdatedAt = time.Now()
-			return nil
-		})
-
-		body, _ := json.Marshal(req)
+	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("POST", "/urgencies", bytes.NewBuffer(body))
-		httpReq.Header.Set("Content-Type", "application/json")
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		invalidPayload := `{
+			"name": "Test Urgency",
+			"email": "test@example.com"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		assert.Equal(t, http.StatusCreated, w.Code)
-
-		var response urgencyv1.UrgencyResponse
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		require.NoError(t, err)
-		assert.Equal(t, uint(1), response.ID)
-		assert.Equal(t, "Test Urgency", response.Name)
-		assert.Equal(t, "N 43.401123 E 22.662756", response.Location)
-		assert.Equal(t, "open", string(response.Status))
-	})
-
-	t.Run("it returns an error when JSON is invalid", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("POST", "/urgencies", bytes.NewBuffer([]byte("invalid json")))
-		httpReq.Header.Set("Content-Type", "application/json")
-
-		router.ServeHTTP(w, httpReq)
+		handler := NewUrgencyHandler(log, nil)
+		handler.CreateUrgency(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "error")
 	})
 
-	t.Run("it returns an error when validation fails", func(t *testing.T) {
-		req := urgencyv1.UrgencyCreateRequest{
-			Name:         "", // Missing required field
-			Email:        "test@example.com",
-			ContactPhone: "123456789",
-			Location:     "N 43.401123 E 22.662756",
-			Description:  "Test description",
-			Level:        urgencyv1.High,
-		}
-
-		body, _ := json.Marshal(req)
+	t.Run("it returns an error when validation fails - missing name", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("POST", "/urgencies", bytes.NewBuffer(body))
-		httpReq.Header.Set("Content-Type", "application/json")
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		payload := `{
+			"name": "",
+			"email": "test@example.com",
+			"contactPhone": "123456789",
+			"location": "N 43.401123 E 22.662756",
+			"description": "Test description",
+			"level": "high"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.CreateUrgency(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "required")
+		assert.Contains(t, w.Body.String(), "Name")
 	})
 
-	t.Run("it returns an error when repository fails", func(t *testing.T) {
-		req := urgencyv1.UrgencyCreateRequest{
-			Name:         "Test Urgency",
-			Email:        "test@example.com",
-			ContactPhone: "123456789",
-			Location:     "N 43.401123 E 22.662756",
-			Description:  "Test description",
-			Level:        urgencyv1.High,
-		}
-
-		mockSvc.EXPECT().CreateUrgency(gomock.Any()).Return(errors.New("database error"))
-
-		body, _ := json.Marshal(req)
+	t.Run("it returns an error when validation fails - invalid email", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("POST", "/urgencies", bytes.NewBuffer(body))
-		httpReq.Header.Set("Content-Type", "application/json")
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		payload := `{
+			"name": "Test Urgency",
+			"email": "invalid-email",
+			"contactPhone": "123456789",
+			"location": "N 43.401123 E 22.662756",
+			"description": "Test description",
+			"level": "high"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.CreateUrgency(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "email")
+	})
+
+	t.Run("it returns an error when validation fails - missing contact phone", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{
+			"name": "Test Urgency",
+			"email": "test@example.com",
+			"contactPhone": "",
+			"location": "N 43.401123 E 22.662756",
+			"description": "Test description",
+			"level": "high"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.CreateUrgency(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "ContactPhone")
+	})
+
+	t.Run("it returns an error when validation fails - missing location", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{
+			"name": "Test Urgency",
+			"email": "test@example.com",
+			"contactPhone": "123456789",
+			"location": "",
+			"description": "Test description",
+			"level": "high"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.CreateUrgency(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Location")
+	})
+
+	t.Run("it returns an error when validation fails - missing description", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{
+			"name": "Test Urgency",
+			"email": "test@example.com",
+			"contactPhone": "123456789",
+			"location": "N 43.401123 E 22.662756",
+			"description": "",
+			"level": "high"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.CreateUrgency(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Description")
+	})
+
+	t.Run("it returns an error when validation fails - invalid urgency level", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{
+			"name": "Test Urgency",
+			"email": "test@example.com",
+			"contactPhone": "123456789",
+			"location": "N 43.401123 E 22.662756",
+			"description": "Test description",
+			"level": "invalid"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.CreateUrgency(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "invalid urgency level")
+	})
+
+	t.Run("it returns an error when service fails to create urgency", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{
+			"name": "Test Urgency",
+			"email": "test@example.com",
+			"contactPhone": "123456789",
+			"location": "N 43.401123 E 22.662756",
+			"description": "Test description",
+			"level": "high"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().CreateUrgency(gomock.Any()).Return(errors.New("database error")).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.CreateUrgency(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "database error")
+	})
+
+	t.Run("it successfully creates urgency when data is valid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		payload := `{
+			"name": "Test Urgency",
+			"email": "test@example.com",
+			"contactPhone": "123456789",
+			"location": "N 43.401123 E 22.662756",
+			"description": "Test description",
+			"level": "high"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().CreateUrgency(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
+			urgency.ID = 1
+			urgency.CreatedAt = time.Now()
+			urgency.UpdatedAt = time.Now()
+			return nil
+		}).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.CreateUrgency(ctx)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+		assert.Contains(t, w.Body.String(), "Test Urgency")
+		assert.Contains(t, w.Body.String(), "test@example.com")
+		assert.Contains(t, w.Body.String(), "high")
 	})
 }
 
 func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 	t.Parallel()
 
-	handler, mockSvc, router := setupTestHandler(t)
-	router.GET("/urgencies", handler.ListUrgencies)
+	log := utils.NewTestLogger()
 
-	t.Run("it lists all urgencies successfully", func(t *testing.T) {
-		urgencies := []model.Urgency{
-			{
-				ID:           1,
-				Name:         "Urgency 1",
-				Email:        "test1@example.com",
-				ContactPhone: "123456789",
-				Location:     "N 43.401123 E 22.662756",
-				Description:  "Description 1",
-				Level:        urgencyv1.High,
-				Status:       urgencyv1.Open,
-			},
-			{
-				ID:           2,
-				Name:         "Urgency 2",
-				Email:        "test2@example.com",
-				ContactPhone: "987654321",
-				Location:     "N 43.401123 E 22.662756",
-				Description:  "Description 2",
-				Level:        urgencyv1.Medium,
-				Status:       urgencyv1.InProgress,
-			},
-		}
-		urgencies[0].CreatedAt = time.Now()
-		urgencies[0].UpdatedAt = time.Now()
-		urgencies[1].CreatedAt = time.Now()
-		urgencies[1].UpdatedAt = time.Now()
-
-		mockSvc.EXPECT().GetAllUrgencies().Return(urgencies, nil)
+	t.Run("it returns an error when service fails to retrieve urgencies", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("GET", "/urgencies", nil)
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().GetAllUrgencies().Return(nil, errors.New("database error")).Times(1)
 
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		var response []urgencyv1.UrgencyResponse
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		require.NoError(t, err)
-		assert.Len(t, response, 2)
-		assert.Equal(t, "Urgency 1", response[0].Name)
-		assert.Equal(t, "Urgency 2", response[1].Name)
-	})
-
-	t.Run("it lists an empty list when no urgencies exist", func(t *testing.T) {
-		mockSvc.EXPECT().GetAllUrgencies().Return([]model.Urgency{}, nil)
-
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("GET", "/urgencies", nil)
-
-		router.ServeHTTP(w, httpReq)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		var response []urgencyv1.UrgencyResponse
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		require.NoError(t, err)
-		assert.Len(t, response, 0)
-	})
-
-	t.Run("it returns an error when repository fails", func(t *testing.T) {
-		mockSvc.EXPECT().GetAllUrgencies().Return(nil, errors.New("database error"))
-
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("GET", "/urgencies", nil)
-
-		router.ServeHTTP(w, httpReq)
+		handler := NewUrgencyHandler(log, mockService)
+		handler.ListUrgencies(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "database error")
+	})
+
+	t.Run("it returns an empty list when no urgencies exist", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().GetAllUrgencies().Return([]model.Urgency{}, nil).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.ListUrgencies(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "[]", w.Body.String())
+	})
+
+	t.Run("it returns a list of urgencies when urgencies exist", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		urgencies := []model.Urgency{
+			{
+				ID:           1,
+				Name:         "Test Urgency 1",
+				Email:        "test1@example.com",
+				ContactPhone: "123456789",
+				Location:     "N 43.401123 E 22.662756",
+				Description:  "Test description 1",
+				Level:        urgencyV1.High,
+				Status:       urgencyV1.Open,
+			},
+			{
+				ID:           2,
+				Name:         "Test Urgency 2",
+				Email:        "test2@example.com",
+				ContactPhone: "987654321",
+				Location:     "N 44.401123 E 23.662756",
+				Description:  "Test description 2",
+				Level:        urgencyV1.Critical,
+				Status:       urgencyV1.InProgress,
+			},
+		}
+
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().GetAllUrgencies().Return(urgencies, nil).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.ListUrgencies(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "Test Urgency 1")
+		assert.Contains(t, w.Body.String(), "Test Urgency 2")
+		assert.Contains(t, w.Body.String(), "test1@example.com")
+		assert.Contains(t, w.Body.String(), "test2@example.com")
 	})
 }
 
 func TestUrgencyHandler_GetUrgency(t *testing.T) {
 	t.Parallel()
 
-	handler, mockSvc, router := setupTestHandler(t)
-	router.GET("/urgencies/:id", handler.GetUrgency)
+	log := utils.NewTestLogger()
 
-	t.Run("it gets an urgency successfully", func(t *testing.T) {
-		urgency := model.Urgency{
+	t.Run("it returns an error when urgency ID is invalid", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.GetUrgency(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "invalid urgency ID")
+	})
+
+	t.Run("it returns an error when urgency does not exist", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.GetUrgency(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "urgency not found")
+	})
+
+	t.Run("it returns an error when service fails to get urgency", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(nil, errors.New("database error")).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.GetUrgency(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "urgency not found")
+	})
+
+	t.Run("it successfully returns urgency when it exists", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		urgency := &model.Urgency{
 			ID:           1,
 			Name:         "Test Urgency",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
-			Level:        urgencyv1.High,
-			Status:       urgencyv1.Open,
+			Level:        urgencyV1.High,
+			Status:       urgencyV1.Open,
 		}
-		urgency.CreatedAt = time.Now()
-		urgency.UpdatedAt = time.Now()
 
-		mockSvc.EXPECT().GetUrgencyByID(uint(1)).DoAndReturn(func(id uint) (*model.Urgency, error) {
-			urgency := &model.Urgency{
-				ID:           1,
-				Name:         "Test Urgency",
-				Email:        "test@example.com",
-				ContactPhone: "123456789",
-				Location:     "N 43.401123 E 22.662756",
-				Description:  "Test description",
-				Level:        urgencyv1.High,
-				Status:       urgencyv1.Open,
-			}
-			urgency.CreatedAt = time.Now()
-			urgency.UpdatedAt = time.Now()
-			return urgency, nil
-		})
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(urgency, nil).Times(1)
 
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("GET", "/urgencies/1", nil)
-
-		router.ServeHTTP(w, httpReq)
+		handler := NewUrgencyHandler(log, mockService)
+		handler.GetUrgency(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-
-		var response urgencyv1.UrgencyResponse
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		require.NoError(t, err)
-		assert.Equal(t, uint(1), response.ID)
-		assert.Equal(t, "Test Urgency", response.Name)
-		assert.Equal(t, "N 43.401123 E 22.662756", response.Location)
-	})
-
-	t.Run("it returns an error when ID is invalid", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("GET", "/urgencies/invalid", nil)
-
-		router.ServeHTTP(w, httpReq)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "invalid urgency ID")
-	})
-
-	t.Run("it returns an error when urgency is not found", func(t *testing.T) {
-		mockSvc.EXPECT().GetUrgencyByID(uint(999)).Return(nil, gorm.ErrRecordNotFound)
-
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("GET", "/urgencies/999", nil)
-
-		router.ServeHTTP(w, httpReq)
-
-		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "urgency not found")
+		assert.Contains(t, w.Body.String(), "Test Urgency")
+		assert.Contains(t, w.Body.String(), "test@example.com")
+		assert.Contains(t, w.Body.String(), "high")
 	})
 }
 
 func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 	t.Parallel()
 
-	handler, mockSvc, router := setupTestHandler(t)
-	router.PUT("/urgencies/:id", handler.UpdateUrgency)
+	log := utils.NewTestLogger()
 
-	t.Run("it updates an urgency successfully", func(t *testing.T) {
-		req := urgencyv1.UrgencyUpdateRequest{
-			Name:   "Updated Urgency",
-			Email:  "updated@example.com", // Include valid email to avoid Gin validation error
-			Status: urgencyv1.InProgress,
-		}
-
-		existingUrgency := model.Urgency{
-			ID:           1,
-			Name:         "Original Urgency",
-			Email:        "test@example.com",
-			ContactPhone: "123456789",
-			Location:     "N 43.401123 E 22.662756",
-			Description:  "Test description",
-			Level:        urgencyv1.High,
-			Status:       urgencyv1.Open,
-		}
-		existingUrgency.CreatedAt = time.Now()
-		existingUrgency.UpdatedAt = time.Now()
-
-		mockSvc.EXPECT().GetUrgencyByID(uint(1)).DoAndReturn(func(id uint) (*model.Urgency, error) {
-			return &existingUrgency, nil
-		})
-
-		mockSvc.EXPECT().UpdateUrgency(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
-			urgency.UpdatedAt = time.Now()
-			return nil
-		})
-
-		body, _ := json.Marshal(req)
+	t.Run("it returns an error when urgency ID is invalid", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("PUT", "/urgencies/1", bytes.NewBuffer(body))
-		httpReq.Header.Set("Content-Type", "application/json")
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
 
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		var response urgencyv1.UrgencyResponse
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		require.NoError(t, err)
-		assert.Equal(t, "Updated Urgency", response.Name)
-		assert.Equal(t, "in_progress", string(response.Status))
-	})
-
-	t.Run("it returns an error when ID is invalid", func(t *testing.T) {
-		req := urgencyv1.UrgencyUpdateRequest{Name: "Updated"}
-		body, _ := json.Marshal(req)
-
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("PUT", "/urgencies/invalid", bytes.NewBuffer(body))
-		httpReq.Header.Set("Content-Type", "application/json")
-
-		router.ServeHTTP(w, httpReq)
+		handler := NewUrgencyHandler(log, nil)
+		handler.UpdateUrgency(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "invalid urgency ID")
 	})
 
-	t.Run("it returns an error when JSON is invalid", func(t *testing.T) {
+	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("PUT", "/urgencies/1", bytes.NewBuffer([]byte("invalid json")))
-		httpReq.Header.Set("Content-Type", "application/json")
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		invalidPayload := `{
+			"name": "Updated Urgency",
+			"email": "updated@example.com"
+		`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/urgencies/1", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.UpdateUrgency(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "error")
 	})
 
-	t.Run("it returns an error when validation fails", func(t *testing.T) {
-		req := urgencyv1.UrgencyUpdateRequest{
-			Email: "invalid-email", // Invalid email format
-		}
-
-		body, _ := json.Marshal(req)
+	t.Run("it returns an error when validation fails - invalid email", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("PUT", "/urgencies/1", bytes.NewBuffer(body))
-		httpReq.Header.Set("Content-Type", "application/json")
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		payload := `{
+			"email": "invalid-email"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/urgencies/1", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.UpdateUrgency(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "email")
+		assert.Contains(t, w.Body.String(), "invalid email format")
 	})
 
-	t.Run("it returns an error when urgency is not found", func(t *testing.T) {
-		req := urgencyv1.UrgencyUpdateRequest{
-			Name:  "Updated",
-			Email: "valid@example.com", // Include valid email
-		}
-
-		mockSvc.EXPECT().GetUrgencyByID(uint(999)).Return(nil, gorm.ErrRecordNotFound)
-
-		body, _ := json.Marshal(req)
+	t.Run("it returns an error when validation fails - invalid urgency level", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("PUT", "/urgencies/999", bytes.NewBuffer(body))
-		httpReq.Header.Set("Content-Type", "application/json")
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		payload := `{
+			"level": "invalid"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/urgencies/1", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.UpdateUrgency(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "invalid urgency level")
+	})
+
+	t.Run("it returns an error when validation fails - invalid status", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		payload := `{
+			"status": "invalid"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/urgencies/1", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewUrgencyHandler(log, nil)
+		handler.UpdateUrgency(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "invalid status")
+	})
+
+	t.Run("it returns an error when urgency does not exist", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		payload := `{
+			"name": "Updated Urgency"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/urgencies/1", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.UpdateUrgency(ctx)
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 		assert.Contains(t, w.Body.String(), "urgency not found")
 	})
 
-	t.Run("it returns an error when repository fails", func(t *testing.T) {
-		req := urgencyv1.UrgencyUpdateRequest{
-			Name:  "Updated",
-			Email: "valid@example.com", // Include valid email
+	t.Run("it returns an error when service fails to update urgency", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		payload := `{
+			"name": "Updated Urgency"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/urgencies/1", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		existingUrgency := &model.Urgency{
+			ID:           1,
+			Name:         "Test Urgency",
+			Email:        "test@example.com",
+			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
+			Description:  "Test description",
+			Level:        urgencyV1.High,
+			Status:       urgencyV1.Open,
 		}
 
-		existingUrgency := model.Urgency{ID: 1, Name: "Original"}
-		mockSvc.EXPECT().GetUrgencyByID(uint(1)).DoAndReturn(func(id uint) (*model.Urgency, error) {
-			return &existingUrgency, nil
-		})
-		mockSvc.EXPECT().UpdateUrgency(gomock.Any()).Return(errors.New("database error"))
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(existingUrgency, nil).Times(1)
+		mockService.EXPECT().UpdateUrgency(gomock.Any()).Return(errors.New("database error")).Times(1)
 
-		body, _ := json.Marshal(req)
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("PUT", "/urgencies/1", bytes.NewBuffer(body))
-		httpReq.Header.Set("Content-Type", "application/json")
-
-		router.ServeHTTP(w, httpReq)
+		handler := NewUrgencyHandler(log, mockService)
+		handler.UpdateUrgency(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "database error")
+	})
+
+	t.Run("it successfully updates urgency when data is valid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		payload := `{
+			"name": "Updated Urgency",
+			"email": "updated@example.com",
+			"status": "in_progress"
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/urgencies/1", strings.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		existingUrgency := &model.Urgency{
+			ID:           1,
+			Name:         "Test Urgency",
+			Email:        "test@example.com",
+			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
+			Description:  "Test description",
+			Level:        urgencyV1.High,
+			Status:       urgencyV1.Open,
+		}
+
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(existingUrgency, nil).Times(1)
+		mockService.EXPECT().UpdateUrgency(gomock.Any()).Return(nil).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.UpdateUrgency(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "Updated Urgency")
+		assert.Contains(t, w.Body.String(), "updated@example.com")
+		assert.Contains(t, w.Body.String(), "in_progress")
 	})
 }
 
 func TestUrgencyHandler_DeleteUrgency(t *testing.T) {
 	t.Parallel()
 
-	handler, mockSvc, router := setupTestHandler(t)
-	router.DELETE("/urgencies/:id", handler.DeleteUrgency)
+	log := utils.NewTestLogger()
 
-	t.Run("it deletes an urgency successfully", func(t *testing.T) {
-		mockSvc.EXPECT().DeleteUrgency(uint(1)).Return(nil)
-
+	t.Run("it returns an error when urgency ID is invalid", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("DELETE", "/urgencies/1", nil)
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
 
-		assert.Equal(t, http.StatusNoContent, w.Code)
-		assert.Empty(t, w.Body.String())
-	})
-
-	t.Run("it returns an error when ID is invalid", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("DELETE", "/urgencies/invalid", nil)
-
-		router.ServeHTTP(w, httpReq)
+		handler := NewUrgencyHandler(log, nil)
+		handler.DeleteUrgency(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "invalid urgency ID")
 	})
 
-	t.Run("it returns an error when urgency is not found", func(t *testing.T) {
-		mockSvc.EXPECT().DeleteUrgency(uint(999)).Return(gorm.ErrRecordNotFound)
+	t.Run("it returns an error when service fails to delete urgency", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("DELETE", "/urgencies/999", nil)
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "record not found")
-	})
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().DeleteUrgency(uint(1)).Return(errors.New("database error")).Times(1)
 
-	t.Run("it returns an error when repository fails", func(t *testing.T) {
-		mockSvc.EXPECT().DeleteUrgency(uint(1)).Return(errors.New("database error"))
-
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("DELETE", "/urgencies/1", nil)
-
-		router.ServeHTTP(w, httpReq)
+		handler := NewUrgencyHandler(log, mockService)
+		handler.DeleteUrgency(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "database error")
+	})
+
+	t.Run("it successfully deletes urgency when it exists", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().DeleteUrgency(uint(1)).Return(nil).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.DeleteUrgency(ctx)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
 	})
 }
 
 func TestUrgencyHandler_ResetAllData(t *testing.T) {
 	t.Parallel()
 
-	handler, mockSvc, router := setupTestHandler(t)
-	router.DELETE("/admin/urgencies/reset", handler.ResetAllData)
+	log := utils.NewTestLogger()
 
-	t.Run("it resets all urgencies successfully", func(t *testing.T) {
-		mockSvc.EXPECT().ResetAllData().Return(nil)
-
-		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("DELETE", "/admin/urgencies/reset", nil)
-
-		router.ServeHTTP(w, httpReq)
-
-		assert.Equal(t, http.StatusNoContent, w.Code)
-		assert.Empty(t, w.Body.String())
-	})
-
-	t.Run("it returns an error when repository fails", func(t *testing.T) {
-		mockSvc.EXPECT().ResetAllData().Return(errors.New("database error"))
+	t.Run("it returns an error when service fails to reset data", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
 		w := httptest.NewRecorder()
-		httpReq, _ := http.NewRequest("DELETE", "/admin/urgencies/reset", nil)
+		ctx, _ := gin.CreateTestContext(w)
 
-		router.ServeHTTP(w, httpReq)
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().ResetAllData().Return(errors.New("database error")).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.ResetAllData(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "database error")
 	})
-}
 
-func TestNewUrgencyHandler(t *testing.T) {
-	log := utils.NewTestLogger()
-	ctrl := gomock.NewController(t)
-	mockSvc := NewMockUrgencyService(ctrl)
+	t.Run("it successfully resets all data", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-	handler := NewUrgencyHandler(log, mockSvc)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
 
-	assert.NotNil(t, handler)
-	assert.IsType(t, &urgencyHandler{}, handler)
+		mockService := NewMockUrgencyService(ctrl)
+		mockService.EXPECT().ResetAllData().Return(nil).Times(1)
+
+		handler := NewUrgencyHandler(log, mockService)
+		handler.ResetAllData(ctx)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
 }

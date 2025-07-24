@@ -15,67 +15,8 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
-
-// MockHTTPClient implements the HTTPClient interface for testing
-type MockHTTPClient struct {
-	GetFunc    func(ctx context.Context, endpoint string) (*http.Response, error)
-	PostFunc   func(ctx context.Context, endpoint string, body interface{}) (*http.Response, error)
-	PutFunc    func(ctx context.Context, endpoint string, body interface{}) (*http.Response, error)
-	DeleteFunc func(ctx context.Context, endpoint string) (*http.Response, error)
-
-	// Track calls for verification
-	GetCalls    []string
-	PostCalls   []string
-	PutCalls    []string
-	DeleteCalls []string
-}
-
-func (m *MockHTTPClient) Get(ctx context.Context, endpoint string) (*http.Response, error) {
-	m.GetCalls = append(m.GetCalls, endpoint)
-	if m.GetFunc != nil {
-		return m.GetFunc(ctx, endpoint)
-	}
-	return nil, fmt.Errorf("mock not configured for GET %s", endpoint)
-}
-
-func (m *MockHTTPClient) Post(ctx context.Context, endpoint string, body interface{}) (*http.Response, error) {
-	m.PostCalls = append(m.PostCalls, endpoint)
-	if m.PostFunc != nil {
-		return m.PostFunc(ctx, endpoint, body)
-	}
-	return nil, fmt.Errorf("mock not configured for POST %s", endpoint)
-}
-
-func (m *MockHTTPClient) Put(ctx context.Context, endpoint string, body interface{}) (*http.Response, error) {
-	m.PutCalls = append(m.PutCalls, endpoint)
-	if m.PutFunc != nil {
-		return m.PutFunc(ctx, endpoint, body)
-	}
-	return nil, fmt.Errorf("mock not configured for PUT %s", endpoint)
-}
-
-func (m *MockHTTPClient) Delete(ctx context.Context, endpoint string) (*http.Response, error) {
-	m.DeleteCalls = append(m.DeleteCalls, endpoint)
-	if m.DeleteFunc != nil {
-		return m.DeleteFunc(ctx, endpoint)
-	}
-	return nil, fmt.Errorf("mock not configured for DELETE %s", endpoint)
-}
-
-// Helper function to create a mock HTTP response
-func createMockResponse(statusCode int, body interface{}) *http.Response {
-	jsonBody, _ := json.Marshal(body)
-	return &http.Response{
-		StatusCode: statusCode,
-		Body:       io.NopCloser(bytes.NewReader(jsonBody)),
-	}
-}
-
-// Helper function to create an employee client with mock HTTP client for testing
-func createTestEmployeeClient(mockHTTPClient *MockHTTPClient) EmployeeClient {
-	return NewEmployeeClientWithHTTPClient(mockHTTPClient, utils.NewTestLogger())
-}
 
 func TestNewEmployeeClient(t *testing.T) {
 	t.Parallel()
@@ -123,10 +64,13 @@ func TestNewEmployeeClientWithHTTPClient(t *testing.T) {
 	t.Parallel()
 
 	t.Run("it creates a new employee client with injected HTTP client", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{}
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
 		logger := utils.NewTestLogger()
 
-		client := NewEmployeeClientWithHTTPClient(mockHTTPClient, logger)
+		client := NewEmployeeClientWithHTTPClient(mockHTTPClient, logger.WithName("employeeClient"))
 
 		assert.NotNil(t, client)
 		assert.IsType(t, &employeeClient{}, client)
@@ -137,6 +81,9 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 	t.Parallel()
 
 	t.Run("it successfully retrieves on-call employees without shift buffer", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
 		mockResponse := employeeV1.OnCallEmployeesResponse{
 			Employees: []employeeV1.EmployeeResponse{
 				{
@@ -162,14 +109,14 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 			},
 		}
 
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				assert.Equal(t, "/api/v1/employees/on-call", endpoint)
-				return createMockResponse(http.StatusOK, mockResponse), nil
-			},
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/on-call").Return(createMockResponse(http.StatusOK, mockResponse), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetOnCallEmployees(context.Background(), 0)
 
 		require.NoError(t, err)
@@ -180,10 +127,12 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 		assert.Equal(t, uint(2), employees[1].ID)
 		assert.Equal(t, "Jane", employees[1].FirstName)
 		assert.Equal(t, "Smith", employees[1].LastName)
-		assert.Len(t, mockHTTPClient.GetCalls, 1)
 	})
 
 	t.Run("it successfully retrieves on-call employees with shift buffer", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
 		mockResponse := employeeV1.OnCallEmployeesResponse{
 			Employees: []employeeV1.EmployeeResponse{
 				{
@@ -196,30 +145,33 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 			},
 		}
 
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				assert.Equal(t, "/api/v1/employees/on-call?shift_buffer=1h0m0s", endpoint)
-				return createMockResponse(http.StatusOK, mockResponse), nil
-			},
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/on-call?shift_buffer=1h0m0s").Return(createMockResponse(http.StatusOK, mockResponse), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetOnCallEmployees(context.Background(), time.Hour)
 
 		require.NoError(t, err)
 		assert.Len(t, employees, 1)
 		assert.Equal(t, uint(1), employees[0].ID)
-		assert.Len(t, mockHTTPClient.GetCalls, 1)
 	})
 
 	t.Run("it handles HTTP client error", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return nil, fmt.Errorf("network error")
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/on-call").Return(nil, fmt.Errorf("network error"))
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetOnCallEmployees(context.Background(), 0)
 
 		assert.Error(t, err)
@@ -229,13 +181,17 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 	})
 
 	t.Run("it handles non-200 status code", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return createMockResponse(http.StatusInternalServerError, nil), nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/on-call").Return(createMockResponse(http.StatusInternalServerError, nil), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetOnCallEmployees(context.Background(), 0)
 
 		assert.Error(t, err)
@@ -244,16 +200,20 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 	})
 
 	t.Run("it handles JSON decode error", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewReader([]byte("invalid json"))),
-				}, nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/on-call").Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader([]byte("invalid json"))),
+		}, nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetOnCallEmployees(context.Background(), 0)
 
 		assert.Error(t, err)
@@ -266,6 +226,9 @@ func TestEmployeeClient_GetAllEmployees(t *testing.T) {
 	t.Parallel()
 
 	t.Run("it successfully retrieves all employees", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
 		mockResponse := employeeV1.AllEmployeesResponse{
 			Employees: []employeeV1.EmployeeResponse{
 				{
@@ -291,14 +254,14 @@ func TestEmployeeClient_GetAllEmployees(t *testing.T) {
 			},
 		}
 
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				assert.Equal(t, "/api/v1/employees", endpoint)
-				return createMockResponse(http.StatusOK, mockResponse), nil
-			},
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees").Return(createMockResponse(http.StatusOK, mockResponse), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetAllEmployees(context.Background())
 
 		require.NoError(t, err)
@@ -309,17 +272,20 @@ func TestEmployeeClient_GetAllEmployees(t *testing.T) {
 		assert.Equal(t, uint(2), employees[1].ID)
 		assert.Equal(t, "Jane", employees[1].FirstName)
 		assert.Equal(t, "Smith", employees[1].LastName)
-		assert.Len(t, mockHTTPClient.GetCalls, 1)
 	})
 
 	t.Run("handles HTTP client error", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return nil, fmt.Errorf("network error")
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees").Return(nil, fmt.Errorf("network error"))
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetAllEmployees(context.Background())
 
 		assert.Error(t, err)
@@ -329,13 +295,17 @@ func TestEmployeeClient_GetAllEmployees(t *testing.T) {
 	})
 
 	t.Run("handles non-200 status code", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return createMockResponse(http.StatusInternalServerError, nil), nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees").Return(createMockResponse(http.StatusInternalServerError, nil), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetAllEmployees(context.Background())
 
 		assert.Error(t, err)
@@ -344,16 +314,20 @@ func TestEmployeeClient_GetAllEmployees(t *testing.T) {
 	})
 
 	t.Run("handles JSON decode error", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewReader([]byte("invalid json"))),
-				}, nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees").Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader([]byte("invalid json"))),
+		}, nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employees, err := client.GetAllEmployees(context.Background())
 
 		assert.Error(t, err)
@@ -366,6 +340,9 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 	t.Parallel()
 
 	t.Run("it successfully retrieves employee by ID", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
 		mockResponse := employeeV1.EmployeeResponse{
 			ID:          1,
 			FirstName:   "John",
@@ -377,14 +354,14 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 			ProfileType: "Medic",
 		}
 
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				assert.Equal(t, "/api/v1/employees/1", endpoint)
-				return createMockResponse(http.StatusOK, mockResponse), nil
-			},
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/1").Return(createMockResponse(http.StatusOK, mockResponse), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employee, err := client.GetEmployeeByID(context.Background(), 1)
 
 		require.NoError(t, err)
@@ -393,17 +370,20 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 		assert.Equal(t, "John", employee.FirstName)
 		assert.Equal(t, "Doe", employee.LastName)
 		assert.Equal(t, "john@example.com", employee.Email)
-		assert.Len(t, mockHTTPClient.GetCalls, 1)
 	})
 
 	t.Run("it handles HTTP client error", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return nil, fmt.Errorf("network error")
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/1").Return(nil, fmt.Errorf("network error"))
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employee, err := client.GetEmployeeByID(context.Background(), 1)
 
 		assert.Error(t, err)
@@ -413,13 +393,17 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 	})
 
 	t.Run("it handles non-200 status code", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return createMockResponse(http.StatusInternalServerError, nil), nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/999").Return(createMockResponse(http.StatusInternalServerError, nil), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employee, err := client.GetEmployeeByID(context.Background(), 999)
 
 		assert.Error(t, err)
@@ -428,13 +412,17 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 	})
 
 	t.Run("it handles 404 not found", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return createMockResponse(http.StatusNotFound, nil), nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/999").Return(createMockResponse(http.StatusNotFound, nil), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employee, err := client.GetEmployeeByID(context.Background(), 999)
 
 		assert.Error(t, err)
@@ -443,16 +431,20 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 	})
 
 	t.Run("it handles JSON decode error", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewReader([]byte("invalid json"))),
-				}, nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/1").Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader([]byte("invalid json"))),
+		}, nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		employee, err := client.GetEmployeeByID(context.Background(), 1)
 
 		assert.Error(t, err)
@@ -469,19 +461,21 @@ func TestEmployeeClient_CheckActiveEmergencies(t *testing.T) {
 			HasActiveEmergencies: true,
 		}
 
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				assert.Equal(t, "/api/v1/employees/1/active-emergencies", endpoint)
-				return createMockResponse(http.StatusOK, mockResponse), nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/1/active-emergencies").Return(createMockResponse(http.StatusOK, mockResponse), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		hasActive, err := client.CheckActiveEmergencies(context.Background(), 1)
 
 		require.NoError(t, err)
 		assert.True(t, hasActive)
-		assert.Len(t, mockHTTPClient.GetCalls, 1)
 	})
 
 	t.Run("it successfully checks active emergencies - no active", func(t *testing.T) {
@@ -489,29 +483,35 @@ func TestEmployeeClient_CheckActiveEmergencies(t *testing.T) {
 			HasActiveEmergencies: false,
 		}
 
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				assert.Equal(t, "/api/v1/employees/2/active-emergencies", endpoint)
-				return createMockResponse(http.StatusOK, mockResponse), nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/2/active-emergencies").Return(createMockResponse(http.StatusOK, mockResponse), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		hasActive, err := client.CheckActiveEmergencies(context.Background(), 2)
 
 		require.NoError(t, err)
 		assert.False(t, hasActive)
-		assert.Len(t, mockHTTPClient.GetCalls, 1)
 	})
 
 	t.Run("it handles HTTP client error", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return nil, fmt.Errorf("network error")
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/1/active-emergencies").Return(nil, fmt.Errorf("network error"))
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		hasActive, err := client.CheckActiveEmergencies(context.Background(), 1)
 
 		assert.Error(t, err)
@@ -521,13 +521,17 @@ func TestEmployeeClient_CheckActiveEmergencies(t *testing.T) {
 	})
 
 	t.Run("it handles non-200 status code", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return createMockResponse(http.StatusInternalServerError, nil), nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/1/active-emergencies").Return(createMockResponse(http.StatusInternalServerError, nil), nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		hasActive, err := client.CheckActiveEmergencies(context.Background(), 1)
 
 		assert.Error(t, err)
@@ -536,20 +540,39 @@ func TestEmployeeClient_CheckActiveEmergencies(t *testing.T) {
 	})
 
 	t.Run("it handles JSON decode error", func(t *testing.T) {
-		mockHTTPClient := &MockHTTPClient{
-			GetFunc: func(ctx context.Context, endpoint string) (*http.Response, error) {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewReader([]byte("invalid json"))),
-				}, nil
-			},
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockHTTPClient := NewMockHTTPClient(ctrl)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/1/active-emergencies").Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader([]byte("invalid json"))),
+		}, nil)
+
+		client := &employeeClient{
+			httpClient: mockHTTPClient,
+			logger:     utils.NewTestLogger(),
 		}
 
-		client := createTestEmployeeClient(mockHTTPClient)
 		hasActive, err := client.CheckActiveEmergencies(context.Background(), 1)
 
 		assert.Error(t, err)
 		assert.False(t, hasActive)
 		assert.Contains(t, err.Error(), "failed to decode response")
 	})
+}
+
+func createMockResponse(statusCode int, body interface{}) *http.Response {
+	var bodyReader io.ReadCloser
+	if body != nil {
+		jsonBytes, _ := json.Marshal(body)
+		bodyReader = io.NopCloser(bytes.NewReader(jsonBytes))
+	} else {
+		bodyReader = io.NopCloser(bytes.NewReader([]byte{}))
+	}
+
+	return &http.Response{
+		StatusCode: statusCode,
+		Body:       bodyReader,
+	}
 }

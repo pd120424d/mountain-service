@@ -237,7 +237,7 @@ func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
 	}
 
 	h.log.Infof("Successfully deleted urgency with ID %d", urgencyID)
-	ctx.Status(http.StatusNoContent)
+	ctx.JSON(http.StatusNoContent, nil)
 }
 
 // ResetAllData Ресетовање свих података
@@ -257,5 +257,5 @@ func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
 	}
 
 	h.log.Info("Successfully reset all urgency data")
-	ctx.Status(http.StatusNoContent)
+	ctx.JSON(http.StatusNoContent, nil)
 }

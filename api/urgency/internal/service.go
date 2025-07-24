@@ -76,6 +76,30 @@ func (s *urgencyService) CreateUrgency(urgency *model.Urgency) error {
 	return nil
 }
 
+func (s *urgencyService) GetAllUrgencies() ([]model.Urgency, error) {
+	return s.repo.GetAll()
+}
+
+func (s *urgencyService) GetUrgencyByID(id uint) (*model.Urgency, error) {
+	var urgency model.Urgency
+	if err := s.repo.GetByID(id, &urgency); err != nil {
+		return nil, err
+	}
+	return &urgency, nil
+}
+
+func (s *urgencyService) UpdateUrgency(urgency *model.Urgency) error {
+	return s.repo.Update(urgency)
+}
+
+func (s *urgencyService) DeleteUrgency(id uint) error {
+	return s.repo.Delete(id)
+}
+
+func (s *urgencyService) ResetAllData() error {
+	return s.repo.ResetAllData()
+}
+
 func (s *urgencyService) createAssignmentAndNotification(urgency *model.Urgency, employee employeeV1.EmployeeResponse) error {
 	assignment := &model.EmergencyAssignment{
 		UrgencyID:  urgency.ID,
@@ -160,28 +184,4 @@ func (s *urgencyService) buildNotificationMessage(urgency *model.Urgency, employ
 	}
 
 	return baseMessage
-}
-
-func (s *urgencyService) GetAllUrgencies() ([]model.Urgency, error) {
-	return s.repo.GetAll()
-}
-
-func (s *urgencyService) GetUrgencyByID(id uint) (*model.Urgency, error) {
-	var urgency model.Urgency
-	if err := s.repo.GetByID(id, &urgency); err != nil {
-		return nil, err
-	}
-	return &urgency, nil
-}
-
-func (s *urgencyService) UpdateUrgency(urgency *model.Urgency) error {
-	return s.repo.Update(urgency)
-}
-
-func (s *urgencyService) DeleteUrgency(id uint) error {
-	return s.repo.Delete(id)
-}
-
-func (s *urgencyService) ResetAllData() error {
-	return s.repo.ResetAllData()
 }

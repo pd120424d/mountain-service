@@ -1,5 +1,7 @@
 package clients
 
+//go:generate mockgen -source=employee_client.go -destination=employee_client_gomock.go -package=clients mountain_service/urgency/internal/clients -imports=gomock=go.uber.org/mock/gomock -typed
+
 import (
 	"context"
 	"encoding/json"

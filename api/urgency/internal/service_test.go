@@ -1,13 +1,12 @@
 package internal
 
 import (
-	"context"
 	"testing"
-	"time"
 
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
+	"github.com/pd120424d/mountain-service/api/urgency/internal/clients"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
 	"github.com/stretchr/testify/assert"
@@ -25,9 +24,10 @@ func TestUrgencyService_CreateUrgency(t *testing.T) {
 		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
 		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
 		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
-		mockEmployeeClient := &mockEmployeeClientForTest{}
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
 
 		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return([]employeeV1.EmployeeResponse{}, nil)
 
 		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
 
@@ -43,7 +43,7 @@ func TestUrgencyService_CreateUrgency(t *testing.T) {
 		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
 		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
 		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
-		mockEmployeeClient := &mockEmployeeClientForTest{}
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
 
 		mockRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError)
 
@@ -51,6 +51,55 @@ func TestUrgencyService_CreateUrgency(t *testing.T) {
 
 		err := svc.CreateUrgency(&model.Urgency{})
 		assert.Error(t, err)
+	})
+
+	t.Run("it returns an error when it fails to fetch on-call employees", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+
+		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(nil, assert.AnError)
+
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
+
+		err := svc.CreateUrgency(&model.Urgency{})
+		assert.Error(t, err)
+	})
+
+	t.Run("it logs an error and continue when it fails to create assignment and notification", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+
+		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return([]employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "+1987654321",
+				Email:     "jane@example.com",
+				Username:  "jane",
+			},
+		}, nil)
+
+		mockAssignmentRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError)
+
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
+
+		err := svc.CreateUrgency(&model.Urgency{})
+		assert.NoError(t, err)
 	})
 }
 
@@ -232,7 +281,7 @@ func TestNewUrgencyService(t *testing.T) {
 		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
 		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
 		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
-		mockEmployeeClient := &mockEmployeeClientForTest{}
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
 
 		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
 		assert.NotNil(t, svc)
@@ -240,7 +289,7 @@ func TestNewUrgencyService(t *testing.T) {
 	})
 }
 
-func TestUrgencyService_CreateAssignmentAndNotification(t *testing.T) {
+func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 	t.Parallel()
 
 	t.Run("it successfully creates assignment and SMS notification for employee with phone", func(t *testing.T) {
@@ -252,17 +301,17 @@ func TestUrgencyService_CreateAssignmentAndNotification(t *testing.T) {
 		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
 		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
 
-		mockEmployeeClient := &mockEmployeeClientWithEmployees{
-			employees: []employeeV1.EmployeeResponse{
-				{
-					ID:        1,
-					FirstName: "Jane",
-					LastName:  "Smith",
-					Phone:     "+1987654321",
-					Email:     "jane@example.com",
-				},
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "+1987654321",
+				Email:     "jane@example.com",
 			},
 		}
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
@@ -324,17 +373,17 @@ func TestUrgencyService_CreateAssignmentAndNotification(t *testing.T) {
 		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
 		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
 
-		mockEmployeeClient := &mockEmployeeClientWithEmployees{
-			employees: []employeeV1.EmployeeResponse{
-				{
-					ID:        1,
-					FirstName: "Jane",
-					LastName:  "Smith",
-					Phone:     "",
-					Email:     "jane@example.com",
-				},
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "",
+				Email:     "jane@example.com",
 			},
 		}
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
@@ -360,34 +409,277 @@ func TestUrgencyService_CreateAssignmentAndNotification(t *testing.T) {
 		err := svc.CreateUrgency(urgency)
 		assert.NoError(t, err)
 	})
-}
 
-type mockEmployeeClientWithEmployees struct {
-	employees []employeeV1.EmployeeResponse
-}
+	t.Run("it returns an error when it fails to create assignment", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
 
-func (m *mockEmployeeClientWithEmployees) GetOnCallEmployees(ctx context.Context, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error) {
-	return m.employees, nil
-}
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
 
-func (m *mockEmployeeClientWithEmployees) GetAllEmployees(ctx context.Context) ([]employeeV1.EmployeeResponse, error) {
-	return m.employees, nil
-}
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
 
-func (m *mockEmployeeClientWithEmployees) GetEmployeeByID(ctx context.Context, employeeID uint) (*employeeV1.EmployeeResponse, error) {
-	for _, emp := range m.employees {
-		if emp.ID == employeeID {
-			return &emp, nil
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "+1987654321",
+				Email:     "jane@example.com",
+			},
 		}
-	}
-	return nil, nil
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
+
+		urgency := &model.Urgency{
+			ID:           1,
+			Name:         "John Doe",
+			Location:     "Mountain Peak",
+			ContactPhone: "+1234567890",
+			Description:  "Lost hiker",
+			Level:        "High",
+		}
+
+		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockAssignmentRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError)
+
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
+
+		err := svc.CreateUrgency(urgency)
+		assert.NoError(t, err) // CreateUrgency should not return error, it logs and continues
+	})
+
+	t.Run("it returns an error when it fails to create sms notification", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
+
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "+1987654321",
+				Email:     "jane@example.com",
+			},
+		}
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
+
+		urgency := &model.Urgency{
+			ID:           1,
+			Name:         "John Doe",
+			Location:     "Mountain Peak",
+			ContactPhone: "+1234567890",
+			Description:  "Lost hiker",
+			Level:        "High",
+		}
+
+		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockAssignmentRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockNotificationRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError).AnyTimes()
+
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
+
+		err := svc.CreateUrgency(urgency)
+		assert.NoError(t, err) // CreateUrgency should not return error, it logs and continues
+	})
+
+	t.Run("it returns an error when it fails to create email notification", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
+
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "", // No phone, only email
+				Email:     "jane@example.com",
+			},
+		}
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
+
+		urgency := &model.Urgency{
+			ID:           1,
+			Name:         "John Doe",
+			Location:     "Mountain Peak",
+			ContactPhone: "+1234567890",
+			Description:  "Lost hiker",
+			Level:        "High",
+		}
+
+		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockAssignmentRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockNotificationRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError)
+
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
+
+		err := svc.CreateUrgency(urgency)
+		assert.NoError(t, err) // CreateUrgency should not return error, it logs and continues
+	})
+
+	t.Run("it handles employee with no phone and no email", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
+
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "", // No phone
+				Email:     "", // No email
+			},
+		}
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
+
+		urgency := &model.Urgency{
+			ID:           1,
+			Name:         "John Doe",
+			Location:     "Mountain Peak",
+			ContactPhone: "+1234567890",
+			Description:  "Lost hiker",
+			Level:        "High",
+		}
+
+		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockAssignmentRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		// No notification expectations since employee has no contact info
+
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
+
+		err := svc.CreateUrgency(urgency)
+		assert.NoError(t, err)
+	})
+
+	t.Run("it creates both SMS and email notifications for employee with both contacts", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
+
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "+1987654321",
+				Email:     "jane@example.com",
+			},
+		}
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
+
+		urgency := &model.Urgency{
+			ID:           1,
+			Name:         "John Doe",
+			Location:     "Mountain Peak",
+			ContactPhone: "+1234567890",
+			Description:  "Lost hiker",
+			Level:        "High",
+		}
+
+		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockAssignmentRepo.EXPECT().Create(gomock.Any()).Return(nil)
+
+		// Expect two notification creations: SMS and Email
+		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
+			assert.Equal(t, model.NotificationSMS, notification.NotificationType)
+			assert.Equal(t, "+1987654321", notification.Recipient)
+			return nil
+		})
+		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
+			assert.Equal(t, model.NotificationEmail, notification.NotificationType)
+			assert.Equal(t, "jane@example.com", notification.Recipient)
+			return nil
+		})
+
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
+
+		err := svc.CreateUrgency(urgency)
+		assert.NoError(t, err)
+	})
+
+	t.Run("it handles multiple employees with mixed success and failures", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+
+		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
+
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "+1987654321",
+				Email:     "jane@example.com",
+			},
+			{
+				ID:        2,
+				FirstName: "John",
+				LastName:  "Doe",
+				Phone:     "+1123456789",
+				Email:     "john@example.com",
+			},
+		}
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
+
+		urgency := &model.Urgency{
+			ID:           1,
+			Name:         "Emergency Situation",
+			Location:     "Mountain Peak",
+			ContactPhone: "+1234567890",
+			Description:  "Lost hiker",
+			Level:        "High",
+		}
+
+		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+
+		// First employee - assignment succeeds, notifications succeed
+		mockAssignmentRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockNotificationRepo.EXPECT().Create(gomock.Any()).Return(nil).Times(2) // SMS + Email
+
+		// Second employee - assignment fails
+		mockAssignmentRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError)
+
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
+
+		err := svc.CreateUrgency(urgency)
+		assert.NoError(t, err) // Should not return error even if some assignments fail
+	})
 }
 
-func (m *mockEmployeeClientWithEmployees) CheckActiveEmergencies(ctx context.Context, employeeID uint) (bool, error) {
-	return false, nil
-}
-
-func TestUrgencyService_BuildNotificationMessage(t *testing.T) {
+func TestUrgencyService_buildNotificationMessage(t *testing.T) {
 	t.Parallel()
 
 	t.Run("it builds SMS notification message correctly", func(t *testing.T) {
@@ -399,17 +691,17 @@ func TestUrgencyService_BuildNotificationMessage(t *testing.T) {
 		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
 		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
 
-		mockEmployeeClient := &mockEmployeeClientWithEmployees{
-			employees: []employeeV1.EmployeeResponse{
-				{
-					ID:        1,
-					FirstName: "Jane",
-					LastName:  "Smith",
-					Phone:     "+1987654321",
-					Email:     "jane@example.com",
-				},
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "+1987654321",
+				Email:     "jane@example.com",
 			},
 		}
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
@@ -464,17 +756,17 @@ func TestUrgencyService_BuildNotificationMessage(t *testing.T) {
 		mockAssignmentRepo := repositories.NewMockAssignmentRepository(mockCtrl)
 		mockNotificationRepo := repositories.NewMockNotificationRepository(mockCtrl)
 
-		mockEmployeeClient := &mockEmployeeClientWithEmployees{
-			employees: []employeeV1.EmployeeResponse{
-				{
-					ID:        1,
-					FirstName: "Jane",
-					LastName:  "Smith",
-					Phone:     "",
-					Email:     "jane@example.com",
-				},
+		mockEmployeeClient := clients.NewMockEmployeeClient(mockCtrl)
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Phone:     "",
+				Email:     "jane@example.com",
 			},
 		}
+		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
@@ -515,23 +807,4 @@ func TestUrgencyService_BuildNotificationMessage(t *testing.T) {
 		err := svc.CreateUrgency(urgency)
 		assert.NoError(t, err)
 	})
-}
-
-// mockEmployeeClientForTest is a simple mock for unit tests
-type mockEmployeeClientForTest struct{}
-
-func (m *mockEmployeeClientForTest) GetOnCallEmployees(ctx context.Context, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error) {
-	return []employeeV1.EmployeeResponse{}, nil
-}
-
-func (m *mockEmployeeClientForTest) GetAllEmployees(ctx context.Context) ([]employeeV1.EmployeeResponse, error) {
-	return []employeeV1.EmployeeResponse{}, nil
-}
-
-func (m *mockEmployeeClientForTest) GetEmployeeByID(ctx context.Context, employeeID uint) (*employeeV1.EmployeeResponse, error) {
-	return nil, nil
-}
-
-func (m *mockEmployeeClientForTest) CheckActiveEmergencies(ctx context.Context, employeeID uint) (bool, error) {
-	return false, nil
 }

@@ -16,20 +16,6 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-
-	gormDB, err := gorm.Open(postgres.New(postgres.Config{
-		Conn: db,
-	}), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Error),
-	})
-	assert.NoError(t, err)
-
-	return gormDB, mock
-}
-
 func TestEmployeeRepositoryMockDB_ListEmployees(t *testing.T) {
 	log := utils.NewTestLogger()
 
@@ -260,4 +246,18 @@ func TestEmployeeRepositoryMockDB_ResetAllData(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
+}
+
+func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+
+	gormDB, err := gorm.Open(postgres.New(postgres.Config{
+		Conn: db,
+	}), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Error),
+	})
+	assert.NoError(t, err)
+
+	return gormDB, mock
 }
