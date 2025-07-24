@@ -198,10 +198,13 @@ func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.Employ
 		admin.DELETE("/reset", employeeHandler.ResetAllData)
 	}
 
-	r.GET("/ping", func(c *gin.Context) {
-		log.Info("Ping route hit")
-		c.JSON(200, gin.H{"message": "pong"})
-	})
+	public := r.Group("/api/v1")
+	{
+		public.GET("/health", func(c *gin.Context) {
+			log.Info("Health endpoint hit")
+			c.JSON(200, gin.H{"message": "Service is healthy", "service": "employee"})
+		})
+	}
 }
 
 func readSecret(filePath string) (string, error) {

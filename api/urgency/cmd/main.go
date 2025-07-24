@@ -18,6 +18,7 @@ import (
 	_ "github.com/pd120424d/mountain-service/api/urgency/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/urgency/config"
 	"github.com/pd120424d/mountain-service/api/urgency/internal"
+	internalConfig "github.com/pd120424d/mountain-service/api/urgency/internal/config"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
 	swaggerFiles "github.com/swaggo/files"
@@ -66,8 +67,25 @@ func main() {
 
 	db := initDb(log, dbHost, dbPort, dbName)
 
+	// Initialize repositories
 	urgencyRepo := repositories.NewUrgencyRepository(log, db)
-	urgencySvc := internal.NewUrgencyService(log, urgencyRepo)
+	assignmentRepo := repositories.NewAssignmentRepository(log, db)
+	notificationRepo := repositories.NewNotificationRepository(log, db)
+
+	// Initialize service clients
+	serviceConfig := internalConfig.ServiceConfig{
+		EmployeeServiceURL: os.Getenv("EMPLOYEE_SERVICE_URL"),
+		ServiceAuthSecret:  os.Getenv("SERVICE_AUTH_SECRET"),
+		ServiceName:        "urgency-service",
+	}
+
+	serviceClients, err := internalConfig.InitializeServiceClients(serviceConfig, log)
+	if err != nil {
+		log.Fatalf("Failed to initialize service clients: %v", err)
+	}
+
+	// Initialize service with all dependencies
+	urgencySvc := internal.NewUrgencyService(log, urgencyRepo, assignmentRepo, notificationRepo, serviceClients.EmployeeClient)
 	urgencyHandler := internal.NewUrgencyHandler(log, urgencySvc)
 
 	r := gin.Default()
@@ -192,11 +210,13 @@ func setupRoutes(log utils.Logger, r *gin.Engine, urgencyHandler internal.Urgenc
 		admin.DELETE("/urgencies/reset", urgencyHandler.ResetAllData)
 	}
 
-	// Health check
-	r.GET("/ping", func(c *gin.Context) {
-		log.Info("Ping route hit")
-		c.JSON(200, gin.H{"message": "pong"})
-	})
+	public := r.Group("/api/v1")
+	{
+		public.GET("/health", func(c *gin.Context) {
+			log.Info("Health endpoint hit")
+			c.JSON(200, gin.H{"message": "Service is healthy", "service": "urgency"})
+		})
+	}
 }
 
 func readSecret(filePath string) (string, error) {

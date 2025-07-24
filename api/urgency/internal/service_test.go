@@ -1,14 +1,37 @@
 package internal
 
 import (
+	"context"
 	"testing"
+	"time"
 
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
+	mock_repositories "github.com/pd120424d/mountain-service/api/urgency/internal/repositories/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
+
+// mockEmployeeClientForTest is a simple mock for unit tests
+type mockEmployeeClientForTest struct{}
+
+func (m *mockEmployeeClientForTest) GetOnCallEmployees(ctx context.Context, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error) {
+	return []employeeV1.EmployeeResponse{}, nil
+}
+
+func (m *mockEmployeeClientForTest) GetAllEmployees(ctx context.Context) ([]employeeV1.EmployeeResponse, error) {
+	return []employeeV1.EmployeeResponse{}, nil
+}
+
+func (m *mockEmployeeClientForTest) GetEmployeeByID(ctx context.Context, employeeID uint) (*employeeV1.EmployeeResponse, error) {
+	return nil, nil
+}
+
+func (m *mockEmployeeClientForTest) CheckActiveEmergencies(ctx context.Context, employeeID uint) (bool, error) {
+	return false, nil
+}
 
 func TestUrgencyService_CreateUrgency(t *testing.T) {
 	t.Parallel()
@@ -19,9 +42,15 @@ func TestUrgencyService_CreateUrgency(t *testing.T) {
 		defer mockCtrl.Finish()
 
 		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
-		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		mockAssignmentRepo := mock_repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := mock_repositories.NewMockNotificationRepository(mockCtrl)
+		mockEmployeeClient := &mockEmployeeClientForTest{}
 
-		svc := &urgencyService{log: log, repo: mockRepo}
+		mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
+		// Expect calls to assignment and notification repos for each employee
+		// Since our mock returns empty list, no calls should be made
+
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
 
 		err := svc.CreateUrgency(&model.Urgency{})
 		assert.NoError(t, err)
@@ -33,9 +62,13 @@ func TestUrgencyService_CreateUrgency(t *testing.T) {
 		defer mockCtrl.Finish()
 
 		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockAssignmentRepo := mock_repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := mock_repositories.NewMockNotificationRepository(mockCtrl)
+		mockEmployeeClient := &mockEmployeeClientForTest{}
+
 		mockRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError)
 
-		svc := &urgencyService{log: log, repo: mockRepo}
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
 
 		err := svc.CreateUrgency(&model.Urgency{})
 		assert.Error(t, err)
@@ -218,8 +251,11 @@ func TestNewUrgencyService(t *testing.T) {
 		defer mockCtrl.Finish()
 
 		mockRepo := repositories.NewMockUrgencyRepository(mockCtrl)
+		mockAssignmentRepo := mock_repositories.NewMockAssignmentRepository(mockCtrl)
+		mockNotificationRepo := mock_repositories.NewMockNotificationRepository(mockCtrl)
+		mockEmployeeClient := &mockEmployeeClientForTest{}
 
-		svc := NewUrgencyService(log, mockRepo)
+		svc := NewUrgencyService(log, mockRepo, mockAssignmentRepo, mockNotificationRepo, mockEmployeeClient)
 		assert.NotNil(t, svc)
 		assert.IsType(t, &urgencyService{}, svc)
 	})

@@ -37,6 +37,25 @@ services:
       retries: 5
     restart: unless-stopped
 
+  activity-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: etf
+      POSTGRES_DB: activity_service
+    volumes:
+      - activity_db_data_prod:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   employee-service:
     image: ${EMPLOYEE_SERVICE_IMAGE}
     environment:
@@ -49,6 +68,7 @@ services:
       - JWT_SECRET=super-secret-prod-key
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - SERVICE_AUTH_SECRET=${SERVICE_AUTH_SECRET}
     depends_on:
       employee-db:
         condition: service_healthy
@@ -75,6 +95,9 @@ services:
       - JWT_SECRET=super-secret-prod-key
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - EMPLOYEE_SERVICE_URL=${EMPLOYEE_SERVICE_URL}
+      - ACTIVITY_SERVICE_URL=${ACTIVITY_SERVICE_URL}
+      - SERVICE_AUTH_SECRET=${SERVICE_AUTH_SECRET}
     depends_on:
       urgency-db:
         condition: service_healthy
@@ -87,6 +110,33 @@ services:
     secrets:
       - urgency_db_user
       - urgency_db_password
+    restart: unless-stopped
+
+  activity-service:
+    image: ${ACTIVITY_SERVICE_IMAGE}
+    environment:
+      - DB_HOST=activity-db
+      - DB_PORT=5432
+      - ACTIVITY_DB_USER_FILE=/run/secrets/activity_db_user
+      - ACTIVITY_DB_PASSWORD_FILE=/run/secrets/activity_db_password
+      - DB_NAME=activity_service
+      - APP_ENV=production
+      - JWT_SECRET=super-secret-prod-key
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - SERVICE_AUTH_SECRET=${SERVICE_AUTH_SECRET}
+    depends_on:
+      activity-db:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    volumes:
+      - /var/log:/var/log
+    networks:
+      - web
+    secrets:
+      - activity_db_user
+      - activity_db_password
     restart: unless-stopped
 
   employee-swagger-ui:
@@ -105,6 +155,16 @@ services:
       - "9083:8080"
     environment:
       API_URL: "${URGENCY_SWAGGER_API_URL:-http://urgency-service:8083/swagger.json}"
+    networks:
+      - web
+    restart: unless-stopped
+
+  activity-swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "9084:8080"
+    environment:
+      API_URL: "${ACTIVITY_SWAGGER_API_URL:-http://activity-service:8084/swagger.json}"
     networks:
       - web
     restart: unless-stopped
@@ -141,6 +201,7 @@ networks:
 volumes:
   db_data_prod:
   urgency_db_data_prod:
+  activity_db_data_prod:
 
 secrets:
   employee_db_user:
@@ -151,3 +212,7 @@ secrets:
     file: ./api/urgency/secrets/db_user.txt
   urgency_db_password:
     file: ./api/urgency/secrets/db_password.txt
+  activity_db_user:
+    file: ./api/activity/secrets/db_user.txt
+  activity_db_password:
+    file: ./api/activity/secrets/db_password.txt

@@ -35,9 +35,9 @@ func main() {
 
 	r.GET("/api/v1/version", versionHandler)
 
-	r.GET("/ping", func(c *gin.Context) {
-		log.Info("Ping route hit")
-		c.JSON(http.StatusOK, gin.H{"message": "pong"})
+	r.GET("/api/v1/health", func(c *gin.Context) {
+		log.Info("Health endpoint hit")
+		c.JSON(200, gin.H{"message": "Service is healthy", "service": "version"})
 	})
 
 	srv := &http.Server{
