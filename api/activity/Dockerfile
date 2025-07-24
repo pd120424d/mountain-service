@@ -28,5 +28,5 @@ WORKDIR /root/
 COPY --from=build /activity-service .
 COPY --from=build /app/docs /docs
 
-EXPOSE 8083
+EXPOSE 8084
 CMD ["./activity-service"]
