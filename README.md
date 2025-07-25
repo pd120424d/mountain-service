@@ -4,9 +4,10 @@ A modular, microservice-based system designed for managing mountain operations�
 
 ---
 
-## 📚 Table of Contents
+## Table of Contents
 
 - [Features](#-features)
+- [CI/CD Pipeline](#-cicd-pipeline)
 - [Architecture](#-architecture)
 - [Microservices](#-microservices)
 - [Tech Stack](#-tech-stack)
@@ -15,7 +16,7 @@ A modular, microservice-based system designed for managing mountain operations�
 
 ---
 
-## ✨ Features
+## Features
 
 - Employee shift scheduling with role constraints (Medic, Technical, Administrator)
 - Activity tracking for mountain operations
@@ -26,7 +27,28 @@ A modular, microservice-based system designed for managing mountain operations�
 
 ---
 
-## 🏗️ Architecture
+## CI/CD Pipeline
+
+This project features an automated CI/CD pipeline with contract-driven model generation:
+
+- **Automated Model Generation**: TypeScript models are automatically generated from backend Swagger specs
+- **Smart Fallback**: Uses live APIs when available, falls back to local swagger files
+- **Continuous Validation**: Models are validated before testing and deployment
+- **Zero-Downtime Deployment**: Seamless deployment to Azure VM with Docker
+
+**Pipeline Flow**:
+```
+Code Push → Generate Models → Run Tests → Deploy
+     ↓           ↓              ↓         ↓
+   GitHub    Live APIs or   Coverage   Azure VM
+   Actions   Fallback Files  Reports   Docker
+```
+
+ **[View Detailed CI/CD Documentation](docs/CI-CD-MODEL-GENERATION.md)**
+
+---
+
+## Architecture
 
 The system follows a microservice architecture:
 
@@ -53,7 +75,7 @@ Each service is independently deployable and communicates via HTTP/REST APIs.
 
 ---
 
-## 🧩 Microservices
+## Microservices
 
 | Service           | Description                                | Path                        |
 |-------------------|--------------------------------------------|-----------------------------|
@@ -65,7 +87,7 @@ Each service is independently deployable and communicates via HTTP/REST APIs.
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Backend**: Go (Gin, GORM, Zap, Afero)
 - **Frontend**: Angular
@@ -75,7 +97,7 @@ Each service is independently deployable and communicates via HTTP/REST APIs.
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 1. Clone the repository:
 
@@ -97,29 +119,29 @@ docker-compose up --build
 
 ---
 
-## 🛠️ CI/CD and Deployment
+## CI/CD and Deployment
 
 The project uses **GitHub Actions** for CI/CD.
 
-### ✅ Test Coverage Workflows
+### Test Coverage Workflows
 
   - `frontend-test-coverage.yml` and `backend-test-coverage.yml` run on:
   - pushes to `main` or version tags (e.g. `v1.0.0`)
   - relevant changes in `ui/`, `api/`, or test script files
   - all pull requests (for coverage only, not deployment)
 
-### 🚀 Deploy Workflows
+### Deploy Workflows
 
 - `frontend-deploy.yml` and `backend-deploy.yml` run **only after successful test coverage** (via `workflow_run`)
 - Deployments are **only triggered by push events** (e.g. merging into `main` or creating a tag)
 - **Pull requests will never trigger a deployment**
 
-### 📦 Deployment Targets
+### Deployment Targets
 
 - Docker images are built and pushed to **GitHub Container Registry**
 - Deployment runs over **SSH to an Azure VM**, loads Docker images, and brings up containers via `docker-compose.prod.yml`
 
-### 🔐 GitHub Secrets
+### GitHub Secrets
 
 To support deployments, these GitHub Secrets are used in workflows:
 
@@ -131,7 +153,7 @@ To support deployments, these GitHub Secrets are used in workflows:
 - `CORS_ALLOWED_ORIGINS`: Frontend URL for CORS config
 
 
-#### 🧪 Mimicking Secrets Locally
+#### Mimicking Secrets Locally
 
 Create a `.env` file in the root directory with values like:
 
@@ -144,7 +166,7 @@ SWAGGER_API_URL=http://yourhost:port/swagger/index.html
 CORS_ALLOWED_ORIGINS=http://localhost:4200
 ```
 
-#### 🧪 Running Services Locally
+#### Running Services Locally
 
 To spin up the services locally with production-like environment variables, you don't need GitHub Secrets.
 Instead, you can use an `.env` file and the `docker-compose.staging.yml` file:
@@ -185,7 +207,7 @@ docker-compose up --build
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 

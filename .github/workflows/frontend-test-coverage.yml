@@ -10,37 +10,55 @@ on:
       - 'ui/**'
       - 'frontend-test-cover.sh'
       - '.github/workflows/frontend-test-coverage.yml'
+      - '.github/workflows/generate-models.yml'
   pull_request:
     paths:
       - 'ui/**'
       - 'frontend-test-cover.sh'
       - '.github/workflows/frontend-test-coverage.yml'
+      - '.github/workflows/generate-models.yml'
 
 jobs:
+  generate-models:
+    uses: ./.github/workflows/generate-models.yml
+    with:
+      backend-services-running: false
+      working-directory: ui
+
   frontend-test:
     runs-on: ubuntu-latest
+    needs: generate-models
     defaults:
       run:
         working-directory: ui
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js (20)
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Cache npm
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('ui/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Download generated models
+        uses: actions/download-artifact@v4
+        with:
+          name: model-generation-artifacts
+          path: ui/
+
+      - name: Verify models are up-to-date
+        run: |
+          echo "🔍 Verifying generated models are present..."
+          ls -la src/app/shared/models/generated/
+
+          echo "📊 Model generation summary:"
+          echo "- Models generated: ${{ needs.generate-models.outputs.models-generated }}"
+          echo "- Generation method: ${{ needs.generate-models.outputs.generation-method }}"
 
       - name: Run frontend coverage script
         run: ../frontend-test-cover.sh

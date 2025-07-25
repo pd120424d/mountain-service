@@ -8,22 +8,38 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  EMPLOYEE_IMAGE_NAME: employee-service
-  URGENCY_IMAGE_NAME: urgency-service
-  ACTIVITY_IMAGE_NAME: activity-service
-  VERSION_IMAGE_NAME: version-service
-  GHCR_EMPLOYEE_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/employee-service
-  GHCR_URGENCY_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/urgency-service
-  GHCR_ACTIVITY_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/activity-service
-  GHCR_VERSION_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/version-service
 
 jobs:
-  deploy:
+  build-and-push:
     # only run if the workflow_run was triggered by a push, not a pull_request
     if: github.event_name == 'workflow_run' &&
         github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service:
+          - name: employee-service
+            dockerfile: ./api/employee/Dockerfile
+            context: ./api
+            build_args: ""
+          - name: urgency-service
+            dockerfile: ./api/urgency/Dockerfile
+            context: ./api
+            build_args: ""
+          - name: activity-service
+            dockerfile: ./api/activity/Dockerfile
+            context: ./api
+            build_args: ""
+          - name: version-service
+            dockerfile: ./api/version-service/Dockerfile
+            context: ./api
+            build_args: "VERSION GIT_SHA"
+
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      git_sha: ${{ steps.version.outputs.GIT_SHA }}
 
     steps:
       - name: Checkout code
@@ -42,47 +58,42 @@ jobs:
           echo "VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo dev)" >> $GITHUB_OUTPUT
           echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Build Docker images
+      - name: Build Docker image for ${{ matrix.service.name }}
         run: |
-          docker build -t employee-service:latest -f ./api/employee/Dockerfile ./api
-          docker build -t urgency-service:latest -f ./api/urgency/Dockerfile ./api
-          docker build -t activity-service:latest -f ./api/activity/Dockerfile ./api
-          docker build \
-            -f api/version-service/Dockerfile \
-            -t version-service:latest \
-            --build-arg VERSION=${{ steps.version.outputs.VERSION }} \
-            --build-arg GIT_SHA=${{ steps.version.outputs.GIT_SHA }} \
-            ./api
+          if [ "${{ matrix.service.build_args }}" != "" ]; then
+            docker build \
+              -f ${{ matrix.service.dockerfile }} \
+              -t ${{ matrix.service.name }}:latest \
+              --build-arg VERSION=${{ steps.version.outputs.VERSION }} \
+              --build-arg GIT_SHA=${{ steps.version.outputs.GIT_SHA }} \
+              ${{ matrix.service.context }}
+          else
+            docker build \
+              -f ${{ matrix.service.dockerfile }} \
+              -t ${{ matrix.service.name }}:latest \
+              ${{ matrix.service.context }}
+          fi
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Tag and Push all images to GHCR
+      - name: Tag and Push ${{ matrix.service.name }} to GHCR
         run: |
-          # Tag and push employee-service
-          docker tag employee-service:latest ${{ env.GHCR_EMPLOYEE_IMAGE_NAME }}:latest
-          docker tag employee-service:latest ${{ env.GHCR_EMPLOYEE_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
-          docker push ${{ env.GHCR_EMPLOYEE_IMAGE_NAME }}:latest
-          docker push ${{ env.GHCR_EMPLOYEE_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          GHCR_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}"
 
-          # Tag and push urgency-service
-          docker tag urgency-service:latest ${{ env.GHCR_URGENCY_IMAGE_NAME }}:latest
-          docker tag urgency-service:latest ${{ env.GHCR_URGENCY_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
-          docker push ${{ env.GHCR_URGENCY_IMAGE_NAME }}:latest
-          docker push ${{ env.GHCR_URGENCY_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          # Tag images
+          docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:latest
+          docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:${{ steps.version.outputs.VERSION }}
 
-          # Tag and push activity-service
-          docker tag activity-service:latest ${{ env.GHCR_ACTIVITY_IMAGE_NAME }}:latest
-          docker tag activity-service:latest ${{ env.GHCR_ACTIVITY_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
-          docker push ${{ env.GHCR_ACTIVITY_IMAGE_NAME }}:latest
-          docker push ${{ env.GHCR_ACTIVITY_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          # Push images
+          docker push ${GHCR_IMAGE_NAME}:latest
+          docker push ${GHCR_IMAGE_NAME}:${{ steps.version.outputs.VERSION }}
 
-          # Tag and push version-service
-          docker tag version-service:latest ${{ env.GHCR_VERSION_IMAGE_NAME }}:latest
-          docker tag version-service:latest ${{ env.GHCR_VERSION_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
-          docker push ${{ env.GHCR_VERSION_IMAGE_NAME }}:latest
-          docker push ${{ env.GHCR_VERSION_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
 
+    steps:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
@@ -91,6 +102,9 @@ jobs:
           ssh-keyscan -H ${{ secrets.AZURE_VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy Docker containers on Azure VM
+        env:
+          VERSION: ${{ needs.build-and-push.outputs.version }}
+          SERVICES: "employee-service urgency-service activity-service version-service"
         run: |
           ssh -i ~/.ssh/github_actions ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} '
             set -e
@@ -101,10 +115,10 @@ jobs:
             echo "URGENCY_SWAGGER_API_URL=${{ secrets.URGENCY_SWAGGER_API_URL }}" >> .env
             echo "ACTIVITY_SWAGGER_API_URL=${{ secrets.ACTIVITY_SWAGGER_API_URL }}" >> .env
             echo "CORS_ALLOWED_ORIGINS=http://${{ secrets.AZURE_VM_HOST }}:9082" >> .env
-            echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ steps.version.outputs.VERSION }}" >> .env
-            echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ steps.version.outputs.VERSION }}" >> .env
-            echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:${{ steps.version.outputs.VERSION }}" >> .env
-            echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ steps.version.outputs.VERSION }}" >> .env
+            echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:'"$VERSION"'" >> .env
+            echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:'"$VERSION"'" >> .env
+            echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:'"$VERSION"'" >> .env
+            echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:'"$VERSION"'" >> .env
             echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
 
             git pull origin main
@@ -112,10 +126,9 @@ jobs:
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Pull all images from GHCR
-            docker pull ghcr.io/${{ github.repository_owner }}/employee-service:${{ steps.version.outputs.VERSION }}
-            docker pull ghcr.io/${{ github.repository_owner }}/urgency-service:${{ steps.version.outputs.VERSION }}
-            docker pull ghcr.io/${{ github.repository_owner }}/activity-service:${{ steps.version.outputs.VERSION }}
-            docker pull ghcr.io/${{ github.repository_owner }}/version-service:${{ steps.version.outputs.VERSION }}
+            for service in '"$SERVICES"'; do
+              docker pull ghcr.io/${{ github.repository_owner }}/${service}:'"$VERSION"'
+            done
 
             docker compose -f docker-compose.prod.yml down
             docker compose -f docker-compose.prod.yml up -d

@@ -11,7 +11,14 @@ shared/models/
 │   │   ├── data-contracts.ts
 │   │   ├── http-client.ts
 │   │   └── index.ts
-│   └── urgency/         # Urgency service models (future)
+│   ├── urgency/         # Urgency service models
+│   │   ├── data-contracts.ts
+│   │   ├── http-client.ts
+│   │   └── index.ts
+│   └── activity/        # Activity service models
+│       ├── data-contracts.ts
+│       ├── http-client.ts
+│       └── index.ts
 ├── extensions/          # Manual extensions and utilities
 │   ├── employee-extensions.ts
 │   └── index.ts
@@ -42,6 +49,24 @@ import { Employee } from '../employee/employee.model';
 - `ErrorResponse`
 - `MessageResponse`
 
+### Urgency Service
+- `Urgency` (alias for `UrgencyResponse`)
+- `UrgencyCreateRequest`
+- `UrgencyUpdateRequest`
+- `UrgencyLevel` (legacy enum)
+- `Status` (legacy enum)
+- `GeneratedUrgencyLevel` (generated enum)
+- `GeneratedUrgencyStatus` (generated enum)
+
+### Activity Service
+- `Activity` (alias for `ActivityResponse`)
+- `ActivityCreateRequest`
+- `ActivityListRequest`
+- `ActivityListResponse`
+- `ActivityStatsResponse`
+- `ActivityType`
+- `ActivityLevel`
+
 ### Role Constants
 - `MedicRole`
 - `TechnicalRole`
@@ -49,10 +74,26 @@ import { Employee } from '../employee/employee.model';
 - `EmployeeRole` (union type)
 
 ### Utility Functions
+
+#### Employee Utilities
 - `createDisplayName(employee)` - Creates full name
 - `isAdmin(employee)` - Checks if employee is admin
 - `isMedic(employee)` - Checks if employee is medic
 - `isTechnical(employee)` - Checks if employee is technical
+
+#### Urgency Utilities
+- `getUrgencyLevelColor(level)` - Returns color for urgency level
+- `getStatusColor(status)` - Returns color for urgency status
+- `mapGeneratedLevelToLegacy(level)` - Converts generated to legacy enum
+- `mapLegacyLevelToGenerated(level)` - Converts legacy to generated enum
+
+#### Activity Utilities
+- `getActivityLevelColor(level)` - Returns color for activity level
+- `getActivityTypeIcon(type)` - Returns icon for activity type
+- `getActivityTypeDisplayName(type)` - Returns display name for activity type
+- `isSystemActivity(type)` - Checks if activity is system-related
+- `isEmployeeActivity(type)` - Checks if activity is employee-related
+- `isUrgencyActivity(type)` - Checks if activity is urgency-related
 
 ## Generating Models
 
@@ -70,6 +111,18 @@ npm run generate-employee-models
 
 # Employee service (from local file)
 npm run generate-employee-models-local
+
+# Urgency service (from live API)
+npm run generate-urgency-models
+
+# Urgency service (from local file)
+npm run generate-urgency-models-local
+
+# Activity service (from live API)
+npm run generate-activity-models
+
+# Activity service (from local file)
+npm run generate-activity-models-local
 ```
 
 ### Adding New Services
