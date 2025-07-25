@@ -47,12 +47,12 @@ jobs:
       - name: Verify models for deployment
         working-directory: ui
         run: |
-          echo "🔍 Verifying models for deployment..."
+          echo "Verifying models for deployment..."
           echo "- Models generated: ${{ needs.generate-models-for-deploy.outputs.models-generated }}"
           echo "- Generation method: ${{ needs.generate-models-for-deploy.outputs.generation-method }}"
 
           if [ "${{ needs.generate-models-for-deploy.outputs.models-generated }}" != "true" ]; then
-            echo "❌ Models were not generated successfully"
+            echo "Models were not generated successfully"
             exit 1
           fi
 

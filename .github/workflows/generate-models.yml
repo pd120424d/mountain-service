@@ -122,3 +122,12 @@ jobs:
           else
             echo "Some model files are missing, but continuing anyway..."
           fi
+
+      - name: Upload generated models
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-generation-artifacts
+          path: |
+            ${{ inputs.working-directory }}/src/app/shared/models/generated/
+          retention-days: 1

@@ -53,10 +53,10 @@ jobs:
 
       - name: Verify models are up-to-date
         run: |
-          echo "🔍 Verifying generated models are present..."
+          echo "Verifying generated models are present..."
           ls -la src/app/shared/models/generated/
 
-          echo "📊 Model generation summary:"
+          echo "Model generation summary:"
           echo "- Models generated: ${{ needs.generate-models.outputs.models-generated }}"
           echo "- Generation method: ${{ needs.generate-models.outputs.generation-method }}"
 
