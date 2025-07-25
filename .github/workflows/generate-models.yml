@@ -57,47 +57,47 @@ jobs:
       - name: Generate TypeScript models
         id: generate
         run: |
-          echo "🚀 Starting model generation..."
+          echo "Starting model generation..."
           
           # Set default values
           MODELS_GENERATED="false"
           GENERATION_METHOD="fallback-files"
           
           if [ "${{ inputs.backend-services-running }}" = "true" ]; then
-            echo "🌐 Attempting to generate models from live APIs..."
+            echo "Attempting to generate models from live APIs..."
             
             # Try to generate from live APIs
             if npm run generate-models 2>&1 | tee generation.log; then
-              echo "✅ Successfully generated models from live APIs"
+              echo "Successfully generated models from live APIs!"
               MODELS_GENERATED="true"
               GENERATION_METHOD="live-api"
             else
-              echo "⚠️ Failed to generate from live APIs, falling back to local files..."
+              echo "Failed to generate from live APIs, falling back to local files..."
               
               # Fallback to local swagger files
               if npm run generate-employee-models-local && \
                  npm run generate-urgency-models-local && \
                  npm run generate-activity-models-local; then
-                echo "✅ Successfully generated models from fallback files"
+                echo "Successfully generated models from fallback files!"
                 MODELS_GENERATED="true"
                 GENERATION_METHOD="fallback-files"
               else
-                echo "❌ Failed to generate models from both live APIs and fallback files"
+                echo "Failed to generate models from both live APIs and fallback files"
                 exit 1
               fi
             fi
           else
-            echo "📁 Generating models from local swagger files..."
+            echo "Generating models from local swagger files..."
             
             # Use local swagger files
             if npm run generate-employee-models-local && \
                npm run generate-urgency-models-local && \
                npm run generate-activity-models-local; then
-              echo "✅ Successfully generated models from fallback files"
+              echo "Successfully generated models from fallback files"
               MODELS_GENERATED="true"
               GENERATION_METHOD="fallback-files"
             else
-              echo "❌ Failed to generate models from fallback files"
+              echo "Failed to generate models from fallback files"
               exit 1
             fi
           fi
@@ -106,13 +106,13 @@ jobs:
           echo "models-generated=$MODELS_GENERATED" >> $GITHUB_OUTPUT
           echo "generation-method=$GENERATION_METHOD" >> $GITHUB_OUTPUT
           
-          echo "📊 Generation Summary:"
+          echo "Generation Summary:"
           echo "- Models Generated: $MODELS_GENERATED"
           echo "- Generation Method: $GENERATION_METHOD"
 
       - name: Validate generated models
         run: |
-          echo "🔍 Validating generated models..."
+          echo "Validating generated models..."
           
           # Check if model files exist
           REQUIRED_FILES=(
@@ -123,18 +123,18 @@ jobs:
           
           for file in "${REQUIRED_FILES[@]}"; do
             if [ ! -f "$file" ]; then
-              echo "❌ Required model file missing: $file"
+              echo "Required model file missing: $file"
               exit 1
             else
-              echo "✅ Found: $file"
+              echo "Found: $file"
             fi
           done
           
           # Check if models can be imported (basic TypeScript validation)
-          echo "🔧 Running TypeScript compilation check..."
+          echo "Running TypeScript compilation check..."
           npx tsc --noEmit --skipLibCheck
           
-          echo "✅ All model validations passed!"
+          echo "All model validations passed!"
 
       - name: Upload generation artifacts
         if: always()
@@ -143,19 +143,20 @@ jobs:
           name: model-generation-artifacts
           path: |
             ${{ inputs.working-directory }}/src/app/shared/models/generated/
+            ${{ inputs.working-directory }}/scripts/
             ${{ inputs.working-directory }}/generation.log
           retention-days: 7
 
       - name: Display generation summary
         run: |
-          echo "## 📋 Model Generation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Model Generation Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Status**: ${{ steps.generate.outputs.models-generated == 'true' && '✅ Success' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Method**: ${{ steps.generate.outputs.generation-method }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
           
           if [ -f "generation.log" ]; then
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 📝 Generation Log" >> $GITHUB_STEP_SUMMARY
+            echo "### Generation Log" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             tail -20 generation.log >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY

@@ -10,13 +10,6 @@
  * ---------------------------------------------------------------
  */
 
-export enum ActivityLevel {
-  Info = "info",
-  Warning = "warning",
-  Error = "error",
-  Critical = "critical",
-}
-
 export enum ActivityType {
   EmployeeCreated = "employee_created",
   EmployeeUpdated = "employee_updated",
@@ -33,6 +26,13 @@ export enum ActivityType {
   NotificationSent = "notification_sent",
   NotificationFailed = "notification_failed",
   SystemReset = "system_reset",
+}
+
+export enum ActivityLevel {
+  Info = "info",
+  Warning = "warning",
+  Error = "error",
+  Critical = "critical",
 }
 
 export interface ErrorResponse {
