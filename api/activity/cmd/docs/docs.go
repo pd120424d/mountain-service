@@ -26,14 +26,14 @@ const docTemplate = `{
     "paths": {
         "/activities": {
             "get": {
-                "description": "Get a paginated list of activities with optional filtering",
+                "description": "Извлачење листе активности са опционим филтрирањем и страничењем",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "activities"
                 ],
-                "summary": "List activities",
+                "summary": "Листа активности",
                 "parameters": [
                     {
                         "type": "integer",
@@ -86,7 +86,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a new activity in the system",
+                "description": "Креирање нове активности у систему",
                 "consumes": [
                     "application/json"
                 ],
@@ -96,7 +96,7 @@ const docTemplate = `{
                 "tags": [
                     "activities"
                 ],
-                "summary": "Create a new activity",
+                "summary": "Креирање нове активности",
                 "parameters": [
                     {
                         "description": "Activity data",
@@ -134,11 +134,11 @@ const docTemplate = `{
         },
         "/activities/reset": {
             "delete": {
-                "description": "Delete all activities from the system",
+                "description": "Брисање свих активности из система",
                 "tags": [
                     "activities"
                 ],
-                "summary": "Reset all activity data",
+                "summary": "Ресетовање свих података о активностима",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -159,14 +159,14 @@ const docTemplate = `{
         },
         "/activities/stats": {
             "get": {
-                "description": "Get comprehensive activity statistics",
+                "description": "Извлачење свеобухватних статистика активности",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "activities"
                 ],
-                "summary": "Get activity statistics",
+                "summary": "Статистике активности",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -186,14 +186,14 @@ const docTemplate = `{
         },
         "/activities/{id}": {
             "get": {
-                "description": "Get a specific activity by its ID",
+                "description": "Претрага одређене активности по њеном ID",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "activities"
                 ],
-                "summary": "Get activity by ID",
+                "summary": "Претрага активности по ID",
                 "parameters": [
                     {
                         "type": "integer",
@@ -234,11 +234,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a specific activity by its ID",
+                "description": "Брисање одређене активности по њеном ID",
                 "tags": [
                     "activities"
                 ],
-                "summary": "Delete activity",
+                "summary": "Брисање активности",
                 "parameters": [
                     {
                         "type": "integer",

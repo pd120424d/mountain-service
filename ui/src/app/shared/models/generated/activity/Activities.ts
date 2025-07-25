@@ -11,20 +11,20 @@
  */
 
 import {
-  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityCreateRequest,
-  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityListResponse,
-  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityResponse,
-  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityStatsResponse,
+  ActivityCreateRequest,
+  ActivityListResponse,
+  ActivityResponse,
+  ActivityStatsResponse,
 } from "./data-contracts";
 import { ContentType, HttpClient, RequestParams } from "./http-client";
 
 export class Activities<SecurityDataType = unknown> extends HttpClient<SecurityDataType> {
   /**
-   * @description Get a paginated list of activities with optional filtering
+   * @description Преузимање листе активности са опционим филтрирањем и пагинацијом
    *
    * @tags activities
    * @name ActivitiesList
-   * @summary List activities
+   * @summary Листа активности
    * @request GET:/activities
    * @secure
    */
@@ -47,7 +47,7 @@ export class Activities<SecurityDataType = unknown> extends HttpClient<SecurityD
     },
     params: RequestParams = {},
   ) =>
-    this.request<GithubComPd120424DMountainServiceApiContractsActivityV1ActivityListResponse, Record<string, any>>({
+    this.request<ActivityListResponse, Record<string, any>>({
       path: `/activities`,
       method: "GET",
       query: query,
@@ -56,19 +56,19 @@ export class Activities<SecurityDataType = unknown> extends HttpClient<SecurityD
       ...params,
     });
   /**
-   * @description Create a new activity in the system
+   * @description Креирање нове активности у систему
    *
    * @tags activities
    * @name ActivitiesCreate
-   * @summary Create a new activity
+   * @summary Креирање нове активности
    * @request POST:/activities
    * @secure
    */
   activitiesCreate = (
-    activity: GithubComPd120424DMountainServiceApiContractsActivityV1ActivityCreateRequest,
+    activity: ActivityCreateRequest,
     params: RequestParams = {},
   ) =>
-    this.request<GithubComPd120424DMountainServiceApiContractsActivityV1ActivityResponse, Record<string, any>>({
+    this.request<ActivityResponse, Record<string, any>>({
       path: `/activities`,
       method: "POST",
       body: activity,
@@ -78,11 +78,11 @@ export class Activities<SecurityDataType = unknown> extends HttpClient<SecurityD
       ...params,
     });
   /**
-   * @description Delete all activities from the system
+   * @description Брисање свих активности из система
    *
    * @tags activities
    * @name ResetDelete
-   * @summary Reset all activity data
+   * @summary Ресетовање свих података о активностима
    * @request DELETE:/activities/reset
    * @secure
    */
@@ -94,16 +94,16 @@ export class Activities<SecurityDataType = unknown> extends HttpClient<SecurityD
       ...params,
     });
   /**
-   * @description Get comprehensive activity statistics
+   * @description Преузимање свеобухватних статистика активности
    *
    * @tags activities
    * @name StatsList
-   * @summary Get activity statistics
+   * @summary Статистике активности
    * @request GET:/activities/stats
    * @secure
    */
   statsList = (params: RequestParams = {}) =>
-    this.request<GithubComPd120424DMountainServiceApiContractsActivityV1ActivityStatsResponse, Record<string, any>>({
+    this.request<ActivityStatsResponse, Record<string, any>>({
       path: `/activities/stats`,
       method: "GET",
       secure: true,
@@ -111,16 +111,16 @@ export class Activities<SecurityDataType = unknown> extends HttpClient<SecurityD
       ...params,
     });
   /**
-   * @description Get a specific activity by its ID
+   * @description Преузимање одређене активности по њеном ID
    *
    * @tags activities
    * @name ActivitiesDetail
-   * @summary Get activity by ID
+   * @summary Преузимање активности по ID
    * @request GET:/activities/{id}
    * @secure
    */
   activitiesDetail = (id: number, params: RequestParams = {}) =>
-    this.request<GithubComPd120424DMountainServiceApiContractsActivityV1ActivityResponse, Record<string, any>>({
+    this.request<ActivityResponse, Record<string, any>>({
       path: `/activities/${id}`,
       method: "GET",
       secure: true,
@@ -128,11 +128,11 @@ export class Activities<SecurityDataType = unknown> extends HttpClient<SecurityD
       ...params,
     });
   /**
-   * @description Delete a specific activity by its ID
+   * @description Брисање одређене активности по њеном ID
    *
    * @tags activities
    * @name ActivitiesDelete
-   * @summary Delete activity
+   * @summary Брисање активности
    * @request DELETE:/activities/{id}
    * @secure
    */

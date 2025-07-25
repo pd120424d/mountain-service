@@ -158,7 +158,7 @@ info:
 paths:
   /activities:
     get:
-      description: Get a paginated list of activities with optional filtering
+      description: Преузимање листе активности са опционим филтрирањем и пагинацијом
       parameters:
       - default: 1
         description: Page number
@@ -195,13 +195,13 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: List activities
+      summary: Листа активности
       tags:
       - activities
     post:
       consumes:
       - application/json
-      description: Create a new activity in the system
+      description: Креирање нове активности у систему
       parameters:
       - description: Activity data
         in: body
@@ -226,12 +226,12 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Create a new activity
+      summary: Креирање нове активности
       tags:
       - activities
   /activities/{id}:
     delete:
-      description: Delete a specific activity by its ID
+      description: Брисање одређене активности по њеном ID
       parameters:
       - description: Activity ID
         in: path
@@ -259,11 +259,11 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Delete activity
+      summary: Брисање активности
       tags:
       - activities
     get:
-      description: Get a specific activity by its ID
+      description: Преузимање одређене активности по њеном ID
       parameters:
       - description: Activity ID
         in: path
@@ -292,12 +292,12 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Get activity by ID
+      summary: Преузимање активности по ID
       tags:
       - activities
   /activities/reset:
     delete:
-      description: Delete all activities from the system
+      description: Брисање свих активности из система
       responses:
         "200":
           description: OK
@@ -309,12 +309,12 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Reset all activity data
+      summary: Ресетовање свих података о активностима
       tags:
       - activities
   /activities/stats:
     get:
-      description: Get comprehensive activity statistics
+      description: Преузимање свеобухватних статистика активности
       produces:
       - application/json
       responses:
@@ -327,7 +327,7 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Get activity statistics
+      summary: Статистике активности
       tags:
       - activities
 security:

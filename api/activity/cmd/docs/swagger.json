@@ -19,14 +19,14 @@
     "paths": {
         "/activities": {
             "get": {
-                "description": "Get a paginated list of activities with optional filtering",
+                "description": "Преузимање листе активности са опционим филтрирањем и пагинацијом",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "activities"
                 ],
-                "summary": "List activities",
+                "summary": "Листа активности",
                 "parameters": [
                     {
                         "type": "integer",
@@ -79,7 +79,7 @@
                 }
             },
             "post": {
-                "description": "Create a new activity in the system",
+                "description": "Креирање нове активности у систему",
                 "consumes": [
                     "application/json"
                 ],
@@ -89,7 +89,7 @@
                 "tags": [
                     "activities"
                 ],
-                "summary": "Create a new activity",
+                "summary": "Креирање нове активности",
                 "parameters": [
                     {
                         "description": "Activity data",
@@ -127,11 +127,11 @@
         },
         "/activities/reset": {
             "delete": {
-                "description": "Delete all activities from the system",
+                "description": "Брисање свих активности из система",
                 "tags": [
                     "activities"
                 ],
-                "summary": "Reset all activity data",
+                "summary": "Ресетовање свих података о активностима",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -152,14 +152,14 @@
         },
         "/activities/stats": {
             "get": {
-                "description": "Get comprehensive activity statistics",
+                "description": "Преузимање свеобухватних статистика активности",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "activities"
                 ],
-                "summary": "Get activity statistics",
+                "summary": "Статистике активности",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -179,14 +179,14 @@
         },
         "/activities/{id}": {
             "get": {
-                "description": "Get a specific activity by its ID",
+                "description": "Преузимање одређене активности по њеном ID",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "activities"
                 ],
-                "summary": "Get activity by ID",
+                "summary": "Преузимање активности по ID",
                 "parameters": [
                     {
                         "type": "integer",
@@ -227,11 +227,11 @@
                 }
             },
             "delete": {
-                "description": "Delete a specific activity by its ID",
+                "description": "Брисање одређене активности по њеном ID",
                 "tags": [
                     "activities"
                 ],
-                "summary": "Delete activity",
+                "summary": "Брисање активности",
                 "parameters": [
                     {
                         "type": "integer",

@@ -30,9 +30,9 @@ func NewActivityHandler(log utils.Logger, svc internal.ActivityService) Activity
 	return &activityHandler{log: log.WithName("activityHandler"), svc: svc}
 }
 
-// CreateActivity creates a new activity
-// @Summary Create a new activity
-// @Description Create a new activity in the system
+// CreateActivity Креирање нове активности
+// @Summary Креирање нове активности
+// @Description Креирање нове активности у систему
 // @Tags activities
 // @Accept json
 // @Produce json
@@ -60,9 +60,9 @@ func (h *activityHandler) CreateActivity(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, response)
 }
 
-// GetActivity retrieves an activity by ID
-// @Summary Get activity by ID
-// @Description Get a specific activity by its ID
+// GetActivity Преузимање активности по ID
+// @Summary Преузимање активности по ID
+// @Description Преузимање одређене активности по њеном ID
 // @Tags activities
 // @Produce json
 // @Param id path int true "Activity ID"
@@ -90,9 +90,9 @@ func (h *activityHandler) GetActivity(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-// ListActivities retrieves a list of activities with filtering and pagination
-// @Summary List activities
-// @Description Get a paginated list of activities with optional filtering
+// ListActivities Преузимање листе активности са филтрирањем и пагинацијом
+// @Summary Листа активности
+// @Description Преузимање листе активности са опционим филтрирањем и пагинацијом
 // @Tags activities
 // @Produce json
 // @Param page query int false "Page number" default(1)
@@ -138,9 +138,9 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-// GetActivityStats retrieves activity statistics
-// @Summary Get activity statistics
-// @Description Get comprehensive activity statistics
+// GetActivityStats Преузимање статистика активности
+// @Summary Статистике активности
+// @Description Преузимање свеобухватних статистика активности
 // @Tags activities
 // @Produce json
 // @Success 200 {object} activityV1.ActivityStatsResponse
@@ -157,9 +157,9 @@ func (h *activityHandler) GetActivityStats(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-// DeleteActivity deletes an activity by ID
-// @Summary Delete activity
-// @Description Delete a specific activity by its ID
+// DeleteActivity Брисање активности по ID
+// @Summary Брисање активности
+// @Description Брисање одређене активности по њеном ID
 // @Tags activities
 // @Param id path int true "Activity ID"
 // @Success 200 {object} map[string]interface{}
@@ -187,9 +187,9 @@ func (h *activityHandler) DeleteActivity(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Activity deleted successfully"})
 }
 
-// ResetAllData resets all activity data
-// @Summary Reset all activity data
-// @Description Delete all activities from the system
+// ResetAllData Ресетовање свих података о активностима
+// @Summary Ресетовање свих података о активностима
+// @Description Брисање свих активности из система
 // @Tags activities
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
