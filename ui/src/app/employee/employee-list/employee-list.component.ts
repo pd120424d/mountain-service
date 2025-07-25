@@ -41,29 +41,27 @@ export class EmployeeListComponent extends BaseTranslatableComponent implements 
     });
   }
 
-  // Open the confirmation dialog
   openDeleteDialog(employeeId: number): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent);
 
-    // Subscribe to the dialog result
     dialogRef.afterClosed().subscribe((result: any) => {
       if (result) {
-        this.deleteEmployee(employeeId); // Proceed with deletion if confirmed
+        this.deleteEmployee(employeeId);
       }
     });
   }
 
   deleteEmployee(id: number): void {
     this.employeeService.deleteEmployee(id).subscribe(() => {
-      this.loadEmployees(); // Reload the list after deletion
+      this.loadEmployees();
     });
   }
 
   editEmployee(employee: Employee): void {
-    console.log('Navigating to edit with employee:', employee); // Debug
+    console.log('Navigating to edit with employee:', employee);
 
     this.router.navigate(['/employees/edit', employee.id], {
-      state: { employee }, // Pass the employee data via router state
+      state: { employee },
     });
   }
 

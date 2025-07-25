@@ -1,7 +1,11 @@
 // Activity model extensions and utilities
 // These extend the generated models with frontend-specific functionality
 
-import { ActivityResponse, ActivityType, ActivityLevel } from '../generated/activity';
+import {
+  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityResponse as ActivityResponse,
+  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityType as ActivityType,
+  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityLevel as ActivityLevel
+} from '../generated/activity';
 
 // Type aliases for cleaner imports
 export type Activity = ActivityResponse;
@@ -9,13 +13,13 @@ export type Activity = ActivityResponse;
 // Utility functions
 export const getActivityLevelColor = (level: ActivityLevel): string => {
   switch (level) {
-    case ActivityLevel.Info:
+    case ActivityLevel.ActivityLevelInfo:
       return 'blue';
-    case ActivityLevel.Warning:
+    case ActivityLevel.ActivityLevelWarning:
       return 'yellow';
-    case ActivityLevel.Error:
+    case ActivityLevel.ActivityLevelError:
       return 'orange';
-    case ActivityLevel.Critical:
+    case ActivityLevel.ActivityLevelCritical:
       return 'red';
     default:
       return 'gray';
@@ -24,27 +28,27 @@ export const getActivityLevelColor = (level: ActivityLevel): string => {
 
 export const getActivityTypeIcon = (type: ActivityType): string => {
   switch (type) {
-    case ActivityType.EmployeeCreated:
-    case ActivityType.EmployeeUpdated:
-    case ActivityType.EmployeeDeleted:
+    case ActivityType.ActivityEmployeeCreated:
+    case ActivityType.ActivityEmployeeUpdated:
+    case ActivityType.ActivityEmployeeDeleted:
       return 'person';
-    case ActivityType.EmployeeLogin:
+    case ActivityType.ActivityEmployeeLogin:
       return 'login';
-    case ActivityType.ShiftAssigned:
-    case ActivityType.ShiftRemoved:
+    case ActivityType.ActivityShiftAssigned:
+    case ActivityType.ActivityShiftRemoved:
       return 'schedule';
-    case ActivityType.UrgencyCreated:
-    case ActivityType.UrgencyUpdated:
-    case ActivityType.UrgencyDeleted:
+    case ActivityType.ActivityUrgencyCreated:
+    case ActivityType.ActivityUrgencyUpdated:
+    case ActivityType.ActivityUrgencyDeleted:
       return 'warning';
-    case ActivityType.EmergencyAssigned:
-    case ActivityType.EmergencyAccepted:
-    case ActivityType.EmergencyDeclined:
+    case ActivityType.ActivityEmergencyAssigned:
+    case ActivityType.ActivityEmergencyAccepted:
+    case ActivityType.ActivityEmergencyDeclined:
       return 'emergency';
-    case ActivityType.NotificationSent:
-    case ActivityType.NotificationFailed:
+    case ActivityType.ActivityNotificationSent:
+    case ActivityType.ActivityNotificationFailed:
       return 'notifications';
-    case ActivityType.SystemReset:
+    case ActivityType.ActivitySystemReset:
       return 'refresh';
     default:
       return 'info';
@@ -53,35 +57,35 @@ export const getActivityTypeIcon = (type: ActivityType): string => {
 
 export const getActivityTypeDisplayName = (type: ActivityType): string => {
   switch (type) {
-    case ActivityType.EmployeeCreated:
+    case ActivityType.ActivityEmployeeCreated:
       return 'Employee Created';
-    case ActivityType.EmployeeUpdated:
+    case ActivityType.ActivityEmployeeUpdated:
       return 'Employee Updated';
-    case ActivityType.EmployeeDeleted:
+    case ActivityType.ActivityEmployeeDeleted:
       return 'Employee Deleted';
-    case ActivityType.EmployeeLogin:
+    case ActivityType.ActivityEmployeeLogin:
       return 'Employee Login';
-    case ActivityType.ShiftAssigned:
+    case ActivityType.ActivityShiftAssigned:
       return 'Shift Assigned';
-    case ActivityType.ShiftRemoved:
+    case ActivityType.ActivityShiftRemoved:
       return 'Shift Removed';
-    case ActivityType.UrgencyCreated:
+    case ActivityType.ActivityUrgencyCreated:
       return 'Urgency Created';
-    case ActivityType.UrgencyUpdated:
+    case ActivityType.ActivityUrgencyUpdated:
       return 'Urgency Updated';
-    case ActivityType.UrgencyDeleted:
+    case ActivityType.ActivityUrgencyDeleted:
       return 'Urgency Deleted';
-    case ActivityType.EmergencyAssigned:
+    case ActivityType.ActivityEmergencyAssigned:
       return 'Emergency Assigned';
-    case ActivityType.EmergencyAccepted:
+    case ActivityType.ActivityEmergencyAccepted:
       return 'Emergency Accepted';
-    case ActivityType.EmergencyDeclined:
+    case ActivityType.ActivityEmergencyDeclined:
       return 'Emergency Declined';
-    case ActivityType.NotificationSent:
+    case ActivityType.ActivityNotificationSent:
       return 'Notification Sent';
-    case ActivityType.NotificationFailed:
+    case ActivityType.ActivityNotificationFailed:
       return 'Notification Failed';
-    case ActivityType.SystemReset:
+    case ActivityType.ActivitySystemReset:
       return 'System Reset';
     default:
       return (type as string).replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
@@ -89,39 +93,39 @@ export const getActivityTypeDisplayName = (type: ActivityType): string => {
 };
 
 export const isSystemActivity = (type: ActivityType): boolean => {
-  return type === ActivityType.SystemReset;
+  return type === ActivityType.ActivitySystemReset;
 };
 
 export const isEmployeeActivity = (type: ActivityType): boolean => {
   return [
-    ActivityType.EmployeeCreated,
-    ActivityType.EmployeeUpdated,
-    ActivityType.EmployeeDeleted,
-    ActivityType.EmployeeLogin
+    ActivityType.ActivityEmployeeCreated,
+    ActivityType.ActivityEmployeeUpdated,
+    ActivityType.ActivityEmployeeDeleted,
+    ActivityType.ActivityEmployeeLogin
   ].includes(type);
 };
 
 export const isUrgencyActivity = (type: ActivityType): boolean => {
   return [
-    ActivityType.UrgencyCreated,
-    ActivityType.UrgencyUpdated,
-    ActivityType.UrgencyDeleted,
-    ActivityType.EmergencyAssigned,
-    ActivityType.EmergencyAccepted,
-    ActivityType.EmergencyDeclined
+    ActivityType.ActivityUrgencyCreated,
+    ActivityType.ActivityUrgencyUpdated,
+    ActivityType.ActivityUrgencyDeleted,
+    ActivityType.ActivityEmergencyAssigned,
+    ActivityType.ActivityEmergencyAccepted,
+    ActivityType.ActivityEmergencyDeclined
   ].includes(type);
 };
 
 export const isShiftActivity = (type: ActivityType): boolean => {
   return [
-    ActivityType.ShiftAssigned,
-    ActivityType.ShiftRemoved
+    ActivityType.ActivityShiftAssigned,
+    ActivityType.ActivityShiftRemoved
   ].includes(type);
 };
 
 export const isNotificationActivity = (type: ActivityType): boolean => {
   return [
-    ActivityType.NotificationSent,
-    ActivityType.NotificationFailed
+    ActivityType.ActivityNotificationSent,
+    ActivityType.ActivityNotificationFailed
   ].includes(type);
 };

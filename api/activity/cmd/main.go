@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/pd120424d/mountain-service/api/activity/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/activity/config"
 	"github.com/pd120424d/mountain-service/api/activity/internal"
 	"github.com/pd120424d/mountain-service/api/activity/internal/handler"
@@ -168,6 +169,9 @@ func setupRoutes(log utils.Logger, r *gin.Engine, activityHandler handler.Activi
 	log.Info("Setting up routes")
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.GET("/swagger.json", func(c *gin.Context) {
+		c.File("/docs/swagger.json")
+	})
 
 	jwtSecret, err := readSecret("/run/secrets/jwt_secret")
 	if err != nil {

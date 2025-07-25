@@ -53,16 +53,16 @@ for SERVICE in "${SERVICES[@]}"; do
     echo "📊 $SERVICE coverage: $COVERAGE%"
 
     if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-      echo "❌ $SERVICE coverage $COVERAGE% is below threshold ($THRESHOLD%)"
+      echo "[FAILURE] $SERVICE coverage $COVERAGE% is below threshold ($THRESHOLD%)"
       OVERALL_SUCCESS=false
     else
-      echo "✅ $SERVICE coverage $COVERAGE% meets threshold ($THRESHOLD%)"
+      echo "[SUCCESS] $SERVICE coverage $COVERAGE% meets threshold ($THRESHOLD%)"
     fi
 
     # Clean up individual coverage file
     rm -f "$COVERAGE_FILE"
   else
-    echo "❌ Failed to run coverage for $SERVICE"
+    echo "[FAILURE] Failed to run coverage for $SERVICE"
     OVERALL_SUCCESS=false
   fi
 

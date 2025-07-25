@@ -3,8 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { UrgencyService } from './urgency.service';
-import { Urgency, UrgencyCreateRequest, UrgencyUpdateRequest } from '../shared/models';
-import { UrgencyLevel as GeneratedUrgencyLevel, UrgencyStatus as GeneratedUrgencyStatus } from '../shared/models/generated/urgency';
+import { Urgency, UrgencyCreateRequest, UrgencyUpdateRequest, GeneratedUrgencyLevel, GeneratedUrgencyStatus } from '../shared/models';
 import { environment } from '../../environments/environment';
 
 describe('UrgencyService', () => {

@@ -5,7 +5,10 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
 import { Urgency } from '../../shared/models';
-import { UrgencyLevel as GeneratedUrgencyLevel, UrgencyStatus as GeneratedUrgencyStatus } from '../../shared/models/generated/urgency';
+import {
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel as GeneratedUrgencyLevel,
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus as GeneratedUrgencyStatus
+} from '../../shared/models/generated/urgency';
 
 @Component({
   selector: 'app-urgency-list',

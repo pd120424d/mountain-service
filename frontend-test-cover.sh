@@ -20,7 +20,7 @@ npm run test
 
 COVERAGE_FILE="coverage/ui/coverage-summary.json"
 if [ ! -f "$COVERAGE_FILE" ]; then
-  echo "❌ Coverage summary file not found"
+  echo "[FAILURE] Coverage summary file not found"
   exit 1
 fi
 
@@ -29,8 +29,8 @@ THRESHOLD=70
 
 echo "Total statement coverage: $COVERAGE%"
 if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-  echo "❌ Coverage $COVERAGE% is below threshold ($THRESHOLD%)."
+  echo "[FAILURE] Coverage $COVERAGE% is below threshold ($THRESHOLD%)."
   exit 1
 else
-  echo "✅ Coverage $COVERAGE% is above threshold ($THRESHOLD%)."
+  echo "[SUCCESS]Coverage $COVERAGE% is above threshold ($THRESHOLD%)."
 fi

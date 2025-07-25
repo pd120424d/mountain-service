@@ -1,7 +1,11 @@
 // Urgency model extensions and utilities
 // These extend the generated models with frontend-specific functionality
 
-import { UrgencyResponse, UrgencyLevel as GeneratedUrgencyLevel, UrgencyStatus as GeneratedUrgencyStatus } from '../generated/urgency';
+import {
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyResponse as UrgencyResponse,
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel as GeneratedUrgencyLevel,
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus as GeneratedUrgencyStatus
+} from '../generated/urgency';
 
 // Legacy enum mappings for backward compatibility
 export enum UrgencyLevel {

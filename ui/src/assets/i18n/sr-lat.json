@@ -121,7 +121,9 @@
             "EMPLOYEE_API": "API Servisa za Zaposlene",
             "EMPLOYEE_API_DESC": "Upravljanje zaposlenima, smenama i autentifikacijom",
             "URGENCY_API": "API Servisa za Hitnosti",
-            "URGENCY_API_DESC": "Rukovanje izveštajima o hitnim slučajevima i upravljanje incidentima"
+            "URGENCY_API_DESC": "Rukovanje izveštajima o hitnim slučajevima i upravljanje incidentima",
+            "ACTIVITY_API": "API Servisa za Aktivnosti",
+            "ACTIVITY_API_DESC": "Upravljanje aktivnostima i njihovim napretkom"
         },
         "DANGER_ZONE": "Opasna zona",
         "RESET_WARNING": "PAŽNJA: Ova akcija će trajno izbrisati sve podatke iz sistema, uključujući zaposlene, smene i sve povezane informacije. Ova akcija se ne može poništiti!",

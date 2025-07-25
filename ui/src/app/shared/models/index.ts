@@ -17,33 +17,38 @@ export * from './extensions';
 
 // Employee Service
 export type {
-  EmployeeResponse as Employee,
-  EmployeeCreateRequest,
-  EmployeeUpdateRequest,
-  EmployeeLogin,
-  TokenResponse,
-  ErrorResponse,
-  MessageResponse
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeResponse as Employee,
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeCreateRequest as EmployeeCreateRequest,
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeUpdateRequest as EmployeeUpdateRequest,
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeLogin as EmployeeLogin,
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1TokenResponse as TokenResponse,
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse as ErrorResponse,
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1MessageResponse as MessageResponse
 } from './generated/employee';
 
 // Urgency Service
 export type {
-  UrgencyResponse,
-  UrgencyCreateRequest,
-  UrgencyUpdateRequest,
-  UrgencyLevel as GeneratedUrgencyLevel,
-  UrgencyStatus as GeneratedUrgencyStatus
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyResponse as UrgencyResponse,
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyCreateRequest as UrgencyCreateRequest,
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyUpdateRequest as UrgencyUpdateRequest
+} from './generated/urgency';
+
+export {
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel as GeneratedUrgencyLevel,
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus as GeneratedUrgencyStatus
 } from './generated/urgency';
 
 // Activity Service
 export type {
-  ActivityResponse,
-  ActivityCreateRequest,
-  ActivityListRequest,
-  ActivityListResponse,
-  ActivityStatsResponse,
-  ActivityType,
-  ActivityLevel
+  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityResponse as ActivityResponse,
+  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityCreateRequest as ActivityCreateRequest,
+  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityListResponse as ActivityListResponse,
+  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityStatsResponse as ActivityStatsResponse
+} from './generated/activity';
+
+export {
+  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityType as ActivityType,
+  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityLevel as ActivityLevel
 } from './generated/activity';
 
 // Re-export role constants and utilities for backward compatibility

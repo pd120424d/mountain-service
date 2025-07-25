@@ -121,7 +121,9 @@
             "EMPLOYEE_API": "Employee Service API",
             "EMPLOYEE_API_DESC": "Manage employees, shifts, and authentication",
             "URGENCY_API": "Urgency Service API",
-            "URGENCY_API_DESC": "Handle emergency reports and incident management"
+            "URGENCY_API_DESC": "Handle emergency reports and incident management",
+            "ACTIVITY_API": "Activity Service API",
+            "ACTIVITY_API_DESC": "Manage activities and their progress"
         },
         "DANGER_ZONE": "Danger Zone",
         "RESET_WARNING": "WARNING: This action will permanently delete all data from the system including employees, shifts, and all related information. This action cannot be undone!",

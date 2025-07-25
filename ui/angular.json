@@ -123,7 +123,12 @@
               "node_modules/ngx-toastr/toastr.css",
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "codeCoverageExclude": [
+              "src/app/shared/models/generated/**/*",
+              "src/app/shared/models/extensions/**/*",
+              "src/app/shared/models/index.ts"
+            ]
           }
         }
       }

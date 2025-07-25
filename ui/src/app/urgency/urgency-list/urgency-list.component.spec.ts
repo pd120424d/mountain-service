@@ -8,7 +8,10 @@ import { of, throwError } from 'rxjs';
 import { UrgencyListComponent } from './urgency-list.component';
 import { UrgencyService } from '../urgency.service';
 import { Urgency } from '../../shared/models';
-import { UrgencyLevel, UrgencyStatus } from '../../shared/models/generated/urgency';
+import {
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel as UrgencyLevel,
+  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus as UrgencyStatus
+} from '../../shared/models/generated/urgency';
 
 describe('UrgencyListComponent', () => {
   let component: UrgencyListComponent;

@@ -150,7 +150,7 @@ jobs:
       - name: Display generation summary
         run: |
           echo "## Model Generation Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ${{ steps.generate.outputs.models-generated == 'true' && '✅ Success' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ steps.generate.outputs.models-generated == 'true' && 'SUCCESS' || 'FAILURE' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Method**: ${{ steps.generate.outputs.generation-method }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
           
