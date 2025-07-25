@@ -478,20 +478,28 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "BearerAuth": {
-            "description": "Type \"Bearer\" followed by a space and JWT token.",
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
+        "OAuth2Password": {
+            "type": "oauth2",
+            "flow": "password",
+            "tokenUrl": "http://localhost:8082/api/v1/login",
+            "scopes": {
+                "read": "Grants read access",
+                "write": "Grants write access"
+            }
         }
-    }
+    },
+    "security": [
+        {
+            "OAuth2Password": []
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8083",
-	BasePath:         "/",
+	Host:             "",
+	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Activity Service API",
 	Description:      "Activity tracking and audit service for the Mountain Emergency Management System",

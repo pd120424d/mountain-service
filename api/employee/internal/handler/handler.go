@@ -158,9 +158,23 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	var req employeeV1.EmployeeLogin
 	h.log.Info("Received Login Employee request")
 
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
-		return
+	// Handle both JSON and form-encoded requests
+	contentType := ctx.GetHeader("Content-Type")
+	if contentType == "application/x-www-form-urlencoded" {
+		// OAuth2 password flow - form encoded
+		req.Username = ctx.PostForm("username")
+		req.Password = ctx.PostForm("password")
+
+		if req.Username == "" || req.Password == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "username and password are required"})
+			return
+		}
+	} else {
+		// Regular JSON request
+		if err := ctx.ShouldBindJSON(&req); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
+			return
+		}
 	}
 
 	if sharedAuth.IsAdminLogin(req.Username) {
@@ -180,7 +194,19 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		}
 
 		h.log.Info("Successfully authenticated admin user")
-		ctx.JSON(http.StatusOK, gin.H{"token": token})
+
+		// Check if request is from OAuth2 flow (Swagger UI)
+		if contentType == "application/x-www-form-urlencoded" {
+			// OAuth2 password flow response format
+			ctx.JSON(http.StatusOK, gin.H{
+				"access_token": token,
+				"token_type":   "Bearer",
+				"expires_in":   86400, // 24 hours in seconds
+			})
+		} else {
+			// Regular JSON API response
+			ctx.JSON(http.StatusOK, gin.H{"token": token})
+		}
 		return
 	}
 
@@ -205,7 +231,19 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	}
 
 	h.log.Info("Successfully validate employee and generated JWT token")
-	ctx.JSON(http.StatusOK, gin.H{"token": token})
+
+	// Check if request is from OAuth2 flow (Swagger UI)
+	if contentType == "application/x-www-form-urlencoded" {
+		// OAuth2 password flow response format
+		ctx.JSON(http.StatusOK, gin.H{
+			"access_token": token,
+			"token_type":   "Bearer",
+			"expires_in":   86400, // 24 hours in seconds
+		})
+	} else {
+		// Regular JSON API response
+		ctx.JSON(http.StatusOK, gin.H{"token": token})
+	}
 }
 
 // ListEmployees Преузимање листе запослених
@@ -580,6 +618,7 @@ func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 // @Summary Претрага запослених који су тренутно на дужности
 // @Description Враћа листу запослених који су тренутно на дужности, са опционим бафером у случају да се близу крај тренутне смене
 // @Tags запослени
+// @Security BearerAuth
 // @Accept  json
 // @Produce  json
 // @Param shift_buffer query string false "Бафер време пре краја смене (нпр. '1h')"
@@ -625,6 +664,7 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 // @Summary Провера активних хитних случајева за запосленог
 // @Description Проверава да ли запослени има активне хитне случајеве
 // @Tags запослени
+// @Security BearerAuth
 // @Accept  json
 // @Produce  json
 // @Param id path int true "ID запосленог"

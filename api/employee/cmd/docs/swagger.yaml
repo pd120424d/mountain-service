@@ -498,9 +498,14 @@ paths:
       summary: Дохватање доступности смена
       tags:
       - запослени
+security:
+- OAuth2Password: []
 securityDefinitions:
-  BearerAuth:
-    in: header
-    name: Authorization
-    type: apiKey
+  OAuth2Password:
+    flow: password
+    scopes:
+      read: Grants read access
+      write: Grants write access
+    tokenUrl: /api/v1/login
+    type: oauth2
 swagger: "2.0"

@@ -38,9 +38,12 @@ import (
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
 
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
+// @securityDefinitions.oauth2.password OAuth2Password
+// @tokenUrl http://localhost:8082/api/v1/login
+// @scope.read Grants read access
+// @scope.write Grants write access
+
+// @security OAuth2Password
 
 // @host
 // @BasePath /api/v1

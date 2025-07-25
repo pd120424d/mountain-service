@@ -1,4 +1,4 @@
-basePath: /
+basePath: /api/v1
 definitions:
   github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityCreateRequest:
     properties:
@@ -142,7 +142,6 @@ definitions:
     - ActivityNotificationSent
     - ActivityNotificationFailed
     - ActivitySystemReset
-host: localhost:8083
 info:
   contact:
     email: support@swagger.io
@@ -331,10 +330,14 @@ paths:
       summary: Get activity statistics
       tags:
       - activities
+security:
+- OAuth2Password: []
 securityDefinitions:
-  BearerAuth:
-    description: Type "Bearer" followed by a space and JWT token.
-    in: header
-    name: Authorization
-    type: apiKey
+  OAuth2Password:
+    flow: password
+    scopes:
+      read: Grants read access
+      write: Grants write access
+    tokenUrl: http://localhost:8082/api/v1/login
+    type: oauth2
 swagger: "2.0"

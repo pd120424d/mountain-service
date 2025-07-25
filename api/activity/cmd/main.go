@@ -45,10 +45,12 @@ import (
 // @host
 // @BasePath /api/v1
 
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Type "Bearer" followed by a space and JWT token.
+// @securityDefinitions.oauth2.password OAuth2Password
+// @tokenUrl http://localhost:8082/api/v1/login
+// @scope.read Grants read access
+// @scope.write Grants write access
+
+// @security OAuth2Password
 
 func main() {
 	log, err := utils.NewLogger("activity-service")

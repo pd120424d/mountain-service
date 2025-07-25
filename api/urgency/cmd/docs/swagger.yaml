@@ -211,9 +211,14 @@ paths:
       summary: Ажурирање ургентне ситуације
       tags:
       - urgency
+security:
+- OAuth2Password: []
 securityDefinitions:
-  BearerAuth:
-    in: header
-    name: Authorization
-    type: apiKey
+  OAuth2Password:
+    flow: password
+    scopes:
+      read: Grants read access
+      write: Grants write access
+    tokenUrl: http://localhost:8082/api/v1/login
+    type: oauth2
 swagger: "2.0"

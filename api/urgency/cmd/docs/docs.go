@@ -335,12 +335,21 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "BearerAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
+        "OAuth2Password": {
+            "type": "oauth2",
+            "flow": "password",
+            "tokenUrl": "http://localhost:8082/api/v1/login",
+            "scopes": {
+                "read": "Grants read access",
+                "write": "Grants write access"
+            }
         }
-    }
+    },
+    "security": [
+        {
+            "OAuth2Password": []
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it

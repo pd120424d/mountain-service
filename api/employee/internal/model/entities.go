@@ -82,6 +82,19 @@ func (e *Employee) Role() string {
 	return string(e.ProfileType)
 }
 
+// Methods for BasicAuth interface compatibility
+func (e *Employee) GetID() uint {
+	return e.ID
+}
+
+func (e *Employee) GetPassword() string {
+	return e.Password
+}
+
+func (e *Employee) GetRole() string {
+	return e.Role()
+}
+
 func (e *Employee) UpdateResponseFromEmployee() employeeV1.EmployeeResponse {
 	return employeeV1.EmployeeResponse{
 		ID:             e.ID,
