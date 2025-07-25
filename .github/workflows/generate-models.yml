@@ -110,31 +110,94 @@ jobs:
           echo "- Models Generated: $MODELS_GENERATED"
           echo "- Generation Method: $GENERATION_METHOD"
 
-      - name: Validate generated models
+      - name: Debug environment
         run: |
-          echo "Validating generated models..."
-          
-          # Check if model files exist
+          echo "=== Debug Information ==="
+          echo "Current working directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "TypeScript config files:"
+          ls -la tsconfig*.json || echo "No tsconfig files found"
+          echo "Generated models directory:"
+          ls -la src/app/shared/models/generated/ || echo "Generated models directory not found"
+          echo "Generated models subdirectories:"
+          find src/app/shared/models/generated/ -type f -name "*.ts" 2>/dev/null || echo "No TypeScript files found in generated models"
+
+      - name: Verify model generation
+        run: |
+          echo "Verifying model generation..."
+
+          # Check if model files exist and have content
           REQUIRED_FILES=(
             "src/app/shared/models/generated/employee/data-contracts.ts"
             "src/app/shared/models/generated/urgency/data-contracts.ts"
             "src/app/shared/models/generated/activity/data-contracts.ts"
           )
-          
+
           for file in "${REQUIRED_FILES[@]}"; do
             if [ ! -f "$file" ]; then
-              echo "Required model file missing: $file"
+              echo "[ERROR] Required model file missing: $file"
               exit 1
             else
               echo "Found: $file"
+              # Check if file has meaningful content
+              if [ $(wc -l < "$file") -lt 10 ]; then
+                echo "  Warning: $file seems too small ($(wc -l < "$file") lines)"
+              fi
+              # Check for expected exports
+              if grep -q "export interface\|export enum" "$file"; then
+                echo "$file contains expected exports"
+              else
+                echo "[ERROR] $file does not contain expected exports"
+                echo "File content preview:"
+                head -20 "$file"
+                exit 1
+              fi
             fi
           done
-          
-          # Check if models can be imported (basic TypeScript validation)
-          echo "Running TypeScript compilation check..."
-          npx tsc --noEmit --skipLibCheck
-          
-          echo "All model validations passed!"
+
+      - name: Test model imports
+        run: |
+          echo "Testing model imports..."
+
+          # Create a test file to verify all imports work
+          cat > test-imports.ts << 'EOF'
+          // Test imports from generated models
+          import {
+            GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeResponse,
+            GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeCreateRequest,
+            GithubComPd120424DMountainServiceApiContractsEmployeeV1TokenResponse
+          } from './src/app/shared/models/generated/employee';
+
+          import {
+            GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyResponse,
+            GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel,
+            GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus
+          } from './src/app/shared/models/generated/urgency';
+
+          import {
+            GithubComPd120424DMountainServiceApiContractsActivityV1ActivityResponse,
+            GithubComPd120424DMountainServiceApiContractsActivityV1ActivityType,
+            GithubComPd120424DMountainServiceApiContractsActivityV1ActivityLevel
+          } from './src/app/shared/models/generated/activity';
+
+          console.log('All critical model imports work correctly!');
+          EOF
+
+          # Test the imports
+          npx tsc --noEmit --skipLibCheck test-imports.ts
+          echo "Model import test passed!"
+
+          # Clean up test file
+          rm -f test-imports.ts
+
+      - name: Validate generated models
+        run: |
+          echo "Validating generated models..."
+
+          # Use our comprehensive validation script
+          echo "Running comprehensive model validation..."
+          npm run validate-models
 
       - name: Upload generation artifacts
         if: always()
