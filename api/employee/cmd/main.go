@@ -38,7 +38,7 @@ import (
 // @license.url https://opensource.org/licenses/MIT
 
 // @securityDefinitions.oauth2.password OAuth2Password
-// @tokenUrl /api/v1/login
+// @tokenUrl /api/v1/oauth/token
 // @scope.read Grants read access
 // @scope.write Grants write access
 
@@ -180,6 +180,7 @@ func setupCORS(log utils.Logger, r *gin.Engine) http.Handler {
 func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.EmployeeHandler) {
 	r.POST("/api/v1/employees", employeeHandler.RegisterEmployee)
 	r.POST("/api/v1/login", employeeHandler.LoginEmployee)
+	r.POST("/api/v1/oauth/token", employeeHandler.OAuth2Token)
 	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log))
 	{
 		authorized.GET("/employees", employeeHandler.ListEmployees)

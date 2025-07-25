@@ -100,7 +100,7 @@ paths:
         "204":
           description: No Content
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Ресетовање свих података
       tags:
       - urgency
@@ -119,7 +119,7 @@ paths:
               type: array
             type: array
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Извлачење листе ургентних ситуација
       tags:
       - urgency
@@ -142,7 +142,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse'
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Креирање нове ургентне ситуације
       tags:
       - urgency
@@ -159,7 +159,7 @@ paths:
         "204":
           description: No Content
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Брисање ургентне ситуације
       tags:
       - urgency
@@ -179,7 +179,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse'
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Извлачење ургентне ситуације по ID
       tags:
       - urgency
@@ -207,7 +207,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse'
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Ажурирање ургентне ситуације
       tags:
       - urgency
@@ -219,6 +219,6 @@ securityDefinitions:
     scopes:
       read: Grants read access
       write: Grants write access
-    tokenUrl: http://localhost:8082/api/v1/login
+    tokenUrl: /api/v1/oauth/token
     type: oauth2
 swagger: "2.0"

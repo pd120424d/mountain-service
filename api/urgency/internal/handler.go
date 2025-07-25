@@ -33,7 +33,7 @@ func NewUrgencyHandler(log utils.Logger, svc UrgencyService) UrgencyHandler {
 // @Summary Креирање нове ургентне ситуације
 // @Description Креирање нове ургентне ситуације са свим потребним подацима
 // @Tags urgency
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Accept  json
 // @Produce  json
 // @Param urgency body urgencyV1.UrgencyCreateRequest true "Urgency data"
@@ -80,7 +80,7 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 // @Summary Извлачење листе ургентних ситуација
 // @Description Извлачење свих ургентних ситуација
 // @Tags urgency
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Produce  json
 // @Success 200 {array} []urgencyV1.UrgencyResponse
 // @Router /urgencies [get]
@@ -107,7 +107,7 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 // @Summary Извлачење ургентне ситуације по ID
 // @Description Извлачење ургентне ситуације по њеном ID
 // @Tags urgency
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Produce  json
 // @Param id path int true "Urgency ID"
 // @Success 200 {object} urgencyV1.UrgencyResponse
@@ -139,7 +139,7 @@ func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 // @Summary Ажурирање ургентне ситуације
 // @Description Ажурирање постојеће ургентне ситуације
 // @Tags urgency
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Accept  json
 // @Produce  json
 // @Param id path int true "Urgency ID"
@@ -215,7 +215,7 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 // @Summary Брисање ургентне ситуације
 // @Description Брисање ургентне ситуације по ID
 // @Tags urgency
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Param id path int true "Urgency ID"
 // @Success 204
 // @Router /urgencies/{id} [delete]
@@ -244,7 +244,7 @@ func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
 // @Summary Ресетовање свих података
 // @Description Брисање свих ургентних ситуација (само за администраторе)
 // @Tags urgency
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Success 204
 // @Router /admin/urgencies/reset [delete]
 func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {

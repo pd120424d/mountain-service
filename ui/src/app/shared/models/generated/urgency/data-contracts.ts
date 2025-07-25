@@ -10,111 +10,48 @@
  * ---------------------------------------------------------------
  */
 
-export enum UrgencyLevel {
+export interface GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyCreateRequest {
+  contactPhone: string;
+  description: string;
+  email: string;
+  level?: GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel;
+  location: string;
+  name: string;
+}
+
+export enum GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel {
   Low = "low",
   Medium = "medium",
   High = "high",
   Critical = "critical",
 }
 
-export enum UrgencyStatus {
+export interface GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyResponse {
+  contactPhone?: string;
+  createdAt?: string;
+  description?: string;
+  email?: string;
+  id?: number;
+  level?: GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel;
+  location?: string;
+  name?: string;
+  status?: GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus;
+  updatedAt?: string;
+}
+
+export enum GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus {
   Open = "open",
   InProgress = "in_progress",
   Resolved = "resolved",
   Closed = "closed",
 }
 
-export interface UrgencyCreateRequest {
-  name: string;
-  /** @format email */
-  email: string;
-  contactPhone: string;
-  location: string;
-  description: string;
-  level?: UrgencyLevel;
-}
-
-export interface UrgencyUpdateRequest {
-  name?: string;
-  /** @format email */
-  email?: string;
+export interface GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyUpdateRequest {
   contactPhone?: string;
-  location?: string;
   description?: string;
-  level?: UrgencyLevel;
-  status?: UrgencyStatus;
-}
-
-export interface UrgencyResponse {
-  /** @format int64 */
-  id?: number;
-  name?: string;
   email?: string;
-  contactPhone?: string;
+  level?: GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel;
   location?: string;
-  description?: string;
-  level?: UrgencyLevel;
-  status?: UrgencyStatus;
-  /** @format date-time */
-  createdAt?: string;
-  /** @format date-time */
-  updatedAt?: string;
-}
-
-export interface UrgencyList {
-  urgencies?: UrgencyResponse[];
-}
-
-export interface EmergencyAssignmentResponse {
-  /** @format int64 */
-  id?: number;
-  /** @format int64 */
-  urgencyId?: number;
-  /** @format int64 */
-  employeeId?: number;
-  status?: string;
-  /** @format date-time */
-  assignedAt?: string;
-  /** @format date-time */
-  createdAt?: string;
-  /** @format date-time */
-  updatedAt?: string;
-}
-
-export interface AssignmentAcceptRequest {
-  /** @format int64 */
-  assignmentId: number;
-}
-
-export interface AssignmentDeclineRequest {
-  /** @format int64 */
-  assignmentId: number;
-  reason?: string;
-}
-
-export interface EmployeeAssignmentsResponse {
-  assignments?: EmergencyAssignmentResponse[];
-}
-
-export interface NotificationResponse {
-  /** @format int64 */
-  id?: number;
-  /** @format int64 */
-  urgencyId?: number;
-  /** @format int64 */
-  employeeId?: number;
-  notificationType?: string;
-  recipient?: string;
-  message?: string;
-  status?: string;
-  attempts?: number;
-  /** @format date-time */
-  lastAttemptAt?: string;
-  /** @format date-time */
-  sentAt?: string;
-  errorMessage?: string;
-  /** @format date-time */
-  createdAt?: string;
-  /** @format date-time */
-  updatedAt?: string;
+  name?: string;
+  status?: GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus;
 }

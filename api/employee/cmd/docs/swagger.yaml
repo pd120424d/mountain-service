@@ -208,7 +208,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Ресетовање свих података
       tags:
       - админ
@@ -227,7 +227,7 @@ paths:
               type: array
             type: array
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Преузимање листе запослених
       tags:
       - запослени
@@ -273,7 +273,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Брисање запосленог
       tags:
       - запослени
@@ -309,7 +309,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Ажурирање запосленог
       tags:
       - запослени
@@ -343,6 +343,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+      security:
+      - OAuth2Password: []
       summary: Провера активних хитних случајева за запосленог
       tags:
       - запослени
@@ -369,7 +371,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Уклањање смене за запосленог
       tags:
       - запослени
@@ -389,7 +391,7 @@ paths:
               $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftResponse'
             type: array
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Дохватање смена за запосленог
       tags:
       - запослени
@@ -417,7 +419,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Додељује смену запосленом
       tags:
       - запослени
@@ -447,6 +449,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+      security:
+      - OAuth2Password: []
       summary: Претрага запослених који су тренутно на дужности
       tags:
       - запослени
@@ -476,6 +480,41 @@ paths:
       summary: Пријавање запосленог
       tags:
       - запослени
+  /oauth/token:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: OAuth2 password flow token endpoint for Swagger UI authentication
+      parameters:
+      - description: Username
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OAuth2 token response
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+      summary: OAuth2 token endpoint
+      tags:
+      - authentication
   /shifts/availability:
     get:
       description: Дохватање доступности смена за одређени дан
@@ -494,7 +533,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Дохватање доступности смена
       tags:
       - запослени
@@ -506,6 +545,6 @@ securityDefinitions:
     scopes:
       read: Grants read access
       write: Grants write access
-    tokenUrl: /api/v1/login
+    tokenUrl: /api/v1/oauth/token
     type: oauth2
 swagger: "2.0"

@@ -23,7 +23,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Брисање свих ургентних ситуација (само за администраторе)",
@@ -42,7 +42,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Извлачење свих ургентних ситуација",
@@ -71,7 +71,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Креирање нове ургентне ситуације са свим потребним подацима",
@@ -110,7 +110,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Извлачење ургентне ситуације по њеном ID",
@@ -142,7 +142,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Ажурирање постојеће ургентне ситуације",
@@ -186,7 +186,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Брисање ургентне ситуације по ID",
@@ -338,7 +338,7 @@ const docTemplate = `{
         "OAuth2Password": {
             "type": "oauth2",
             "flow": "password",
-            "tokenUrl": "http://localhost:8082/api/v1/login",
+            "tokenUrl": "/api/v1/oauth/token",
             "scopes": {
                 "read": "Grants read access",
                 "write": "Grants write access"

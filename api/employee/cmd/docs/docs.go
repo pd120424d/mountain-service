@@ -23,7 +23,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Брише све запослене, смене и повезане податке из система (само за админе)",
@@ -60,7 +60,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Преузимање свих запослених",
@@ -127,6 +127,11 @@ const docTemplate = `{
         },
         "/employees/on-call": {
             "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
                 "description": "Враћа листу запослених који су тренутно на дужности, са опционим бафером у случају да се близу крај тренутне смене",
                 "consumes": [
                     "application/json"
@@ -172,7 +177,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Ажурирање запосленог по ID-ју",
@@ -228,7 +233,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Брисање запосленог по ID-ју",
@@ -260,6 +265,11 @@ const docTemplate = `{
         },
         "/employees/{id}/active-emergencies": {
             "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
                 "description": "Проверава да ли запослени има активне хитне случајеве",
                 "consumes": [
                     "application/json"
@@ -312,7 +322,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Дохватање смена за запосленог по ID-ју",
@@ -344,7 +354,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Додељује смену запосленом по ID-ју",
@@ -388,7 +398,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Уклањање смене за запосленог по ID-ју и подацима о смени",
@@ -467,11 +477,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/oauth/token": {
+            "post": {
+                "description": "OAuth2 password flow token endpoint for Swagger UI authentication",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication"
+                ],
+                "summary": "OAuth2 token endpoint",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OAuth2 token response",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/shifts/availability": {
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Дохватање доступности смена за одређени дан",
@@ -778,7 +840,7 @@ const docTemplate = `{
         "OAuth2Password": {
             "type": "oauth2",
             "flow": "password",
-            "tokenUrl": "/api/v1/login",
+            "tokenUrl": "/api/v1/oauth/token",
             "scopes": {
                 "read": "Grants read access",
                 "write": "Grants write access"

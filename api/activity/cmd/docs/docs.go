@@ -481,7 +481,7 @@ const docTemplate = `{
         "OAuth2Password": {
             "type": "oauth2",
             "flow": "password",
-            "tokenUrl": "http://localhost:8082/api/v1/login",
+            "tokenUrl": "/api/v1/oauth/token",
             "scopes": {
                 "read": "Grants read access",
                 "write": "Grants write access"

@@ -39,7 +39,7 @@ import (
 // @license.url https://opensource.org/licenses/MIT
 
 // @securityDefinitions.oauth2.password OAuth2Password
-// @tokenUrl http://localhost:8082/api/v1/login
+// @tokenUrl /api/v1/oauth/token
 // @scope.read Grants read access
 // @scope.write Grants write access
 

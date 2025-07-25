@@ -20,6 +20,7 @@ type EmployeeHandler interface {
 	// Crud operations, Register is create
 	RegisterEmployee(ctx *gin.Context)
 	LoginEmployee(ctx *gin.Context)
+	OAuth2Token(ctx *gin.Context)
 	ListEmployees(ctx *gin.Context)
 	UpdateEmployee(ctx *gin.Context)
 	DeleteEmployee(ctx *gin.Context)
@@ -158,23 +159,9 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	var req employeeV1.EmployeeLogin
 	h.log.Info("Received Login Employee request")
 
-	// Handle both JSON and form-encoded requests
-	contentType := ctx.GetHeader("Content-Type")
-	if contentType == "application/x-www-form-urlencoded" {
-		// OAuth2 password flow - form encoded
-		req.Username = ctx.PostForm("username")
-		req.Password = ctx.PostForm("password")
-
-		if req.Username == "" || req.Password == "" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "username and password are required"})
-			return
-		}
-	} else {
-		// Regular JSON request
-		if err := ctx.ShouldBindJSON(&req); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
-			return
-		}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
+		return
 	}
 
 	if sharedAuth.IsAdminLogin(req.Username) {
@@ -194,19 +181,7 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		}
 
 		h.log.Info("Successfully authenticated admin user")
-
-		// Check if request is from OAuth2 flow (Swagger UI)
-		if contentType == "application/x-www-form-urlencoded" {
-			// OAuth2 password flow response format
-			ctx.JSON(http.StatusOK, gin.H{
-				"access_token": token,
-				"token_type":   "Bearer",
-				"expires_in":   86400, // 24 hours in seconds
-			})
-		} else {
-			// Regular JSON API response
-			ctx.JSON(http.StatusOK, gin.H{"token": token})
-		}
+		ctx.JSON(http.StatusOK, gin.H{"token": token})
 		return
 	}
 
@@ -231,26 +206,91 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	}
 
 	h.log.Info("Successfully validate employee and generated JWT token")
+	ctx.JSON(http.StatusOK, gin.H{"token": token})
+}
 
-	// Check if request is from OAuth2 flow (Swagger UI)
-	if contentType == "application/x-www-form-urlencoded" {
-		// OAuth2 password flow response format
+// OAuth2Token OAuth2 token endpoint for Swagger UI
+// @Summary OAuth2 token endpoint
+// @Description OAuth2 password flow token endpoint for Swagger UI authentication
+// @Tags authentication
+// @Accept application/x-www-form-urlencoded
+// @Produce json
+// @Param username formData string true "Username"
+// @Param password formData string true "Password"
+// @Success 200 {object} map[string]interface{} "OAuth2 token response"
+// @Failure 400 {object} employeeV1.ErrorResponse
+// @Failure 401 {object} employeeV1.ErrorResponse
+// @Router /oauth/token [post]
+func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
+	h.log.Info("Received OAuth2 Token request")
+
+	username := ctx.PostForm("username")
+	password := ctx.PostForm("password")
+
+	if username == "" || password == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "username and password are required"})
+		return
+	}
+
+	// Check if it's admin login
+	if sharedAuth.IsAdminLogin(username) {
+		h.log.Info("Admin OAuth2 login attempt detected")
+
+		if !sharedAuth.ValidateAdminPassword(password) {
+			h.log.Error("Invalid admin password")
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+			return
+		}
+
+		token, err := sharedAuth.GenerateAdminJWT()
+		if err != nil {
+			h.log.Errorf("failed to generate admin token: %v", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+			return
+		}
+
+		h.log.Info("Successfully authenticated admin user via OAuth2")
 		ctx.JSON(http.StatusOK, gin.H{
 			"access_token": token,
 			"token_type":   "Bearer",
 			"expires_in":   86400, // 24 hours in seconds
 		})
-	} else {
-		// Regular JSON API response
-		ctx.JSON(http.StatusOK, gin.H{"token": token})
+		return
 	}
+
+	employee, err := h.emplRepo.GetEmployeeByUsername(username)
+	if err != nil {
+		h.log.Errorf("failed to retrieve employee: %v", err)
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	if !sharedAuth.CheckPassword(employee.Password, password) {
+		h.log.Error("failed to verify password")
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	token, err := sharedAuth.GenerateJWT(employee.ID, employee.Role())
+	if err != nil {
+		h.log.Errorf("failed to generate token: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	h.log.Info("Successfully validated employee and generated JWT token via OAuth2")
+	ctx.JSON(http.StatusOK, gin.H{
+		"access_token": token,
+		"token_type":   "Bearer",
+		"expires_in":   86400, // 24 hours in seconds
+	})
 }
 
 // ListEmployees Преузимање листе запослених
 // @Summary Преузимање листе запослених
 // @Description Преузимање свих запослених
 // @Tags запослени
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Produce  json
 // @Success 200 {array} []employeeV1.EmployeeResponse
 // @Router /employees [get]
@@ -289,7 +329,7 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 // @Summary Ажурирање запосленог
 // @Description Ажурирање запосленог по ID-ју
 // @Tags запослени
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Param id path int true "ID запосленог"
 // @Param employee body employeeV1.EmployeeUpdateRequest true "Подаци за ажурирање запосленог"
 // @Success 200 {object} employeeV1.EmployeeResponse
@@ -344,7 +384,7 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 // @Summary Брисање запосленог
 // @Description Брисање запосленог по ID-ју
 // @Tags запослени
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Param id path int true "ID запосленог"
 // @Success 204
 // @Failure 404 {object} employeeV1.ErrorResponse
@@ -374,7 +414,7 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 // @Summary Додељује смену запосленом
 // @Description Додељује смену запосленом по ID-ју
 // @Tags запослени
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Param id path int true "ID запосленог"
 // @Param shift body employeeV1.AssignShiftRequest true "Подаци о смени"
 // @Success 201 {object} employeeV1.AssignShiftResponse
@@ -470,7 +510,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 // @Summary Дохватање смена за запосленог
 // @Description Дохватање смена за запосленог по ID-ју
 // @Tags запослени
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Param id path int true "ID запосленог"
 // @Success 200 {object} []employeeV1.ShiftResponse
 // @Router /employees/{id}/shifts [get]
@@ -513,7 +553,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 // @Summary Дохватање доступности смена
 // @Description Дохватање доступности смена за одређени дан
 // @Tags запослени
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Param date query string false "Дан за који се проверава доступност смена"
 // @Success 200 {object} employeeV1.ShiftAvailabilityResponse
 // @Failure 400 {object} employeeV1.ErrorResponse
@@ -548,7 +588,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 // @Summary Уклањање смене за запосленог
 // @Description Уклањање смене за запосленог по ID-ју и подацима о смени
 // @Tags запослени
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Param id path int true "ID запосленог"
 // @Param shift body employeeV1.RemoveShiftRequest true "Подаци о смени"
 // @Success 204
@@ -594,7 +634,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 // @Summary Ресетовање свих података
 // @Description Брише све запослене, смене и повезане податке из система (само за админе)
 // @Tags админ
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Produce json
 // @Success 200 {object} employeeV1.MessageResponse
 // @Failure 403 {object} employeeV1.ErrorResponse
@@ -618,7 +658,7 @@ func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 // @Summary Претрага запослених који су тренутно на дужности
 // @Description Враћа листу запослених који су тренутно на дужности, са опционим бафером у случају да се близу крај тренутне смене
 // @Tags запослени
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Accept  json
 // @Produce  json
 // @Param shift_buffer query string false "Бафер време пре краја смене (нпр. '1h')"
@@ -664,7 +704,7 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 // @Summary Провера активних хитних случајева за запосленог
 // @Description Проверава да ли запослени има активне хитне случајеве
 // @Tags запослени
-// @Security BearerAuth
+// @Security OAuth2Password
 // @Accept  json
 // @Produce  json
 // @Param id path int true "ID запосленог"

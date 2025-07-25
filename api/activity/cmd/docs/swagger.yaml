@@ -338,6 +338,6 @@ securityDefinitions:
     scopes:
       read: Grants read access
       write: Grants write access
-    tokenUrl: http://localhost:8082/api/v1/login
+    tokenUrl: /api/v1/oauth/token
     type: oauth2
 swagger: "2.0"
