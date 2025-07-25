@@ -41,7 +41,7 @@ export class UrgencyFormComponent extends BaseTranslatableComponent implements O
       contactPhone: ['', [Validators.required, Validators.minLength(8)]],
       location: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
-      level: [UrgencyLevel.MEDIUM, [Validators.required]]
+      level: [UrgencyLevel.Medium, [Validators.required]]
     });
   }
 

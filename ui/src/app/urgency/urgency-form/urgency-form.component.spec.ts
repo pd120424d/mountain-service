@@ -58,7 +58,7 @@ describe('UrgencyFormComponent', () => {
     expect(component.urgencyForm.get('contactPhone')?.value).toBe('');
     expect(component.urgencyForm.get('location')?.value).toBe('');
     expect(component.urgencyForm.get('description')?.value).toBe('');
-    expect(component.urgencyForm.get('level')?.value).toBe('Medium');
+    expect(component.urgencyForm.get('level')?.value).toBe('medium');
   });
 
   it('should validate required fields', () => {
@@ -94,7 +94,7 @@ describe('UrgencyFormComponent', () => {
         contactPhone: '1234567890',
         location: 'Test Location',
         description: 'This is a test emergency description',
-        level: UrgencyLevel.HIGH
+        level: UrgencyLevel.High
       });
 
       const mockResponse = { id: 1, name: 'Test Emergency' };
@@ -115,7 +115,7 @@ describe('UrgencyFormComponent', () => {
         contactPhone: '1234567890',
         location: 'Test Location',
         description: 'This is a test emergency description',
-        level: UrgencyLevel.HIGH
+        level: UrgencyLevel.High
       });
 
       urgencyService.addUrgency.and.returnValue(throwError(() => new Error('Server error')));
@@ -143,7 +143,7 @@ describe('UrgencyFormComponent', () => {
         contactPhone: '1234567890',
         location: 'Test Location',
         description: 'This is a test emergency description',
-        level: UrgencyLevel.HIGH
+        level: UrgencyLevel.High
       });
 
       component.isSubmitting = true;

@@ -4,11 +4,7 @@ import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
-import { Urgency } from '../../shared/models';
-import {
-  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel as GeneratedUrgencyLevel,
-  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus as GeneratedUrgencyStatus
-} from '../../shared/models/generated/urgency';
+import { Urgency, UrgencyLevel, UrgencyStatus, UrgencyStatus as GeneratedUrgencyStatus, UrgencyLevel as GeneratedUrgencyLevel } from '../../shared/models';
 
 @Component({
   selector: 'app-urgency-list',
@@ -22,8 +18,8 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   isLoading = true;
   error: string | null = null;
 
-  UrgencyLevel = GeneratedUrgencyLevel;
-  Status = GeneratedUrgencyStatus;
+  UrgencyLevel = UrgencyLevel;
+  Status = UrgencyStatus;
 
   constructor(
     private urgencyService: UrgencyService,
@@ -39,7 +35,7 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   loadUrgencies(): void {
     this.isLoading = true;
     this.error = null;
-    
+
     this.urgencyService.getUrgencies().subscribe({
       next: (urgencies) => {
         this.urgencies = urgencies;
@@ -75,13 +71,13 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
 
   getLevelClass(level: GeneratedUrgencyLevel): string {
     switch (level) {
-      case GeneratedUrgencyLevel.Low:
+      case UrgencyLevel.Low:
         return 'level-low';
-      case GeneratedUrgencyLevel.Medium:
+      case UrgencyLevel.Medium:
         return 'level-medium';
-      case GeneratedUrgencyLevel.High:
+      case UrgencyLevel.High:
         return 'level-high';
-      case GeneratedUrgencyLevel.Critical:
+      case UrgencyLevel.Critical:
         return 'level-critical';
       default:
         return '';

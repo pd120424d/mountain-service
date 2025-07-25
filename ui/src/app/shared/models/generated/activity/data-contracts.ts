@@ -10,77 +10,108 @@
  * ---------------------------------------------------------------
  */
 
-export interface GithubComPd120424DMountainServiceApiContractsActivityV1ActivityCreateRequest {
-  actorId?: number;
-  actorName?: string;
-  description: string;
-  level: GithubComPd120424DMountainServiceApiContractsActivityV1ActivityLevel;
-  metadata?: string;
-  targetId?: number;
-  targetType?: string;
-  title: string;
-  type: GithubComPd120424DMountainServiceApiContractsActivityV1ActivityType;
+export enum ActivityType {
+  EmployeeCreated = "employee_created",
+  EmployeeUpdated = "employee_updated",
+  EmployeeDeleted = "employee_deleted",
+  EmployeeLogin = "employee_login",
+  ShiftAssigned = "shift_assigned",
+  ShiftRemoved = "shift_removed",
+  UrgencyCreated = "urgency_created",
+  UrgencyUpdated = "urgency_updated",
+  UrgencyDeleted = "urgency_deleted",
+  EmergencyAssigned = "emergency_assigned",
+  EmergencyAccepted = "emergency_accepted",
+  EmergencyDeclined = "emergency_declined",
+  NotificationSent = "notification_sent",
+  NotificationFailed = "notification_failed",
+  SystemReset = "system_reset",
 }
 
-export enum GithubComPd120424DMountainServiceApiContractsActivityV1ActivityLevel {
-  ActivityLevelInfo = "info",
-  ActivityLevelWarning = "warning",
-  ActivityLevelError = "error",
-  ActivityLevelCritical = "critical",
+export enum ActivityLevel {
+  Info = "info",
+  Warning = "warning",
+  Error = "error",
+  Critical = "critical",
 }
 
-export interface GithubComPd120424DMountainServiceApiContractsActivityV1ActivityListResponse {
-  activities?: GithubComPd120424DMountainServiceApiContractsActivityV1ActivityResponse[];
-  page?: number;
-  pageSize?: number;
-  total?: number;
-  totalPages?: number;
+export interface ErrorResponse {
+  error?: string;
 }
 
-export interface GithubComPd120424DMountainServiceApiContractsActivityV1ActivityResponse {
-  /** ID of the user who performed the action */
-  actorId?: number;
-  /** Name of the user who performed the action */
-  actorName?: string;
-  createdAt?: string;
-  description?: string;
+export interface MessageResponse {
+  message?: string;
+}
+
+export interface ActivityResponse {
+  /** @format int64 */
   id?: number;
-  level?: GithubComPd120424DMountainServiceApiContractsActivityV1ActivityLevel;
-  /** JSON string with additional data */
-  metadata?: string;
-  /** ID of the target entity */
-  targetId?: number;
-  /** Type of the target entity (employee, urgency, etc.) */
-  targetType?: string;
+  type?: ActivityType;
+  level?: ActivityLevel;
   title?: string;
-  type?: GithubComPd120424DMountainServiceApiContractsActivityV1ActivityType;
+  description?: string;
+  /** @format int64 */
+  actorId?: number;
+  actorName?: string;
+  /** @format int64 */
+  targetId?: number;
+  targetType?: string;
+  metadata?: string;
+  /** @format date-time */
+  createdAt?: string;
+  /** @format date-time */
   updatedAt?: string;
 }
 
-export interface GithubComPd120424DMountainServiceApiContractsActivityV1ActivityStatsResponse {
-  activitiesByLevel?: Record<string, number>;
-  activitiesByType?: Record<string, number>;
-  activitiesLast24h?: number;
-  activitiesLast30Days?: number;
-  activitiesLast7Days?: number;
-  recentActivities?: GithubComPd120424DMountainServiceApiContractsActivityV1ActivityResponse[];
-  totalActivities?: number;
+export interface ActivityCreateRequest {
+  type: ActivityType;
+  level: ActivityLevel;
+  title: string;
+  description: string;
+  /** @format int64 */
+  actorId?: number;
+  actorName?: string;
+  /** @format int64 */
+  targetId?: number;
+  targetType?: string;
+  metadata?: string;
 }
 
-export enum GithubComPd120424DMountainServiceApiContractsActivityV1ActivityType {
-  ActivityEmployeeCreated = "employee_created",
-  ActivityEmployeeUpdated = "employee_updated",
-  ActivityEmployeeDeleted = "employee_deleted",
-  ActivityEmployeeLogin = "employee_login",
-  ActivityShiftAssigned = "shift_assigned",
-  ActivityShiftRemoved = "shift_removed",
-  ActivityUrgencyCreated = "urgency_created",
-  ActivityUrgencyUpdated = "urgency_updated",
-  ActivityUrgencyDeleted = "urgency_deleted",
-  ActivityEmergencyAssigned = "emergency_assigned",
-  ActivityEmergencyAccepted = "emergency_accepted",
-  ActivityEmergencyDeclined = "emergency_declined",
-  ActivityNotificationSent = "notification_sent",
-  ActivityNotificationFailed = "notification_failed",
-  ActivitySystemReset = "system_reset",
+export interface ActivityListRequest {
+  type?: ActivityType;
+  level?: ActivityLevel;
+  /** @format int64 */
+  actorId?: number;
+  /** @format int64 */
+  targetId?: number;
+  targetType?: string;
+  /** @format date-time */
+  startDate?: string;
+  /** @format date-time */
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ActivityListResponse {
+  activities?: ActivityResponse[];
+  /** @format int64 */
+  total?: number;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
+}
+
+export interface ActivityStatsResponse {
+  /** @format int64 */
+  totalActivities?: number;
+  activitiesByType?: Record<string, number>;
+  activitiesByLevel?: Record<string, number>;
+  recentActivities?: ActivityResponse[];
+  /** @format int64 */
+  activitiesLast24h?: number;
+  /** @format int64 */
+  activitiesLast7Days?: number;
+  /** @format int64 */
+  activitiesLast30Days?: number;
 }

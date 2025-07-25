@@ -7,11 +7,7 @@ import { of, throwError } from 'rxjs';
 
 import { UrgencyListComponent } from './urgency-list.component';
 import { UrgencyService } from '../urgency.service';
-import { Urgency } from '../../shared/models';
-import {
-  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel as UrgencyLevel,
-  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus as UrgencyStatus
-} from '../../shared/models/generated/urgency';
+import { Urgency, UrgencyLevel, UrgencyStatus } from '../../shared/models';
 
 describe('UrgencyListComponent', () => {
   let component: UrgencyListComponent;
@@ -61,7 +57,7 @@ describe('UrgencyListComponent', () => {
         { provide: UrgencyService, useValue: urgencyServiceSpy }
       ]
     })
-    .compileComponents();
+      .compileComponents();
 
     fixture = TestBed.createComponent(UrgencyListComponent);
     component = fixture.componentInstance;
@@ -75,9 +71,9 @@ describe('UrgencyListComponent', () => {
 
   it('should load urgencies on init', () => {
     urgencyService.getUrgencies.and.returnValue(of(mockUrgencies));
-    
+
     component.ngOnInit();
-    
+
     expect(urgencyService.getUrgencies).toHaveBeenCalled();
     expect(component.urgencies).toEqual(mockUrgencies);
     expect(component.isLoading).toBeFalse();
@@ -86,9 +82,9 @@ describe('UrgencyListComponent', () => {
   it('should handle error when loading urgencies', () => {
     const errorMessage = 'Failed to load urgencies';
     urgencyService.getUrgencies.and.returnValue(throwError(() => new Error(errorMessage)));
-    
+
     component.ngOnInit();
-    
+
     expect(component.error).toBe(errorMessage);
     expect(component.isLoading).toBeFalse();
   });

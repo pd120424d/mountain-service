@@ -28,27 +28,27 @@ export type {
 
 // Urgency Service
 export type {
-  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyResponse as UrgencyResponse,
-  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyCreateRequest as UrgencyCreateRequest,
-  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyUpdateRequest as UrgencyUpdateRequest
+  UrgencyResponse,
+  UrgencyCreateRequest,
+  UrgencyUpdateRequest
 } from './generated/urgency';
 
 export {
-  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyLevel as GeneratedUrgencyLevel,
-  GithubComPd120424DMountainServiceApiContractsUrgencyV1UrgencyStatus as GeneratedUrgencyStatus
+  UrgencyLevel as GeneratedUrgencyLevel,
+  UrgencyStatus as GeneratedUrgencyStatus
 } from './generated/urgency';
 
 // Activity Service
 export type {
-  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityResponse as ActivityResponse,
-  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityCreateRequest as ActivityCreateRequest,
-  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityListResponse as ActivityListResponse,
-  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityStatsResponse as ActivityStatsResponse
+  ActivityResponse,
+  ActivityCreateRequest,
+  ActivityListResponse,
+  ActivityStatsResponse
 } from './generated/activity';
 
 export {
-  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityType as ActivityType,
-  GithubComPd120424DMountainServiceApiContractsActivityV1ActivityLevel as ActivityLevel
+  ActivityType,
+  ActivityLevel
 } from './generated/activity';
 
 // Re-export role constants and utilities for backward compatibility
@@ -64,17 +64,11 @@ export {
   isTechnical
 } from './extensions/employee-extensions';
 
-// Re-export urgency utilities and legacy enums
+// Re-export urgency utilities
 export {
-  UrgencyLevel,
-  Status,
   type Urgency,
-  mapGeneratedLevelToLegacy,
-  mapLegacyLevelToGenerated,
-  mapGeneratedStatusToLegacy,
-  mapLegacyStatusToGenerated,
   getUrgencyLevelColor,
-  getStatusColor
+  getUrgencyStatusColor
 } from './extensions/urgency-extensions';
 
 // Re-export activity utilities

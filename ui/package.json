@@ -14,10 +14,7 @@
     "generate-urgency-models-local": "swagger-typescript-api generate -p urgency-swagger.json -o src/app/shared/models/generated/urgency --modular",
     "generate-activity-models": "swagger-typescript-api generate -p http://localhost:8084/swagger.json -o src/app/shared/models/generated/activity --modular",
     "generate-activity-models-local": "swagger-typescript-api generate -p activity-swagger.json -o src/app/shared/models/generated/activity --modular",
-    "validate-models": "node scripts/validate-models.js",
-    "models:generate": "npm run generate-models",
-    "models:validate": "npm run validate-models",
-    "models:check": "npm run generate-models && npm run validate-models"
+    "models:generate": "npm run generate-models"
   },
   "private": true,
   "dependencies": {
