@@ -120,13 +120,26 @@ func main() {
 }
 
 func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
-	log.Info("Setting up database connection")
+	log.Info("Setting up database...")
+	dbUser, err := readSecret(os.Getenv("ACTIVITY_DB_USER_FILE"))
+	if err != nil {
+		log.Fatalf("Failed to read ACTIVITY_DB_USER: %v", err)
+	}
 
-	dbStringActivity := fmt.Sprintf("host=%s user=postgres password=postgres dbname=%s port=%s sslmode=disable TimeZone=UTC", dbHost, dbName, dbPort)
+	dbPassword, err := readSecret(os.Getenv("ACTIVITY_DB_PASSWORD_FILE"))
+	if err != nil {
+		log.Fatalf("Failed to read ACTIVITY_DB_PASSWORD: %v", err)
+	}
 
+	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
+	dbStringActivity := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		dbHost, dbPort, dbUser, dbPassword, dbName)
+
+	// Create the activity_service database if it doesn't exist
 	db := config.GetActivityDB(log, dbStringActivity)
 
-	err := db.AutoMigrate(&model.Activity{})
+	// Auto migrate the model
+	err = db.AutoMigrate(&model.Activity{})
 	if err != nil {
 		log.Fatalf("failed to migrate activity models: %v", err)
 	}
