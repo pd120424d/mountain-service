@@ -17,13 +17,13 @@ export * from './extensions';
 
 // Employee Service
 export type {
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeResponse as Employee,
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeCreateRequest as EmployeeCreateRequest,
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeUpdateRequest as EmployeeUpdateRequest,
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeLogin as EmployeeLogin,
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1TokenResponse as TokenResponse,
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse as ErrorResponse,
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1MessageResponse as MessageResponse
+  EmployeeResponse as Employee,
+  EmployeeCreateRequest,
+  EmployeeUpdateRequest,
+  EmployeeLogin,
+  TokenResponse,
+  ErrorResponse,
+  MessageResponse
 } from './generated/employee';
 
 // Urgency Service

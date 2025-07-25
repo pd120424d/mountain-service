@@ -1,7 +1,7 @@
 // Employee model extensions and utilities
 // These extend the generated models with frontend-specific functionality
 
-import { GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeResponse as EmployeeResponse } from '../generated/employee';
+import { EmployeeResponse } from '../generated/employee';
 
 // Role constants for backward compatibility
 export const MedicRole = 'Medic' as const;

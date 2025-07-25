@@ -9,7 +9,7 @@ import {
   isMedic,
   isTechnical
 } from './employee-extensions';
-import { GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeResponse as EmployeeResponse } from '../generated/employee';
+import { EmployeeResponse } from '../generated/employee';
 
 describe('Employee Extensions', () => {
   let mockEmployee: EmployeeResponse;
