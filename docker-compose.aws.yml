@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: etf
       POSTGRES_DB: employee_service
     volumes:
-      - db_data_prod:/var/lib/postgresql/data
+      - db_data_aws:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
@@ -25,7 +25,7 @@ services:
       POSTGRES_PASSWORD: etf
       POSTGRES_DB: urgency_service
     volumes:
-      - urgency_db_data_prod:/var/lib/postgresql/data
+      - urgency_db_data_aws:/var/lib/postgresql/data
     ports:
       - "5433:5432"
     networks:
@@ -44,7 +44,7 @@ services:
       POSTGRES_PASSWORD: etf
       POSTGRES_DB: activity_service
     volumes:
-      - activity_db_data_prod:/var/lib/postgresql/data
+      - activity_db_data_aws:/var/lib/postgresql/data
     ports:
       - "5434:5432"
     networks:
@@ -65,7 +65,7 @@ services:
       - EMPLOYEE_DB_PASSWORD_FILE=/run/secrets/employee_db_password
       - DB_NAME=employee_service
       - APP_ENV=production
-      - JWT_SECRET=super-secret-prod-key
+      - JWT_SECRET=${JWT_SECRET}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
       - SERVICE_AUTH_SECRET=${SERVICE_AUTH_SECRET}
@@ -98,7 +98,7 @@ services:
       - URGENCY_DB_PASSWORD_FILE=/run/secrets/urgency_db_password
       - DB_NAME=urgency_service
       - APP_ENV=production
-      - JWT_SECRET=super-secret-prod-key
+      - JWT_SECRET=${JWT_SECRET}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
       - EMPLOYEE_SERVICE_URL=http://employee-service:8082
@@ -133,7 +133,7 @@ services:
       - ACTIVITY_DB_PASSWORD_FILE=/run/secrets/activity_db_password
       - DB_NAME=activity_service
       - APP_ENV=production
-      - JWT_SECRET=super-secret-prod-key
+      - JWT_SECRET=${JWT_SECRET}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
       - SERVICE_AUTH_SECRET=${SERVICE_AUTH_SECRET}
@@ -191,6 +191,7 @@ services:
     image: ${FRONTEND_IMAGE}
     ports:
       - "80:80"
+      - "443:443"
     environment:
       - NODE_ENV=production
     depends_on:
@@ -206,6 +207,7 @@ services:
       - web
     volumes:
       - /var/log:/var/log
+      - ./ssl:/etc/nginx/ssl:ro
     restart: unless-stopped
 
   version-service:
@@ -228,9 +230,9 @@ networks:
   web:
 
 volumes:
-  db_data_prod:
-  urgency_db_data_prod:
-  activity_db_data_prod:
+  db_data_aws:
+  urgency_db_data_aws:
+  activity_db_data_aws:
 
 secrets:
   employee_db_user:

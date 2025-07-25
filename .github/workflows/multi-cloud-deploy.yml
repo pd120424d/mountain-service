@@ -1,0 +1,314 @@
+name: Multi-Cloud Deployment
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      deployment_target:
+        description: 'Deployment target (azure or aws)'
+        required: true
+        default: 'aws'
+        type: choice
+        options:
+          - azure
+          - aws
+      force_rebuild:
+        description: 'Force rebuild all images'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        service:
+          - name: employee-service
+            dockerfile: ./api/employee/Dockerfile
+            context: ./api
+            build_args: ""
+          - name: urgency-service
+            dockerfile: ./api/urgency/Dockerfile
+            context: ./api
+            build_args: ""
+          - name: activity-service
+            dockerfile: ./api/activity/Dockerfile
+            context: ./api
+            build_args: ""
+          - name: version-service
+            dockerfile: ./api/version-service/Dockerfile
+            context: ./api
+            build_args: "VERSION GIT_SHA"
+
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      git_sha: ${{ steps.version.outputs.GIT_SHA }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Fetch full git history and tags
+      run: |
+        git fetch --tags --unshallow || git fetch --tags
+
+    - name: Get Git tag and SHA
+      id: version
+      run: |
+        echo "VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo dev)" >> $GITHUB_OUTPUT
+        echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Determine deployment target
+      id: deployment-target
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "target=${{ github.event.inputs.deployment_target }}" >> $GITHUB_OUTPUT
+        else
+          echo "target=${{ secrets.AWS_DEPLOYMENT_TARGET || 'aws' }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Set up environment variables
+      run: |
+        TARGET="${{ steps.deployment-target.outputs.target }}"
+        echo "DEPLOYMENT_TARGET=$TARGET" >> $GITHUB_ENV
+
+        if [ "$TARGET" = "aws" ]; then
+          # Use AWS-prefixed secrets
+          echo "CLOUD_INSTANCE_IP=${{ secrets.AWS_INSTANCE_IP }}" >> $GITHUB_ENV
+          echo "CLOUD_INSTANCE_USER=${{ secrets.AWS_INSTANCE_USER }}" >> $GITHUB_ENV
+          echo "JWT_SECRET=${{ secrets.AWS_JWT_SECRET }}" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=${{ secrets.AWS_ADMIN_PASSWORD }}" >> $GITHUB_ENV
+          echo "SERVICE_AUTH_SECRET=${{ secrets.AWS_SERVICE_AUTH_SECRET }}" >> $GITHUB_ENV
+          echo "CORS_ALLOWED_ORIGINS=${{ secrets.AWS_CORS_ALLOWED_ORIGINS }}" >> $GITHUB_ENV
+          echo "COMPOSE_ENV=production" >> $GITHUB_ENV
+          echo "SWAGGER_API_URL=http://${{ secrets.AWS_INSTANCE_IP }}:8082/swagger.json" >> $GITHUB_ENV
+        else
+          # Use existing Azure secrets (backward compatibility)
+          echo "CLOUD_INSTANCE_IP=${{ secrets.AZURE_VM_HOST }}" >> $GITHUB_ENV
+          echo "CLOUD_INSTANCE_USER=${{ secrets.AZURE_VM_USER }}" >> $GITHUB_ENV
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'default-jwt-secret' }}" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD || 'admin123' }}" >> $GITHUB_ENV
+          echo "SERVICE_AUTH_SECRET=${{ secrets.SERVICE_AUTH_SECRET || 'default-service-secret' }}" >> $GITHUB_ENV
+          echo "CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS || 'http://localhost' }}" >> $GITHUB_ENV
+          echo "COMPOSE_ENV=${{ secrets.COMPOSE_ENV }}" >> $GITHUB_ENV
+          echo "SWAGGER_API_URL=${{ secrets.SWAGGER_API_URL }}" >> $GITHUB_ENV
+        fi
+        
+        # Set image names (matching working backend-deploy.yml pattern)
+        echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ steps.version.outputs.VERSION }}" >> $GITHUB_ENV
+        echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ steps.version.outputs.VERSION }}" >> $GITHUB_ENV
+        echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:${{ steps.version.outputs.VERSION }}" >> $GITHUB_ENV
+        echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ steps.version.outputs.VERSION }}" >> $GITHUB_ENV
+        echo "FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/frontend:${{ steps.version.outputs.VERSION }}" >> $GITHUB_ENV
+
+    - name: Build Docker image for ${{ matrix.service.name }}
+      run: |
+        if [ "${{ matrix.service.build_args }}" != "" ]; then
+          docker build \
+            -f ${{ matrix.service.dockerfile }} \
+            -t ${{ matrix.service.name }}:latest \
+            --build-arg VERSION=${{ steps.version.outputs.VERSION }} \
+            --build-arg GIT_SHA=${{ steps.version.outputs.GIT_SHA }} \
+            ${{ matrix.service.context }}
+        else
+          docker build \
+            -f ${{ matrix.service.dockerfile }} \
+            -t ${{ matrix.service.name }}:latest \
+            ${{ matrix.service.context }}
+        fi
+
+    - name: Tag and Push ${{ matrix.service.name }} to GHCR
+      run: |
+        GHCR_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}"
+
+        # Tag images
+        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:latest
+        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:${{ steps.version.outputs.VERSION }}
+
+        # Push images
+        docker push ${GHCR_IMAGE_NAME}:latest
+        docker push ${GHCR_IMAGE_NAME}:${{ steps.version.outputs.VERSION }}
+
+  build-frontend:
+    needs: build-backend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Determine deployment target
+      id: deployment-target
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "target=${{ github.event.inputs.deployment_target }}" >> $GITHUB_OUTPUT
+        else
+          echo "target=${{ secrets.AWS_DEPLOYMENT_TARGET || 'aws' }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Build and push Frontend image
+      run: |
+        # Build frontend (use AWS Dockerfile for AWS, regular for Azure)
+        if [ "${{ steps.deployment-target.outputs.target }}" = "aws" ]; then
+          docker build -t frontend:latest -f ./ui/Dockerfile.aws ./ui
+        else
+          docker build -t frontend:latest -f ./ui/Dockerfile ./ui
+        fi
+
+        # Tag and push (matching working deployment pattern)
+        GHCR_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/frontend"
+        docker tag frontend:latest ${GHCR_IMAGE_NAME}:latest
+        docker tag frontend:latest ${GHCR_IMAGE_NAME}:${{ needs.build-backend.outputs.version }}
+        docker push ${GHCR_IMAGE_NAME}:latest
+        docker push ${GHCR_IMAGE_NAME}:${{ needs.build-backend.outputs.version }}
+
+  deploy:
+    needs: [build-backend, build-frontend]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Determine deployment target
+      id: deployment-target
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "target=${{ github.event.inputs.deployment_target }}" >> $GITHUB_OUTPUT
+        else
+          echo "target=${{ secrets.AWS_DEPLOYMENT_TARGET || 'aws' }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Set up environment variables
+      run: |
+        TARGET="${{ steps.deployment-target.outputs.target }}"
+        echo "DEPLOYMENT_TARGET=$TARGET" >> $GITHUB_ENV
+
+        if [ "$TARGET" = "aws" ]; then
+          # Use AWS-prefixed secrets
+          echo "CLOUD_INSTANCE_IP=${{ secrets.AWS_INSTANCE_IP }}" >> $GITHUB_ENV
+          echo "CLOUD_INSTANCE_USER=${{ secrets.AWS_INSTANCE_USER }}" >> $GITHUB_ENV
+          echo "JWT_SECRET=${{ secrets.AWS_JWT_SECRET }}" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=${{ secrets.AWS_ADMIN_PASSWORD }}" >> $GITHUB_ENV
+          echo "SERVICE_AUTH_SECRET=${{ secrets.AWS_SERVICE_AUTH_SECRET }}" >> $GITHUB_ENV
+          echo "CORS_ALLOWED_ORIGINS=${{ secrets.AWS_CORS_ALLOWED_ORIGINS }}" >> $GITHUB_ENV
+          echo "COMPOSE_ENV=production" >> $GITHUB_ENV
+          echo "SWAGGER_API_URL=http://${{ secrets.AWS_INSTANCE_IP }}:8082/swagger.json" >> $GITHUB_ENV
+        else
+          # Use existing Azure secrets (backward compatibility)
+          echo "CLOUD_INSTANCE_IP=${{ secrets.AZURE_VM_HOST }}" >> $GITHUB_ENV
+          echo "CLOUD_INSTANCE_USER=${{ secrets.AZURE_VM_USER }}" >> $GITHUB_ENV
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'default-jwt-secret' }}" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD || 'admin123' }}" >> $GITHUB_ENV
+          echo "SERVICE_AUTH_SECRET=${{ secrets.SERVICE_AUTH_SECRET || 'default-service-secret' }}" >> $GITHUB_ENV
+          echo "CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS || 'http://localhost' }}" >> $GITHUB_ENV
+          echo "COMPOSE_ENV=${{ secrets.COMPOSE_ENV }}" >> $GITHUB_ENV
+          echo "SWAGGER_API_URL=${{ secrets.SWAGGER_API_URL }}" >> $GITHUB_ENV
+        fi
+
+        # Set image names (matching working backend-deploy.yml pattern)
+        echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ needs.build-backend.outputs.version }}" >> $GITHUB_ENV
+        echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ needs.build-backend.outputs.version }}" >> $GITHUB_ENV
+        echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:${{ needs.build-backend.outputs.version }}" >> $GITHUB_ENV
+        echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ needs.build-backend.outputs.version }}" >> $GITHUB_ENV
+        echo "FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/frontend:${{ needs.build-backend.outputs.version }}" >> $GITHUB_ENV
+
+    - name: Create deployment environment file
+      run: |
+        cat > .env << EOF
+        DEPLOYMENT_TARGET=${{ env.DEPLOYMENT_TARGET }}
+        CLOUD_INSTANCE_IP=${{ env.CLOUD_INSTANCE_IP }}
+        CLOUD_INSTANCE_USER=${{ env.CLOUD_INSTANCE_USER }}
+        INSTANCE_IP=${{ env.CLOUD_INSTANCE_IP }}
+        INSTANCE_USER=${{ env.CLOUD_INSTANCE_USER }}
+        SSH_KEY_PATH=~/.ssh/deploy_key
+        EMPLOYEE_SERVICE_IMAGE=${{ env.EMPLOYEE_SERVICE_IMAGE }}
+        URGENCY_SERVICE_IMAGE=${{ env.URGENCY_SERVICE_IMAGE }}
+        ACTIVITY_SERVICE_IMAGE=${{ env.ACTIVITY_SERVICE_IMAGE }}
+        VERSION_SERVICE_IMAGE=${{ env.VERSION_SERVICE_IMAGE }}
+        FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}
+        JWT_SECRET=${{ env.JWT_SECRET }}
+        ADMIN_PASSWORD=${{ env.ADMIN_PASSWORD }}
+        SERVICE_AUTH_SECRET=${{ env.SERVICE_AUTH_SECRET }}
+        CORS_ALLOWED_ORIGINS=${{ env.CORS_ALLOWED_ORIGINS }}
+        COMPOSE_ENV=${{ env.COMPOSE_ENV }}
+        SWAGGER_API_URL=${{ env.SWAGGER_API_URL }}
+        EOF
+
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        if [ "${{ env.DEPLOYMENT_TARGET }}" = "aws" ]; then
+          echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        else
+          echo "${{ secrets.AZURE_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        fi
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H ${{ env.CLOUD_INSTANCE_IP }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to cloud instance
+      run: |
+        if [ "${{ env.DEPLOYMENT_TARGET }}" = "aws" ]; then
+          export SSH_KEY_CONTENT="${{ secrets.AWS_SSH_PRIVATE_KEY }}"
+        else
+          export SSH_KEY_CONTENT="${{ secrets.AZURE_SSH_PRIVATE_KEY }}"
+        fi
+        export SSH_KEY_PATH="~/.ssh/deploy_key"
+        
+        # Make deployment script executable
+        chmod +x ./deploy-aws.sh
+        
+        # Run deployment
+        ./deploy-aws.sh
+
+    - name: Verify deployment
+      run: |
+        echo "Waiting for services to start..."
+        sleep 30
+        
+        # Test health endpoints
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/health || echo "Frontend health check failed"
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}:8082/api/v1/health || echo "Employee service health check failed"
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}:8083/api/v1/health || echo "Urgency service health check failed"
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}:8084/api/v1/health || echo "Activity service health check failed"
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}:8090/api/v1/health || echo "Version service health check failed"
+
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f ~/.ssh/deploy_key
+        rm -f .env
+
+    - name: Deployment Summary
+      run: |
+        echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Target Platform**: ${{ env.DEPLOYMENT_TARGET }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Instance**: ${{ env.CLOUD_INSTANCE_USER }}@${{ env.CLOUD_INSTANCE_IP }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Frontend**: http://${{ env.CLOUD_INSTANCE_IP }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Employee API**: http://${{ env.CLOUD_INSTANCE_IP }}:8082" >> $GITHUB_STEP_SUMMARY
+        echo "- **Urgency API**: http://${{ env.CLOUD_INSTANCE_IP }}:8083" >> $GITHUB_STEP_SUMMARY
+        echo "- **Activity API**: http://${{ env.CLOUD_INSTANCE_IP }}:8084" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version API**: http://${{ env.CLOUD_INSTANCE_IP }}:8090" >> $GITHUB_STEP_SUMMARY
