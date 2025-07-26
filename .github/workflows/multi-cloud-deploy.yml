@@ -97,6 +97,8 @@ jobs:
           echo "ADMIN_PASSWORD=${{ secrets.AWS_ADMIN_PASSWORD }}" >> $GITHUB_ENV
           echo "SERVICE_AUTH_SECRET=${{ secrets.AWS_SERVICE_AUTH_SECRET }}" >> $GITHUB_ENV
           echo "CORS_ALLOWED_ORIGINS=${{ secrets.AWS_CORS_ALLOWED_ORIGINS }}" >> $GITHUB_ENV
+          echo "DB_USER=${{ secrets.AWS_DB_USER }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.AWS_DB_PASSWORD }}" >> $GITHUB_ENV
           echo "COMPOSE_ENV=production" >> $GITHUB_ENV
           echo "SWAGGER_API_URL=http://${{ secrets.AWS_INSTANCE_IP }}:8082/swagger.json" >> $GITHUB_ENV
         else
@@ -107,6 +109,8 @@ jobs:
           echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD || 'admin123' }}" >> $GITHUB_ENV
           echo "SERVICE_AUTH_SECRET=${{ secrets.SERVICE_AUTH_SECRET || 'default-service-secret' }}" >> $GITHUB_ENV
           echo "CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS || 'http://localhost' }}" >> $GITHUB_ENV
+          echo "DB_USER=${{ secrets.DB_USER }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
           echo "COMPOSE_ENV=${{ secrets.COMPOSE_ENV }}" >> $GITHUB_ENV
           echo "SWAGGER_API_URL=${{ secrets.SWAGGER_API_URL }}" >> $GITHUB_ENV
         fi
@@ -215,6 +219,8 @@ jobs:
           echo "ADMIN_PASSWORD=${{ secrets.AWS_ADMIN_PASSWORD }}" >> $GITHUB_ENV
           echo "SERVICE_AUTH_SECRET=${{ secrets.AWS_SERVICE_AUTH_SECRET }}" >> $GITHUB_ENV
           echo "CORS_ALLOWED_ORIGINS=${{ secrets.AWS_CORS_ALLOWED_ORIGINS }}" >> $GITHUB_ENV
+          echo "DB_USER=${{ secrets.AWS_DB_USER }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.AWS_DB_PASSWORD }}" >> $GITHUB_ENV
           echo "COMPOSE_ENV=production" >> $GITHUB_ENV
           echo "SWAGGER_API_URL=http://${{ secrets.AWS_INSTANCE_IP }}:8082/swagger.json" >> $GITHUB_ENV
         else
@@ -225,6 +231,8 @@ jobs:
           echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD || 'admin123' }}" >> $GITHUB_ENV
           echo "SERVICE_AUTH_SECRET=${{ secrets.SERVICE_AUTH_SECRET || 'default-service-secret' }}" >> $GITHUB_ENV
           echo "CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS || 'http://localhost' }}" >> $GITHUB_ENV
+          echo "DB_USER=${{ secrets.DB_USER }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
           echo "COMPOSE_ENV=${{ secrets.COMPOSE_ENV }}" >> $GITHUB_ENV
           echo "SWAGGER_API_URL=${{ secrets.SWAGGER_API_URL }}" >> $GITHUB_ENV
         fi
@@ -254,6 +262,8 @@ jobs:
         ADMIN_PASSWORD=${{ env.ADMIN_PASSWORD }}
         SERVICE_AUTH_SECRET=${{ env.SERVICE_AUTH_SECRET }}
         CORS_ALLOWED_ORIGINS=${{ env.CORS_ALLOWED_ORIGINS }}
+        DB_USER=${{ env.DB_USER }}
+        DB_PASSWORD=${{ env.DB_PASSWORD }}
         COMPOSE_ENV=${{ env.COMPOSE_ENV }}
         SWAGGER_API_URL=${{ env.SWAGGER_API_URL }}
         EOF

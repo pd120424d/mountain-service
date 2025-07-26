@@ -264,11 +264,6 @@ transfer_deployment_files() {
     scp -i "$SSH_KEY_PATH" "$COMPOSE_FILE" "$INSTANCE_USER@$INSTANCE_IP:~/mountain-service-deployment/"
     scp -i "$SSH_KEY_PATH" .env "$INSTANCE_USER@$INSTANCE_IP:~/mountain-service-deployment/"
 
-    # Transfer secrets directory if it exists
-    if [ -d "api" ]; then
-        scp -i "$SSH_KEY_PATH" -r api "$INSTANCE_USER@$INSTANCE_IP:~/mountain-service-deployment/"
-    fi
-
     log_success "Deployment files transferred successfully"
 }
 

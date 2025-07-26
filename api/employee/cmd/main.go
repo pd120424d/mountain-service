@@ -112,14 +112,33 @@ func main() {
 
 func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
 	log.Info("Setting up database...")
-	dbUser, err := readSecret(os.Getenv("EMPLOYEE_DB_USER_FILE"))
-	if err != nil {
-		log.Fatalf("Failed to read EMPLOYEE_DB_USER: %v", err)
+
+	dbUser := os.Getenv("DB_USER")
+	if dbUser == "" {
+		userFile := os.Getenv("EMPLOYEE_DB_USER_FILE")
+		if userFile != "" {
+			var err error
+			dbUser, err = readSecret(userFile)
+			if err != nil {
+				log.Fatalf("Failed to read EMPLOYEE_DB_USER from file %s: %v", userFile, err)
+			}
+		} else {
+			log.Fatalf("Neither DB_USER environment variable nor EMPLOYEE_DB_USER_FILE is set")
+		}
 	}
 
-	dbPassword, err := readSecret(os.Getenv("EMPLOYEE_DB_PASSWORD_FILE"))
-	if err != nil {
-		log.Fatalf("Failed to read EMPLOYEE_DB_PASSWORD: %v", err)
+	dbPassword := os.Getenv("DB_PASSWORD")
+	if dbPassword == "" {
+		passwordFile := os.Getenv("EMPLOYEE_DB_PASSWORD_FILE")
+		if passwordFile != "" {
+			var err error
+			dbPassword, err = readSecret(passwordFile)
+			if err != nil {
+				log.Fatalf("Failed to read EMPLOYEE_DB_PASSWORD from file %s: %v", passwordFile, err)
+			}
+		} else {
+			log.Fatalf("Neither DB_PASSWORD environment variable nor EMPLOYEE_DB_PASSWORD_FILE is set")
+		}
 	}
 
 	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
@@ -130,7 +149,7 @@ func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
 	db := config.GetEmployeeDB(log, dbStringEmployee)
 
 	// Auto migrate the model
-	err = db.AutoMigrate(&model.Employee{}, &model.Shift{}, &model.EmployeeShift{})
+	err := db.AutoMigrate(&model.Employee{}, &model.Shift{}, &model.EmployeeShift{})
 	if err != nil {
 		log.Fatalf("failed to migrate employee models: %v", err)
 	}
@@ -216,5 +235,5 @@ func readSecret(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(secret), nil
+	return strings.TrimSpace(string(secret)), nil
 }

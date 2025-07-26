@@ -124,14 +124,36 @@ func main() {
 
 func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
 	log.Info("Setting up database...")
-	dbUser, err := readSecret(os.Getenv("ACTIVITY_DB_USER_FILE"))
-	if err != nil {
-		log.Fatalf("Failed to read ACTIVITY_DB_USER: %v", err)
+
+	dbUser := os.Getenv("DB_USER")
+	log.Infof("DB_USER: %s", dbUser)
+	if dbUser == "" {
+		log.Infof("DB_USER is empty, checking ACTIVITY_DB_USER_FILE")
+		userFile := os.Getenv("ACTIVITY_DB_USER_FILE")
+		if userFile != "" && userFile != " " {
+			var err error
+			dbUser, err = readSecret(userFile)
+			if err != nil {
+				log.Fatalf("Failed to read ACTIVITY_DB_USER from file %s: %v", userFile, err)
+			}
+		} else {
+			log.Fatalf("Neither DB_USER environment variable nor ACTIVITY_DB_USER_FILE is set. DB_USER='%s', ACTIVITY_DB_USER_FILE='%s'", dbUser, userFile)
+		}
 	}
 
-	dbPassword, err := readSecret(os.Getenv("ACTIVITY_DB_PASSWORD_FILE"))
-	if err != nil {
-		log.Fatalf("Failed to read ACTIVITY_DB_PASSWORD: %v", err)
+	dbPassword := os.Getenv("DB_PASSWORD")
+	if dbPassword == "" {
+		log.Infof("DB_PASSWORD is empty, checking ACTIVITY_DB_PASSWORD_FILE")
+		passwordFile := os.Getenv("ACTIVITY_DB_PASSWORD_FILE")
+		if passwordFile != "" && passwordFile != " " {
+			var err error
+			dbPassword, err = readSecret(passwordFile)
+			if err != nil {
+				log.Fatalf("Failed to read ACTIVITY_DB_PASSWORD from file %s: %v", passwordFile, err)
+			}
+		} else {
+			log.Fatalf("Neither DB_PASSWORD environment variable nor ACTIVITY_DB_PASSWORD_FILE is set. DB_PASSWORD='%s', ACTIVITY_DB_PASSWORD_FILE='%s'", dbPassword, passwordFile)
+		}
 	}
 
 	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
@@ -142,7 +164,7 @@ func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
 	db := config.GetActivityDB(log, dbStringActivity)
 
 	// Auto migrate the model
-	err = db.AutoMigrate(&model.Activity{})
+	err := db.AutoMigrate(&model.Activity{})
 	if err != nil {
 		log.Fatalf("failed to migrate activity models: %v", err)
 	}
