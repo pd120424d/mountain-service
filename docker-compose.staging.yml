@@ -2,8 +2,8 @@ services:
   employee-db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: etf
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-etf}
       POSTGRES_DB: employee_service
     volumes:
       - db_data_staging:/var/lib/postgresql/data
@@ -12,7 +12,7 @@ services:
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -20,8 +20,8 @@ services:
   urgency-db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: etf
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-etf}
       POSTGRES_DB: urgency_service
     volumes:
       - urgency_db_data_staging:/var/lib/postgresql/data
@@ -30,7 +30,7 @@ services:
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,8 +38,8 @@ services:
   activity-db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: etf
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-etf}
       POSTGRES_DB: activity_service
     volumes:
       - activity_db_data_staging:/var/lib/postgresql/data
@@ -48,7 +48,7 @@ services:
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
