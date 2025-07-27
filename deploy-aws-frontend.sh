@@ -22,7 +22,7 @@ for var in "${required_vars[@]}"; do
     fi
 done
 
-echo "🚀 Starting AWS Frontend Deployment..."
+echo "Starting AWS Frontend Deployment..."
 echo "Target: $INSTANCE_USER@$INSTANCE_IP"
 echo "Frontend Image: $FRONTEND_IMAGE"
 
@@ -75,53 +75,53 @@ scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no .env.frontend.remote $INSTA
 ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $INSTANCE_USER@$INSTANCE_IP << 'EOF'
     cd ~/mountain-service-frontend
     
-    echo "🔐 Logging into GitHub Container Registry..."
+    echo "Logging into GitHub Container Registry..."
     echo $GHCR_PAT | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
     
-    echo "🛑 Stopping existing frontend container..."
+    echo "Stopping existing frontend container..."
     docker-compose -f docker-compose.frontend.yml down || true
     
-    echo "🧹 Cleaning up old frontend images..."
+    echo "Cleaning up old frontend images..."
     docker image prune -f
     
-    echo "📥 Pulling latest frontend image..."
+    echo "Pulling latest frontend image..."
     docker-compose -f docker-compose.frontend.yml pull
     
-    echo "🚀 Starting frontend container..."
+    echo "Starting frontend container..."
     docker-compose -f docker-compose.frontend.yml up -d
     
-    echo "⏳ Waiting for frontend to be ready..."
+    echo "Waiting for frontend to be ready..."
     sleep 15
     
-    echo "🔍 Checking frontend container status..."
+    echo "Checking frontend container status..."
     docker-compose -f docker-compose.frontend.yml ps
     
-    echo "📋 Frontend container logs (last 20 lines):"
+    echo "Frontend container logs (last 20 lines):"
     docker-compose -f docker-compose.frontend.yml logs --tail=20 frontend
 EOF
 
 # Verify deployment
-echo "🔍 Verifying frontend deployment..."
+echo "Verifying frontend deployment..."
 sleep 10
 
 # Test frontend health endpoint
 if curl -f http://$INSTANCE_IP/health; then
-    echo "✅ Frontend health check passed"
+    echo "Frontend health check passed"
 else
-    echo "❌ Frontend health check failed"
+    echo "Frontend health check failed"
     exit 1
 fi
 
 # Test frontend application
 if curl -f http://$INSTANCE_IP/ > /dev/null; then
-    echo "✅ Frontend application is accessible"
+    echo "Frontend application is accessible"
 else
-    echo "❌ Frontend application is not accessible"
+    echo "Frontend application is not accessible"
     exit 1
 fi
 
 # Cleanup local files
 rm -f docker-compose.frontend.yml .env.frontend.remote
 
-echo "🎉 Frontend deployment completed successfully!"
-echo "🌐 Application URL: http://$INSTANCE_IP"
+echo "Frontend deployment completed successfully!"
+echo "Application URL: http://$INSTANCE_IP"
