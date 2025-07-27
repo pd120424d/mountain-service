@@ -34,6 +34,8 @@ export type {
 } from './generated/urgency';
 
 export {
+  UrgencyLevel,
+  UrgencyStatus,
   UrgencyLevel as GeneratedUrgencyLevel,
   UrgencyStatus as GeneratedUrgencyStatus
 } from './generated/urgency';

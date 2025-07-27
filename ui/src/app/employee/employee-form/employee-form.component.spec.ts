@@ -36,7 +36,7 @@ describe('EmployeeFormComponent', () => {
       lastName: 'Doe',
       email: 'john.doe@example.com',
       phone: '+1234567890',
-      profileType: MedicRole,
+      profileType: MedicRole as any,
       username: 'johndoe',
       gender: 'Male'
     };
@@ -77,7 +77,7 @@ describe('EmployeeFormComponent', () => {
       lastName: 'Doe',
       email: 'john.doe@example.com',
       phone: '+1234567890',
-      profileType: MedicRole,
+      profileType: MedicRole as any,
       username: 'johndoe',
       gender: 'Male'
     };
@@ -105,7 +105,7 @@ describe('EmployeeFormComponent', () => {
       lastName: 'Doe',
       email: 'john.doe@example.com',
       phone: '+1234567890',
-      profileType: MedicRole,
+      profileType: MedicRole as any,
       username: 'johndoe',
       gender: 'Male'
     };
@@ -121,7 +121,7 @@ describe('EmployeeFormComponent', () => {
       gender: 'Male',
       phoneNumber: '+1234567890',
       email: 'john.doe@example.com',
-      profileType: MedicRole,
+      profileType: MedicRole as any,
       profilePicture: null
     });
 
@@ -134,7 +134,7 @@ describe('EmployeeFormComponent', () => {
       phone: '+1234567890',
       username: 'johndoe',
       password: 'password',
-      profileType: MedicRole,
+      profileType: MedicRole as any,
       gender: 'Male',
       profilePicture: undefined
     };

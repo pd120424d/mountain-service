@@ -31,10 +31,10 @@ shared/models/
 Import models from the shared location:
 
 ```typescript
-// ✅ Good - Use shared models
+// Good - Use shared models
 import { Employee, EmployeeCreateRequest, MedicRole } from '../shared/models';
 
-// ❌ Bad - Don't import from old locations
+// Bad - Don't import from old locations
 import { Employee } from '../employee/employee.model';
 ```
 
