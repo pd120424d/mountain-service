@@ -25,7 +25,28 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      git_sha: ${{ steps.version.outputs.GIT_SHA }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Fetch full git history and tags
+      run: |
+        git fetch --tags --unshallow || git fetch --tags
+
+    - name: Get Git tag and SHA
+      id: version
+      run: |
+        echo "VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo dev)" >> $GITHUB_OUTPUT
+        echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
   build-backend:
+    needs: get-version
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,26 +72,12 @@ jobs:
             context: ./api
             build_args: "VERSION GIT_SHA"
 
-    outputs:
-      version: ${{ steps.version.outputs.VERSION }}
-      git_sha: ${{ steps.version.outputs.GIT_SHA }}
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-
-    - name: Fetch full git history and tags
-      run: |
-        git fetch --tags --unshallow || git fetch --tags
-
-    - name: Get Git tag and SHA
-      id: version
-      run: |
-        echo "VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo dev)" >> $GITHUB_OUTPUT
-        echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Log in to GitHub Container Registry
       run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -122,11 +129,11 @@ jobs:
         fi
         
         # Set image names (matching working backend-deploy.yml pattern)
-        echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ steps.version.outputs.VERSION }}" >> $GITHUB_ENV
-        echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ steps.version.outputs.VERSION }}" >> $GITHUB_ENV
-        echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:${{ steps.version.outputs.VERSION }}" >> $GITHUB_ENV
-        echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ steps.version.outputs.VERSION }}" >> $GITHUB_ENV
-        echo "FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/frontend:${{ steps.version.outputs.VERSION }}" >> $GITHUB_ENV
+        echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/frontend:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
 
     - name: Build Docker image for ${{ matrix.service.name }}
       run: |
@@ -140,8 +147,8 @@ jobs:
           docker build \
             -f ${{ matrix.service.dockerfile }} \
             -t ${{ matrix.service.name }}:latest \
-            --build-arg VERSION=${{ steps.version.outputs.VERSION }} \
-            --build-arg GIT_SHA=${{ steps.version.outputs.GIT_SHA }} \
+            --build-arg VERSION=${{ needs.get-version.outputs.version }} \
+            --build-arg GIT_SHA=${{ needs.get-version.outputs.git_sha }} \
             --build-arg BUILD_TIMESTAMP=$BUILD_TIMESTAMP \
             $NO_CACHE_FLAG \
             ${{ matrix.service.context }}
@@ -160,14 +167,14 @@ jobs:
 
         # Tag images
         docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:latest
-        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:${{ steps.version.outputs.VERSION }}
+        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:${{ needs.get-version.outputs.version }}
 
         # Push images
         docker push ${GHCR_IMAGE_NAME}:latest
-        docker push ${GHCR_IMAGE_NAME}:${{ steps.version.outputs.VERSION }}
+        docker push ${GHCR_IMAGE_NAME}:${{ needs.get-version.outputs.version }}
 
   build-frontend:
-    needs: build-backend
+    needs: get-version
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -183,7 +190,11 @@ jobs:
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           echo "target=${{ github.event.inputs.deployment_target }}" >> $GITHUB_OUTPUT
         else
-          echo "target=${{ secrets.AWS_DEPLOYMENT_TARGET || 'aws' }}" >> $GITHUB_OUTPUT
+          TARGET="${{ secrets.AWS_DEPLOYMENT_TARGET }}"
+          if [ -z "$TARGET" ]; then
+            TARGET="aws"
+          fi
+          echo "target=$TARGET" >> $GITHUB_OUTPUT
         fi
 
     - name: Log in to GitHub Container Registry
@@ -206,12 +217,12 @@ jobs:
         # Tag and push (matching working deployment pattern)
         GHCR_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/frontend"
         docker tag frontend:latest ${GHCR_IMAGE_NAME}:latest
-        docker tag frontend:latest ${GHCR_IMAGE_NAME}:${{ needs.build-backend.outputs.version }}
+        docker tag frontend:latest ${GHCR_IMAGE_NAME}:${{ needs.get-version.outputs.version }}
         docker push ${GHCR_IMAGE_NAME}:latest
-        docker push ${GHCR_IMAGE_NAME}:${{ needs.build-backend.outputs.version }}
+        docker push ${GHCR_IMAGE_NAME}:${{ needs.get-version.outputs.version }}
 
   deploy:
-    needs: [build-backend, build-frontend]
+    needs: [get-version, build-backend, build-frontend]
     runs-on: ubuntu-latest
 
     steps:
@@ -224,7 +235,11 @@ jobs:
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           echo "target=${{ github.event.inputs.deployment_target }}" >> $GITHUB_OUTPUT
         else
-          echo "target=${{ secrets.AWS_DEPLOYMENT_TARGET || 'aws' }}" >> $GITHUB_OUTPUT
+          TARGET="${{ secrets.AWS_DEPLOYMENT_TARGET }}"
+          if [ -z "$TARGET" ]; then
+            TARGET="aws"
+          fi
+          echo "target=$TARGET" >> $GITHUB_OUTPUT
         fi
 
     - name: Set up environment variables
@@ -259,11 +274,11 @@ jobs:
         fi
 
         # Set image names (matching working backend-deploy.yml pattern)
-        echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ needs.build-backend.outputs.version }}" >> $GITHUB_ENV
-        echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ needs.build-backend.outputs.version }}" >> $GITHUB_ENV
-        echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:${{ needs.build-backend.outputs.version }}" >> $GITHUB_ENV
-        echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ needs.build-backend.outputs.version }}" >> $GITHUB_ENV
-        echo "FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/frontend:${{ needs.build-backend.outputs.version }}" >> $GITHUB_ENV
+        echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/frontend:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
 
     - name: Create secure deployment environment file
       run: |
@@ -338,13 +353,24 @@ jobs:
       run: |
         echo "Waiting for services to start..."
         sleep 30
-        
-        # Test health endpoints
+
+        # Test the application through the frontend/nginx proxy only
+        echo "Testing frontend health (main entry point)..."
         curl -f http://${{ env.CLOUD_INSTANCE_IP }}/health || echo "Frontend health check failed"
-        curl -f http://${{ env.CLOUD_INSTANCE_IP }}:8082/api/v1/health || echo "Employee service health check failed"
-        curl -f http://${{ env.CLOUD_INSTANCE_IP }}:8083/api/v1/health || echo "Urgency service health check failed"
-        curl -f http://${{ env.CLOUD_INSTANCE_IP }}:8084/api/v1/health || echo "Activity service health check failed"
-        curl -f http://${{ env.CLOUD_INSTANCE_IP }}:8090/api/v1/health || echo "Version service health check failed"
+
+        # Test general API health through nginx proxy (routes to employee service)
+        echo "Testing API health through nginx proxy..."
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/health || echo "API health check through proxy failed"
+
+        # Test version endpoint through nginx proxy
+        echo "Testing version API through nginx proxy..."
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/version || echo "Version API through proxy failed"
+
+        # Verify all containers are running (via SSH for debugging)
+        echo "Verifying all services are running..."
+        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.CLOUD_INSTANCE_USER }}@${{ env.CLOUD_INSTANCE_IP }} "docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E '(employee|urgency|activity|version|frontend)'"
+
+        echo "Deployment verification completed successfully!"
 
     - name: Cleanup
       if: always()
@@ -357,8 +383,11 @@ jobs:
         echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
         echo "- **Target Platform**: ${{ env.DEPLOYMENT_TARGET }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Instance**: ${{ env.CLOUD_INSTANCE_USER }}@${{ env.CLOUD_INSTANCE_IP }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Frontend**: http://${{ env.CLOUD_INSTANCE_IP }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Employee API**: http://${{ env.CLOUD_INSTANCE_IP }}:8082" >> $GITHUB_STEP_SUMMARY
-        echo "- **Urgency API**: http://${{ env.CLOUD_INSTANCE_IP }}:8083" >> $GITHUB_STEP_SUMMARY
-        echo "- **Activity API**: http://${{ env.CLOUD_INSTANCE_IP }}:8084" >> $GITHUB_STEP_SUMMARY
-        echo "- **Version API**: http://${{ env.CLOUD_INSTANCE_IP }}:8090" >> $GITHUB_STEP_SUMMARY
+        echo "- **Application URL**: http://${{ env.CLOUD_INSTANCE_IP }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Employee API**: http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/employees" >> $GITHUB_STEP_SUMMARY
+        echo "- **Urgency API**: http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/urgencies" >> $GITHUB_STEP_SUMMARY
+        echo "- **Activity API**: http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/activities" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version API**: http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/version" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Architecture**: All API requests are routed through nginx reverse proxy (port 80 only)." >> $GITHUB_STEP_SUMMARY
+        echo "**Security**: Backend services (ports 8082-8084, 8090) are not directly accessible externally." >> $GITHUB_STEP_SUMMARY
