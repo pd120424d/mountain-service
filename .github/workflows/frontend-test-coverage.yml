@@ -11,6 +11,7 @@ on:
       - 'frontend-test-cover.sh'
       - '.github/workflows/frontend-test-coverage.yml'
       - '.github/workflows/generate-models.yml'
+      - '.github/workflows/aws-frontend-deploy.yml'
   pull_request:
     paths:
       - 'ui/**'

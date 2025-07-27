@@ -34,13 +34,14 @@ This project features an automated CI/CD pipeline with contract-driven model gen
 - **Automated Model Generation**: TypeScript models are automatically generated from backend Swagger specs
 - **Smart Fallback**: Uses live APIs when available, falls back to local swagger files
 - **Continuous Validation**: Models are validated before testing and deployment
-- **Zero-Downtime Deployment**: Seamless deployment to Azure VM with Docker
+- **Independent Deployments**: Separate AWS frontend and backend deployments for faster, safer releases
+- **Path-Based Triggering**: Only deploys components that have changed
 
 **Pipeline Flow**:
 ```
-Code Push → Generate Models → Run Tests → Deploy
+Code Push → Generate Models → Run Tests → Deploy (Frontend/Backend)
      ↓           ↓              ↓         ↓
-   GitHub    Live APIs or   Coverage   Azure VM
+   GitHub    Live APIs or   Coverage   AWS EC2
    Actions   Fallback Files  Reports   Docker
 ```
 
@@ -121,34 +122,48 @@ docker-compose up --build
 
 ## CI/CD and Deployment
 
-The project uses **GitHub Actions** for CI/CD.
+The project uses **GitHub Actions** for CI/CD with separate AWS frontend and backend deployments.
 
 ### Test Coverage Workflows
 
-  - `frontend-test-coverage.yml` and `backend-test-coverage.yml` run on:
+- `frontend-test-coverage.yml` and `backend-test-coverage.yml` run on:
   - pushes to `main` or version tags (e.g. `v1.0.0`)
   - relevant changes in `ui/`, `api/`, or test script files
   - all pull requests (for coverage only, not deployment)
 
-### Deploy Workflows
+### AWS Deploy Workflows
 
-- `frontend-deploy.yml` and `backend-deploy.yml` run **only after successful test coverage** (via `workflow_run`)
+- `aws-frontend-deploy.yml` and `aws-backend-deploy.yml` run **only after successful test coverage** (via `workflow_run`)
+- **Path-based triggering**: Frontend deploys only on `ui/` changes, backend only on `api/` changes
 - Deployments are **only triggered by push events** (e.g. merging into `main` or creating a tag)
 - **Pull requests will never trigger a deployment**
 
-### Deployment Targets
+### Deployment Architecture
 
+- **Independent Deployments**: Frontend and backend deploy separately for faster, safer deployments
 - Docker images are built and pushed to **GitHub Container Registry**
-- Deployment runs over **SSH to an Azure VM**, loads Docker images, and brings up containers via `docker-compose.prod.yml`
+- Deployment runs over **SSH to AWS EC2**, loads Docker images via separate docker-compose files
+- **Frontend**: Nginx reverse proxy with Angular app (port 80/443)
+- **Backend**: All microservices + PostgreSQL database (ports 8082-8090)
+
+For detailed deployment information, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ### GitHub Secrets
 
-To support deployments, these GitHub Secrets are used in workflows:
+To support AWS deployments, these GitHub Secrets are required:
 
 - `GHCR_PAT`: GitHub token for publishing to the container registry
-- `AZURE_SSH_PRIVATE_KEY`: SSH private key for VM access
-- `AZURE_VM_USER`: Azure VM username
-- `AZURE_VM_HOST`: Azure VM hostname or IP address
+- `AWS_SSH_PRIVATE_KEY`: SSH private key for EC2 access
+- `AWS_INSTANCE_USER`: EC2 instance username (typically `ubuntu`)
+- `AWS_INSTANCE_IP`: EC2 instance IP address
+- `AWS_JWT_SECRET`: JWT secret for backend authentication
+- `AWS_ADMIN_PASSWORD`: Admin password for backend services
+- `AWS_SERVICE_AUTH_SECRET`: Service-to-service authentication secret
+- `AWS_CORS_ALLOWED_ORIGINS`: Allowed CORS origins
+- `AWS_DB_USER`: PostgreSQL database username
+- `AWS_DB_PASSWORD`: PostgreSQL database password
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete setup instructions.
 - `SWAGGER_API_URL`: Swagger documentation URL
 - `CORS_ALLOWED_ORIGINS`: Frontend URL for CORS config
 

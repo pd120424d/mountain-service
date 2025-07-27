@@ -27,7 +27,7 @@ func main() {
 		panic("failed to create new logger: " + err.Error())
 	}
 
-	log.Info("Starting Version service on :8090...")
+	log.Info("Starting Version service on :8090...") // Updated to trigger deployment
 
 	r := gin.Default()
 

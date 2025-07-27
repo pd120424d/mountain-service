@@ -1,0 +1,253 @@
+name: AWS Backend Deploy
+
+on:
+  workflow_run:
+    workflows: ["backend-test-coverage"]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild backend images'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      git_sha: ${{ steps.version.outputs.GIT_SHA }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Fetch full git history and tags
+      run: |
+        git fetch --tags --unshallow || git fetch --tags
+
+    - name: Get Git tag and SHA
+      id: version
+      run: |
+        echo "VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo dev)" >> $GITHUB_OUTPUT
+        echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+  build-backend:
+    needs: get-version
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'workflow_run' &&
+         github.event.workflow_run.conclusion == 'success' &&
+         github.event.workflow_run.event == 'push')
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        service:
+          - name: employee-service
+            dockerfile: ./api/employee/Dockerfile
+            context: ./api
+            build_args: ""
+          - name: urgency-service
+            dockerfile: ./api/urgency/Dockerfile
+            context: ./api
+            build_args: ""
+          - name: activity-service
+            dockerfile: ./api/activity/Dockerfile
+            context: ./api
+            build_args: ""
+          - name: version-service
+            dockerfile: ./api/version-service/Dockerfile
+            context: ./api
+            build_args: "VERSION GIT_SHA"
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Clean Docker build cache
+      run: |
+        echo "Cleaning Docker build cache to ensure fresh build..."
+        docker builder prune -f
+        docker system prune -f
+
+    - name: Build Docker image for ${{ matrix.service.name }}
+      run: |
+        NO_CACHE_FLAG=""
+        if [ "${{ github.event.inputs.force_rebuild }}" = "true" ]; then
+          NO_CACHE_FLAG="--no-cache"
+        fi
+
+        # Add a unique build arg to bust cache if needed
+        BUILD_TIMESTAMP=$(date +%s)
+
+        if [ "${{ matrix.service.build_args }}" != "" ]; then
+          docker build \
+            -f ${{ matrix.service.dockerfile }} \
+            -t ${{ matrix.service.name }}:latest \
+            --build-arg VERSION=${{ needs.get-version.outputs.version }} \
+            --build-arg GIT_SHA=${{ needs.get-version.outputs.git_sha }} \
+            --build-arg BUILD_TIMESTAMP=$BUILD_TIMESTAMP \
+            $NO_CACHE_FLAG \
+            ${{ matrix.service.context }}
+        else
+          docker build \
+            -f ${{ matrix.service.dockerfile }} \
+            -t ${{ matrix.service.name }}:latest \
+            --build-arg BUILD_TIMESTAMP=$BUILD_TIMESTAMP \
+            $NO_CACHE_FLAG \
+            ${{ matrix.service.context }}
+        fi
+
+    - name: Tag and Push ${{ matrix.service.name }} to GHCR
+      run: |
+        GHCR_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}"
+
+        # Tag images
+        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:latest
+        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:${{ needs.get-version.outputs.version }}
+
+        # Push images
+        docker push ${GHCR_IMAGE_NAME}:latest
+        docker push ${GHCR_IMAGE_NAME}:${{ needs.get-version.outputs.version }}
+
+  deploy-backend:
+    needs: [get-version, build-backend]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up environment variables
+      run: |
+        # Use AWS-prefixed secrets
+        echo "CLOUD_INSTANCE_IP=${{ secrets.AWS_INSTANCE_IP }}" >> $GITHUB_ENV
+        echo "CLOUD_INSTANCE_USER=${{ secrets.AWS_INSTANCE_USER }}" >> $GITHUB_ENV
+        echo "JWT_SECRET=${{ secrets.AWS_JWT_SECRET }}" >> $GITHUB_ENV
+        echo "ADMIN_PASSWORD=${{ secrets.AWS_ADMIN_PASSWORD }}" >> $GITHUB_ENV
+        echo "SERVICE_AUTH_SECRET=${{ secrets.AWS_SERVICE_AUTH_SECRET }}" >> $GITHUB_ENV
+        echo "CORS_ALLOWED_ORIGINS=${{ secrets.AWS_CORS_ALLOWED_ORIGINS }}" >> $GITHUB_ENV
+        echo "DB_USER=${{ secrets.AWS_DB_USER }}" >> $GITHUB_ENV
+        echo "DB_PASSWORD=${{ secrets.AWS_DB_PASSWORD }}" >> $GITHUB_ENV
+        echo "COMPOSE_ENV=production" >> $GITHUB_ENV
+        echo "SWAGGER_API_URL=http://${{ secrets.AWS_INSTANCE_IP }}:8082/swagger.json" >> $GITHUB_ENV
+        
+        # Set image names
+        echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+
+    - name: Create backend deployment environment file
+      run: |
+        cat > .env.backend << EOF
+        # Backend Deployment Configuration
+        CLOUD_INSTANCE_IP=${{ env.CLOUD_INSTANCE_IP }}
+        CLOUD_INSTANCE_USER=${{ env.CLOUD_INSTANCE_USER }}
+        INSTANCE_IP=${{ env.CLOUD_INSTANCE_IP }}
+        INSTANCE_USER=${{ env.CLOUD_INSTANCE_USER }}
+        SSH_KEY_PATH=~/.ssh/deploy_key
+
+        # Docker Images
+        EMPLOYEE_SERVICE_IMAGE=${{ env.EMPLOYEE_SERVICE_IMAGE }}
+        URGENCY_SERVICE_IMAGE=${{ env.URGENCY_SERVICE_IMAGE }}
+        ACTIVITY_SERVICE_IMAGE=${{ env.ACTIVITY_SERVICE_IMAGE }}
+        VERSION_SERVICE_IMAGE=${{ env.VERSION_SERVICE_IMAGE }}
+
+        # GitHub Container Registry Authentication
+        GHCR_PAT=${{ secrets.GHCR_PAT }}
+        GITHUB_ACTOR=${{ github.actor }}
+
+        # Application Security
+        JWT_SECRET=${{ env.JWT_SECRET }}
+        ADMIN_PASSWORD=${{ env.ADMIN_PASSWORD }}
+        SERVICE_AUTH_SECRET=${{ env.SERVICE_AUTH_SECRET }}
+        CORS_ALLOWED_ORIGINS=${{ env.CORS_ALLOWED_ORIGINS }}
+
+        # Database Configuration
+        DB_USER=${{ env.DB_USER }}
+        DB_PASSWORD=${{ env.DB_PASSWORD }}
+
+        # Service URLs
+        EMPLOYEE_SERVICE_URL=http://employee-service:8082
+        ACTIVITY_SERVICE_URL=http://activity-service:8084
+
+        # Additional Configuration
+        COMPOSE_ENV=${{ env.COMPOSE_ENV }}
+        SWAGGER_API_URL=${{ env.SWAGGER_API_URL }}
+        EOF
+
+        echo "Backend deployment .env file created"
+
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H ${{ env.CLOUD_INSTANCE_IP }} >> ~/.ssh/known_hosts
+
+    - name: Deploy backend to AWS
+      run: |
+        export SSH_KEY_CONTENT="${{ secrets.AWS_SSH_PRIVATE_KEY }}"
+        export SSH_KEY_PATH="~/.ssh/deploy_key"
+
+        # Make deployment script executable
+        chmod +x ./deploy-aws-backend.sh
+
+        # Run backend deployment
+        ./deploy-aws-backend.sh
+
+    - name: Verify backend deployment
+      run: |
+        echo "Waiting for backend services to start..."
+        sleep 30
+
+        # Test backend services through nginx proxy
+        echo "Testing employee service health through proxy..."
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/health || echo "Employee service health check failed"
+
+        echo "Testing version service through proxy..."
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/version || echo "Version service check failed"
+
+        # Verify all backend containers are running
+        echo "Verifying all backend services are running..."
+        ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.CLOUD_INSTANCE_USER }}@${{ env.CLOUD_INSTANCE_IP }} "docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E '(employee|urgency|activity|version)'"
+
+        echo "Backend deployment verification completed!"
+
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f ~/.ssh/deploy_key
+        rm -f .env.backend
+
+    - name: Backend Deployment Summary
+      run: |
+        echo "## Backend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Target Platform**: AWS" >> $GITHUB_STEP_SUMMARY
+        echo "- **Instance**: ${{ env.CLOUD_INSTANCE_USER }}@${{ env.CLOUD_INSTANCE_IP }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Employee API**: http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/employees" >> $GITHUB_STEP_SUMMARY
+        echo "- **Urgency API**: http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/urgencies" >> $GITHUB_STEP_SUMMARY
+        echo "- **Activity API**: http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/activities" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version API**: http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/version" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Backend Images Deployed**:" >> $GITHUB_STEP_SUMMARY
+        echo "- Employee Service: ${{ env.EMPLOYEE_SERVICE_IMAGE }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Urgency Service: ${{ env.URGENCY_SERVICE_IMAGE }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Activity Service: ${{ env.ACTIVITY_SERVICE_IMAGE }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Version Service: ${{ env.VERSION_SERVICE_IMAGE }}" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,156 @@
+name: AWS Frontend Deploy
+
+on:
+  workflow_run:
+    workflows: ["frontend-test-coverage"]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild frontend image'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      git_sha: ${{ steps.version.outputs.GIT_SHA }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Fetch full git history and tags
+      run: |
+        git fetch --tags --unshallow || git fetch --tags
+
+    - name: Get Git tag and SHA
+      id: version
+      run: |
+        echo "VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo dev)" >> $GITHUB_OUTPUT
+        echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+  build-frontend:
+    needs: get-version
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'workflow_run' &&
+         github.event.workflow_run.conclusion == 'success' &&
+         github.event.workflow_run.event == 'push')
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Build and push Frontend image
+      run: |
+        NO_CACHE_FLAG=""
+        if [ "${{ github.event.inputs.force_rebuild }}" = "true" ]; then
+          NO_CACHE_FLAG="--no-cache"
+        fi
+
+        # Build frontend using AWS Dockerfile
+        docker build -t frontend:latest -f ./ui/Dockerfile.aws $NO_CACHE_FLAG ./ui
+
+        # Tag and push
+        GHCR_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/frontend"
+        docker tag frontend:latest ${GHCR_IMAGE_NAME}:latest
+        docker tag frontend:latest ${GHCR_IMAGE_NAME}:${{ needs.get-version.outputs.version }}
+        docker push ${GHCR_IMAGE_NAME}:latest
+        docker push ${GHCR_IMAGE_NAME}:${{ needs.get-version.outputs.version }}
+
+  deploy-frontend:
+    needs: [get-version, build-frontend]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up environment variables
+      run: |
+        # Use AWS-prefixed secrets
+        echo "CLOUD_INSTANCE_IP=${{ secrets.AWS_INSTANCE_IP }}" >> $GITHUB_ENV
+        echo "CLOUD_INSTANCE_USER=${{ secrets.AWS_INSTANCE_USER }}" >> $GITHUB_ENV
+        echo "FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/frontend:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+
+    - name: Create frontend deployment environment file
+      run: |
+        cat > .env.frontend << EOF
+        # Frontend Deployment Configuration
+        CLOUD_INSTANCE_IP=${{ env.CLOUD_INSTANCE_IP }}
+        CLOUD_INSTANCE_USER=${{ env.CLOUD_INSTANCE_USER }}
+        INSTANCE_IP=${{ env.CLOUD_INSTANCE_IP }}
+        INSTANCE_USER=${{ env.CLOUD_INSTANCE_USER }}
+        SSH_KEY_PATH=~/.ssh/deploy_key
+
+        # Frontend Docker Image
+        FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}
+
+        # GitHub Container Registry Authentication
+        GHCR_PAT=${{ secrets.GHCR_PAT }}
+        GITHUB_ACTOR=${{ github.actor }}
+        EOF
+
+        echo "Frontend deployment .env file created"
+
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H ${{ env.CLOUD_INSTANCE_IP }} >> ~/.ssh/known_hosts
+
+    - name: Deploy frontend to AWS
+      run: |
+        export SSH_KEY_CONTENT="${{ secrets.AWS_SSH_PRIVATE_KEY }}"
+        export SSH_KEY_PATH="~/.ssh/deploy_key"
+        
+        # Make deployment script executable
+        chmod +x ./deploy-aws-frontend.sh
+        
+        # Run frontend deployment
+        ./deploy-aws-frontend.sh
+
+    - name: Verify frontend deployment
+      run: |
+        echo "Waiting for frontend to start..."
+        sleep 15
+
+        # Test frontend health
+        echo "Testing frontend health..."
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/health || echo "Frontend health check failed"
+
+        # Test frontend is serving the app
+        echo "Testing frontend application..."
+        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/ || echo "Frontend application check failed"
+
+        echo "Frontend deployment verification completed!"
+
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f ~/.ssh/deploy_key
+        rm -f .env.frontend
+
+    - name: Frontend Deployment Summary
+      run: |
+        echo "## Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Target Platform**: AWS" >> $GITHUB_STEP_SUMMARY
+        echo "- **Instance**: ${{ env.CLOUD_INSTANCE_USER }}@${{ env.CLOUD_INSTANCE_IP }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Application URL**: http://${{ env.CLOUD_INSTANCE_IP }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Frontend Image**: ${{ env.FRONTEND_IMAGE }}" >> $GITHUB_STEP_SUMMARY
