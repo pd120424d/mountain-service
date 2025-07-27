@@ -1,28 +1,19 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"net/http"
 	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gorilla/handlers"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	globConf "github.com/pd120424d/mountain-service/api/shared/config"
+	"github.com/pd120424d/mountain-service/api/shared/server"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	_ "github.com/pd120424d/mountain-service/api/urgency/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/urgency/internal"
 	internalConfig "github.com/pd120424d/mountain-service/api/urgency/internal/config"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	"gorm.io/gorm"
 
 	// Import contracts for Swagger documentation
 	_ "github.com/pd120424d/mountain-service/api/contracts/common/v1"
@@ -58,28 +49,40 @@ func main() {
 			log.Fatalf("failed to sync logger: %v", err)
 		}
 	}(log)
-	log.Info("Starting Urgency Service")
 
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbName := os.Getenv("DB_NAME")
-	if dbName == "" {
-		dbName = globConf.UrgencyDBName
+	// Setup server configuration
+	serverConfig := server.ServerConfig{
+		ServiceName: svcName,
+		Port:        globConf.UrgencyServicePort,
+		DatabaseConfig: server.GetDatabaseConfigWithDefaults(
+			[]interface{}{&model.Urgency{}, &model.EmergencyAssignment{}, &model.Notification{}},
+			globConf.UrgencyDBName,
+		),
+		CORSConfig: server.CORSConfig{
+			AllowedOrigins:     []string{"*"},
+			AllowedMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:     []string{"*"},
+			ExposeHeaders:      []string{"Content-Length"},
+			AllowCredentials:   true,
+			UseGorillaHandlers: true,
+		},
+		RouteConfig: server.RouteConfig{
+			ServiceName: svcName,
+			SwaggerURL:  "/urgency-swagger.json",
+		},
+		SetupCustomRoutes: func(log utils.Logger, r *gin.Engine, db *gorm.DB) {
+			setupRoutes(log, r, db)
+		},
 	}
 
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		log.Info("APP_ENV is not set, defaulting to staging")
-		env = "staging"
+	// Initialize and run server
+	if err := server.InitializeServer(log, serverConfig); err != nil {
+		log.Fatalf("Failed to initialize server: %v", err)
 	}
+}
 
-	dbConfig := globConf.DatabaseConfig{
-		Host:   dbHost,
-		Port:   dbPort,
-		Name:   dbName,
-		Models: []interface{}{&model.Urgency{}, &model.EmergencyAssignment{}, &model.Notification{}},
-	}
-	db := globConf.InitDb(log, svcName, dbConfig)
+func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
+	log.Info("Setting up custom urgency routes")
 
 	// Initialize repositories
 	urgencyRepo := repositories.NewUrgencyRepository(log, db)
@@ -102,83 +105,6 @@ func main() {
 	urgencySvc := internal.NewUrgencyService(log, urgencyRepo, assignmentRepo, notificationRepo, serviceClients.EmployeeClient)
 	urgencyHandler := internal.NewUrgencyHandler(log, urgencySvc)
 
-	r := gin.Default()
-
-	r.Use(log.RequestLogger())
-
-	setupRoutes(log, r, urgencyHandler)
-
-	corsHandler := setupCORS(log, r)
-
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%v", globConf.UrgencyServicePort),
-		Handler: corsHandler,
-	}
-
-	// Run server in a goroutine
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("listen: %s\n", err)
-		}
-	}()
-
-	log.Infof("Starting Urgency Service on port %s", globConf.UrgencyServicePort)
-
-	// Wait for interrupt signal to gracefully shut down the server
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Info("Shutting down Urgency Service...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Urgency Service forced to shutdown: %v", err)
-	}
-
-	log.Info("Urgency Service exiting")
-}
-
-func setupCORS(log utils.Logger, r *gin.Engine) http.Handler {
-	log.Info("Setting up CORS...")
-
-	corsConfig := cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"*"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-	}
-
-	r.Use(cors.New(corsConfig))
-
-	r.Use(gin.Recovery())
-	r.GET("/swagger/*any", func(c *gin.Context) {
-		log.Infof("Swagger request: %s %s from %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
-		ginSwagger.WrapHandler(swaggerFiles.Handler,
-			ginSwagger.URL("/urgency-swagger.json"),
-		)(c)
-	})
-	r.GET("/swagger.json", func(c *gin.Context) {
-		c.File("/docs/swagger.json")
-	})
-
-	// CORS setup
-	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
-	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
-
-	corsOriginsEnv := os.Getenv("CORS_ALLOWED_ORIGINS")
-	corsOrigins := strings.Split(corsOriginsEnv, ",")
-	origins := handlers.AllowedOrigins(corsOrigins)
-
-	log.Infof("Allowed CORS origins: %s", os.Getenv("CORS_ALLOWED_ORIGINS"))
-
-	log.Info("CORS setup finished")
-
-	return handlers.CORS(origins, headers, methods)(r)
-}
-
-func setupRoutes(log utils.Logger, r *gin.Engine, urgencyHandler internal.UrgencyHandler) {
 	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log))
 	{
 		authorized.POST("/urgencies", urgencyHandler.CreateUrgency)
@@ -193,20 +119,4 @@ func setupRoutes(log utils.Logger, r *gin.Engine, urgencyHandler internal.Urgenc
 	{
 		admin.DELETE("/urgencies/reset", urgencyHandler.ResetAllData)
 	}
-
-	public := r.Group("/api/v1")
-	{
-		public.GET("/health", func(c *gin.Context) {
-			log.Info("Health endpoint hit")
-			c.JSON(200, gin.H{"message": "Service is healthy", "service": "urgency"})
-		})
-	}
-}
-
-func readSecret(filePath string) (string, error) {
-	secret, err := os.ReadFile(filePath)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(secret)), nil
 }

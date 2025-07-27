@@ -1,15 +1,7 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"net/http"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
 
 	_ "github.com/pd120424d/mountain-service/api/employee/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/employee/internal/handler"
@@ -17,17 +9,15 @@ import (
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	globConf "github.com/pd120424d/mountain-service/api/shared/config"
+	"github.com/pd120424d/mountain-service/api/shared/server"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	// Import contracts for Swagger documentation
 	_ "github.com/pd120424d/mountain-service/api/contracts/common/v1"
 	_ "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/handlers"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	"gorm.io/gorm"
 )
 
 // @title API Сервис за Запослене
@@ -57,108 +47,45 @@ func main() {
 			log.Fatalf("failed to sync logger: %v", err)
 		}
 	}(log)
-	log.Info("Starting Employee Service")
 
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbName := os.Getenv("DB_NAME")
-	if dbName == "" {
-		dbName = globConf.EmployeeDBName
+	// Setup server configuration
+	serverConfig := server.ServerConfig{
+		ServiceName: svcName,
+		Port:        globConf.EmployeeServicePort,
+		DatabaseConfig: server.GetDatabaseConfigWithDefaults(
+			[]interface{}{&model.Employee{}, &model.Shift{}, &model.EmployeeShift{}},
+			globConf.EmployeeDBName,
+		),
+		CORSConfig: server.CORSConfig{
+			AllowedOrigins:     []string{"http://localhost:4200"},
+			AllowedMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+			AllowedHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Requested-With"},
+			ExposeHeaders:      []string{"Content-Length"},
+			AllowCredentials:   true,
+			UseGorillaHandlers: true,
+		},
+		RouteConfig: server.RouteConfig{
+			ServiceName: svcName,
+		},
+		SetupCustomRoutes: func(log utils.Logger, r *gin.Engine, db *gorm.DB) {
+			setupRoutes(log, r, db)
+		},
 	}
 
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		log.Info("APP_ENV is not set, defaulting to staging")
-		env = "staging"
+	// Initialize and run server
+	if err := server.InitializeServer(log, serverConfig); err != nil {
+		log.Fatalf("Failed to initialize server: %v", err)
 	}
+}
 
-	dbConfig := globConf.DatabaseConfig{
-		Host:   dbHost,
-		Port:   dbPort,
-		Name:   dbName,
-		Models: []interface{}{&model.Employee{}, &model.Shift{}, &model.EmployeeShift{}},
-	}
-	db := globConf.InitDb(log, svcName, dbConfig)
+func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
+	log.Info("Setting up custom employee routes")
 
+	// Initialize repositories and handler
 	employeeRepo := repositories.NewEmployeeRepository(log, db)
 	shiftsRepo := repositories.NewShiftRepository(log, db)
 	employeeHandler := handler.NewEmployeeHandler(log, employeeRepo, shiftsRepo)
 
-	r := gin.Default()
-
-	r.Use(log.RequestLogger())
-
-	setupRoutes(log, r, employeeHandler)
-
-	corsHandler := setupCORS(log, r)
-
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%v", globConf.EmployeeServicePort),
-		Handler: corsHandler,
-	}
-
-	// Run server in a goroutine
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("listen: %s\n", err)
-		}
-	}()
-
-	log.Infof("Starting Employee Service on port %s", globConf.EmployeeServicePort)
-
-	// Wait for interrupt signal to gracefully shut down the server
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Info("Shutting down Employee Service...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Employee Service forced to shutdown: %v", err)
-	}
-
-	log.Info("Employee Service exiting")
-}
-
-func setupCORS(log utils.Logger, r *gin.Engine) http.Handler {
-	log.Info("Setting up CORS...")
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:4200"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-	}))
-
-	r.Use(gin.Recovery())
-	r.GET("/swagger/*any", func(c *gin.Context) {
-		log.Infof("Swagger request: %s %s from %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
-		ginSwagger.WrapHandler(swaggerFiles.Handler,
-			ginSwagger.URL("/swagger.json"),
-		)(c)
-	})
-	r.GET("/swagger.json", func(c *gin.Context) {
-		c.File("/docs/swagger.json")
-	})
-
-	// CORS setup
-	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
-	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
-
-	corsOriginsEnv := os.Getenv("CORS_ALLOWED_ORIGINS") // e.g., "http://localhost:4200 for local development
-	corsOrigins := strings.Split(corsOriginsEnv, ",")
-	origins := handlers.AllowedOrigins(corsOrigins)
-
-	log.Infof("Allowed CORS origins: %s", os.Getenv("CORS_ALLOWED_ORIGINS"))
-
-	log.Info("CORS setup finished")
-
-	// Wrap the router with CORS middleware
-	return handlers.CORS(origins, headers, methods)(r)
-}
-
-func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.EmployeeHandler) {
 	r.POST("/api/v1/employees", employeeHandler.RegisterEmployee)
 	r.POST("/api/v1/login", employeeHandler.LoginEmployee)
 	r.POST("/api/v1/oauth/token", employeeHandler.OAuth2Token)
@@ -182,20 +109,4 @@ func setupRoutes(log utils.Logger, r *gin.Engine, employeeHandler handler.Employ
 	{
 		admin.DELETE("/reset", employeeHandler.ResetAllData)
 	}
-
-	public := r.Group("/api/v1")
-	{
-		public.GET("/health", func(c *gin.Context) {
-			log.Info("Health endpoint hit")
-			c.JSON(200, gin.H{"message": "Service is healthy", "service": "employee"})
-		})
-	}
-}
-
-func readSecret(filePath string) (string, error) {
-	secret, err := os.ReadFile(filePath)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(secret)), nil
 }
