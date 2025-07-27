@@ -158,7 +158,7 @@ info:
 paths:
   /activities:
     get:
-      description: Преузимање листе активности са опционим филтрирањем и пагинацијом
+      description: Извлачење листе активности са опционим филтрирањем и страничењем
       parameters:
       - default: 1
         description: Page number

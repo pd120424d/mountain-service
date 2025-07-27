@@ -159,7 +159,7 @@ const docTemplate = `{
         },
         "/activities/stats": {
             "get": {
-                "description": "Извлачење свеобухватних статистика активности",
+                "description": "Преузимање свеобухватних статистика активности",
                 "produces": [
                     "application/json"
                 ],
@@ -186,14 +186,14 @@ const docTemplate = `{
         },
         "/activities/{id}": {
             "get": {
-                "description": "Претрага одређене активности по њеном ID",
+                "description": "Преузимање одређене активности по њеном ID",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "activities"
                 ],
-                "summary": "Претрага активности по ID",
+                "summary": "Преузимање активности по ID",
                 "parameters": [
                     {
                         "type": "integer",

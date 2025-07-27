@@ -92,7 +92,7 @@ func (h *activityHandler) GetActivity(ctx *gin.Context) {
 
 // ListActivities Преузимање листе активности са филтрирањем и пагинацијом
 // @Summary Листа активности
-// @Description Преузимање листе активности са опционим филтрирањем и пагинацијом
+// @Description Извлачење листе активности са опционим филтрирањем и страничењем
 // @Tags activities
 // @Produce json
 // @Param page query int false "Page number" default(1)
