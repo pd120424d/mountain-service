@@ -53,6 +53,8 @@ if [ -n "$SSH_KEY_CONTENT" ]; then
         "ACTIVITY_SERVICE_IMAGE"
         "VERSION_SERVICE_IMAGE"
         "FRONTEND_IMAGE"
+        "GHCR_PAT"
+        "GITHUB_ACTOR"
     )
 else
     required_vars=(
@@ -64,6 +66,8 @@ else
         "ACTIVITY_SERVICE_IMAGE"
         "VERSION_SERVICE_IMAGE"
         "FRONTEND_IMAGE"
+        "GHCR_PAT"
+        "GITHUB_ACTOR"
     )
 fi
 
@@ -130,128 +134,6 @@ test_ssh_connection() {
     fi
 }
 
-# Build Docker images
-build_images() {
-    log_info "Building Docker images..."
-
-    # Build frontend image
-    log_info "Building frontend image..."
-    if [ "$DEPLOYMENT_TARGET" = "azure" ]; then
-        docker build -f ui/Dockerfile -t "${FRONTEND_IMAGE}" ui/
-    else
-        docker build -f ui/Dockerfile.aws -t "${FRONTEND_IMAGE}" ui/
-    fi
-
-    # Build backend services with correct context (matching working backend-deploy.yml)
-    cd "$SCRIPT_DIR"
-
-    # Employee service
-    if [ -d "api/employee" ]; then
-        log_info "Building employee service image..."
-        docker build -f api/employee/Dockerfile -t "${EMPLOYEE_SERVICE_IMAGE}" api/
-    fi
-
-    # Urgency service
-    if [ -d "api/urgency" ]; then
-        log_info "Building urgency service image..."
-        docker build -f api/urgency/Dockerfile -t "${URGENCY_SERVICE_IMAGE}" api/
-    fi
-
-    # Activity service
-    if [ -d "api/activity" ]; then
-        log_info "Building activity service image..."
-        docker build -f api/activity/Dockerfile -t "${ACTIVITY_SERVICE_IMAGE}" api/
-    fi
-
-    # Version service (with build args)
-    if [ -d "api/version-service" ]; then
-        log_info "Building version service image..."
-        # Get version and git SHA for version service
-        VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo dev)
-        GIT_SHA=$(git rev-parse --short HEAD)
-        docker build -f api/version-service/Dockerfile \
-            --build-arg VERSION="$VERSION" \
-            --build-arg GIT_SHA="$GIT_SHA" \
-            -t "${VERSION_SERVICE_IMAGE}" api/
-    fi
-
-    log_success "All Docker images built successfully"
-}
-
-# Save and transfer Docker images
-transfer_images() {
-    log_info "Saving Docker images to tar files..."
-
-    # Create temporary directory for image files
-    mkdir -p /tmp/mountain-service-images
-
-    # Save images with compression and verify
-    images=(
-        "${FRONTEND_IMAGE}:frontend"
-        "${EMPLOYEE_SERVICE_IMAGE}:employee"
-        "${URGENCY_SERVICE_IMAGE}:urgency"
-        "${ACTIVITY_SERVICE_IMAGE}:activity"
-        "${VERSION_SERVICE_IMAGE}:version"
-    )
-
-    for image_info in "${images[@]}"; do
-        IFS=':' read -r image_name file_name <<< "$image_info"
-        log_info "Saving $image_name..."
-
-        # Save image
-        docker save "$image_name" | gzip > "/tmp/mountain-service-images/${file_name}.tar.gz"
-
-        # Verify the saved file
-        if [ ! -s "/tmp/mountain-service-images/${file_name}.tar.gz" ]; then
-            log_error "Failed to save $image_name - file is empty"
-            exit 1
-        fi
-
-        # Test the compressed file
-        if ! gzip -t "/tmp/mountain-service-images/${file_name}.tar.gz"; then
-            log_error "Corrupted compressed file for $image_name"
-            exit 1
-        fi
-
-        log_success "Successfully saved and verified $image_name"
-    done
-
-    log_info "Transferring Docker images to $DEPLOYMENT_TARGET instance..."
-
-    # Create directory on remote server
-    ssh -i "$SSH_KEY_PATH" "$INSTANCE_USER@$INSTANCE_IP" "mkdir -p ~/mountain-service-images"
-
-    # Transfer image files with verification
-    for image_info in "${images[@]}"; do
-        IFS=':' read -r image_name file_name <<< "$image_info"
-        log_info "Transferring ${file_name}.tar.gz..."
-
-        # Transfer with retry logic
-        max_retries=3
-        retry_count=0
-
-        while [ $retry_count -lt $max_retries ]; do
-            if scp -i "$SSH_KEY_PATH" "/tmp/mountain-service-images/${file_name}.tar.gz" "$INSTANCE_USER@$INSTANCE_IP:~/mountain-service-images/"; then
-                log_success "Successfully transferred ${file_name}.tar.gz"
-                break
-            else
-                retry_count=$((retry_count + 1))
-                log_warning "Transfer failed for ${file_name}.tar.gz, retry $retry_count/$max_retries"
-                sleep 2
-            fi
-        done
-
-        if [ $retry_count -eq $max_retries ]; then
-            log_error "Failed to transfer ${file_name}.tar.gz after $max_retries attempts"
-            exit 1
-        fi
-    done
-
-    # Clean up local files
-    rm -rf /tmp/mountain-service-images
-
-    log_success "Docker images transferred successfully"
-}
 
 # Transfer deployment files
 transfer_deployment_files() {
@@ -275,46 +157,6 @@ deploy_on_cloud() {
     ssh -i "$SSH_KEY_PATH" -T "$INSTANCE_USER@$INSTANCE_IP" << 'EOF'
         set -e
 
-        echo "Loading Docker images..."
-        cd ~/mountain-service-images
-
-        # Show available images before loading
-        echo "Available tar files:"
-        ls -la *.tar 2>/dev/null || echo "No tar files found"
-
-        # Load all available image files (both .tar.gz and .tar)
-        loaded_count=0
-
-        # Load compressed images first
-        for image in *.tar.gz; do
-            if [ -f "$image" ]; then
-                echo "Loading compressed $image..."
-                if gzip -t "$image" && gzip -dc "$image" | docker load; then
-                    echo "✓ Successfully loaded $image"
-                    loaded_count=$((loaded_count + 1))
-                else
-                    echo "✗ Failed to load $image"
-                    exit 1
-                fi
-            fi
-        done
-
-        # Load uncompressed tar files
-        for image in *.tar; do
-            if [ -f "$image" ]; then
-                echo "Loading $image..."
-                if docker load -i "$image"; then
-                    echo "✓ Successfully loaded $image"
-                    loaded_count=$((loaded_count + 1))
-                else
-                    echo "✗ Failed to load $image"
-                    exit 1
-                fi
-            fi
-        done
-
-        echo "Successfully loaded $loaded_count Docker images"
-
         echo "Stopping existing containers..."
         cd ~/mountain-service-deployment
 
@@ -330,10 +172,20 @@ deploy_on_cloud() {
 
         echo "Using compose file: $COMPOSE_FILE"
 
-        docker compose -f "$COMPOSE_FILE" down || true
+        # Stop and remove containers, networks, and volumes
+        echo "Stopping and removing existing containers..."
+        docker compose -f "$COMPOSE_FILE" down --remove-orphans || true
 
-        echo "Starting new containers..."
-        docker compose -f "$COMPOSE_FILE" up -d
+        # Remove any remaining containers that might be holding ports
+        echo "Cleaning up dangling containers..."
+        docker container prune -f || true
+
+        # Pull latest images (force pull even if tags are the same)
+        echo "Pulling latest images..."
+        docker compose -f "$COMPOSE_FILE" pull || true
+
+        echo "Starting new containers with latest images..."
+        docker compose -f "$COMPOSE_FILE" up -d --force-recreate
 
         echo "Waiting for services to start..."
         sleep 30
@@ -347,9 +199,9 @@ EOF
     log_success "Application deployed successfully on $DEPLOYMENT_TARGET instance"
 }
 
-# Alternative: Pull images from registry (like working backend-deploy.yml)
+# Pull images from registry and update deployment
 pull_images_from_registry() {
-    log_info "Pulling Docker images from registry on $DEPLOYMENT_TARGET instance..."
+    log_info "Pulling latest Docker images from registry on $DEPLOYMENT_TARGET instance..."
 
     # Execute on remote server
     ssh -i "$SSH_KEY_PATH" "$INSTANCE_USER@$INSTANCE_IP" << EOF
@@ -358,22 +210,22 @@ pull_images_from_registry() {
         echo "Logging into GitHub Container Registry..."
         echo "$GHCR_PAT" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-        echo "Pulling images from registry..."
+        echo "Pulling latest images from registry..."
         docker pull "${EMPLOYEE_SERVICE_IMAGE}" || echo "Warning: Failed to pull employee service image"
         docker pull "${URGENCY_SERVICE_IMAGE}" || echo "Warning: Failed to pull urgency service image"
         docker pull "${ACTIVITY_SERVICE_IMAGE}" || echo "Warning: Failed to pull activity service image"
         docker pull "${VERSION_SERVICE_IMAGE}" || echo "Warning: Failed to pull version service image"
         docker pull "${FRONTEND_IMAGE}" || echo "Warning: Failed to pull frontend image"
 
-        echo "Successfully pulled images from registry"
+        echo "Successfully pulled latest images from registry"
 EOF
 
-    log_success "Images pulled from registry successfully"
+    log_success "Latest images pulled from registry successfully"
 }
 
 # Main deployment process
 main() {
-    echo -e "${GREEN}=== Mountain Rescue Service - Multi-Cloud Deployment ===${NC}"
+    echo -e "${GREEN}=== Mountain Rescue Service - Simplified Registry Deployment ===${NC}"
     echo -e "${BLUE}Target Platform: $DEPLOYMENT_TARGET${NC}"
     echo -e "${BLUE}Target Instance: $INSTANCE_USER@$INSTANCE_IP${NC}"
     echo ""
@@ -381,15 +233,8 @@ main() {
     check_ssh_key
     test_ssh_connection
 
-    # Choose deployment method based on environment
-    if [ -n "$GHCR_PAT" ] && [ -n "$GITHUB_ACTOR" ]; then
-        log_info "Using registry-based deployment (recommended)"
-        pull_images_from_registry
-    else
-        log_info "Using local build and transfer method"
-        build_images
-        transfer_images
-    fi
+    log_info "Using registry-based deployment"
+    pull_images_from_registry
 
     transfer_deployment_files
     deploy_on_cloud
@@ -398,10 +243,10 @@ main() {
     log_success "Deployment completed successfully!"
     echo -e "${GREEN}Your application should now be available at:${NC}"
     echo -e "${BLUE}  Frontend: http://$INSTANCE_IP${NC}"
-    echo -e "${BLUE}  Employee API: http://$INSTANCE_IP:8082${NC}"
-    echo -e "${BLUE}  Urgency API: http://$INSTANCE_IP:8083${NC}"
-    echo -e "${BLUE}  Activity API: http://$INSTANCE_IP:8084${NC}"
-    echo -e "${BLUE}  Version API: http://$INSTANCE_IP:8090${NC}"
+    echo -e "${BLUE}  Employee API: http://$INSTANCE_IP/api/v1/employees${NC}"
+    echo -e "${BLUE}  Urgency API: http://$INSTANCE_IP/api/v1/urgencies${NC}"
+    echo -e "${BLUE}  Activity API: http://$INSTANCE_IP/api/v1/activities${NC}"
+    echo -e "${BLUE}  Version API: http://$INSTANCE_IP/api/v1/version${NC}"
     echo ""
     if [ "$DEPLOYMENT_TARGET" = "aws" ]; then
         echo -e "${YELLOW}Note: Make sure your AWS security group allows inbound traffic on these ports.${NC}"
