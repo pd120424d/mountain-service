@@ -7,17 +7,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	_ "github.com/pd120424d/mountain-service/api/activity/cmd/docs"
-	"github.com/pd120424d/mountain-service/api/activity/config"
 	"github.com/pd120424d/mountain-service/api/activity/internal"
 	"github.com/pd120424d/mountain-service/api/activity/internal/handler"
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
+	globConf "github.com/pd120424d/mountain-service/api/shared/config"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	// Import contracts for Swagger documentation
@@ -28,7 +27,6 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"gorm.io/gorm"
 )
 
 // @title Activity Service API
@@ -54,7 +52,8 @@ import (
 // @security OAuth2Password
 
 func main() {
-	log, err := utils.NewLogger("activity-service")
+	svcName := globConf.ActivityServiceName
+	log, err := utils.NewLogger(svcName)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create logger: %v", err))
 	}
@@ -62,21 +61,25 @@ func main() {
 
 	// Read environment variables
 	dbHost := os.Getenv("DB_HOST")
-	if dbHost == "" {
-		dbHost = "localhost"
-	}
-
 	dbPort := os.Getenv("DB_PORT")
-	if dbPort == "" {
-		dbPort = "5432"
-	}
-
 	dbName := os.Getenv("DB_NAME")
 	if dbName == "" {
-		dbName = "mountain_service"
+		dbName = globConf.ActivityDBName
 	}
 
-	db := initDb(log, dbHost, dbPort, dbName)
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		log.Info("APP_ENV is not set, defaulting to staging")
+		env = "staging"
+	}
+
+	dbConfig := globConf.DatabaseConfig{
+		Host:   dbHost,
+		Port:   dbPort,
+		Name:   dbName,
+		Models: []interface{}{&model.Activity{}},
+	}
+	db := globConf.InitDb(log, svcName, dbConfig)
 
 	// Initialize repositories
 	activityRepo := repositories.NewActivityRepository(log, db)
@@ -94,7 +97,7 @@ func main() {
 	corsHandler := setupCORS(log, r)
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%v", config.ServerPort),
+		Addr:    fmt.Sprintf(":%v", globConf.ActivityServicePort),
 		Handler: corsHandler,
 	}
 
@@ -104,7 +107,7 @@ func main() {
 		}
 	}()
 
-	log.Infof("Activity Service started on port %v", config.ServerPort)
+	log.Infof("Activity Service started on port %v", globConf.ActivityServicePort)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -120,58 +123,6 @@ func main() {
 	}
 
 	log.Info("Activity Service exited")
-}
-
-func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
-	log.Info("Setting up database...")
-
-	dbUser := os.Getenv("DB_USER")
-	log.Infof("DB_USER: %s", dbUser)
-	if dbUser == "" {
-		log.Infof("DB_USER is empty, checking ACTIVITY_DB_USER_FILE")
-		userFile := os.Getenv("ACTIVITY_DB_USER_FILE")
-		if userFile != "" && userFile != " " {
-			var err error
-			dbUser, err = readSecret(userFile)
-			if err != nil {
-				log.Fatalf("Failed to read ACTIVITY_DB_USER from file %s: %v", userFile, err)
-			}
-		} else {
-			log.Fatalf("Neither DB_USER environment variable nor ACTIVITY_DB_USER_FILE is set. DB_USER='%s', ACTIVITY_DB_USER_FILE='%s'", dbUser, userFile)
-		}
-	}
-
-	dbPassword := os.Getenv("DB_PASSWORD")
-	if dbPassword == "" {
-		log.Infof("DB_PASSWORD is empty, checking ACTIVITY_DB_PASSWORD_FILE")
-		passwordFile := os.Getenv("ACTIVITY_DB_PASSWORD_FILE")
-		if passwordFile != "" && passwordFile != " " {
-			var err error
-			dbPassword, err = readSecret(passwordFile)
-			if err != nil {
-				log.Fatalf("Failed to read ACTIVITY_DB_PASSWORD from file %s: %v", passwordFile, err)
-			}
-		} else {
-			log.Fatalf("Neither DB_PASSWORD environment variable nor ACTIVITY_DB_PASSWORD_FILE is set. DB_PASSWORD='%s', ACTIVITY_DB_PASSWORD_FILE='%s'", dbPassword, passwordFile)
-		}
-	}
-
-	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
-	dbStringActivity := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPassword, dbName)
-
-	// Create the activity_service database if it doesn't exist
-	db := config.GetActivityDB(log, dbStringActivity)
-
-	// Auto migrate the model
-	err := db.AutoMigrate(&model.Activity{})
-	if err != nil {
-		log.Fatalf("failed to migrate activity models: %v", err)
-	}
-	log.Info("Successfully migrated activity models")
-
-	log.Info("Database setup finished")
-	return db
 }
 
 func setupCORS(log utils.Logger, r *gin.Engine) http.Handler {
@@ -195,7 +146,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, activityHandler handler.Activi
 		c.File("/docs/swagger.json")
 	})
 
-	jwtSecret, err := readSecret("/run/secrets/jwt_secret")
+	jwtSecret, err := globConf.ReadSecret("/run/secrets/jwt_secret")
 	if err != nil {
 		log.Warnf("Failed to read JWT secret from file, using environment variable: %v", err)
 		jwtSecret = os.Getenv("JWT_SECRET")
@@ -228,12 +179,4 @@ func setupRoutes(log utils.Logger, r *gin.Engine, activityHandler handler.Activi
 	{
 		admin.DELETE("/activities/reset", activityHandler.ResetAllData)
 	}
-}
-
-func readSecret(filePath string) (string, error) {
-	secret, err := os.ReadFile(filePath)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(secret)), nil
 }

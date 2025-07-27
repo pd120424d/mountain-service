@@ -12,11 +12,11 @@ import (
 	"time"
 
 	_ "github.com/pd120424d/mountain-service/api/employee/cmd/docs"
-	"github.com/pd120424d/mountain-service/api/employee/config"
 	"github.com/pd120424d/mountain-service/api/employee/internal/handler"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
+	globConf "github.com/pd120424d/mountain-service/api/shared/config"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	// Import contracts for Swagger documentation
@@ -28,7 +28,6 @@ import (
 	"github.com/gorilla/handlers"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"gorm.io/gorm"
 )
 
 // @title API Сервис за Запослене
@@ -47,18 +46,10 @@ import (
 // @host
 // @BasePath /api/v1
 func main() {
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbName := os.Getenv("DB_NAME")
-
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		env = "staging"
-	}
-
-	log, err := utils.NewLogger("employee-service")
+	svcName := globConf.EmployeeServiceName
+	log, err := utils.NewLogger(svcName)
 	if err != nil {
-		panic("failed to create logger:" + err.Error())
+		panic(fmt.Sprintf("Failed to create logger: %v", err))
 	}
 	defer func(log utils.Logger) {
 		err := log.Sync()
@@ -66,8 +57,28 @@ func main() {
 			log.Fatalf("failed to sync logger: %v", err)
 		}
 	}(log)
+	log.Info("Starting Employee Service")
 
-	db := initDb(log, dbHost, dbPort, dbName)
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		dbName = globConf.EmployeeDBName
+	}
+
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		log.Info("APP_ENV is not set, defaulting to staging")
+		env = "staging"
+	}
+
+	dbConfig := globConf.DatabaseConfig{
+		Host:   dbHost,
+		Port:   dbPort,
+		Name:   dbName,
+		Models: []interface{}{&model.Employee{}, &model.Shift{}, &model.EmployeeShift{}},
+	}
+	db := globConf.InitDb(log, svcName, dbConfig)
 
 	employeeRepo := repositories.NewEmployeeRepository(log, db)
 	shiftsRepo := repositories.NewShiftRepository(log, db)
@@ -82,7 +93,7 @@ func main() {
 	corsHandler := setupCORS(log, r)
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%v", config.ServerPort),
+		Addr:    fmt.Sprintf(":%v", globConf.EmployeeServicePort),
 		Handler: corsHandler,
 	}
 
@@ -93,7 +104,7 @@ func main() {
 		}
 	}()
 
-	log.Infof("Starting Employee Service on port %s", config.ServerPort)
+	log.Infof("Starting Employee Service on port %s", globConf.EmployeeServicePort)
 
 	// Wait for interrupt signal to gracefully shut down the server
 	quit := make(chan os.Signal, 1)
@@ -108,55 +119,6 @@ func main() {
 	}
 
 	log.Info("Employee Service exiting")
-}
-
-func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
-	log.Info("Setting up database...")
-
-	dbUser := os.Getenv("DB_USER")
-	if dbUser == "" {
-		userFile := os.Getenv("EMPLOYEE_DB_USER_FILE")
-		if userFile != "" {
-			var err error
-			dbUser, err = readSecret(userFile)
-			if err != nil {
-				log.Fatalf("Failed to read EMPLOYEE_DB_USER from file %s: %v", userFile, err)
-			}
-		} else {
-			log.Fatalf("Neither DB_USER environment variable nor EMPLOYEE_DB_USER_FILE is set")
-		}
-	}
-
-	dbPassword := os.Getenv("DB_PASSWORD")
-	if dbPassword == "" {
-		passwordFile := os.Getenv("EMPLOYEE_DB_PASSWORD_FILE")
-		if passwordFile != "" {
-			var err error
-			dbPassword, err = readSecret(passwordFile)
-			if err != nil {
-				log.Fatalf("Failed to read EMPLOYEE_DB_PASSWORD from file %s: %v", passwordFile, err)
-			}
-		} else {
-			log.Fatalf("Neither DB_PASSWORD environment variable nor EMPLOYEE_DB_PASSWORD_FILE is set")
-		}
-	}
-
-	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
-	dbStringEmployee := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPassword, dbName)
-
-	// Create the employee_service database if it doesn't exist
-	db := config.GetEmployeeDB(log, dbStringEmployee)
-
-	// Auto migrate the model
-	err := db.AutoMigrate(&model.Employee{}, &model.Shift{}, &model.EmployeeShift{})
-	if err != nil {
-		log.Fatalf("failed to migrate employee models: %v", err)
-	}
-	log.Info("Successfully migrated employee models")
-
-	log.Info("Database setup finished")
-	return db
 }
 
 func setupCORS(log utils.Logger, r *gin.Engine) http.Handler {

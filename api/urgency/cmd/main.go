@@ -14,16 +14,15 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gorilla/handlers"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
+	globConf "github.com/pd120424d/mountain-service/api/shared/config"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	_ "github.com/pd120424d/mountain-service/api/urgency/cmd/docs"
-	"github.com/pd120424d/mountain-service/api/urgency/config"
 	"github.com/pd120424d/mountain-service/api/urgency/internal"
 	internalConfig "github.com/pd120424d/mountain-service/api/urgency/internal/config"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"gorm.io/gorm"
 
 	// Import contracts for Swagger documentation
 	_ "github.com/pd120424d/mountain-service/api/contracts/common/v1"
@@ -48,18 +47,10 @@ import (
 // @host
 // @BasePath /api/v1
 func main() {
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbName := os.Getenv("DB_NAME")
-
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		env = "staging"
-	}
-
-	log, err := utils.NewLogger("urgency-service")
+	svcName := globConf.UrgencyServiceName
+	log, err := utils.NewLogger(svcName)
 	if err != nil {
-		panic("failed to create logger:" + err.Error())
+		panic(fmt.Sprintf("Failed to create logger: %v", err))
 	}
 	defer func(log utils.Logger) {
 		err := log.Sync()
@@ -67,8 +58,28 @@ func main() {
 			log.Fatalf("failed to sync logger: %v", err)
 		}
 	}(log)
+	log.Info("Starting Urgency Service")
 
-	db := initDb(log, dbHost, dbPort, dbName)
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		dbName = globConf.UrgencyDBName
+	}
+
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		log.Info("APP_ENV is not set, defaulting to staging")
+		env = "staging"
+	}
+
+	dbConfig := globConf.DatabaseConfig{
+		Host:   dbHost,
+		Port:   dbPort,
+		Name:   dbName,
+		Models: []interface{}{&model.Urgency{}, &model.EmergencyAssignment{}, &model.Notification{}},
+	}
+	db := globConf.InitDb(log, svcName, dbConfig)
 
 	// Initialize repositories
 	urgencyRepo := repositories.NewUrgencyRepository(log, db)
@@ -100,7 +111,7 @@ func main() {
 	corsHandler := setupCORS(log, r)
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%v", config.ServerPort),
+		Addr:    fmt.Sprintf(":%v", globConf.UrgencyServicePort),
 		Handler: corsHandler,
 	}
 
@@ -111,7 +122,7 @@ func main() {
 		}
 	}()
 
-	log.Infof("Starting Urgency Service on port %s", config.ServerPort)
+	log.Infof("Starting Urgency Service on port %s", globConf.UrgencyServicePort)
 
 	// Wait for interrupt signal to gracefully shut down the server
 	quit := make(chan os.Signal, 1)
@@ -126,55 +137,6 @@ func main() {
 	}
 
 	log.Info("Urgency Service exiting")
-}
-
-func initDb(log utils.Logger, dbHost, dbPort, dbName string) *gorm.DB {
-	log.Info("Setting up database...")
-
-	dbUser := os.Getenv("DB_USER")
-	if dbUser == "" {
-		userFile := os.Getenv("URGENCY_DB_USER_FILE")
-		if userFile != "" {
-			var err error
-			dbUser, err = readSecret(userFile)
-			if err != nil {
-				log.Fatalf("Failed to read URGENCY_DB_USER from file %s: %v", userFile, err)
-			}
-		} else {
-			log.Fatalf("Neither DB_USER environment variable nor URGENCY_DB_USER_FILE is set")
-		}
-	}
-
-	dbPassword := os.Getenv("DB_PASSWORD")
-	if dbPassword == "" {
-		passwordFile := os.Getenv("URGENCY_DB_PASSWORD_FILE")
-		if passwordFile != "" {
-			var err error
-			dbPassword, err = readSecret(passwordFile)
-			if err != nil {
-				log.Fatalf("Failed to read URGENCY_DB_PASSWORD from file %s: %v", passwordFile, err)
-			}
-		} else {
-			log.Fatalf("Neither DB_PASSWORD environment variable nor URGENCY_DB_PASSWORD_FILE is set")
-		}
-	}
-
-	log.Infof("Connecting to database at %s:%s as user %s", dbHost, dbPort, dbUser)
-	dbStringUrgency := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPassword, dbName)
-
-	// Create the urgency_service database if it doesn't exist
-	db := config.GetUrgencyDB(log, dbStringUrgency)
-
-	// Auto migrate the models
-	err := db.AutoMigrate(&model.Urgency{}, &model.EmergencyAssignment{}, &model.Notification{})
-	if err != nil {
-		log.Fatalf("failed to migrate urgency models: %v", err)
-	}
-	log.Info("Successfully migrated urgency models")
-
-	log.Info("Database setup finished")
-	return db
 }
 
 func setupCORS(log utils.Logger, r *gin.Engine) http.Handler {
