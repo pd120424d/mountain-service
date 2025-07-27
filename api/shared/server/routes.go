@@ -10,9 +10,7 @@ import (
 )
 
 type RouteConfig struct {
-	ServiceName    string
-	SwaggerURL     string // Custom swagger URL (optional)
-	SwaggerDocPath string // Path to swagger.json file (default: "/docs/swagger.json")
+	ServiceName string
 }
 
 func SetupHealthEndpoint(log utils.Logger, r *gin.Engine, serviceName string) {
@@ -33,32 +31,17 @@ func SetupHealthEndpoint(log utils.Logger, r *gin.Engine, serviceName string) {
 func SetupSwaggerEndpoints(log utils.Logger, r *gin.Engine, config RouteConfig) {
 	log.Info("Setting up swagger endpoints")
 
-	if config.SwaggerDocPath == "" {
-		config.SwaggerDocPath = "/docs/swagger.json"
-	}
-
-	// Setup swagger UI endpoint
-	if config.SwaggerURL != "" {
-		// Custom swagger URL (like urgency service)
-		r.GET("/swagger/*any", func(c *gin.Context) {
-			log.Infof("Swagger request: %s %s from %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
-			ginSwagger.WrapHandler(swaggerFiles.Handler,
-				ginSwagger.URL(config.SwaggerURL),
-			)(c)
-		})
-	} else {
-		// Standard swagger setup
-		r.GET("/swagger/*any", func(c *gin.Context) {
-			log.Infof("Swagger request: %s %s from %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
-			ginSwagger.WrapHandler(swaggerFiles.Handler,
-				ginSwagger.URL("/swagger.json"),
-			)(c)
-		})
-	}
+	// Standard swagger setup for all services
+	r.GET("/swagger/*any", func(c *gin.Context) {
+		log.Infof("Swagger request: %s %s from %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
+		ginSwagger.WrapHandler(swaggerFiles.Handler,
+			ginSwagger.URL("/swagger.json"),
+		)(c)
+	})
 
 	// Setup swagger.json endpoint
 	r.GET("/swagger.json", func(c *gin.Context) {
-		c.File(config.SwaggerDocPath)
+		c.File("/docs/swagger.json")
 	})
 }
 

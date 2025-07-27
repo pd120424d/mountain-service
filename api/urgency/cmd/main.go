@@ -68,7 +68,6 @@ func main() {
 		},
 		RouteConfig: server.RouteConfig{
 			ServiceName: svcName,
-			SwaggerURL:  "/urgency-swagger.json",
 		},
 		SetupCustomRoutes: func(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 			setupRoutes(log, r, db)
@@ -119,4 +118,9 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	{
 		admin.DELETE("/urgencies/reset", urgencyHandler.ResetAllData)
 	}
+
+	// Custom swagger route (if using custom SwaggerURL)
+	// r.GET("/urgency-swagger.json", func(c *gin.Context) {
+	//     c.File("/docs/swagger.json")
+	// })
 }
