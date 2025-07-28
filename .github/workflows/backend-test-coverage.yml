@@ -9,12 +9,14 @@ on:
     paths:
       - 'api/**'
       - 'backend-test-cover.sh'
+      - 'deploy-aws-backend.sh'
       - '.github/workflows/backend-test-coverage.yml'
       - '.github/workflows/aws-backend-deploy.yml'
   pull_request:
     paths:
       - 'api/**'
       - 'backend-test-cover.sh'
+      - 'deploy-aws-backend.sh'
       - '.github/workflows/backend-test-coverage.yml'
 
 jobs:
