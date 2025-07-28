@@ -1,3 +1,10 @@
+# Unified Docker Compose Configuration
+# Use environment variables to customize for different environments
+# Usage: 
+#   Staging: docker-compose up
+#   Production: docker-compose --env-file .env.prod up
+#   AWS: docker-compose --env-file .env.aws up
+
 services:
   employee-db:
     image: postgres:15-alpine
@@ -6,9 +13,9 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-etf}
       POSTGRES_DB: employee_service
     volumes:
-      - db_data_staging:/var/lib/postgresql/data
+      - employee_db_data:/var/lib/postgresql/data
     ports:
-      - "10001:5432"
+      - "${EMPLOYEE_DB_PORT:-5432}:5432"
     networks:
       - web
     healthcheck:
@@ -16,6 +23,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   urgency-db:
     image: postgres:15-alpine
@@ -24,9 +32,9 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-etf}
       POSTGRES_DB: urgency_service
     volumes:
-      - urgency_db_data_staging:/var/lib/postgresql/data
+      - urgency_db_data:/var/lib/postgresql/data
     ports:
-      - "10002:5432"
+      - "${URGENCY_DB_PORT:-5433}:5432"
     networks:
       - web
     healthcheck:
@@ -34,6 +42,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   activity-db:
     image: postgres:15-alpine
@@ -42,9 +51,9 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-etf}
       POSTGRES_DB: activity_service
     volumes:
-      - activity_db_data_staging:/var/lib/postgresql/data
+      - activity_db_data:/var/lib/postgresql/data
     ports:
-      - "10003:5432"
+      - "${ACTIVITY_DB_PORT:-5434}:5432"
     networks:
       - web
     healthcheck:
@@ -52,33 +61,33 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   employee-service:
+    image: ${EMPLOYEE_SERVICE_IMAGE:-employee-service:latest}
     build:
-      context: ./api
+      context: ${BUILD_CONTEXT}
       dockerfile: employee/Dockerfile
     environment:
       - DB_HOST=employee-db
       - DB_PORT=5432
-      - EMPLOYEE_DB_USER_FILE=/run/secrets/employee_db_user
-      - EMPLOYEE_DB_PASSWORD_FILE=/run/secrets/employee_db_password
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-etf}
       - DB_NAME=employee_service
-      - APP_ENV=staging
-      - JWT_SECRET=super-secret-staging-key
+      - APP_ENV=${APP_ENV:-staging}
+      - JWT_SECRET=${JWT_SECRET:-super-secret-staging-key}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123!@#}
-      - CORS_ALLOWED_ORIGINS=http://localhost:4200
-      - LOG_DIR=/var/log
-      - SERVICE_AUTH_SECRET=super-secret-service-auth-key
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:4200}
+      - SERVICE_AUTH_SECRET=${SERVICE_AUTH_SECRET:-super-secret-service-auth-key}
     depends_on:
       employee-db:
         condition: service_healthy
     ports:
       - "8082:8082"
+    volumes:
+      - /var/log:/var/log
     networks:
       - web
-    secrets:
-      - employee_db_user
-      - employee_db_password
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8082/api/v1/health"]
@@ -88,33 +97,32 @@ services:
       start_period: 60s
 
   urgency-service:
+    image: ${URGENCY_SERVICE_IMAGE:-urgency-service:latest}
     build:
-      context: ./api
+      context: ${BUILD_CONTEXT}
       dockerfile: urgency/Dockerfile
     environment:
       - DB_HOST=urgency-db
       - DB_PORT=5432
-      - URGENCY_DB_USER_FILE=/run/secrets/urgency_db_user
-      - URGENCY_DB_PASSWORD_FILE=/run/secrets/urgency_db_password
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-etf}
       - DB_NAME=urgency_service
-      - APP_ENV=staging
-      - JWT_SECRET=super-secret-staging-key
+      - APP_ENV=${APP_ENV:-staging}
+      - JWT_SECRET=${JWT_SECRET:-super-secret-staging-key}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123!@#}
-      - CORS_ALLOWED_ORIGINS=http://localhost:4200
-      - LOG_DIR=/var/log
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:4200}
       - EMPLOYEE_SERVICE_URL=http://employee-service:8082
       - ACTIVITY_SERVICE_URL=http://activity-service:8084
-      - SERVICE_AUTH_SECRET=super-secret-service-auth-key
+      - SERVICE_AUTH_SECRET=${SERVICE_AUTH_SECRET:-super-secret-service-auth-key}
     depends_on:
       urgency-db:
         condition: service_healthy
     ports:
       - "8083:8083"
+    volumes:
+      - /var/log:/var/log
     networks:
       - web
-    secrets:
-      - urgency_db_user
-      - urgency_db_password
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8083/api/v1/health"]
@@ -124,31 +132,30 @@ services:
       start_period: 60s
 
   activity-service:
+    image: ${ACTIVITY_SERVICE_IMAGE:-activity-service:latest}
     build:
-      context: ./api
+      context: ${BUILD_CONTEXT}
       dockerfile: activity/Dockerfile
     environment:
       - DB_HOST=activity-db
       - DB_PORT=5432
-      - ACTIVITY_DB_USER_FILE=/run/secrets/activity_db_user
-      - ACTIVITY_DB_PASSWORD_FILE=/run/secrets/activity_db_password
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-etf}
       - DB_NAME=activity_service
-      - APP_ENV=staging
-      - JWT_SECRET=super-secret-staging-key
+      - APP_ENV=${APP_ENV:-staging}
+      - JWT_SECRET=${JWT_SECRET:-super-secret-staging-key}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123!@#}
-      - CORS_ALLOWED_ORIGINS=http://localhost:4200
-      - LOG_DIR=/var/log
-      - SERVICE_AUTH_SECRET=super-secret-service-auth-key
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:4200}
+      - SERVICE_AUTH_SECRET=${SERVICE_AUTH_SECRET:-super-secret-service-auth-key}
     depends_on:
       activity-db:
         condition: service_healthy
     ports:
       - "8084:8084"
+    volumes:
+      - /var/log:/var/log
     networks:
       - web
-    secrets:
-      - activity_db_user
-      - activity_db_password
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8084/api/v1/health"]
@@ -157,40 +164,11 @@ services:
       retries: 5
       start_period: 60s
 
-  employee-swagger-ui:
-    image: swaggerapi/swagger-ui
-    ports:
-      - "9082:8080"
-    environment:
-      API_URL: "http://employee-service:8082/swagger.json"
-    networks:
-      - web
-
-  urgency-swagger-ui:
-    image: swaggerapi/swagger-ui
-    ports:
-      - "9083:8080"
-    environment:
-      API_URL: "http://urgency-service:8083/swagger.json"
-    networks:
-      - web
-
-  activity-swagger-ui:
-    image: swaggerapi/swagger-ui
-    ports:
-      - "9084:8080"
-    environment:
-      API_URL: "http://activity-service:8084/swagger.json"
-    networks:
-      - web
-
   version-service:
+    image: ${VERSION_SERVICE_IMAGE:-version-service:latest}
     build:
-      context: ./api
+      context: ${BUILD_CONTEXT}
       dockerfile: version-service/Dockerfile
-    image: version-service:latest
-    environment:
-      - LOG_DIR=/var/log
     ports:
       - "8090:8090"
     volumes:
@@ -206,41 +184,71 @@ services:
       start_period: 60s
 
   frontend:
+    image: ${FRONTEND_IMAGE:-frontend:latest}
     build:
-      context: ./ui
+      context: ${BUILD_CONTEXT}
     ports:
-      - "4200:80"
+      - "${FRONTEND_HTTP_PORT:-80}:80"
+      - "${FRONTEND_HTTPS_PORT:-443}:443"
     environment:
-      - NODE_ENV=staging
+      - NODE_ENV=${NODE_ENV:-staging}
     depends_on:
       employee-service:
         condition: service_healthy
       urgency-service:
         condition: service_healthy
+      activity-service:
+        condition: service_healthy
       version-service:
         condition: service_healthy
     networks:
       - web
+    volumes:
+      - /var/log:/var/log
+      - ${SSL_CERT_PATH:-./ssl}:/etc/nginx/ssl:ro
     restart: unless-stopped
+
+  # Swagger UI services (optional - controlled by ENABLE_SWAGGER)
+  employee-swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "9082:8080"
+    environment:
+      API_URL: "${EMPLOYEE_SWAGGER_API_URL:-http://employee-service:8082/swagger.json}"
+    networks:
+      - web
+    restart: unless-stopped
+    profiles:
+      - swagger
+
+  urgency-swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "9083:8080"
+    environment:
+      API_URL: "${URGENCY_SWAGGER_API_URL:-http://urgency-service:8083/swagger.json}"
+    networks:
+      - web
+    restart: unless-stopped
+    profiles:
+      - swagger
+
+  activity-swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "9084:8080"
+    environment:
+      API_URL: "${ACTIVITY_SWAGGER_API_URL:-http://activity-service:8084/swagger.json}"
+    networks:
+      - web
+    restart: unless-stopped
+    profiles:
+      - swagger
 
 networks:
   web:
 
 volumes:
-  db_data_staging:
-  urgency_db_data_staging:
-  activity_db_data_staging:
-
-secrets:
-  employee_db_user:
-    file: ./api/employee/secrets/db_user.txt
-  employee_db_password:
-    file: ./api/employee/secrets/db_password.txt
-  urgency_db_user:
-    file: ./api/urgency/secrets/db_user.txt
-  urgency_db_password:
-    file: ./api/urgency/secrets/db_password.txt
-  activity_db_user:
-    file: ./api/activity/secrets/db_user.txt
-  activity_db_password:
-    file: ./api/activity/secrets/db_password.txt
+  employee_db_data:
+  urgency_db_data:
+  activity_db_data:

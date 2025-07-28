@@ -9,7 +9,9 @@ on:
     paths:
       - 'ui/**'
       - 'frontend-test-cover.sh'
-      - 'deploy-aws-frontend.sh'
+      - 'deploy-simple.sh'
+      - 'docker-compose.yml'
+      - '.env.aws'
       - '.github/workflows/frontend-test-coverage.yml'
       - '.github/workflows/generate-models.yml'
       - '.github/workflows/aws-frontend-deploy.yml'
@@ -17,7 +19,9 @@ on:
     paths:
       - 'ui/**'
       - 'frontend-test-cover.sh'
-      - 'deploy-aws-frontend.sh'
+      - 'deploy-simple.sh'
+      - 'docker-compose.yml'
+      - '.env.aws'
       - '.github/workflows/frontend-test-coverage.yml'
       - '.github/workflows/generate-models.yml'
 

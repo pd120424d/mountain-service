@@ -205,12 +205,14 @@ jobs:
       run: |
         export SSH_KEY_CONTENT="${{ secrets.AWS_SSH_PRIVATE_KEY }}"
         export SSH_KEY_PATH="~/.ssh/deploy_key"
+        export GHCR_PAT="${{ secrets.GHCR_PAT }}"
+        export GITHUB_ACTOR="${{ github.actor }}"
 
         # Make deployment script executable
-        chmod +x ./deploy-aws-backend.sh
+        chmod +x ./deploy-backend.sh
 
         # Run backend deployment
-        ./deploy-aws-backend.sh
+        ./deploy-backend.sh .env.aws
 
     - name: Verify backend deployment
       run: |

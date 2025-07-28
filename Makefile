@@ -261,28 +261,28 @@ ui-clean:
 # Docker targets
 docker-build:
 	@echo "Building Docker images..."
-	@docker compose -f docker-compose.staging.yml build
+	@docker compose --env-file .env.staging build
 
 docker-up:
-	@echo "Starting services with Docker Compose..."
-	@docker compose -f docker-compose.staging.yml up -d
+	@echo "Starting services with Docker Compose (staging)..."
+	@docker compose --env-file .env.staging up -d
 
 docker-down:
 	@echo "Stopping services with Docker Compose..."
-	@docker compose -f docker-compose.staging.yml down
+	@docker compose down
 
 docker-logs:
 	@echo "Showing Docker Compose logs..."
-	@docker compose -f docker-compose.staging.yml logs -f
+	@docker compose logs -f
 
 # Production Docker targets
 docker-prod-up:
 	@echo "Starting services with Docker Compose (production)..."
-	@docker compose -f docker-compose.prod.yml up -d
+	@docker compose --env-file .env.aws up -d
 
 docker-prod-down:
 	@echo "Stopping services with Docker Compose (production)..."
-	@docker compose -f docker-compose.prod.yml down
+	@docker compose down
 
 # Development workflow targets
 dev-setup: deps generate swagger ui-models
@@ -305,6 +305,6 @@ health:
 # Coverage report
 coverage:
 	@echo "Generating coverage reports..."
-	@cd api && ./backend-test-cover.sh
-	@cd ui && npm run test
+	@./backend-test-cover.sh
+	@./frontend-test-cover.sh
 	@echo "Coverage reports generated"

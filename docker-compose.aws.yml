@@ -1,18 +1,22 @@
+# AWS Docker Compose Configuration
+# Uses pre-built images from GHCR - no building required
+# Usage: docker-compose -f docker-compose.aws.yml up
+
 services:
   employee-db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-etf}
       POSTGRES_DB: employee_service
     volumes:
-      - db_data_aws:/var/lib/postgresql/data
+      - employee_db_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${EMPLOYEE_DB_PORT:-5432}:5432"
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,17 +25,17 @@ services:
   urgency-db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-etf}
       POSTGRES_DB: urgency_service
     volumes:
-      - urgency_db_data_aws:/var/lib/postgresql/data
+      - urgency_db_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "${URGENCY_DB_PORT:-5433}:5432"
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,17 +44,17 @@ services:
   activity-db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-etf}
       POSTGRES_DB: activity_service
     volumes:
-      - activity_db_data_aws:/var/lib/postgresql/data
+      - activity_db_data:/var/lib/postgresql/data
     ports:
-      - "5434:5432"
+      - "${ACTIVITY_DB_PORT:-5434}:5432"
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -61,10 +65,10 @@ services:
     environment:
       - DB_HOST=employee-db
       - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-etf}
       - DB_NAME=employee_service
-      - APP_ENV=production
+      - APP_ENV=${APP_ENV:-production}
       - JWT_SECRET=${JWT_SECRET}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
@@ -91,10 +95,10 @@ services:
     environment:
       - DB_HOST=urgency-db
       - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-etf}
       - DB_NAME=urgency_service
-      - APP_ENV=production
+      - APP_ENV=${APP_ENV:-production}
       - JWT_SECRET=${JWT_SECRET}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
@@ -123,10 +127,10 @@ services:
     environment:
       - DB_HOST=activity-db
       - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-etf}
       - DB_NAME=activity_service
-      - APP_ENV=production
+      - APP_ENV=${APP_ENV:-production}
       - JWT_SECRET=${JWT_SECRET}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
@@ -148,59 +152,6 @@ services:
       retries: 5
       start_period: 60s
 
-  employee-swagger-ui:
-    image: swaggerapi/swagger-ui
-    ports:
-      - "9082:8080"
-    environment:
-      API_URL: "${EMPLOYEE_SWAGGER_API_URL:-http://employee-service:8082/swagger.json}"
-    networks:
-      - web
-    restart: unless-stopped
-
-  urgency-swagger-ui:
-    image: swaggerapi/swagger-ui
-    ports:
-      - "9083:8080"
-    environment:
-      API_URL: "${URGENCY_SWAGGER_API_URL:-http://urgency-service:8083/swagger.json}"
-    networks:
-      - web
-    restart: unless-stopped
-
-  activity-swagger-ui:
-    image: swaggerapi/swagger-ui
-    ports:
-      - "9084:8080"
-    environment:
-      API_URL: "${ACTIVITY_SWAGGER_API_URL:-http://activity-service:8084/swagger.json}"
-    networks:
-      - web
-    restart: unless-stopped
-
-  frontend:
-    image: ${FRONTEND_IMAGE}
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      - NODE_ENV=production
-    depends_on:
-      employee-service:
-        condition: service_healthy
-      urgency-service:
-        condition: service_healthy
-      activity-service:
-        condition: service_healthy
-      version-service:
-        condition: service_healthy
-    networks:
-      - web
-    volumes:
-      - /var/log:/var/log
-      - ./ssl:/etc/nginx/ssl:ro
-    restart: unless-stopped
-
   version-service:
     image: ${VERSION_SERVICE_IMAGE}
     ports:
@@ -217,12 +168,33 @@ services:
       retries: 5
       start_period: 60s
 
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    ports:
+      - "${FRONTEND_HTTP_PORT:-80}:80"
+      - "${FRONTEND_HTTPS_PORT:-443}:443"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    depends_on:
+      employee-service:
+        condition: service_healthy
+      urgency-service:
+        condition: service_healthy
+      activity-service:
+        condition: service_healthy
+      version-service:
+        condition: service_healthy
+    networks:
+      - web
+    volumes:
+      - /var/log:/var/log
+      - ${SSL_CERT_PATH:-./ssl}:/etc/nginx/ssl:ro
+    restart: unless-stopped
+
 networks:
   web:
 
 volumes:
-  db_data_aws:
-  urgency_db_data_aws:
-  activity_db_data_aws:
-
-
+  employee_db_data:
+  urgency_db_data:
+  activity_db_data:

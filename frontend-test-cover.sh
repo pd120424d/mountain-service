@@ -1,36 +1,31 @@
 #!/bin/bash
 set -e
 
-if pwd | grep -q ui; then
-  echo "Already in ui directory"
-else
-  echo "Navigating to ui directory"
-  cd ui
-fi
+# Navigate to UI directory if not already there
+[[ $(pwd) == *ui ]] || cd ui
 
-# Skip npm install if node_modules exists and has packages
+# Install dependencies only if needed
 if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then
-  echo "Installing dependencies..."
+  echo "📦 Installing dependencies..."
   npm install
-else
-  echo "Dependencies already installed, skipping npm install"
 fi
 
+echo "🧪 Running frontend tests..."
 npm run test
 
 COVERAGE_FILE="coverage/ui/coverage-summary.json"
+THRESHOLD=70
+
 if [ ! -f "$COVERAGE_FILE" ]; then
-  echo "[FAILURE] Coverage summary file not found"
+  echo "❌ Coverage summary file not found"
   exit 1
 fi
 
 COVERAGE=$(node -e "console.log(require('./$COVERAGE_FILE').total.statements.pct)")
-THRESHOLD=70
 
-echo "Total statement coverage: $COVERAGE%"
 if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-  echo "[FAILURE] Coverage $COVERAGE% is below threshold ($THRESHOLD%)."
+  echo "❌ Frontend coverage: $COVERAGE% (below $THRESHOLD%)"
   exit 1
 else
-  echo "[SUCCESS]Coverage $COVERAGE% is above threshold ($THRESHOLD%)."
+  echo "✅ Frontend coverage: $COVERAGE%"
 fi

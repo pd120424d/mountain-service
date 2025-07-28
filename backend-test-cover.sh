@@ -2,79 +2,49 @@
 set -e
 
 # Install go-acc if needed
-if ! command -v go-acc &> /dev/null; then
+command -v go-acc >/dev/null || {
   echo "Installing go-acc..."
   go install github.com/ory/go-acc@latest
   export PATH="$PATH:$(go env GOPATH)/bin"
-fi
+}
 
-# Move into the api folder
 cd api
 
 SERVICES=("employee" "urgency" "activity")
 THRESHOLD=75.0
 OVERALL_SUCCESS=true
 
-echo "Running coverage tests for all services..."
-echo "Coverage threshold: $THRESHOLD%"
-echo "=================================="
+echo "🧪 Running backend coverage tests (threshold: $THRESHOLD%)"
+echo "=================================================="
 
 for SERVICE in "${SERVICES[@]}"; do
-  echo ""
-  echo "Testing service: $SERVICE"
-  echo "----------------------------"
+  echo "Testing $SERVICE..."
 
-  # Check if service has internal packages
   TARGETS=$(go list ./$SERVICE/internal/... 2>/dev/null || echo "")
+  [ -z "$TARGETS" ] && { echo "⚠️  No packages found for $SERVICE, skipping"; continue; }
 
-  if [ -z "$TARGETS" ]; then
-    echo "WARNING: No internal packages found for $SERVICE, skipping..."
-    continue
-  fi
-
-  echo "Running coverage for:"
-  echo "$TARGETS"
-
-  # Run go-acc with only those packages
   COVERAGE_FILE="coverage-$SERVICE.out"
-  if go-acc $TARGETS \
-    --ignore ".*_gomock.go" \
-    --output "$COVERAGE_FILE"; then
-
-    # Show coverage summary without gomock
-    echo ""
-    echo "Coverage details for $SERVICE:"
-    go tool cover -func="$COVERAGE_FILE" | grep -v '_gomock.go'
-
-    # Check if coverage is above threshold
+  if go-acc $TARGETS --ignore ".*_gomock.go" --output "$COVERAGE_FILE" >/dev/null 2>&1; then
     COVERAGE=$(go tool cover -func="$COVERAGE_FILE" | grep total | awk '{print substr($3, 1, length($3)-1)}')
 
-    echo ""
-    echo "📊 $SERVICE coverage: $COVERAGE%"
-
     if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-      echo "[FAILURE] $SERVICE coverage $COVERAGE% is below threshold ($THRESHOLD%)"
+      echo "❌ $SERVICE: $COVERAGE% (below $THRESHOLD%)"
       OVERALL_SUCCESS=false
     else
-      echo "[SUCCESS] $SERVICE coverage $COVERAGE% meets threshold ($THRESHOLD%)"
+      echo "✅ $SERVICE: $COVERAGE%"
     fi
-
-    # Clean up individual coverage file
     rm -f "$COVERAGE_FILE"
   else
-    echo "[FAILURE] Failed to run coverage for $SERVICE"
+    echo "❌ $SERVICE: Failed to run tests"
     OVERALL_SUCCESS=false
   fi
-
-  echo "----------------------------"
 done
 
-echo ""
-echo "=================================="
+echo "=================================================="
 if [ "$OVERALL_SUCCESS" = true ]; then
-  echo "SUCCESS: All services passed coverage requirements!"
+  echo "🎉 All backend services passed coverage requirements!"
   exit 0
 else
-  echo "FAILURE: One or more services failed coverage requirements!"
+  echo "💥 Some services failed coverage requirements!"
   exit 1
 fi

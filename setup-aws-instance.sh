@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# AWS Instance Setup Script for Mountain Rescue Service
+# AWS Instance Setup Script for Mountain Service
 # This script prepares an AWS EC2 instance for deployment
 
 set -e  # Exit on any error
@@ -91,7 +91,7 @@ test_ssh_connection() {
 
 # Setup AWS instance
 setup_instance() {
-    log_info "Setting up AWS instance for Mountain Rescue Service deployment..."
+    log_info "Setting up AWS instance for Mountain Service deployment..."
     
     ssh -i "$AWS_KEY_PATH" "$AWS_INSTANCE_USER@$AWS_INSTANCE_IP" << 'EOF'
         set -e
@@ -137,7 +137,7 @@ LOGROTATE
         echo "Creating systemd service for auto-start..."
         sudo tee /etc/systemd/system/mountain-service.service > /dev/null << 'SERVICE'
 [Unit]
-Description=Mountain Rescue Service
+Description=Mountain Service
 Requires=docker.service
 After=docker.service
 
@@ -160,9 +160,9 @@ SERVICE
         echo "Setting up monitoring script..."
         tee ~/monitor-services.sh > /dev/null << 'MONITOR'
 #!/bin/bash
-# Simple monitoring script for Mountain Rescue Service
+# Simple monitoring script for Mountain Service
 
-echo "=== Mountain Rescue Service Status ==="
+echo "=== Mountain Service Status ==="
 echo "Date: $(date)"
 echo ""
 
@@ -194,7 +194,7 @@ MONITOR
         echo "Setting up backup script..."
         tee ~/backup-data.sh > /dev/null << 'BACKUP'
 #!/bin/bash
-# Backup script for Mountain Rescue Service
+# Backup script for Mountain Service
 
 BACKUP_DIR="$HOME/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
@@ -252,7 +252,7 @@ EOF
 
 # Main setup process
 main() {
-    echo -e "${GREEN}=== Mountain Rescue Service - AWS Instance Setup ===${NC}"
+    echo -e "${GREEN}=== Mountain Service - AWS Instance Setup ===${NC}"
     echo -e "${BLUE}Target: $AWS_INSTANCE_USER@$AWS_INSTANCE_IP${NC}"
     echo ""
     

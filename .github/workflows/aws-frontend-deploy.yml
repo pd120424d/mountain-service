@@ -119,12 +119,14 @@ jobs:
       run: |
         export SSH_KEY_CONTENT="${{ secrets.AWS_SSH_PRIVATE_KEY }}"
         export SSH_KEY_PATH="~/.ssh/deploy_key"
-        
+        export GHCR_PAT="${{ secrets.GHCR_PAT }}"
+        export GITHUB_ACTOR="${{ github.actor }}"
+
         # Make deployment script executable
-        chmod +x ./deploy-aws-frontend.sh
-        
+        chmod +x ./deploy-frontend.sh
+
         # Run frontend deployment
-        ./deploy-aws-frontend.sh
+        ./deploy-frontend.sh .env.aws
 
     - name: Verify frontend deployment
       run: |

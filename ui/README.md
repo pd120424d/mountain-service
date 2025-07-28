@@ -1,6 +1,6 @@
-# Mountain Rescue Management System
+# Mountain Management System
 
-A web application built with Angular for managing mountain rescue service operations, including employee management, shift scheduling, and emergency response coordination.
+A web application built with Angular for managing mountain service operations, including employee management, shift scheduling, and emergency response coordination.
 
 ## Features
 
@@ -60,8 +60,8 @@ ng build --configuration production
 Build and run the application using Docker:
 
 ```bash
-docker build -t mountain-rescue-ui .
-docker run -p 80:80 mountain-rescue-ui
+docker build -t mountain-service-ui .
+docker run -p 80:80 mountain-service-ui
 ```
 
 ## Environment Configuration
