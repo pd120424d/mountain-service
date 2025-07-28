@@ -9,7 +9,7 @@ import {
   RemoveShiftRequest, 
   RemoveShiftByDetailsRequest 
 } from './shift.model';
-import { Employee, MedicRole, TechnicalRole } from '../shared/models';
+import { Employee, EmployeeResponseProfileTypeEnum } from '../shared/models';
 
 describe('ShiftManagementService', () => {
   let service: ShiftManagementService;
@@ -38,7 +38,7 @@ describe('ShiftManagementService', () => {
       lastName: 'Doe',
       email: 'john.doe@example.com',
       phone: '+1234567890',
-      profileType: MedicRole,
+      profileType: EmployeeResponseProfileTypeEnum.Medic,
       username: 'johndoe',
       gender: 'Male'
     },
@@ -48,7 +48,7 @@ describe('ShiftManagementService', () => {
       lastName: 'Smith',
       email: 'jane.smith@example.com',
       phone: '+1234567891',
-      profileType: TechnicalRole,
+      profileType: EmployeeResponseProfileTypeEnum.Technical,
       username: 'janesmith',
       gender: 'Female'
     }

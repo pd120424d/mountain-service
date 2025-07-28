@@ -9,7 +9,7 @@ import {
   isMedic,
   isTechnical
 } from './employee-extensions';
-import { EmployeeResponse } from '../generated/employee';
+import { EmployeeResponse, EmployeeResponseProfileTypeEnum } from '../generated/employee';
 
 describe('Employee Extensions', () => {
   let mockEmployee: EmployeeResponse;
@@ -21,7 +21,7 @@ describe('Employee Extensions', () => {
       lastName: 'Doe',
       email: 'john.doe@example.com',
       phone: '+1234567890',
-      profileType: 'Medic',
+      profileType: EmployeeResponseProfileTypeEnum.Medic,
       username: 'johndoe',
       gender: 'Male'
     };
@@ -70,17 +70,17 @@ describe('Employee Extensions', () => {
 
   describe('isAdmin', () => {
     it('should return true for Administrator role', () => {
-      mockEmployee.profileType = AdministratorRole;
+      mockEmployee.profileType = EmployeeResponseProfileTypeEnum.Administrator;
       expect(isAdmin(mockEmployee)).toBe(true);
     });
 
     it('should return false for Medic role', () => {
-      mockEmployee.profileType = MedicRole;
+      mockEmployee.profileType = EmployeeResponseProfileTypeEnum.Medic;
       expect(isAdmin(mockEmployee)).toBe(false);
     });
 
     it('should return false for Technical role', () => {
-      mockEmployee.profileType = TechnicalRole;
+      mockEmployee.profileType = EmployeeResponseProfileTypeEnum.Technical;
       expect(isAdmin(mockEmployee)).toBe(false);
     });
 
@@ -92,17 +92,17 @@ describe('Employee Extensions', () => {
 
   describe('isMedic', () => {
     it('should return true for Medic role', () => {
-      mockEmployee.profileType = MedicRole;
+      mockEmployee.profileType = EmployeeResponseProfileTypeEnum.Medic;
       expect(isMedic(mockEmployee)).toBe(true);
     });
 
     it('should return false for Administrator role', () => {
-      mockEmployee.profileType = AdministratorRole;
+      mockEmployee.profileType = EmployeeResponseProfileTypeEnum.Administrator;
       expect(isMedic(mockEmployee)).toBe(false);
     });
 
     it('should return false for Technical role', () => {
-      mockEmployee.profileType = TechnicalRole;
+      mockEmployee.profileType = EmployeeResponseProfileTypeEnum.Technical;
       expect(isMedic(mockEmployee)).toBe(false);
     });
 
@@ -114,17 +114,17 @@ describe('Employee Extensions', () => {
 
   describe('isTechnical', () => {
     it('should return true for Technical role', () => {
-      mockEmployee.profileType = TechnicalRole;
+      mockEmployee.profileType = EmployeeResponseProfileTypeEnum.Technical;
       expect(isTechnical(mockEmployee)).toBe(true);
     });
 
     it('should return false for Administrator role', () => {
-      mockEmployee.profileType = AdministratorRole;
+      mockEmployee.profileType = EmployeeResponseProfileTypeEnum.Administrator;
       expect(isTechnical(mockEmployee)).toBe(false);
     });
 
     it('should return false for Medic role', () => {
-      mockEmployee.profileType = MedicRole;
+      mockEmployee.profileType = EmployeeResponseProfileTypeEnum.Medic;
       expect(isTechnical(mockEmployee)).toBe(false);
     });
 

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { EmployeeService } from './employee.service';
-import { Employee, EmployeeCreateRequest, MedicRole, TechnicalRole } from '../shared/models';
+import { Employee, EmployeeCreateRequest, EmployeeUpdateRequest, EmployeeResponseProfileTypeEnum, EmployeeCreateRequestProfileTypeEnum, EmployeeUpdateRequestProfileTypeEnum } from '../shared/models';
 import { environment } from '../../environments/environment';
 import { LoggingService } from '../services/logging.service';
 
@@ -50,7 +50,7 @@ describe('EmployeeService', () => {
         lastName: 'Doe',
         email: 'john.doe@example.com',
         phone: '+1234567890',
-        profileType: MedicRole,
+        profileType: EmployeeResponseProfileTypeEnum.Medic,
         username: 'johndoe',
         gender: 'Male'
       },
@@ -60,7 +60,7 @@ describe('EmployeeService', () => {
         lastName: 'Smith',
         email: 'jane.smith@example.com',
         phone: '+1234567891',
-        profileType: TechnicalRole,
+        profileType: EmployeeResponseProfileTypeEnum.Technical,
         username: 'janesmith',
         gender: 'Female'
       }
@@ -82,7 +82,7 @@ describe('EmployeeService', () => {
       lastName: 'Doe',
       email: 'john.doe@example.com',
       phone: '+1234567890',
-      profileType: MedicRole,
+      profileType: EmployeeResponseProfileTypeEnum.Medic,
       username: 'johndoe',
       gender: 'Male'
     };
@@ -103,7 +103,7 @@ describe('EmployeeService', () => {
       lastName: 'Doe',
       email: 'john.doe@example.com',
       phone: '+1234567890',
-      profileType: MedicRole,
+      profileType: EmployeeCreateRequestProfileTypeEnum.Medic,
       username: 'johndoe',
       password: 'password123',
       gender: 'Male'
@@ -115,7 +115,7 @@ describe('EmployeeService', () => {
       lastName: 'Doe',
       email: 'john.doe@example.com',
       phone: '+1234567890',
-      profileType: MedicRole,
+      profileType: EmployeeResponseProfileTypeEnum.Medic,
       username: 'johndoe',
       gender: 'Male'
     };
@@ -131,24 +131,34 @@ describe('EmployeeService', () => {
   });
 
   it('should update employee', () => {
+    const mockUpdateRequest: EmployeeUpdateRequest = {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      phone: '+1234567890',
+      profileType: EmployeeUpdateRequestProfileTypeEnum.Medic,
+      username: 'johndoe',
+      gender: 'Male'
+    };
+
     const mockEmployee: Employee = {
       id: 1,
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
       phone: '+1234567890',
-      profileType: MedicRole,
+      profileType: EmployeeResponseProfileTypeEnum.Medic,
       username: 'johndoe',
       gender: 'Male'
     };
 
-    service.updateEmployee(1, mockEmployee).subscribe(employee => {
+    service.updateEmployee(1, mockUpdateRequest).subscribe(employee => {
       expect(employee).toEqual(mockEmployee);
     });
 
     const req = httpMock.expectOne(`${expectedEmployeeUrl}/1`);
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual(mockEmployee);
+    expect(req.request.body).toEqual(mockUpdateRequest);
     req.flush(mockEmployee);
   });
 
