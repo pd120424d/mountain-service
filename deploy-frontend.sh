@@ -131,10 +131,14 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
     # Login to registry
     echo "$GHCR_PAT" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
     
-    # Stop any existing frontend container
+    # Stop any existing frontend container (may have been stopped by backend deployment)
     echo "Stopping existing frontend container..."
     docker stop mountain-service-deployment_frontend_1 2>/dev/null || true
     docker rm mountain-service-deployment_frontend_1 2>/dev/null || true
+
+    # Also check for frontend containers from the frontend-only compose file
+    docker-compose -f docker-compose-frontend.yml --env-file .env.frontend stop 2>/dev/null || true
+    docker-compose -f docker-compose-frontend.yml --env-file .env.frontend rm -f 2>/dev/null || true
     
     # Pull frontend image
     echo "Pulling frontend image..."

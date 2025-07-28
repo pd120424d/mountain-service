@@ -92,15 +92,24 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
     
     # Login to registry
     echo "$GHCR_PAT" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-    
-    # Stop ALL containers to ensure clean deployment
-    echo "Stopping ALL containers to ensure clean deployment..."
-    docker stop $(docker ps -q) 2>/dev/null || true
+
+    # Stop only backend containers to preserve frontend
+    echo "Stopping existing backend containers..."
+    docker stop mountain-service-deployment_employee-service_1 2>/dev/null || true
+    docker stop mountain-service-deployment_urgency-service_1 2>/dev/null || true
+    docker stop mountain-service-deployment_activity-service_1 2>/dev/null || true
+    docker stop mountain-service-deployment_version-service_1 2>/dev/null || true
+    docker stop mountain-service-deployment_employee-db_1 2>/dev/null || true
+    docker stop mountain-service-deployment_urgency-db_1 2>/dev/null || true
+    docker stop mountain-service-deployment_activity-db_1 2>/dev/null || true
+
+    # Remove stopped backend containers
     docker container prune -f || true
-    
-    # Stop existing services with compose
-    echo "Stopping existing services with compose..."
-    docker-compose down --remove-orphans --volumes || true
+
+    # Stop existing backend services with compose (but preserve frontend)
+    echo "Stopping existing backend services with compose..."
+    docker-compose stop employee-service urgency-service activity-service version-service employee-db urgency-db activity-db 2>/dev/null || true
+    docker-compose rm -f employee-service urgency-service activity-service version-service employee-db urgency-db activity-db 2>/dev/null || true
     
     # Pull backend service images
     echo "Pulling backend service images..."
@@ -232,9 +241,13 @@ if [ $? -eq 0 ]; then
     
     echo
     log_success "Backend deployment completed successfully!"
-    echo -e "${GREEN}Backend services are running and accessible within the Docker network.${NC}"
-    echo -e "${BLUE}Services can be accessed through the frontend application or via Docker network.${NC}"
-    echo -e "${YELLOW}Note: Backend ports are not exposed externally for security reasons.${NC}"
+    echo -e "${GREEN}Backend API URLs:${NC}"
+    echo -e "${BLUE}  Employee API: http://$INSTANCE_IP:8082${NC}"
+    echo -e "${BLUE}  Urgency API: http://$INSTANCE_IP:8083${NC}"
+    echo -e "${BLUE}  Activity API: http://$INSTANCE_IP:8084${NC}"
+    echo -e "${BLUE}  Version API: http://$INSTANCE_IP:8090${NC}"
+    echo
+    log_info "Note: If frontend was running, it may have been stopped. Run deploy-frontend.sh to restart it."
 else
     log_error "Backend deployment failed!"
     exit 1
