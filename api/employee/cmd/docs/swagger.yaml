@@ -139,12 +139,12 @@ definitions:
     type: object
   github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability:
     properties:
-      available:
-        type: boolean
-      employees:
-        items:
-          type: string
-        type: array
+      medicSlotsAvailable:
+        description: Available slots for medics (0-2)
+        type: integer
+      technicalSlotsAvailable:
+        description: Available slots for technical staff (0-4)
+        type: integer
     type: object
   github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay:
     properties:
@@ -346,6 +346,42 @@ paths:
       security:
       - OAuth2Password: []
       summary: Провера активних хитних случајева за запосленог
+      tags:
+      - запослени
+  /employees/{id}/shift-warnings:
+    get:
+      description: Враћа листу упозорења о сменама за запосленог (нпр. недостају смене,
+        није испуњена норма)
+      parameters:
+      - description: ID запосленог
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                type: string
+              type: array
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+      security:
+      - OAuth2Password: []
+      summary: Дохватање упозорења о сменама за запосленог
       tags:
       - запослени
   /employees/{id}/shifts:

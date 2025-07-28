@@ -139,6 +139,20 @@ func (mr *MockShiftRepositoryMockRecorder) GetShiftsByEmployeeID(employeeID, res
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftsByEmployeeID", reflect.TypeOf((*MockShiftRepository)(nil).GetShiftsByEmployeeID), employeeID, result)
 }
 
+// GetShiftsByEmployeeIDInDateRange mocks base method.
+func (m *MockShiftRepository) GetShiftsByEmployeeIDInDateRange(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetShiftsByEmployeeIDInDateRange", employeeID, startDate, endDate, result)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetShiftsByEmployeeIDInDateRange indicates an expected call of GetShiftsByEmployeeIDInDateRange.
+func (mr *MockShiftRepositoryMockRecorder) GetShiftsByEmployeeIDInDateRange(employeeID, startDate, endDate, result interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftsByEmployeeIDInDateRange", reflect.TypeOf((*MockShiftRepository)(nil).GetShiftsByEmployeeIDInDateRange), employeeID, startDate, endDate, result)
+}
+
 // RemoveEmployeeFromShiftByDetails mocks base method.
 func (m *MockShiftRepository) RemoveEmployeeFromShiftByDetails(employeeID uint, shiftDate time.Time, shiftType int) error {
 	m.ctrl.T.Helper()

@@ -3,7 +3,7 @@
   "info": {
     "title": "Activity Service API",
     "version": "1.0.0",
-    "description": "Mountain Rescue Activity Logging API"
+    "description": "Mountain Activity Logging API"
   },
   "host": "localhost:8084",
   "basePath": "/api/v1",

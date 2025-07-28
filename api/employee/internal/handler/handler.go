@@ -12,6 +12,7 @@ import (
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
+	"github.com/pd120424d/mountain-service/api/employee/internal/service"
 	sharedAuth "github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
@@ -30,6 +31,7 @@ type EmployeeHandler interface {
 	GetShifts(ctx *gin.Context)
 	GetShiftsAvailability(ctx *gin.Context)
 	RemoveShift(ctx *gin.Context)
+	GetShiftWarnings(ctx *gin.Context)
 
 	// Emergency operations
 	GetOnCallEmployees(ctx *gin.Context)
@@ -40,13 +42,18 @@ type EmployeeHandler interface {
 }
 
 type employeeHandler struct {
-	log        utils.Logger
-	emplRepo   repositories.EmployeeRepository
-	shiftsRepo repositories.ShiftRepository
+	log      utils.Logger
+	service  service.EmployeeService
+	emplRepo repositories.EmployeeRepository
 }
 
 func NewEmployeeHandler(log utils.Logger, emplRepo repositories.EmployeeRepository, shiftsRepo repositories.ShiftRepository) EmployeeHandler {
-	return &employeeHandler{log: log.WithName("employeeHandler"), emplRepo: emplRepo, shiftsRepo: shiftsRepo}
+	employeeService := service.NewEmployeeService(log, emplRepo, shiftsRepo)
+	return &employeeHandler{
+		log:      log.WithName("employeeHandler"),
+		service:  employeeService,
+		emplRepo: emplRepo,
+	}
 }
 
 // RegisterEmployee Креирање новог запосленог
@@ -426,7 +433,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {
-		h.log.Errorf("failed to extract url param, invalid employee ID: ", err)
+		h.log.Errorf("failed to extract url param, invalid employee ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee ID"})
 		return
 	}
@@ -438,72 +445,25 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 		return
 	}
 
-	employee := &model.Employee{}
-	err = h.emplRepo.GetEmployeeByID(uint(employeeID), employee)
-	if err != nil {
-		h.log.Errorf("failed to assign shift, failed to get employee: %v", err)
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	profileType := employee.ProfileType
-
-	shiftDate, err := time.Parse(time.DateOnly, req.ShiftDate)
-	if err != nil {
-		h.log.Errorf("failed to parse shift date: %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid shiftDate format, expected YYYY-MM-DD"})
-		return
-	}
-
-	// Step 1: Get or create shift
-	shift, err := h.shiftsRepo.GetOrCreateShift(shiftDate, req.ShiftType)
-	if err != nil {
-		h.log.Errorf("failed to get/create shift: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "could not get or create shift"})
-		return
-	}
-
-	// Step 2: Check existing assignment
-	assigned, err := h.shiftsRepo.AssignedToShift(uint(employeeID), shift.ID)
-	if err != nil {
-		h.log.Errorf("failed to check assignment: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	if assigned {
-		h.log.Errorf("employee with ID %d is already assigned to the requested shift ID %d", employeeID, shift.ID)
-		ctx.JSON(http.StatusConflict, gin.H{"error": "employee is already assigned to this shift"})
-		return
-	}
-
-	// Step 3: Check capacity
-	count, err := h.shiftsRepo.CountAssignmentsByProfile(shift.ID, profileType)
-	if err != nil {
-		h.log.Errorf("failed to count assignments by profile: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	if (profileType.String() == "Medic" && count >= 2) || (profileType.String() == "Technical" && count >= 4) {
-		h.log.Errorf("failed to assign shift: maximum capacity for role %s reached in the selected shift", profileType.String())
-		ctx.JSON(http.StatusConflict, gin.H{"error": "maximum capacity for this role reached in the selected shift"})
-		return
-	}
-
-	// Step 4: Assign
-	assignmentID, err := h.shiftsRepo.CreateAssignment(uint(employeeID), shift.ID)
+	response, err := h.service.AssignShift(uint(employeeID), req)
 	if err != nil {
 		h.log.Errorf("failed to assign shift: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to assign employee"})
+
+		switch err.Error() {
+		case "employee not found":
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case "invalid shift date format", "cannot assign shift in the past", "cannot assign shift more than 3 months in advance":
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case "employee is already assigned to this shift", "maximum capacity for this role reached in the selected shift":
+			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
 		return
 	}
 
 	h.log.Infof("Successfully assigned shift for employee ID %d", employeeID)
-	resp := employeeV1.AssignShiftResponse{
-		ID:        assignmentID,
-		ShiftDate: shift.ShiftDate.Format(time.DateOnly),
-		ShiftType: shift.ShiftType,
-	}
-	ctx.JSON(http.StatusCreated, resp)
+	ctx.JSON(http.StatusCreated, response)
 }
 
 // GetShifts Дохватање смена за запосленог
@@ -525,27 +485,14 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 		return
 	}
 
-	var shifts []model.Shift
-	err = h.shiftsRepo.GetShiftsByEmployeeID(uint(employeeID), &shifts)
+	response, err := h.service.GetShifts(uint(employeeID))
 	if err != nil {
 		h.log.Errorf("failed to get shifts for employee ID %d: %v", employeeID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
-	h.log.Infof("Successfully retrieved shifts for employee ID %d", employeeID)
 
-	response := make([]employeeV1.ShiftResponse, 0)
-	for _, shift := range shifts {
-		response = append(response, employeeV1.ShiftResponse{
-			ID:        shift.ID,
-			ShiftDate: shift.ShiftDate,
-			ShiftType: shift.ShiftType,
-			CreatedAt: shift.CreatedAt,
-		})
-	}
-
-	h.log.Info("Successfully mapped shifts to response format")
-	h.log.Infof("Returning %d shifts", len(response))
+	h.log.Infof("Successfully retrieved %d shifts for employee ID %d", len(response), employeeID)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -569,10 +516,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 		return
 	}
 
-	start := time.Now().Truncate(24 * time.Hour)
-	end := start.AddDate(0, 0, days)
-
-	availability, err := h.shiftsRepo.GetShiftAvailability(start, end)
+	response, err := h.service.GetShiftsAvailability(days)
 	if err != nil {
 		h.log.Errorf("failed to get shifts availability: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -580,8 +524,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	}
 
 	h.log.Infof("Successfully retrieved shifts availability for the next %v days", days)
-	availabilityResponse := model.MapShiftsAvailabilityToResponse(availability)
-	ctx.JSON(http.StatusOK, availabilityResponse)
+	ctx.JSON(http.StatusOK, response)
 }
 
 // RemoveShift Уклањање смене за запосленог
@@ -612,17 +555,15 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 		return
 	}
 
-	shiftDate, err := time.Parse(time.DateOnly, req.ShiftDate)
-	if err != nil {
-		h.log.Errorf("failed to parse shift date: %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid shiftDate format, expected YYYY-MM-DD"})
-		return
-	}
-
-	err = h.shiftsRepo.RemoveEmployeeFromShiftByDetails(uint(employeeID), shiftDate, req.ShiftType)
+	err = h.service.RemoveShift(uint(employeeID), req)
 	if err != nil {
 		h.log.Errorf("failed to remove shift: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+
+		if err.Error() == "invalid shift date format" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
 		return
 	}
 
@@ -680,16 +621,11 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 		}
 	}
 
-	employees, err := h.shiftsRepo.GetOnCallEmployees(time.Now(), shiftBuffer)
+	employeeResponses, err := h.service.GetOnCallEmployees(time.Now(), shiftBuffer)
 	if err != nil {
 		h.log.Errorf("Failed to get on-call employees: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve on-call employees"})
 		return
-	}
-
-	var employeeResponses []employeeV1.EmployeeResponse
-	for _, emp := range employees {
-		employeeResponses = append(employeeResponses, emp.UpdateResponseFromEmployee())
 	}
 
 	response := employeeV1.OnCallEmployeesResponse{
@@ -739,5 +675,47 @@ func (h *employeeHandler) CheckActiveEmergencies(ctx *gin.Context) {
 	}
 
 	h.log.Infof("Employee %d has active emergencies: %v", employeeID, response.HasActiveEmergencies)
+	ctx.JSON(http.StatusOK, response)
+}
+
+// GetShiftWarnings Дохватање упозорења о сменама за запосленог
+// @Summary Дохватање упозорења о сменама за запосленог
+// @Description Враћа листу упозорења о сменама за запосленог (нпр. недостају смене, није испуњена норма)
+// @Tags запослени
+// @Security OAuth2Password
+// @Param id path int true "ID запосленог"
+// @Success 200 {object} map[string][]string
+// @Failure 400 {object} employeeV1.ErrorResponse
+// @Failure 404 {object} employeeV1.ErrorResponse
+// @Failure 500 {object} employeeV1.ErrorResponse
+// @Router /employees/{id}/shift-warnings [get]
+func (h *employeeHandler) GetShiftWarnings(ctx *gin.Context) {
+	employeeIDParam := ctx.Param("id")
+	h.log.Infof("Received Get Shift Warnings request for employee ID %s", employeeIDParam)
+
+	employeeID, err := strconv.Atoi(employeeIDParam)
+	if err != nil || employeeID <= 0 {
+		h.log.Errorf("failed to extract url param, invalid employee ID: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
+		return
+	}
+
+	warnings, err := h.service.GetShiftWarnings(uint(employeeID))
+	if err != nil {
+		h.log.Errorf("failed to get shift warnings for employee ID %d: %v", employeeID, err)
+
+		if err.Error() == "employee not found" {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+
+	response := gin.H{
+		"warnings": warnings,
+	}
+
+	h.log.Infof("Successfully retrieved %d warnings for employee ID %d", len(warnings), employeeID)
 	ctx.JSON(http.StatusOK, response)
 }

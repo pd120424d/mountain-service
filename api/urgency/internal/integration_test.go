@@ -60,7 +60,7 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 
 	t.Run("it successfully completes the urgency lifecycle (POST, GET, PUT and DELETE)", func(t *testing.T) {
 		createReq := urgencyV1.UrgencyCreateRequest{
-			Name:         "Mountain Rescue Emergency",
+			Name:         "Mountain Service Emergency",
 			Email:        "rescue@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
@@ -81,7 +81,7 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 		var createResponse urgencyv1.UrgencyResponse
 		err := json.Unmarshal(w.Body.Bytes(), &createResponse)
 		require.NoError(t, err)
-		assert.Equal(t, "Mountain Rescue Emergency", createResponse.Name)
+		assert.Equal(t, "Mountain Service Emergency", createResponse.Name)
 		assert.Equal(t, "N 43.401123 E 22.662756", createResponse.Location)
 		assert.Equal(t, "open", string(createResponse.Status))
 		urgencyID := createResponse.ID
@@ -112,7 +112,7 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 		err = json.Unmarshal(w.Body.Bytes(), &getResponse)
 		require.NoError(t, err)
 		assert.Equal(t, urgencyID, getResponse.ID)
-		assert.Equal(t, "Mountain Rescue Emergency", getResponse.Name)
+		assert.Equal(t, "Mountain Service Emergency", getResponse.Name)
 
 		updateReq := urgencyV1.UrgencyUpdateRequest{
 			Status: urgencyV1.InProgress,

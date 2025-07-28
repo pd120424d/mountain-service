@@ -1,6 +1,6 @@
 package repositories
 
-//go:generate mockgen -source=shift_repository.go -destination=shift_repository_gomock.go -package=repositories mountain_service/employee/internal/repositories -imports=gomock=go.uber.org/mock/gomock
+//go:generate mockgen -source=shift_repository.go -destination=shift_repository_gomock.go -package=repositories
 
 import (
 	"errors"
@@ -19,6 +19,7 @@ type ShiftRepository interface {
 	CountAssignmentsByProfile(shiftID uint, profileType model.ProfileType) (int64, error)
 	CreateAssignment(employeeID, shiftID uint) (uint, error)
 	GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error
+	GetShiftsByEmployeeIDInDateRange(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error
 	GetShiftAvailability(start, end time.Time) (*model.ShiftsAvailabilityRange, error)
 	RemoveEmployeeFromShiftByDetails(employeeID uint, shiftDate time.Time, shiftType int) error
 	GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]model.Employee, error)
@@ -85,6 +86,15 @@ func (r *shiftRepository) GetShiftsByEmployeeID(employeeID uint, result *[]model
 		Select("employee_shifts.id, shifts.shift_date, shifts.shift_type").
 		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
 		Where("employee_shifts.employee_id = ?", employeeID).
+		Order("shifts.shift_date ASC, shifts.shift_type ASC").
+		Scan(result).Error
+}
+
+func (r *shiftRepository) GetShiftsByEmployeeIDInDateRange(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+	return r.db.Table("employee_shifts").
+		Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
+		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
+		Where("employee_shifts.employee_id = ? AND shifts.shift_date >= ? AND shifts.shift_date <= ?", employeeID, startDate, endDate).
 		Order("shifts.shift_date ASC, shifts.shift_type ASC").
 		Scan(result).Error
 }

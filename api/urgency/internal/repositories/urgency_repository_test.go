@@ -167,7 +167,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 	repo := NewUrgencyRepository(log, db)
 
 	urgency1 := &model.Urgency{
-		Name:         "Emergency Rescue",
+		Name:         "Emergency Service",
 		Email:        "rescue@example.com",
 		ContactPhone: "123456789",
 		Description:  "Mountain rescue needed",
@@ -218,7 +218,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 		urgencies, err := repo.List(filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
-		assert.Equal(t, "Emergency Rescue", urgencies[0].Name)
+		assert.Equal(t, "Emergency Service", urgencies[0].Name)
 	})
 
 	t.Run("it returns urgencies filtered by name (partial match)", func(t *testing.T) {
@@ -238,7 +238,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 		urgencies, err := repo.List(filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
-		assert.Equal(t, "Emergency Rescue", urgencies[0].Name)
+		assert.Equal(t, "Emergency Service", urgencies[0].Name)
 	})
 
 	t.Run("it returns urgencies filtered by multiple filters", func(t *testing.T) {

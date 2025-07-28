@@ -318,6 +318,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/employees/{id}/shift-warnings": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Враћа листу упозорења о сменама за запосленог (нпр. недостају смене, није испуњена норма)",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Дохватање упозорења о сменама за запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/employees/{id}/shifts": {
             "get": {
                 "security": [
@@ -772,14 +827,13 @@ const docTemplate = `{
         "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability": {
             "type": "object",
             "properties": {
-                "available": {
-                    "type": "boolean"
+                "medicSlotsAvailable": {
+                    "description": "Available slots for medics (0-2)",
+                    "type": "integer"
                 },
-                "employees": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "technicalSlotsAvailable": {
+                    "description": "Available slots for technical staff (0-4)",
+                    "type": "integer"
                 }
             }
         },

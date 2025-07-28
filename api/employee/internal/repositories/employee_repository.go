@@ -1,6 +1,6 @@
 package repositories
 
-//go:generate mockgen -source=employee_repository.go -destination=employee_repository_gomock.go -package=repositories mountain_service/employee/internal/repositories -imports=gomock=go.uber.org/mock/gomock -typed
+//go:generate mockgen -source=employee_repository.go -destination=employee_repository_gomock.go -package=repositories
 
 import (
 	"fmt"

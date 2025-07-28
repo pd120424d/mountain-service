@@ -3,7 +3,7 @@
   "info": {
     "title": "Employee Service API",
     "version": "1.0.0",
-    "description": "Mountain Rescue Employee Management API"
+    "description": "Mountain Service Employee Management API"
   },
   "host": "localhost:8082",
   "basePath": "/api/v1",

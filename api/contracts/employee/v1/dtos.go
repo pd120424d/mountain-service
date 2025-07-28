@@ -117,8 +117,8 @@ type ShiftAvailabilityPerDay struct {
 // ShiftAvailability DTO for returning the shift availability for a certain shift
 // swagger:model
 type ShiftAvailability struct {
-	Available bool     `json:"available"`
-	Employees []string `json:"employees"`
+	MedicSlotsAvailable     int `json:"medicSlotsAvailable"`     // Available slots for medics (0-2)
+	TechnicalSlotsAvailable int `json:"technicalSlotsAvailable"` // Available slots for technical staff (0-4)
 }
 
 // OnCallEmployeesResponse DTO for returning on-call employees
