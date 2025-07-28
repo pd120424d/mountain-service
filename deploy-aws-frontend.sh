@@ -26,10 +26,27 @@ echo "Starting AWS Frontend Deployment..."
 echo "Target: $INSTANCE_USER@$INSTANCE_IP"
 echo "Frontend Image: $FRONTEND_IMAGE"
 
-# Create deployment directory on remote server
+# Create deployment directory and cleanup on remote server
 ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $INSTANCE_USER@$INSTANCE_IP << 'EOF'
+    echo "Checking disk space..."
+    df -h /
+
+    echo "Cleaning up old containers and images..."
+    docker system prune -f || true
+    docker volume prune -f || true
+
+    echo "Cleaning up old Docker image tar files..."
+    rm -rf ~/mountain-service-images/ || true
+
+    echo "Creating deployment directory..."
     mkdir -p ~/mountain-service-frontend
     cd ~/mountain-service-frontend
+
+    echo "Removing old deployment files..."
+    rm -f docker-compose.frontend.yml .env || true
+
+    echo "Disk space after cleanup:"
+    df -h /
 EOF
 
 # Copy frontend-specific docker-compose file to remote server

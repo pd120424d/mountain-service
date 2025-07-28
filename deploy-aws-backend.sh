@@ -29,10 +29,27 @@ echo "Urgency Service: $URGENCY_SERVICE_IMAGE"
 echo "Activity Service: $ACTIVITY_SERVICE_IMAGE"
 echo "Version Service: $VERSION_SERVICE_IMAGE"
 
-# Create deployment directory on remote server
+# Create deployment directory and cleanup on remote server
 ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $INSTANCE_USER@$INSTANCE_IP << 'EOF'
+    echo "Checking disk space..."
+    df -h /
+
+    echo "Cleaning up old containers and images..."
+    docker system prune -f || true
+    docker volume prune -f || true
+
+    echo "Cleaning up old Docker image tar files..."
+    rm -rf ~/mountain-service-images/ || true
+
+    echo "Creating deployment directory..."
     mkdir -p ~/mountain-service-backend
     cd ~/mountain-service-backend
+
+    echo "Removing old deployment files..."
+    rm -f docker-compose.backend.yml .env || true
+
+    echo "Disk space after cleanup:"
+    df -h /
 EOF
 
 # Copy backend-specific docker-compose file to remote server
@@ -217,7 +234,12 @@ networks:
 EOF
 
 # Copy the docker-compose file to remote server
-scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no docker-compose.backend.yml $INSTANCE_USER@$INSTANCE_IP:~/mountain-service-backend/
+echo "Copying docker-compose file to remote server..."
+if ! scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no docker-compose.backend.yml $INSTANCE_USER@$INSTANCE_IP:~/mountain-service-backend/; then
+    echo "Failed to copy docker-compose file. Checking remote disk space..."
+    ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $INSTANCE_USER@$INSTANCE_IP "df -h /"
+    exit 1
+fi
 
 # Create backend environment file for remote server
 cat > .env.backend.remote << EOF
@@ -238,7 +260,12 @@ ACTIVITY_SERVICE_URL=$ACTIVITY_SERVICE_URL
 EOF
 
 # Copy environment file to remote server
-scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no .env.backend.remote $INSTANCE_USER@$INSTANCE_IP:~/mountain-service-backend/.env
+echo "Copying environment file to remote server..."
+if ! scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no .env.backend.remote $INSTANCE_USER@$INSTANCE_IP:~/mountain-service-backend/.env; then
+    echo "Failed to copy environment file. Checking remote disk space..."
+    ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $INSTANCE_USER@$INSTANCE_IP "df -h /"
+    exit 1
+fi
 
 # Database initialization not needed - services create their own schemas
 
