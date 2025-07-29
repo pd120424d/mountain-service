@@ -70,7 +70,15 @@
             "TECHNICAL": "Technical Staff"
         },
         "SAVE": "Save",
-        "CANCEL": "Cancel"
+        "CANCEL": "Cancel",
+        "SUBMITTING": "Saving...",
+        "CREATE_SUCCESS": "Employee created successfully!",
+        "UPDATE_SUCCESS": "Employee updated successfully!",
+        "CREATE_ERROR": "Failed to create employee. Please try again.",
+        "UPDATE_ERROR": "Failed to update employee. Please try again.",
+        "VALIDATION_ERROR": "Please check the form for errors.",
+        "NETWORK_ERROR": "Network error. Please check your connection and try again.",
+        "SERVER_ERROR": "Server error. Please try again later."
     },
     "NOT_FOUND": {
         "TITLE": "Page Not Found",

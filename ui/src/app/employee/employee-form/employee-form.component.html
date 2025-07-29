@@ -38,6 +38,23 @@
     <option value="Technical">{{ 'EMPLOYEE_FORM.PROFILE_OPTIONS.TECHNICAL' | translate }}</option>
   </select>
 
-  <button type="submit">{{ 'EMPLOYEE_FORM.SAVE' | translate }}</button>
-  <button type="button" (click)="cancel()">{{ 'EMPLOYEE_FORM.CANCEL' | translate }}</button>
+  <div class="form-actions">
+    <button
+      type="submit"
+      class="btn btn-primary"
+      [disabled]="isSubmitting || !employeeForm.valid">
+      <span *ngIf="isSubmitting">{{ 'EMPLOYEE_FORM.SUBMITTING' | translate }}</span>
+      <span *ngIf="!isSubmitting">{{ 'EMPLOYEE_FORM.SAVE' | translate }}</span>
+    </button>
+    <button
+      type="button"
+      class="btn btn-secondary"
+      [disabled]="isSubmitting"
+      (click)="cancel()">
+      {{ 'EMPLOYEE_FORM.CANCEL' | translate }}
+    </button>
+  </div>
 </form>
+
+<!-- Global spinner for loading states -->
+<ngx-spinner></ngx-spinner>

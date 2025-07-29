@@ -70,7 +70,15 @@
             "TECHNICAL": "Tehničko osoblje"
         },
         "SAVE": "Sačuvaj",
-        "CANCEL": "Otkaži"
+        "CANCEL": "Otkaži",
+        "SUBMITTING": "Čuvanje...",
+        "CREATE_SUCCESS": "Zaposleni je uspešno kreiran!",
+        "UPDATE_SUCCESS": "Zaposleni je uspešno ažuriran!",
+        "CREATE_ERROR": "Neuspeh prilikom kreiranja zaposlenog. Molimo pokušajte ponovo.",
+        "UPDATE_ERROR": "Neuspeh prilikom ažuriranja zaposlenog. Molimo pokušajte ponovo.",
+        "VALIDATION_ERROR": "Postoje greške u formi. Molimo vas ispravite.",
+        "NETWORK_ERROR": "Greška na mreži. Molimo proverite vašu vezu i pokušajte ponovo.",
+        "SERVER_ERROR": "Greška na serveru. Molimo pokušajte ponovo kasnije."
     },
     "NOT_FOUND": {
         "TITLE": "Stranica nije pronađena",
