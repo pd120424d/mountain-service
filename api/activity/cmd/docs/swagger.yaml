@@ -89,10 +89,12 @@ definitions:
     properties:
       activitiesByLevel:
         additionalProperties:
+          format: int64
           type: integer
         type: object
       activitiesByType:
         additionalProperties:
+          format: int64
           type: integer
         type: object
       activitiesLast7Days:

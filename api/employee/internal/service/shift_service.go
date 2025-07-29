@@ -158,15 +158,15 @@ func (s *shiftService) GetShiftsAvailability(days int) (*employeeV1.ShiftAvailab
 		dayAvailability := employeeV1.ShiftAvailabilityPerDay{}
 
 		// Initialize all shifts with zero availability
-		dayAvailability.Shift1 = employeeV1.ShiftAvailability{
+		dayAvailability.FirstShift = employeeV1.ShiftAvailability{
 			MedicSlotsAvailable:     0,
 			TechnicalSlotsAvailable: 0,
 		}
-		dayAvailability.Shift2 = employeeV1.ShiftAvailability{
+		dayAvailability.SecondShift = employeeV1.ShiftAvailability{
 			MedicSlotsAvailable:     0,
 			TechnicalSlotsAvailable: 0,
 		}
-		dayAvailability.Shift3 = employeeV1.ShiftAvailability{
+		dayAvailability.ThirdShift = employeeV1.ShiftAvailability{
 			MedicSlotsAvailable:     0,
 			TechnicalSlotsAvailable: 0,
 		}
@@ -175,11 +175,11 @@ func (s *shiftService) GetShiftsAvailability(days int) (*employeeV1.ShiftAvailab
 			var shiftAvailability *employeeV1.ShiftAvailability
 			switch shiftIndex {
 			case 0:
-				shiftAvailability = &dayAvailability.Shift1
+				shiftAvailability = &dayAvailability.FirstShift
 			case 1:
-				shiftAvailability = &dayAvailability.Shift2
+				shiftAvailability = &dayAvailability.SecondShift
 			case 2:
-				shiftAvailability = &dayAvailability.Shift3
+				shiftAvailability = &dayAvailability.ThirdShift
 			default:
 				s.log.Warnf("more than 3 shifts found for date %v, skipping the entry", date)
 				continue

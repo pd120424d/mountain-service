@@ -94,6 +94,7 @@
     },
     "SHIFT_MANAGEMENT": {
         "TITLE": "Shift Management",
+        "WARNINGS": "Shift Warnings",
         "ASSIGN": "Assign",
         "REMOVE": "Remove",
         "SHIFT": "Shift",

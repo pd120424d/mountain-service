@@ -23,7 +23,14 @@ export type {
   EmployeeLogin,
   TokenResponse,
   ErrorResponse,
-  MessageResponse
+  MessageResponse,
+  ShiftAvailability,
+  ShiftAvailabilityPerDay,
+  ShiftAvailabilityResponse,
+  AssignShiftRequest,
+  AssignShiftResponse,
+  RemoveShiftRequest,
+  ShiftResponse
 } from './generated/employee';
 
 // Urgency Service
@@ -65,6 +72,25 @@ export {
   isMedic,
   isTechnical
 } from './extensions/employee-extensions';
+
+// Legacy enum exports for backward compatibility
+export enum EmployeeResponseProfileTypeEnum {
+  Medic = "Medic",
+  Technical = "Technical",
+  Administrator = "Administrator",
+}
+
+export enum EmployeeCreateRequestProfileTypeEnum {
+  Medic = "Medic",
+  Technical = "Technical",
+  Administrator = "Administrator",
+}
+
+export enum EmployeeUpdateRequestProfileTypeEnum {
+  Medic = "Medic",
+  Technical = "Technical",
+  Administrator = "Administrator",
+}
 
 // Re-export urgency utilities
 export {

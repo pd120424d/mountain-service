@@ -7,6 +7,16 @@
     <h2 class="title">{{ 'SHIFT_MANAGEMENT.TITLE' | translate }}</h2>
   </div>
 
+  <!-- Shift Warnings -->
+  <div *ngIf="shiftWarnings.length > 0" class="warnings-section">
+    <div class="alert alert-warning">
+      <h5><i class="fas fa-exclamation-triangle"></i> {{ 'SHIFT_MANAGEMENT.WARNINGS' | translate }}</h5>
+      <ul class="mb-0">
+        <li *ngFor="let warning of shiftWarnings">{{ warning }}</li>
+      </ul>
+    </div>
+  </div>
+
   <!-- Loading state -->
   <div *ngIf="isLoading" class="loading-container">
     <div class="loading-spinner">

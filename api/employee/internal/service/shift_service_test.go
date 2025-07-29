@@ -488,12 +488,12 @@ func TestShiftService_GetShiftsAvailability(t *testing.T) {
 		assert.Contains(t, response.Days, tomorrow)
 
 		todayShifts := response.Days[today]
-		assert.Equal(t, 1, todayShifts.Shift1.MedicSlotsAvailable)
-		assert.Equal(t, 2, todayShifts.Shift1.TechnicalSlotsAvailable)
-		assert.Equal(t, 2, todayShifts.Shift2.MedicSlotsAvailable)
-		assert.Equal(t, 4, todayShifts.Shift2.TechnicalSlotsAvailable)
-		assert.Equal(t, 0, todayShifts.Shift3.MedicSlotsAvailable)
-		assert.Equal(t, 1, todayShifts.Shift3.TechnicalSlotsAvailable)
+		assert.Equal(t, 1, todayShifts.FirstShift.MedicSlotsAvailable)
+		assert.Equal(t, 2, todayShifts.FirstShift.TechnicalSlotsAvailable)
+		assert.Equal(t, 2, todayShifts.SecondShift.MedicSlotsAvailable)
+		assert.Equal(t, 4, todayShifts.SecondShift.TechnicalSlotsAvailable)
+		assert.Equal(t, 0, todayShifts.ThirdShift.MedicSlotsAvailable)
+		assert.Equal(t, 1, todayShifts.ThirdShift.TechnicalSlotsAvailable)
 	})
 }
 

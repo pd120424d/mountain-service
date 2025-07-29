@@ -9,7 +9,8 @@ import {
   isMedic,
   isTechnical
 } from './employee-extensions';
-import { EmployeeResponse, EmployeeResponseProfileTypeEnum } from '../generated/employee';
+import { EmployeeResponse } from '../generated/employee';
+import { EmployeeResponseProfileTypeEnum } from '../index';
 
 describe('Employee Extensions', () => {
   let mockEmployee: EmployeeResponse;

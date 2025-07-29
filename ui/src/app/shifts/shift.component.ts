@@ -1,5 +1,5 @@
 import { Component, OnInit } from "@angular/core";
-import { AdministratorRole, Employee, MedicRole, EmployeeRole } from "../shared/models";
+import { AdministratorRole, Employee, MedicRole, EmployeeRole, ShiftAvailabilityResponse } from "../shared/models";
 import { AuthService } from "../services/auth.service";
 import { TranslateModule, TranslateService } from "@ngx-translate/core";
 import { Router, RouterModule } from "@angular/router";
@@ -9,7 +9,6 @@ import { ShiftManagementService } from "./shift.service";
 import { ToastrService } from "ngx-toastr";
 import { NgxSpinnerService } from "ngx-spinner";
 import { BaseTranslatableComponent } from "../base-translatable.component";
-import { ShiftAvailabilityResponse } from "./shift.model";
 import { format } from 'date-fns';
 import { enUS, sr, srLatn, ru } from 'date-fns/locale';
 
@@ -29,6 +28,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   isLoading = true;
   isAssigning = false;
   isRemoving = false;
+  shiftWarnings: string[] = [];
 
   constructor(private shiftService: ShiftManagementService,
     private auth: AuthService,
@@ -43,6 +43,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     this.userRole = this.auth.getRole();
     this.userId = this.auth.getUserId();
     this.loadShifts();
+    this.loadShiftWarnings();
     if (this.userRole === AdministratorRole) {
       this.loadAllEmployees();
     }
@@ -54,7 +55,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       next: (data) => {
         console.log('Shift availability data received:', data);
         this.shiftAvailability = data;
-        this.dates = Object.keys(data.days)
+        this.dates = Object.keys(data.days || {})
           .map(d => new Date(d))
           .sort((a, b) => a.getTime() - b.getTime());
         console.log('Processed dates:', this.dates);
@@ -73,6 +74,21 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     this.shiftService.getAllEmployees().subscribe(data => {
       this.employees = data;
     });
+  }
+
+  loadShiftWarnings() {
+    if (this.userId) {
+      this.shiftService.getShiftWarnings(this.userId).subscribe({
+        next: (data) => {
+          this.shiftWarnings = data.warnings || [];
+          console.log('Shift warnings loaded:', this.shiftWarnings);
+        },
+        error: (error) => {
+          console.error('Error loading shift warnings:', error);
+          // Don't show error toast for warnings as they're not critical
+        }
+      });
+    }
   }
 
   canModifyOthers(): boolean {
@@ -151,9 +167,9 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
 
     let result = 0;
     switch (shiftType) {
-      case 1: result = day.firstShift?.medic || 0; break;
-      case 2: result = day.secondShift?.medic || 0; break;
-      case 3: result = day.thirdShift?.medic || 0; break;
+      case 1: result = day.firstShift?.medicSlotsAvailable || 0; break;
+      case 2: result = day.secondShift?.medicSlotsAvailable || 0; break;
+      case 3: result = day.thirdShift?.medicSlotsAvailable || 0; break;
       default: result = 0;
     }
 
@@ -171,9 +187,9 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
 
     let result = 0;
     switch (shiftType) {
-      case 1: result = day.firstShift?.technical || 0; break;
-      case 2: result = day.secondShift?.technical || 0; break;
-      case 3: result = day.thirdShift?.technical || 0; break;
+      case 1: result = day.firstShift?.technicalSlotsAvailable || 0; break;
+      case 2: result = day.secondShift?.technicalSlotsAvailable || 0; break;
+      case 3: result = day.thirdShift?.technicalSlotsAvailable || 0; break;
       default: result = 0;
     }
 

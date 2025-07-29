@@ -59,11 +59,11 @@ func TestMapShiftsAvailabilityToResponse(t *testing.T) {
 		testDate := time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC)
 
 		// Check that all shifts have full availability (2 medics, 4 technical)
-		assert.Equal(t, 2, response.Days[testDate].Shift1.MedicSlotsAvailable)
-		assert.Equal(t, 4, response.Days[testDate].Shift1.TechnicalSlotsAvailable)
-		assert.Equal(t, 2, response.Days[testDate].Shift2.MedicSlotsAvailable)
-		assert.Equal(t, 4, response.Days[testDate].Shift2.TechnicalSlotsAvailable)
-		assert.Equal(t, 2, response.Days[testDate].Shift3.MedicSlotsAvailable)
-		assert.Equal(t, 4, response.Days[testDate].Shift3.TechnicalSlotsAvailable)
+		assert.Equal(t, 2, response.Days[testDate].FirstShift.MedicSlotsAvailable)
+		assert.Equal(t, 4, response.Days[testDate].FirstShift.TechnicalSlotsAvailable)
+		assert.Equal(t, 2, response.Days[testDate].SecondShift.MedicSlotsAvailable)
+		assert.Equal(t, 4, response.Days[testDate].SecondShift.TechnicalSlotsAvailable)
+		assert.Equal(t, 2, response.Days[testDate].ThirdShift.MedicSlotsAvailable)
+		assert.Equal(t, 4, response.Days[testDate].ThirdShift.TechnicalSlotsAvailable)
 	})
 }

@@ -34,15 +34,15 @@ func MapShiftsAvailabilityToResponse(availability *ShiftsAvailabilityRange) *emp
 		}
 
 		response.Days[date] = employeeV1.ShiftAvailabilityPerDay{
-			Shift1: employeeV1.ShiftAvailability{
+			FirstShift: employeeV1.ShiftAvailability{
 				MedicSlotsAvailable:     max(0, day[0][Medic]),
 				TechnicalSlotsAvailable: max(0, day[0][Technical]),
 			},
-			Shift2: employeeV1.ShiftAvailability{
+			SecondShift: employeeV1.ShiftAvailability{
 				MedicSlotsAvailable:     max(0, day[1][Medic]),
 				TechnicalSlotsAvailable: max(0, day[1][Technical]),
 			},
-			Shift3: employeeV1.ShiftAvailability{
+			ThirdShift: employeeV1.ShiftAvailability{
 				MedicSlotsAvailable:     max(0, day[2][Medic]),
 				TechnicalSlotsAvailable: max(0, day[2][Technical]),
 			},

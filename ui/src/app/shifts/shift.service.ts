@@ -2,9 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-import { Employee } from '../shared/models';
-import { DatePipe } from '@angular/common';
-import { ShiftAvailabilityResponse, AssignShiftRequest, AssignShiftResponse, RemoveShiftRequest, RemoveShiftByDetailsRequest } from './shift.model';
+import { Employee, ShiftAvailabilityResponse, AssignShiftRequest, AssignShiftResponse, RemoveShiftRequest, ShiftResponse } from '../shared/models';
 
 @Injectable({
   providedIn: 'root',
@@ -38,20 +36,8 @@ export class ShiftManagementService {
       catchError(this.handleError)
     );
   }
-
-  removeEmployeeFromShift(employeeId: string, shiftId: number): Observable<any> {
-    const req = <RemoveShiftRequest>{ id: shiftId };
-    console.log('Removing employee from shift:', { employeeId, shiftId, req });
-    return this.http.request('delete', `/api/v1/employees/${employeeId}/shifts`, {
-      body: req
-    }).pipe(
-      tap(response => console.log('Removal response:', response)),
-      catchError(this.handleError)
-    );
-  }
-
   removeEmployeeFromShiftByDetails(employeeId: string, shiftType: number, date: Date): Observable<any> {
-    const req = <RemoveShiftByDetailsRequest>{
+    const req: RemoveShiftRequest = {
       shiftDate: date.toISOString().split('T')[0],
       shiftType: shiftType
     };
@@ -60,6 +46,22 @@ export class ShiftManagementService {
       body: req
     }).pipe(
       tap(response => console.log('Removal by details response:', response)),
+      catchError(this.handleError)
+    );
+  }
+
+  getShiftWarnings(employeeId: string): Observable<{warnings: string[]}> {
+    console.log(`Fetching shift warnings for employee ${employeeId}`);
+    return this.http.get<{warnings: string[]}>(`/api/v1/employees/${employeeId}/shift-warnings`).pipe(
+      tap(response => console.log('Shift warnings response:', response)),
+      catchError(this.handleError)
+    );
+  }
+
+  getEmployeeShifts(employeeId: string): Observable<ShiftResponse[]> {
+    console.log(`Fetching shifts for employee ${employeeId}`);
+    return this.http.get<ShiftResponse[]>(`/api/v1/employees/${employeeId}/shifts`).pipe(
+      tap(response => console.log('Employee shifts response:', response)),
       catchError(this.handleError)
     );
   }

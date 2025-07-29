@@ -840,13 +840,13 @@ const docTemplate = `{
         "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay": {
             "type": "object",
             "properties": {
-                "shift1": {
+                "firstShift": {
                     "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
                 },
-                "shift2": {
+                "secondShift": {
                     "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
                 },
-                "shift3": {
+                "thirdShift": {
                     "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
                 }
             }

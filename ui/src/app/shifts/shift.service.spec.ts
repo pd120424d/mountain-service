@@ -2,14 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { ShiftManagementService } from './shift.service';
-import { 
-  ShiftAvailabilityResponse, 
-  AssignShiftRequest, 
-  AssignShiftResponse, 
-  RemoveShiftRequest, 
-  RemoveShiftByDetailsRequest 
-} from './shift.model';
-import { Employee, EmployeeResponseProfileTypeEnum } from '../shared/models';
+import {
+  ShiftAvailabilityResponse,
+  AssignShiftRequest,
+  AssignShiftResponse,
+  RemoveShiftRequest,
+  Employee,
+  EmployeeResponseProfileTypeEnum
+} from '../shared/models';
 
 describe('ShiftManagementService', () => {
   let service: ShiftManagementService;
@@ -19,14 +19,14 @@ describe('ShiftManagementService', () => {
   const mockShiftAvailability: ShiftAvailabilityResponse = {
     days: {
       '2024-01-15': {
-        firstShift: { medic: 2, technical: 1 },
-        secondShift: { medic: 1, technical: 2 },
-        thirdShift: { medic: 0, technical: 1 }
+        firstShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
+        secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 2 },
+        thirdShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 1 }
       },
       '2024-01-16': {
-        firstShift: { medic: 3, technical: 2 },
-        secondShift: { medic: 2, technical: 1 },
-        thirdShift: { medic: 1, technical: 0 }
+        firstShift: { medicSlotsAvailable: 3, technicalSlotsAvailable: 2 },
+        secondShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
+        thirdShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 0 }
       }
     }
   };
@@ -188,37 +188,6 @@ describe('ShiftManagementService', () => {
     });
   });
 
-  describe('removeEmployeeFromShift', () => {
-    it('should remove employee from shift by ID', () => {
-      const employeeId = 'emp123';
-      const shiftId = 456;
-
-      service.removeEmployeeFromShift(employeeId, shiftId).subscribe(response => {
-        expect(response).toBeTruthy();
-      });
-
-      const req = httpMock.expectOne(`/api/v1/employees/${employeeId}/shifts`);
-      expect(req.request.method).toBe('DELETE');
-      expect(req.request.body).toEqual({ id: shiftId } as RemoveShiftRequest);
-      req.flush({});
-    });
-
-    it('should handle removal errors', () => {
-      const employeeId = 'emp123';
-      const shiftId = 456;
-
-      service.removeEmployeeFromShift(employeeId, shiftId).subscribe({
-        next: () => fail('Expected error'),
-        error: (error) => {
-          expect(error.message).toContain('Server error: 404');
-        }
-      });
-
-      const req = httpMock.expectOne(`/api/v1/employees/${employeeId}/shifts`);
-      req.flush('Shift not found', { status: 404, statusText: 'Not Found' });
-    });
-  });
-
   describe('removeEmployeeFromShiftByDetails', () => {
     it('should remove employee from shift by details', () => {
       const employeeId = 'emp123';
@@ -234,7 +203,7 @@ describe('ShiftManagementService', () => {
       expect(req.request.body).toEqual({
         shiftDate: '2024-01-16',
         shiftType: 2
-      } as RemoveShiftByDetailsRequest);
+      } as RemoveShiftRequest);
       req.flush({});
     });
   });

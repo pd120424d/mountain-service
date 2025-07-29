@@ -109,9 +109,9 @@ type ShiftAvailabilityResponse struct {
 // ShiftAvailabilityPerDay DTO for returning the shift availability for a certain day
 // swagger:model
 type ShiftAvailabilityPerDay struct {
-	Shift1 ShiftAvailability `json:"shift1"`
-	Shift2 ShiftAvailability `json:"shift2"`
-	Shift3 ShiftAvailability `json:"shift3"`
+	FirstShift  ShiftAvailability `json:"firstShift"`
+	SecondShift ShiftAvailability `json:"secondShift"`
+	ThirdShift  ShiftAvailability `json:"thirdShift"`
 }
 
 // ShiftAvailability DTO for returning the shift availability for a certain shift

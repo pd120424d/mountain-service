@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ShiftManagementComponent } from './shift.component';
 import { sharedTestingProviders } from '../test-utils/shared-test-imports';
 import { DatePipe } from '@angular/common';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 describe('ShiftManagementComponent', () => {
   let component: ShiftManagementComponent;
@@ -98,9 +98,9 @@ describe('ShiftManagementComponent', () => {
     component.shiftAvailability = {
       days: {
         '2024-01-15': {
-          firstShift: { medic: 2, technical: 1 },
-          secondShift: { medic: 1, technical: 2 },
-          thirdShift: { medic: 0, technical: 1 }
+          firstShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
+          secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 2 },
+          thirdShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 1 }
         }
       }
     };
@@ -113,9 +113,9 @@ describe('ShiftManagementComponent', () => {
     component.shiftAvailability = {
       days: {
         '2024-01-15': {
-          firstShift: { medic: 2, technical: 1 },
-          secondShift: { medic: 1, technical: 2 },
-          thirdShift: { medic: 0, technical: 1 }
+          firstShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
+          secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 2 },
+          thirdShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 1 }
         }
       }
     };
@@ -134,6 +134,84 @@ describe('ShiftManagementComponent', () => {
   it('should get translated date', () => {
     const date = new Date('2024-01-15');
     expect(component.getTranslatedDate(date)).toBe('Monday, January 15, 2024');
+  });
+
+  it('should load shift warnings', () => {
+    spyOn(component['shiftService'], 'getShiftWarnings').and.returnValue(of({ warnings: ['Test warning'] }));
+    component.userId = '1';
+    component.loadShiftWarnings();
+    expect(component['shiftService'].getShiftWarnings).toHaveBeenCalledWith('1');
+    expect(component.shiftWarnings).toEqual(['Test warning']);
+  });
+
+  it('should handle empty shift warnings', () => {
+    spyOn(component['shiftService'], 'getShiftWarnings').and.returnValue(of({ warnings: [] }));
+    component.userId = '1';
+    component.loadShiftWarnings();
+    expect(component.shiftWarnings).toEqual([]);
+  });
+
+  it('should handle shift warnings error silently', () => {
+    spyOn(component['shiftService'], 'getShiftWarnings').and.returnValue(throwError(() => new Error('Test error')));
+    spyOn(console, 'error');
+    component.userId = '1';
+    component.loadShiftWarnings();
+    expect(console.error).toHaveBeenCalled();
+  });
+
+  it('should not load shift warnings when userId is empty', () => {
+    spyOn(component['shiftService'], 'getShiftWarnings');
+    component.userId = '';
+    component.loadShiftWarnings();
+    expect(component['shiftService'].getShiftWarnings).not.toHaveBeenCalled();
+  });
+
+  it('should handle missing day data in getAvailableMedics', () => {
+    component.shiftAvailability = { days: {} };
+    spyOn(console, 'warn');
+    const result = component.getAvailableMedics(1, new Date('2024-01-15'));
+    expect(result).toBe(0);
+    expect(console.warn).toHaveBeenCalled();
+  });
+
+  it('should handle missing day data in getAvailableTechnicals', () => {
+    component.shiftAvailability = { days: {} };
+    spyOn(console, 'warn');
+    const result = component.getAvailableTechnicals(1, new Date('2024-01-15'));
+    expect(result).toBe(0);
+    expect(console.warn).toHaveBeenCalled();
+  });
+
+  it('should handle invalid shift type in getAvailableMedics', () => {
+    component.shiftAvailability = {
+      days: {
+        '2024-01-15': {
+          firstShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
+          secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 2 },
+          thirdShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 1 }
+        }
+      }
+    };
+    expect(component.getAvailableMedics(4, new Date('2024-01-15'))).toBe(0);
+  });
+
+  it('should handle invalid shift type in getAvailableTechnicals', () => {
+    component.shiftAvailability = {
+      days: {
+        '2024-01-15': {
+          firstShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
+          secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 2 },
+          thirdShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 1 }
+        }
+      }
+    };
+    expect(component.getAvailableTechnicals(4, new Date('2024-01-15'))).toBe(0);
+  });
+
+  it('should go back using router', () => {
+    spyOn(component['router'], 'navigate');
+    component.goBack();
+    expect(component['router'].navigate).toHaveBeenCalledWith(['/']);
   });
 
 });

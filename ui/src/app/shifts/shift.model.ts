@@ -1,44 +1,14 @@
-export interface ShiftResponse {
-  id: number;
-  shiftDate: string; // ISO format date
-  shiftType: number; // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am
-  createdAt?: string; // Optional
-}
+// Legacy interfaces - these are now generated from swagger
+// Keep this file for any custom shift-related types that aren't in the API
 
-export interface AssignShiftRequest {
-  shiftDate: string;
-  shiftType: number;
-}
-
-export interface AssignShiftResponse {
-  id: number;
-  shiftDate: string;
-  shiftType: number;
-}
-
-export interface RemoveShiftRequest {
-  id: number;
-}
-
-export interface RemoveShiftByDetailsRequest {
-  shiftDate: string;
-  shiftType: number;
-}
-
-export interface ShiftAvailabilityDto {
-  medic: number;
-  technical: number;
-}
-
-export interface ShiftAvailabilityPerDay {
-  firstShift: ShiftAvailabilityDto;
-  secondShift: ShiftAvailabilityDto;
-  thirdShift: ShiftAvailabilityDto;
-}
-
-export interface ShiftAvailabilityResponse {
-  days: {
-    [date: string]: ShiftAvailabilityPerDay;
-  };
-}
+// Re-export the generated types for backward compatibility
+export type {
+  ShiftResponse,
+  AssignShiftRequest,
+  AssignShiftResponse,
+  RemoveShiftRequest,
+  ShiftAvailability,
+  ShiftAvailabilityPerDay,
+  ShiftAvailabilityResponse
+} from '../shared/models';
 
