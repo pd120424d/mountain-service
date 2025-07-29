@@ -48,7 +48,6 @@ export class UrgencyService {
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
-    console.error('UrgencyService error:', error);
     let errorMessage = 'Something went wrong. Please try again later.';
 
     if (error.error instanceof ErrorEvent) {
@@ -63,7 +62,6 @@ export class UrgencyService {
       }
     }
 
-    console.error('Processed error message:', errorMessage);
     return throwError(() => new Error(errorMessage));
   }
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -259,6 +260,104 @@ func TestShiftService_AssignShift(t *testing.T) {
 		assert.Equal(t, "assigning this shift would result in more than 6 consecutive shifts", err.Error())
 	})
 
+	t.Run("it fails when create repository call fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
+		shiftRepoMock := repositories.NewMockShiftRepository(ctrl)
+
+		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
+
+		employee := &model.Employee{
+			ID:          1,
+			ProfileType: model.Medic,
+		}
+
+		futureDate := time.Now().UTC().Truncate(24*time.Hour).AddDate(0, 0, 7)
+		futureDateStr := futureDate.Format("2006-01-02")
+
+		req := employeeV1.AssignShiftRequest{
+			ShiftDate: futureDateStr,
+			ShiftType: 1,
+		}
+
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+			*emp = *employee
+			return nil
+		})
+
+		existingShifts := []model.Shift{
+			{ShiftDate: futureDate.AddDate(0, 0, -3)},
+			{ShiftDate: futureDate.AddDate(0, 0, -2)},
+			{ShiftDate: futureDate.AddDate(0, 0, -1)},
+			{ShiftDate: futureDate.AddDate(0, 0, 1)},
+			{ShiftDate: futureDate.AddDate(0, 0, 2)},
+		}
+
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+			*result = existingShifts
+			return nil
+		})
+
+		shiftRepoMock.EXPECT().GetOrCreateShift(futureDate, 1).Return(nil, fmt.Errorf("database error")).Times(1)
+
+		response, err := service.AssignShift(1, req)
+
+		assert.Error(t, err)
+		assert.Nil(t, response)
+		assert.Equal(t, "failed to create shift", err.Error())
+	})
+
+	t.Run("it fails when check assignment repository call fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
+		shiftRepoMock := repositories.NewMockShiftRepository(ctrl)
+
+		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
+
+		employee := &model.Employee{
+			ID:          1,
+			ProfileType: model.Medic,
+		}
+		futureDate := time.Date(2025, 8, 4, 0, 0, 0, 0, time.UTC)
+		futureDateStr := futureDate.Format("2006-01-02")
+
+		shift := &model.Shift{
+			ID:        1,
+			ShiftDate: futureDate,
+			ShiftType: 1,
+		}
+
+		req := employeeV1.AssignShiftRequest{
+			ShiftDate: futureDateStr,
+			ShiftType: 1,
+		}
+
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+			*emp = *employee
+			return nil
+		})
+
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+			*result = []model.Shift{}
+			return nil
+		})
+
+		shiftRepoMock.EXPECT().GetOrCreateShift(futureDate, 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(false, fmt.Errorf("database error")).Times(1)
+
+		response, err := service.AssignShift(1, req)
+
+		assert.Error(t, err)
+		assert.Nil(t, response)
+		assert.Equal(t, "failed to check assignment", err.Error())
+	})
+
 	t.Run("it fails when employee is already assigned to shift", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -305,6 +404,54 @@ func TestShiftService_AssignShift(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Equal(t, "employee is already assigned to this shift", err.Error())
+	})
+
+	t.Run("it fails when count assignments repository call fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
+		shiftRepoMock := repositories.NewMockShiftRepository(ctrl)
+
+		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
+
+		employee := &model.Employee{
+			ID:          1,
+			ProfileType: model.Medic,
+		}
+		futureDate := time.Date(2025, 8, 4, 0, 0, 0, 0, time.UTC)
+		futureDateStr := futureDate.Format("2006-01-02")
+
+		shift := &model.Shift{
+			ID:        1,
+			ShiftDate: futureDate,
+			ShiftType: 1,
+		}
+
+		req := employeeV1.AssignShiftRequest{
+			ShiftDate: futureDateStr,
+			ShiftType: 1,
+		}
+
+		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+			*emp = *employee
+			return nil
+		})
+
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+			*result = []model.Shift{}
+			return nil
+		})
+
+		shiftRepoMock.EXPECT().GetOrCreateShift(futureDate, 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(false, nil)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(1), model.Medic).Return(int64(1), fmt.Errorf("database error")).Times(1)
+
+		response, err := service.AssignShift(1, req)
+
+		assert.Error(t, err)
+		assert.Nil(t, response)
 	})
 
 	t.Run("it fails when shift capacity is full for medics", func(t *testing.T) {
@@ -422,7 +569,9 @@ func TestShiftService_GetShiftsAvailability(t *testing.T) {
 
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
-		response, err := service.GetShiftsAvailability(0)
+		emplId := uint(1)
+
+		response, err := service.GetShiftsAvailability(emplId, 91)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -439,9 +588,11 @@ func TestShiftService_GetShiftsAvailability(t *testing.T) {
 
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
-		shiftRepoMock.EXPECT().GetShiftAvailability(gomock.Any(), gomock.Any()).Return(nil, assert.AnError)
+		emplId := uint(1)
 
-		response, err := service.GetShiftsAvailability(7)
+		shiftRepoMock.EXPECT().GetShiftAvailabilityWithEmployeeStatus(emplId, gomock.Any(), gomock.Any()).Return(nil, assert.AnError)
+
+		response, err := service.GetShiftsAvailability(emplId, 7)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -461,24 +612,22 @@ func TestShiftService_GetShiftsAvailability(t *testing.T) {
 		today := time.Now().Truncate(24 * time.Hour)
 		tomorrow := today.AddDate(0, 0, 1)
 
-		availability := &model.ShiftsAvailabilityRange{
-			Days: map[time.Time][]map[model.ProfileType]int{
+		shiftRepoMock.EXPECT().GetShiftAvailabilityWithEmployeeStatus(uint(1), gomock.Any(), gomock.Any()).Return(&model.ShiftsAvailabilityWithEmployeeStatus{
+			Days: map[time.Time][]model.ShiftAvailabilityWithStatus{
 				today: {
-					{model.Medic: 1, model.Technical: 2},
-					{model.Medic: 2, model.Technical: 4},
-					{model.Medic: 0, model.Technical: 1},
+					{MedicSlotsAvailable: 1, TechnicalSlotsAvailable: 2, IsAssignedToEmployee: false, IsFullyBooked: false},
+					{MedicSlotsAvailable: 2, TechnicalSlotsAvailable: 4, IsAssignedToEmployee: true, IsFullyBooked: false},
+					{MedicSlotsAvailable: 0, TechnicalSlotsAvailable: 1, IsAssignedToEmployee: false, IsFullyBooked: false},
 				},
 				tomorrow: {
-					{model.Medic: 2, model.Technical: 4},
-					{model.Medic: 1, model.Technical: 3},
-					{model.Medic: 2, model.Technical: 4},
+					{MedicSlotsAvailable: 2, TechnicalSlotsAvailable: 4, IsAssignedToEmployee: false, IsFullyBooked: false},
+					{MedicSlotsAvailable: 1, TechnicalSlotsAvailable: 3, IsAssignedToEmployee: false, IsFullyBooked: false},
+					{MedicSlotsAvailable: 2, TechnicalSlotsAvailable: 4, IsAssignedToEmployee: false, IsFullyBooked: false},
 				},
 			},
-		}
+		}, nil)
 
-		shiftRepoMock.EXPECT().GetShiftAvailability(gomock.Any(), gomock.Any()).Return(availability, nil)
-
-		response, err := service.GetShiftsAvailability(2)
+		response, err := service.GetShiftsAvailability(1, 2)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -490,10 +639,18 @@ func TestShiftService_GetShiftsAvailability(t *testing.T) {
 		todayShifts := response.Days[today]
 		assert.Equal(t, 1, todayShifts.FirstShift.MedicSlotsAvailable)
 		assert.Equal(t, 2, todayShifts.FirstShift.TechnicalSlotsAvailable)
+		assert.Equal(t, false, todayShifts.FirstShift.IsAssignedToEmployee)
+		assert.Equal(t, false, todayShifts.FirstShift.IsFullyBooked)
+
 		assert.Equal(t, 2, todayShifts.SecondShift.MedicSlotsAvailable)
 		assert.Equal(t, 4, todayShifts.SecondShift.TechnicalSlotsAvailable)
+		assert.Equal(t, true, todayShifts.SecondShift.IsAssignedToEmployee)
+		assert.Equal(t, false, todayShifts.SecondShift.IsFullyBooked)
+
 		assert.Equal(t, 0, todayShifts.ThirdShift.MedicSlotsAvailable)
 		assert.Equal(t, 1, todayShifts.ThirdShift.TechnicalSlotsAvailable)
+		assert.Equal(t, false, todayShifts.ThirdShift.IsAssignedToEmployee)
+		assert.Equal(t, false, todayShifts.ThirdShift.IsFullyBooked)
 	})
 }
 

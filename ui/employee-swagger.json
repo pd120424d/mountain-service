@@ -30,6 +30,14 @@
     "ShiftAvailability": {
       "type": "object",
       "properties": {
+        "isAssignedToEmployee": {
+          "type": "boolean",
+          "description": "Whether the requesting employee is assigned to this shift"
+        },
+        "isFullyBooked": {
+          "type": "boolean",
+          "description": "Whether the shift is at full capacity (2 medics + 4 technicians)"
+        },
         "medicSlotsAvailable": {
           "type": "integer",
           "description": "Available slots for medics (0-2)"
@@ -43,13 +51,13 @@
     "ShiftAvailabilityPerDay": {
       "type": "object",
       "properties": {
-        "shift1": {
+        "firstShift": {
           "$ref": "#/definitions/ShiftAvailability"
         },
-        "shift2": {
+        "secondShift": {
           "$ref": "#/definitions/ShiftAvailability"
         },
-        "shift3": {
+        "thirdShift": {
           "$ref": "#/definitions/ShiftAvailability"
         }
       }

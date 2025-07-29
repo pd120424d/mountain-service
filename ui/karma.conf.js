@@ -19,7 +19,7 @@ module.exports = function (config) {
         reporters: [
           { type: 'html' },
           { type: 'text-summary' },
-          { type: 'json-summary' } // ✅ important for test-cover-ui.sh
+          { type: 'json-summary' } // important for test-cover-ui.sh
         ],
         fixWebpackSourcePaths: true
       },
@@ -37,10 +37,16 @@ module.exports = function (config) {
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-gpu',
-            '--remote-debugging-port=9222'
+            '--remote-debugging-port=9222',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor'
           ]
         }
       },
+      browserDisconnectTimeout: 10000,
+      browserDisconnectTolerance: 1,
+      browserNoActivityTimeout: 30000,
+      captureTimeout: 10000,
       singleRun: false,
       restartOnFileChange: true
     });

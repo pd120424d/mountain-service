@@ -117,8 +117,10 @@ type ShiftAvailabilityPerDay struct {
 // ShiftAvailability DTO for returning the shift availability for a certain shift
 // swagger:model
 type ShiftAvailability struct {
-	MedicSlotsAvailable     int `json:"medicSlotsAvailable"`     // Available slots for medics (0-2)
-	TechnicalSlotsAvailable int `json:"technicalSlotsAvailable"` // Available slots for technical staff (0-4)
+	MedicSlotsAvailable     int  `json:"medicSlotsAvailable"`     // Available slots for medics (0-2)
+	TechnicalSlotsAvailable int  `json:"technicalSlotsAvailable"` // Available slots for technical staff (0-4)
+	IsAssignedToEmployee    bool `json:"isAssignedToEmployee"`    // Whether the requesting employee is assigned to this shift
+	IsFullyBooked           bool `json:"isFullyBooked"`           // Whether the shift is at full capacity (2 medics + 4 technicians)
 }
 
 // OnCallEmployeesResponse DTO for returning on-call employees

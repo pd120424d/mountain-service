@@ -42,7 +42,6 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading urgencies:', error);
         this.error = error.message || 'Failed to load urgencies';
         this.isLoading = false;
       }

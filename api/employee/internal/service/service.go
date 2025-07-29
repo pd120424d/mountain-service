@@ -13,7 +13,7 @@ import (
 type ShiftService interface {
 	AssignShift(employeeID uint, req employeeV1.AssignShiftRequest) (*employeeV1.AssignShiftResponse, error)
 	GetShifts(employeeID uint) ([]employeeV1.ShiftResponse, error)
-	GetShiftsAvailability(days int) (*employeeV1.ShiftAvailabilityResponse, error)
+	GetShiftsAvailability(employeeID uint, days int) (*employeeV1.ShiftAvailabilityResponse, error)
 	RemoveShift(employeeID uint, req employeeV1.RemoveShiftRequest) error
 	GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error)
 	GetShiftWarnings(employeeID uint) ([]string, error)

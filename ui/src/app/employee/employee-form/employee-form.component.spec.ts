@@ -3,16 +3,31 @@ import { Router } from '@angular/router';
 import { EmployeeFormComponent } from './employee-form.component';
 import { sharedTestingProviders } from '../../test-utils/shared-test-imports';
 import { Employee, EmployeeCreateRequest, MedicRole } from '../../shared/models';
-import { of } from 'rxjs';
+import { of, EMPTY } from 'rxjs';
+import { NgxSpinnerService } from 'ngx-spinner';
+import { ToastrService } from 'ngx-toastr';
 
 describe('EmployeeFormComponent', () => {
   let component: EmployeeFormComponent;
   let fixture: ComponentFixture<EmployeeFormComponent>;
+  let mockSpinnerService: jasmine.SpyObj<NgxSpinnerService>;
+  let mockToastrService: jasmine.SpyObj<ToastrService>;
 
   beforeEach(async () => {
+    // Create spy objects for the services
+    mockSpinnerService = jasmine.createSpyObj('NgxSpinnerService', ['show', 'hide', 'getSpinner']);
+    mockToastrService = jasmine.createSpyObj('ToastrService', ['success', 'error', 'warning']);
+
+    // Configure getSpinner to return an empty observable
+    mockSpinnerService.getSpinner.and.returnValue(EMPTY);
+
     await TestBed.configureTestingModule({
       imports: [EmployeeFormComponent],
-      providers: [...sharedTestingProviders]
+      providers: [
+        ...sharedTestingProviders,
+        { provide: NgxSpinnerService, useValue: mockSpinnerService },
+        { provide: ToastrService, useValue: mockToastrService }
+      ]
     })
     .compileComponents();
 
@@ -140,6 +155,9 @@ describe('EmployeeFormComponent', () => {
     };
 
     expect(component['employeeService'].addEmployee).toHaveBeenCalledWith(expectedCreateRequest);
+    expect(mockSpinnerService.show).toHaveBeenCalled();
+    expect(mockSpinnerService.hide).toHaveBeenCalled();
+    expect(mockToastrService.success).toHaveBeenCalled();
     expect(component['router'].navigate).toHaveBeenCalledWith(['/employees']);
   });
 
@@ -148,4 +166,6 @@ describe('EmployeeFormComponent', () => {
     component.cancel();
     expect(component['router'].navigate).toHaveBeenCalledWith(['/employees']);
   });
+
+
 });

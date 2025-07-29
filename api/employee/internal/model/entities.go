@@ -48,6 +48,17 @@ type ShiftsAvailabilityRange struct {
 	Days map[time.Time][]map[ProfileType]int `json:"days"`
 }
 
+type ShiftAvailabilityWithStatus struct {
+	MedicSlotsAvailable     int  `json:"medicSlotsAvailable"`
+	TechnicalSlotsAvailable int  `json:"technicalSlotsAvailable"`
+	IsAssignedToEmployee    bool `json:"isAssignedToEmployee"`
+	IsFullyBooked           bool `json:"isFullyBooked"`
+}
+
+type ShiftsAvailabilityWithEmployeeStatus struct {
+	Days map[time.Time][]ShiftAvailabilityWithStatus `json:"days"`
+}
+
 func (p ProfileType) String() string {
 	switch {
 	case p == Medic:

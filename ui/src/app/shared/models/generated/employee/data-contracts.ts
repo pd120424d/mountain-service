@@ -19,6 +19,10 @@ export interface MessageResponse {
 }
 
 export interface ShiftAvailability {
+  /** Whether the requesting employee is assigned to this shift */
+  isAssignedToEmployee?: boolean;
+  /** Whether the shift is at full capacity (2 medics + 4 technicians) */
+  isFullyBooked?: boolean;
   /** Available slots for medics (0-2) */
   medicSlotsAvailable?: number;
   /** Available slots for technical staff (0-4) */

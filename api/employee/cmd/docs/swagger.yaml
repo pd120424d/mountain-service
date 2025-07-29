@@ -1,11 +1,21 @@
 basePath: /api/v1
 definitions:
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.ActiveEmergenciesResponse:
+  github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  github_com_pd120424d_mountain-service_api_contracts_employee_v1.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  v1.ActiveEmergenciesResponse:
     properties:
       hasActiveEmergencies:
         type: boolean
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.AssignShiftRequest:
+  v1.AssignShiftRequest:
     properties:
       shiftDate:
         type: string
@@ -17,7 +27,7 @@ definitions:
     - shiftDate
     - shiftType
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.AssignShiftResponse:
+  v1.AssignShiftResponse:
     properties:
       id:
         type: integer
@@ -30,7 +40,7 @@ definitions:
     - shiftDate
     - shiftType
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeCreateRequest:
+  v1.EmployeeCreateRequest:
     properties:
       email:
         type: string
@@ -59,14 +69,14 @@ definitions:
     - phone
     - username
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeLogin:
+  v1.EmployeeLogin:
     properties:
       password:
         type: string
       username:
         type: string
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse:
+  v1.EmployeeResponse:
     properties:
       email:
         type: string
@@ -89,7 +99,7 @@ definitions:
       username:
         type: string
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeUpdateRequest:
+  v1.EmployeeUpdateRequest:
     properties:
       email:
         type: string
@@ -108,24 +118,14 @@ definitions:
       username:
         type: string
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse:
-    properties:
-      error:
-        type: string
-    type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.MessageResponse:
-    properties:
-      message:
-        type: string
-    type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.OnCallEmployeesResponse:
+  v1.OnCallEmployeesResponse:
     properties:
       employees:
         items:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse'
+          $ref: '#/definitions/v1.EmployeeResponse'
         type: array
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.RemoveShiftRequest:
+  v1.RemoveShiftRequest:
     properties:
       shiftDate:
         type: string
@@ -137,8 +137,14 @@ definitions:
     - shiftDate
     - shiftType
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability:
+  v1.ShiftAvailability:
     properties:
+      isAssignedToEmployee:
+        description: Whether the requesting employee is assigned to this shift
+        type: boolean
+      isFullyBooked:
+        description: Whether the shift is at full capacity (2 medics + 4 technicians)
+        type: boolean
       medicSlotsAvailable:
         description: Available slots for medics (0-2)
         type: integer
@@ -146,23 +152,23 @@ definitions:
         description: Available slots for technical staff (0-4)
         type: integer
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay:
+  v1.ShiftAvailabilityPerDay:
     properties:
       firstShift:
-        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability'
+        $ref: '#/definitions/v1.ShiftAvailability'
       secondShift:
-        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability'
+        $ref: '#/definitions/v1.ShiftAvailability'
       thirdShift:
-        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability'
+        $ref: '#/definitions/v1.ShiftAvailability'
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityResponse:
+  v1.ShiftAvailabilityResponse:
     properties:
       days:
         additionalProperties:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay'
+          $ref: '#/definitions/v1.ShiftAvailabilityPerDay'
         type: object
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftResponse:
+  v1.ShiftResponse:
     properties:
       createdAt:
         type: string
@@ -174,7 +180,7 @@ definitions:
         description: '1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid'
         type: integer
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.TokenResponse:
+  v1.TokenResponse:
     properties:
       token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -224,7 +230,7 @@ paths:
           schema:
             items:
               items:
-                $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse'
+                $ref: '#/definitions/v1.EmployeeResponse'
               type: array
             type: array
       security:
@@ -242,14 +248,14 @@ paths:
         name: employee
         required: true
         schema:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeCreateRequest'
+          $ref: '#/definitions/v1.EmployeeCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse'
+            $ref: '#/definitions/v1.EmployeeResponse'
         "400":
           description: Bad Request
           schema:
@@ -291,12 +297,12 @@ paths:
         name: employee
         required: true
         schema:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeUpdateRequest'
+          $ref: '#/definitions/v1.EmployeeUpdateRequest'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse'
+            $ref: '#/definitions/v1.EmployeeResponse'
         "400":
           description: Bad Request
           schema:
@@ -331,7 +337,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ActiveEmergenciesResponse'
+            $ref: '#/definitions/v1.ActiveEmergenciesResponse'
         "400":
           description: Bad Request
           schema:
@@ -399,7 +405,7 @@ paths:
         name: shift
         required: true
         schema:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.RemoveShiftRequest'
+          $ref: '#/definitions/v1.RemoveShiftRequest'
       responses:
         "204":
           description: No Content
@@ -425,7 +431,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftResponse'
+              $ref: '#/definitions/v1.ShiftResponse'
             type: array
       security:
       - OAuth2Password: []
@@ -445,12 +451,12 @@ paths:
         name: shift
         required: true
         schema:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.AssignShiftRequest'
+          $ref: '#/definitions/v1.AssignShiftRequest'
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.AssignShiftResponse'
+            $ref: '#/definitions/v1.AssignShiftResponse'
         "400":
           description: Bad Request
           schema:
@@ -477,7 +483,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.OnCallEmployeesResponse'
+            $ref: '#/definitions/v1.OnCallEmployeesResponse'
         "400":
           description: Bad Request
           schema:
@@ -502,14 +508,14 @@ paths:
         name: employee
         required: true
         schema:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeLogin'
+          $ref: '#/definitions/v1.EmployeeLogin'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.TokenResponse'
+            $ref: '#/definitions/v1.TokenResponse'
         "401":
           description: Unauthorized
           schema:
@@ -564,7 +570,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityResponse'
+            $ref: '#/definitions/v1.ShiftAvailabilityResponse'
         "400":
           description: Bad Request
           schema:

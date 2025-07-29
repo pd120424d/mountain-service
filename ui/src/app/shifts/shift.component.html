@@ -5,6 +5,49 @@
       {{ 'GO_HOME' | translate }}
     </button>
     <h2 class="title">{{ 'SHIFT_MANAGEMENT.TITLE' | translate }}</h2>
+
+    <!-- Time span selector -->
+    <div class="time-span-selector">
+      <label class="selector-label" id="time-span-label">{{ 'SHIFT_MANAGEMENT.TIME_SPAN' | translate }}:</label>
+      <div class="btn-group" role="group" aria-labelledby="time-span-label">
+        <button type="button"
+                class="btn btn-outline-primary time-span-btn"
+                [class.active]="selectedTimeSpan === 7"
+                (click)="changeTimeSpan(7)"
+                [disabled]="isLoading"
+                [attr.aria-pressed]="selectedTimeSpan === 7"
+                [attr.aria-label]="'SHIFT_MANAGEMENT.ONE_WEEK' | translate">
+          {{ 'SHIFT_MANAGEMENT.ONE_WEEK' | translate }}
+        </button>
+        <button type="button"
+                class="btn btn-outline-primary time-span-btn"
+                [class.active]="selectedTimeSpan === 14"
+                (click)="changeTimeSpan(14)"
+                [disabled]="isLoading"
+                [attr.aria-pressed]="selectedTimeSpan === 14"
+                [attr.aria-label]="'SHIFT_MANAGEMENT.TWO_WEEKS' | translate">
+          {{ 'SHIFT_MANAGEMENT.TWO_WEEKS' | translate }}
+        </button>
+        <button type="button"
+                class="btn btn-outline-primary time-span-btn"
+                [class.active]="selectedTimeSpan === 21"
+                (click)="changeTimeSpan(21)"
+                [disabled]="isLoading"
+                [attr.aria-pressed]="selectedTimeSpan === 21"
+                [attr.aria-label]="'SHIFT_MANAGEMENT.THREE_WEEKS' | translate">
+          {{ 'SHIFT_MANAGEMENT.THREE_WEEKS' | translate }}
+        </button>
+        <button type="button"
+                class="btn btn-outline-primary time-span-btn"
+                [class.active]="selectedTimeSpan === 28"
+                (click)="changeTimeSpan(28)"
+                [disabled]="isLoading"
+                [attr.aria-pressed]="selectedTimeSpan === 28"
+                [attr.aria-label]="'SHIFT_MANAGEMENT.FOUR_WEEKS' | translate">
+          {{ 'SHIFT_MANAGEMENT.FOUR_WEEKS' | translate }}
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Shift Warnings -->
@@ -31,23 +74,62 @@
         {{ getTranslatedDate(day) }}
       </h3>
 
-      <div *ngFor="let shiftType of [1, 2, 3]" class="shift-card" [ngClass]="'shift-type-' + shiftType">
+      <div *ngFor="let shiftType of [1, 2, 3]" class="shift-card"
+           [ngClass]="{
+             'shift-type-1': shiftType === 1,
+             'shift-type-2': shiftType === 2,
+             'shift-type-3': shiftType === 3,
+             'assigned': isAssignedToShift(shiftType, day),
+             'fully-booked': isShiftFullyBooked(shiftType, day)
+           }">
         <h4 class="shift-title">
           <span class="badge" [ngClass]="'badge-' + shiftType">
             {{ getShiftLabel(shiftType) }}
           </span>
           {{ 'SHIFT_MANAGEMENT.SHIFT' | translate }} {{ shiftType }}
+          <span *ngIf="isAssignedToShift(shiftType, day)" class="assigned-indicator">
+            <i class="fas fa-check-circle" style="color: #28a745; margin-left: 0.5rem;"></i>
+          </span>
+          <span *ngIf="isShiftFullyBooked(shiftType, day)" class="fully-booked-indicator">
+            <i class="fas fa-exclamation-triangle" style="color: #dc3545; margin-left: 0.5rem;"></i>
+          </span>
         </h4>
 
         <div class="shift-info">
-          <p>
-            {{ 'SHIFT_MANAGEMENT.MEDICS' | translate }}:
-            <strong>{{ getAvailableMedics(shiftType, day) }}</strong>
-          </p>
-          <p>
-            {{ 'SHIFT_MANAGEMENT.TECHNICALS' | translate }}:
-            <strong>{{ getAvailableTechnicals(shiftType, day) }}</strong>
-          </p>
+          <div class="capacity-row">
+            <span class="capacity-label">{{ 'SHIFT_MANAGEMENT.MEDICS' | translate }}:</span>
+            <div class="capacity-indicator">
+              <span class="capacity-available" [ngClass]="{'low-capacity': getAvailableMedics(shiftType, day) <= 1, 'no-capacity': getAvailableMedics(shiftType, day) === 0}">
+                {{ getAvailableMedics(shiftType, day) }}
+              </span>
+              <span class="capacity-total">/ 2</span>
+              <div class="capacity-bar">
+                <div class="capacity-fill medic-fill" [style.width.%]="(2 - getAvailableMedics(shiftType, day)) * 50"></div>
+              </div>
+            </div>
+          </div>
+          <div class="capacity-row">
+            <span class="capacity-label">{{ 'SHIFT_MANAGEMENT.TECHNICALS' | translate }}:</span>
+            <div class="capacity-indicator">
+              <span class="capacity-available" [ngClass]="{'low-capacity': getAvailableTechnicals(shiftType, day) <= 1, 'no-capacity': getAvailableTechnicals(shiftType, day) === 0}">
+                {{ getAvailableTechnicals(shiftType, day) }}
+              </span>
+              <span class="capacity-total">/ 4</span>
+              <div class="capacity-bar">
+                <div class="capacity-fill technical-fill" [style.width.%]="(4 - getAvailableTechnicals(shiftType, day)) * 25"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Capacity warning -->
+          <div *ngIf="isShiftFullyBooked(shiftType, day)" class="capacity-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ 'SHIFT_MANAGEMENT.FULLY_BOOKED' | translate }}
+          </div>
+          <div *ngIf="isShiftLowCapacity(shiftType, day) && !isShiftFullyBooked(shiftType, day)" class="capacity-warning low">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ 'SHIFT_MANAGEMENT.LOW_CAPACITY' | translate }}
+          </div>
         </div>
 
         <!-- Admin view -->
@@ -65,13 +147,15 @@
           <div class="hover-actions">
             <div class="button-group">
               <button class="btn assign" (click)="assignToShift(shiftType, day, selectedEmployee.value)"
-                [disabled]="!selectedEmployee.value || isAssigning || isRemoving" [title]="'SHIFT_MANAGEMENT.TOOLTIP_ASSIGN' | translate">
+                [disabled]="!canAssignToShift(shiftType, day, selectedEmployee.value)"
+                [title]="getAssignButtonTooltip(shiftType, day, selectedEmployee.value)">
                 <i class="fas" [ngClass]="isAssigning ? 'fa-spinner fa-spin' : 'fa-user-plus'"></i>
                 {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
               </button>
 
               <button class="btn remove" (click)="removeFromShift(shiftType, selectedEmployee.value, day)"
-                [disabled]="!selectedEmployee.value || isAssigning || isRemoving" [title]="'SHIFT_MANAGEMENT.TOOLTIP_REMOVE' | translate">
+                [disabled]="!canRemoveFromShift(shiftType, day, selectedEmployee.value)"
+                [title]="getRemoveButtonTooltip(shiftType, day, selectedEmployee.value)">
                 <i class="fas" [ngClass]="isRemoving ? 'fa-spinner fa-spin' : 'fa-user-minus'"></i>
                 {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
               </button>
@@ -84,13 +168,15 @@
           <div class="hover-actions">
             <div class="button-group">
               <button class="btn add-me" (click)="assignToShift(shiftType, day)"
-                [disabled]="isAssigning || isRemoving" [title]="'SHIFT_MANAGEMENT.TOOLTIP_ADD_ME' | translate">
+                [disabled]="!canAssignToShift(shiftType, day)"
+                [title]="getAssignButtonTooltip(shiftType, day)">
                 <i class="fas" [ngClass]="isAssigning ? 'fa-spinner fa-spin' : 'fa-user-plus'"></i>
                 {{ 'SHIFT_MANAGEMENT.ASSIGN' | translate }}
               </button>
 
               <button class="btn remove-me" (click)="removeFromShift(shiftType, undefined, day)"
-                [disabled]="isAssigning || isRemoving" [title]="'SHIFT_MANAGEMENT.TOOLTIP_REMOVE_ME' | translate">
+                [disabled]="!canRemoveFromShift(shiftType, day)"
+                [title]="getRemoveButtonTooltip(shiftType, day)">
                 <i class="fas" [ngClass]="isRemoving ? 'fa-spinner fa-spin' : 'fa-user-minus'"></i>
                 {{ 'SHIFT_MANAGEMENT.REMOVE' | translate }}
               </button>

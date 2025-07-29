@@ -414,3 +414,52 @@ func TestShiftRepository_shiftBufferLogic(t *testing.T) {
 		})
 	}
 }
+
+func TestShiftRepositoryMockDB_GetShiftAvailabilityWithEmployeeStatus(t *testing.T) {
+	log := utils.NewTestLogger()
+
+	gormDB, mock := setupMockDB(t)
+	repo := NewShiftRepository(log, gormDB)
+	gormDB.Logger = gormDB.Logger.LogMode(logger.Info)
+
+	t.Run("it returns shift availability with employee assignment status", func(t *testing.T) {
+		start := time.Date(2025, 8, 1, 0, 0, 0, 0, time.UTC)
+		end := start.AddDate(0, 0, 1)
+		employeeID := uint(1)
+
+		// Mock the query for assigned employees grouped by shift and role
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT shifts.shift_date, shifts.shift_type, employees.profile_type AS employee_role, COUNT(*) AS count FROM "shifts" JOIN employee_shifts ON shifts.id = employee_shifts.shift_id JOIN employees ON employee_shifts.employee_id = employees.id WHERE shift_date >= $1 AND shift_date < $2 GROUP BY shifts.shift_date, shifts.shift_type, employees.profile_type`)).
+			WithArgs(start, end).
+			WillReturnRows(sqlmock.NewRows([]string{"shift_date", "shift_type", "employee_role", "count"}).
+				AddRow(start, 1, "Medic", 1))
+
+		// Mock the query for employee assignments
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT shifts.shift_date, shifts.shift_type FROM "shifts" JOIN employee_shifts ON shifts.id = employee_shifts.shift_id WHERE employee_shifts.employee_id = $1 AND shift_date >= $2 AND shift_date < $3`)).
+			WithArgs(employeeID, start, end).
+			WillReturnRows(sqlmock.NewRows([]string{"shift_date", "shift_type"}).
+				AddRow(start, 1))
+
+		result, err := repo.GetShiftAvailabilityWithEmployeeStatus(employeeID, start, end)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Contains(t, result.Days, start)
+
+		dayShifts := result.Days[start]
+		assert.Len(t, dayShifts, 3)
+
+		// First shift should show employee is assigned and reduced medic availability
+		firstShift := dayShifts[0]
+		assert.Equal(t, 1, firstShift.MedicSlotsAvailable) // 2 - 1 assigned
+		assert.Equal(t, 4, firstShift.TechnicalSlotsAvailable)
+		assert.True(t, firstShift.IsAssignedToEmployee)
+		assert.False(t, firstShift.IsFullyBooked)
+
+		// Other shifts should show employee is not assigned
+		secondShift := dayShifts[1]
+		assert.Equal(t, 2, secondShift.MedicSlotsAvailable)
+		assert.Equal(t, 4, secondShift.TechnicalSlotsAvailable)
+		assert.False(t, secondShift.IsAssignedToEmployee)
+		assert.False(t, secondShift.IsFullyBooked)
+	})
+}

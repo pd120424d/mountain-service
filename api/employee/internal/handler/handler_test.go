@@ -185,7 +185,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 }
 
 func TestEmployeeHandler_LoginEmployee(t *testing.T) {
-	t.Parallel()
+	// Note: Not using t.Parallel() because this test modifies environment variables
 
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -361,7 +361,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 }
 
 func TestEmployeeHandler_OAuth2Token(t *testing.T) {
-	t.Parallel()
+	// Note: Not using t.Parallel() because this test modifies environment variables
 
 	t.Run("it returns an error when username is not provided", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -1135,6 +1135,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability?days=invalid", nil)
+		ctx.Set("employeeID", "1")
 
 		handler.GetShiftsAvailability(ctx)
 
@@ -1156,6 +1157,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability?days=0", nil)
+		ctx.Set("employeeID", "1")
 
 		handler.GetShiftsAvailability(ctx)
 
@@ -1177,8 +1179,9 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability?days=7", nil)
+		ctx.Set("employeeID", "1")
 
-		mockShiftSvc.EXPECT().GetShiftsAvailability(7).Return(nil, fmt.Errorf("database error"))
+		mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 7).Return(nil, fmt.Errorf("database error"))
 
 		handler.GetShiftsAvailability(ctx)
 
@@ -1200,10 +1203,11 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability", nil)
+		ctx.Set("employeeID", "1")
 
 		response := &employeeV1.ShiftAvailabilityResponse{}
 
-		mockShiftSvc.EXPECT().GetShiftsAvailability(7).Return(response, nil)
+		mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 7).Return(response, nil)
 
 		handler.GetShiftsAvailability(ctx)
 
@@ -1224,10 +1228,11 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability?days=14", nil)
+		ctx.Set("employeeID", "1")
 
 		response := &employeeV1.ShiftAvailabilityResponse{}
 
-		mockShiftSvc.EXPECT().GetShiftsAvailability(14).Return(response, nil)
+		mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 14).Return(response, nil)
 
 		handler.GetShiftsAvailability(ctx)
 

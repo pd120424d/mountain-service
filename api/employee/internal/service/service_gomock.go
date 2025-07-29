@@ -97,18 +97,18 @@ func (mr *MockShiftServiceMockRecorder) GetShifts(employeeID interface{}) *gomoc
 }
 
 // GetShiftsAvailability mocks base method.
-func (m *MockShiftService) GetShiftsAvailability(days int) (*v1.ShiftAvailabilityResponse, error) {
+func (m *MockShiftService) GetShiftsAvailability(employeeID uint, days int) (*v1.ShiftAvailabilityResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetShiftsAvailability", days)
+	ret := m.ctrl.Call(m, "GetShiftsAvailability", employeeID, days)
 	ret0, _ := ret[0].(*v1.ShiftAvailabilityResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetShiftsAvailability indicates an expected call of GetShiftsAvailability.
-func (mr *MockShiftServiceMockRecorder) GetShiftsAvailability(days interface{}) *gomock.Call {
+func (mr *MockShiftServiceMockRecorder) GetShiftsAvailability(employeeID, days interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftsAvailability", reflect.TypeOf((*MockShiftService)(nil).GetShiftsAvailability), days)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftsAvailability", reflect.TypeOf((*MockShiftService)(nil).GetShiftsAvailability), employeeID, days)
 }
 
 // RemoveShift mocks base method.

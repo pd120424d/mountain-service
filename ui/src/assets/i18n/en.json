@@ -120,7 +120,21 @@
         "TOOLTIP_ADD_ME": "Reserve this shift",
         "TOOLTIP_REMOVE_ME": "Cancel reservation",
         "TOOLTIP_ASSIGN": "Assign selected employee to this shift",
-        "TOOLTIP_REMOVE": "Remove selected employee from this shift"
+        "TOOLTIP_REMOVE": "Remove selected employee from this shift",
+        "TOOLTIP_PROCESSING": "Processing request...",
+        "TOOLTIP_SELECT_EMPLOYEE": "Please select an employee first",
+        "TOOLTIP_ALREADY_ASSIGNED": "You are already assigned to this shift",
+        "TOOLTIP_FULLY_BOOKED": "This shift is fully booked",
+        "TOOLTIP_NOT_ASSIGNED": "You are not assigned to this shift",
+        "TIME_SPAN": "Time Span",
+        "ONE_WEEK": "1 Week",
+        "TWO_WEEKS": "2 Weeks",
+        "THREE_WEEKS": "3 Weeks",
+        "FOUR_WEEKS": "4 Weeks",
+        "FULLY_BOOKED": "Fully Booked",
+        "LOW_CAPACITY": "Low Capacity",
+        "CONFIRM_ASSIGN": "Are you sure you want to assign to {{shift}} on {{date}}?",
+        "CONFIRM_REMOVE": "Are you sure you want to remove from {{shift}} on {{date}}?"
     },
     "ADMIN_PANEL": {
         "TITLE": "Admin Panel",

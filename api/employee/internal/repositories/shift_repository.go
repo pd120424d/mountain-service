@@ -21,6 +21,7 @@ type ShiftRepository interface {
 	GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error
 	GetShiftsByEmployeeIDInDateRange(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error
 	GetShiftAvailability(start, end time.Time) (*model.ShiftsAvailabilityRange, error)
+	GetShiftAvailabilityWithEmployeeStatus(employeeID uint, start, end time.Time) (*model.ShiftsAvailabilityWithEmployeeStatus, error)
 	RemoveEmployeeFromShiftByDetails(employeeID uint, shiftDate time.Time, shiftType int) error
 	GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]model.Employee, error)
 }
@@ -141,6 +142,91 @@ func (r *shiftRepository) GetShiftAvailability(start, end time.Time) (*model.Shi
 
 		if shifts, ok := result.Days[day]; ok && shiftIndex >= 0 && shiftIndex < len(shifts) {
 			shifts[shiftIndex][role] -= c.Count
+		}
+	}
+
+	return &result, nil
+}
+
+func (r *shiftRepository) GetShiftAvailabilityWithEmployeeStatus(employeeID uint, start, end time.Time) (*model.ShiftsAvailabilityWithEmployeeStatus, error) {
+	result := model.ShiftsAvailabilityWithEmployeeStatus{
+		Days: map[time.Time][]model.ShiftAvailabilityWithStatus{},
+	}
+
+	// Initial availability per shift
+	for d := start; d.Before(end); d = d.Add(24 * time.Hour) {
+		day := d.Truncate(24 * time.Hour)
+		result.Days[day] = []model.ShiftAvailabilityWithStatus{
+			{MedicSlotsAvailable: 2, TechnicalSlotsAvailable: 4, IsAssignedToEmployee: false, IsFullyBooked: false},
+			{MedicSlotsAvailable: 2, TechnicalSlotsAvailable: 4, IsAssignedToEmployee: false, IsFullyBooked: false},
+			{MedicSlotsAvailable: 2, TechnicalSlotsAvailable: 4, IsAssignedToEmployee: false, IsFullyBooked: false},
+		}
+	}
+
+	// Query assigned employees grouped by shift and role
+	var counts []struct {
+		ShiftDate    time.Time
+		ShiftType    int
+		EmployeeRole string
+		Count        int
+	}
+
+	err := r.db.Table("shifts").
+		Joins("JOIN employee_shifts ON shifts.id = employee_shifts.shift_id").
+		Joins("JOIN employees ON employee_shifts.employee_id = employees.id").
+		Select("shifts.shift_date, shifts.shift_type, employees.profile_type AS employee_role, COUNT(*) AS count").
+		Where("shift_date >= ? AND shift_date < ?", start, end).
+		Group("shifts.shift_date, shifts.shift_type, employees.profile_type").
+		Scan(&counts).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply the counts to reduce availability
+	for _, count := range counts {
+		day := count.ShiftDate.Truncate(24 * time.Hour)
+		if dayShifts, exists := result.Days[day]; exists {
+			shiftIndex := count.ShiftType - 1 // Convert to 0-based index
+			if shiftIndex >= 0 && shiftIndex < len(dayShifts) {
+				switch count.EmployeeRole {
+				case "Medic":
+					result.Days[day][shiftIndex].MedicSlotsAvailable = max(0, 2-count.Count)
+				case "Technical":
+					result.Days[day][shiftIndex].TechnicalSlotsAvailable = max(0, 4-count.Count)
+				}
+			}
+		}
+	}
+
+	var employeeAssignments []struct {
+		ShiftDate time.Time
+		ShiftType int
+	}
+
+	// Check if employee is assigned to each shift and if shifts are fully booked
+	err = r.db.Table("shifts").
+		Joins("JOIN employee_shifts ON shifts.id = employee_shifts.shift_id").
+		Select("shifts.shift_date, shifts.shift_type").
+		Where("employee_shifts.employee_id = ? AND shift_date >= ? AND shift_date < ?", employeeID, start, end).
+		Scan(&employeeAssignments).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for _, assignment := range employeeAssignments {
+		day := assignment.ShiftDate.Truncate(24 * time.Hour)
+		if dayShifts, exists := result.Days[day]; exists {
+			shiftIndex := assignment.ShiftType - 1
+			if shiftIndex >= 0 && shiftIndex < len(dayShifts) {
+				result.Days[day][shiftIndex].IsAssignedToEmployee = true
+			}
+		}
+	}
+
+	// Mark fully booked shifts
+	for day, dayShifts := range result.Days {
+		for i, shift := range dayShifts {
+			result.Days[day][i].IsFullyBooked = shift.MedicSlotsAvailable == 0 && shift.TechnicalSlotsAvailable == 0
 		}
 	}
 

@@ -422,6 +422,21 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	h.log.Infof("Received Get Shifts Availability request for the next %s days", ctx.Query("days"))
 
+	// Extract employee ID from authentication context
+	employeeIDStr, exists := ctx.Get("employeeID")
+	if !exists {
+		h.log.Errorf("employee ID not found in context")
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	employeeID, err := strconv.Atoi(employeeIDStr.(string))
+	if err != nil || employeeID <= 0 {
+		h.log.Errorf("invalid employee ID in context: %v", employeeIDStr)
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid employee ID"})
+		return
+	}
+
 	daysStr := ctx.DefaultQuery("days", "7")
 	days, err := strconv.Atoi(daysStr)
 	if err != nil || days <= 0 {
@@ -430,14 +445,14 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 		return
 	}
 
-	response, err := h.shiftService.GetShiftsAvailability(days)
+	response, err := h.shiftService.GetShiftsAvailability(uint(employeeID), days)
 	if err != nil {
 		h.log.Errorf("failed to get shifts availability: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	h.log.Infof("Successfully retrieved shifts availability for the next %v days", days)
+	h.log.Infof("Successfully retrieved shifts availability for employee %d for the next %v days", employeeID, days)
 	ctx.JSON(http.StatusOK, response)
 }
 

@@ -67,7 +67,6 @@ export class ShiftManagementService {
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
-    console.error('ShiftManagementService error:', error);
     let errorMessage = 'An unknown error occurred';
 
     if (error.error instanceof ErrorEvent) {
@@ -83,7 +82,6 @@ export class ShiftManagementService {
       }
     }
 
-    console.error('Processed error message:', errorMessage);
     return throwError(() => new Error(errorMessage));
   }
 }

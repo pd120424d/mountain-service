@@ -119,7 +119,21 @@
     "TOOLTIP_ADD_ME": "Резервиши смену",
     "TOOLTIP_REMOVE_ME": "Откажи смену",
     "TOOLTIP_ASSIGN": "Додели смену",
-    "TOOLTIP_REMOVE": "Уклони смену"
+    "TOOLTIP_REMOVE": "Уклони смену",
+    "TOOLTIP_PROCESSING": "Обрађује се захтев...",
+    "TOOLTIP_SELECT_EMPLOYEE": "Молимо прво изаберите запосленог",
+    "TOOLTIP_ALREADY_ASSIGNED": "Већ сте додељени овој смени",
+    "TOOLTIP_FULLY_BOOKED": "Ова смена је потпуно попуњена",
+    "TOOLTIP_NOT_ASSIGNED": "Нисте додељени овој смени",
+    "TIME_SPAN": "Временски период",
+    "ONE_WEEK": "1 недеља",
+    "TWO_WEEKS": "2 недеље",
+    "THREE_WEEKS": "3 недеље",
+    "FOUR_WEEKS": "4 недеље",
+    "FULLY_BOOKED": "Потпуно попуњено",
+    "LOW_CAPACITY": "Низак капацитет",
+    "CONFIRM_ASSIGN": "Да ли сте сигурни да желите да се доделите на {{shift}} дана {{date}}?",
+    "CONFIRM_REMOVE": "Да ли сте сигурни да желите да се уклоните са {{shift}} дана {{date}}?"
   },
   "ADMIN_PANEL": {
     "TITLE": "Админ панел",

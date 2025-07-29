@@ -28,7 +28,7 @@ export interface UrgencyCreateRequest {
   firstName: string;
   lastName: string;
   /** @format email */
-  email: string;
+  email?: string;
   contactPhone: string;
   location: string;
   description: string;

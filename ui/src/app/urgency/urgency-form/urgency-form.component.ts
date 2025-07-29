@@ -58,7 +58,6 @@ export class UrgencyFormComponent extends BaseTranslatableComponent implements O
           this.router.navigate(['/']);
         },
         error: (error) => {
-          console.error('Error creating urgency:', error);
           this.isSubmitting = false;
         }
       });

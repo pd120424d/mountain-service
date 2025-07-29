@@ -65,7 +65,7 @@ func (s *shiftService) AssignShift(employeeID uint, req employeeV1.AssignShiftRe
 	shift, err := s.shiftsRepo.GetOrCreateShift(shiftDate, req.ShiftType)
 	if err != nil {
 		s.log.Errorf("failed to get or create shift: %v", err)
-		return nil, fmt.Errorf("failed to process shift")
+		return nil, fmt.Errorf("failed to create shift")
 	}
 
 	// Step 7: Check if employee is already assigned
@@ -133,8 +133,8 @@ func (s *shiftService) GetShifts(employeeID uint) ([]employeeV1.ShiftResponse, e
 	return response, nil
 }
 
-func (s *shiftService) GetShiftsAvailability(days int) (*employeeV1.ShiftAvailabilityResponse, error) {
-	s.log.Infof("Getting shift availability for %d days", days)
+func (s *shiftService) GetShiftsAvailability(employeeID uint, days int) (*employeeV1.ShiftAvailabilityResponse, error) {
+	s.log.Infof("Getting shift availability for employee %d for %d days", employeeID, days)
 
 	if days <= 0 || days > 90 {
 		s.log.Errorf("invalid days parameter: %d", days)
@@ -144,9 +144,9 @@ func (s *shiftService) GetShiftsAvailability(days int) (*employeeV1.ShiftAvailab
 	start := time.Now().Truncate(24 * time.Hour)
 	end := start.AddDate(0, 0, days)
 
-	availability, err := s.shiftsRepo.GetShiftAvailability(start, end)
+	availability, err := s.shiftsRepo.GetShiftAvailabilityWithEmployeeStatus(employeeID, start, end)
 	if err != nil {
-		s.log.Errorf("failed to get shift availability: %v", err)
+		s.log.Errorf("failed to get shift availability with employee status: %v", err)
 		return nil, fmt.Errorf("failed to retrieve shift availability")
 	}
 
@@ -161,44 +161,47 @@ func (s *shiftService) GetShiftsAvailability(days int) (*employeeV1.ShiftAvailab
 		dayAvailability.FirstShift = employeeV1.ShiftAvailability{
 			MedicSlotsAvailable:     0,
 			TechnicalSlotsAvailable: 0,
+			IsAssignedToEmployee:    false,
+			IsFullyBooked:           false,
 		}
 		dayAvailability.SecondShift = employeeV1.ShiftAvailability{
 			MedicSlotsAvailable:     0,
 			TechnicalSlotsAvailable: 0,
+			IsAssignedToEmployee:    false,
+			IsFullyBooked:           false,
 		}
 		dayAvailability.ThirdShift = employeeV1.ShiftAvailability{
 			MedicSlotsAvailable:     0,
 			TechnicalSlotsAvailable: 0,
+			IsAssignedToEmployee:    false,
+			IsFullyBooked:           false,
 		}
 
-		for shiftIndex, shiftMap := range shifts {
-			var shiftAvailability *employeeV1.ShiftAvailability
-			switch shiftIndex {
-			case 0:
-				shiftAvailability = &dayAvailability.FirstShift
-			case 1:
-				shiftAvailability = &dayAvailability.SecondShift
-			case 2:
-				shiftAvailability = &dayAvailability.ThirdShift
-			default:
-				s.log.Warnf("more than 3 shifts found for date %v, skipping the entry", date)
-				continue
+		if len(shifts) >= 3 {
+			dayAvailability.FirstShift = employeeV1.ShiftAvailability{
+				MedicSlotsAvailable:     max(0, shifts[0].MedicSlotsAvailable),
+				TechnicalSlotsAvailable: max(0, shifts[0].TechnicalSlotsAvailable),
+				IsAssignedToEmployee:    shifts[0].IsAssignedToEmployee,
+				IsFullyBooked:           shifts[0].IsFullyBooked,
 			}
-
-			for profileType, availableSlots := range shiftMap {
-				switch profileType {
-				case model.Medic:
-					shiftAvailability.MedicSlotsAvailable = max(0, availableSlots)
-				case model.Technical:
-					shiftAvailability.TechnicalSlotsAvailable = max(0, availableSlots)
-				}
+			dayAvailability.SecondShift = employeeV1.ShiftAvailability{
+				MedicSlotsAvailable:     max(0, shifts[1].MedicSlotsAvailable),
+				TechnicalSlotsAvailable: max(0, shifts[1].TechnicalSlotsAvailable),
+				IsAssignedToEmployee:    shifts[1].IsAssignedToEmployee,
+				IsFullyBooked:           shifts[1].IsFullyBooked,
+			}
+			dayAvailability.ThirdShift = employeeV1.ShiftAvailability{
+				MedicSlotsAvailable:     max(0, shifts[2].MedicSlotsAvailable),
+				TechnicalSlotsAvailable: max(0, shifts[2].TechnicalSlotsAvailable),
+				IsAssignedToEmployee:    shifts[2].IsAssignedToEmployee,
+				IsFullyBooked:           shifts[2].IsFullyBooked,
 			}
 		}
 
 		response.Days[date] = dayAvailability
 	}
 
-	s.log.Infof("Successfully retrieved shift availability for %d days", days)
+	s.log.Infof("Successfully retrieved shift availability for employee %d for %d days", employeeID, days)
 	return response, nil
 }
 

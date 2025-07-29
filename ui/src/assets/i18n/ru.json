@@ -119,7 +119,21 @@
         "TOOLTIP_ADD_ME": "Зарезервировать смену",
         "TOOLTIP_REMOVE_ME": "Отменить смену",
         "TOOLTIP_ASSIGN": "Назначить выбранного сотрудника на смену",
-        "TOOLTIP_REMOVE": "Удалить выбранного сотрудника из смены"
+        "TOOLTIP_REMOVE": "Удалить выбранного сотрудника из смены",
+        "TOOLTIP_PROCESSING": "Обрабатывается запрос...",
+        "TOOLTIP_SELECT_EMPLOYEE": "Пожалуйста, сначала выберите сотрудника",
+        "TOOLTIP_ALREADY_ASSIGNED": "Вы уже назначены на эту смену",
+        "TOOLTIP_FULLY_BOOKED": "Эта смена полностью заполнена",
+        "TOOLTIP_NOT_ASSIGNED": "Вы не назначены на эту смену",
+        "TIME_SPAN": "Временной период",
+        "ONE_WEEK": "1 неделя",
+        "TWO_WEEKS": "2 недели",
+        "THREE_WEEKS": "3 недели",
+        "FOUR_WEEKS": "4 недели",
+        "FULLY_BOOKED": "Полностью заполнено",
+        "LOW_CAPACITY": "Низкая вместимость",
+        "CONFIRM_ASSIGN": "Вы уверены, что хотите назначиться на {{shift}} {{date}}?",
+        "CONFIRM_REMOVE": "Вы уверены, что хотите убрать себя с {{shift}} {{date}}?"
     },
     "ADMIN_PANEL": {
         "TITLE": "Панель администратора",

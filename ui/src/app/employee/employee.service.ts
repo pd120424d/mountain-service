@@ -57,7 +57,6 @@ export class EmployeeService {
   }
 
   private handleError = (error: HttpErrorResponse): Observable<never> => {
-    console.error('An error occurred:', error);
 
     let errorMessage = 'Something went wrong. Please try again later.';
 
