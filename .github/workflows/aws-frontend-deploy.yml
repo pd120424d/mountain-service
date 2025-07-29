@@ -63,8 +63,8 @@ jobs:
           NO_CACHE_FLAG="--no-cache"
         fi
 
-        # Build frontend using AWS Dockerfile
-        docker build -t frontend:latest -f ./ui/Dockerfile.aws $NO_CACHE_FLAG ./ui
+        # Build frontend using production Dockerfile
+        docker build -t frontend:latest -f ./ui/Dockerfile.production $NO_CACHE_FLAG ./ui
 
         # Tag and push
         GHCR_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/frontend"

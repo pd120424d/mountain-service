@@ -1,3 +1,6 @@
+# Staging/Development Dockerfile for Mountain Service UI
+# Simple configuration for local development and staging environments
+
 # Stage 1: Build Angular App
 FROM node:18 AS builder
 
@@ -19,8 +22,8 @@ FROM nginx:alpine
 # Install additional tools for health checks and debugging
 RUN apk add --no-cache curl wget
 
-# Optional: Custom NGINX config
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copy staging/development NGINX config
+COPY nginx.staging.conf /etc/nginx/nginx.conf
 
 # Copy built Angular app to NGINX
 COPY --from=builder /app/dist/ui/browser /usr/share/nginx/html

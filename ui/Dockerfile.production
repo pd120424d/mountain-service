@@ -1,3 +1,6 @@
+# Production Dockerfile for Mountain Service UI
+# Multi-stage build with production-ready NGINX configuration
+
 # Stage 1: Build Angular App
 FROM node:18 AS builder
 
@@ -19,8 +22,8 @@ FROM nginx:alpine
 # Install additional tools for health checks and debugging
 RUN apk add --no-cache curl wget
 
-# Copy AWS-specific NGINX config
-COPY nginx.aws.conf /etc/nginx/nginx.conf
+# Copy production NGINX config
+COPY nginx.production.conf /etc/nginx/nginx.conf
 
 # Copy built Angular app to NGINX
 COPY --from=builder /app/dist/ui/browser /usr/share/nginx/html

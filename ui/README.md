@@ -57,11 +57,20 @@ ng build --configuration production
 
 ## Docker Deployment
 
-Build and run the application using Docker:
+### Staging/Development Environment
+Build and run the application using the staging configuration:
 
 ```bash
-docker build -t mountain-service-ui .
-docker run -p 80:80 mountain-service-ui
+docker build -t mountain-service-ui-staging .
+docker run -p 80:80 mountain-service-ui-staging
+```
+
+### Production Environment
+Build and run the application using the production configuration:
+
+```bash
+docker build -t mountain-service-ui-production -f Dockerfile.production .
+docker run -p 80:80 mountain-service-ui-production
 ```
 
 ## Environment Configuration
