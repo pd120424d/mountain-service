@@ -46,7 +46,8 @@ func TestUrgency_ToResponse(t *testing.T) {
 				UpdatedAt: updatedAt,
 			},
 			ID:           1,
-			Name:         "Test Emergency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "test@example.com",
 			ContactPhone: "+1234567890",
 			Location:     "Test Location",
@@ -58,7 +59,8 @@ func TestUrgency_ToResponse(t *testing.T) {
 		response := urgency.ToResponse()
 
 		assert.Equal(t, uint(1), response.ID)
-		assert.Equal(t, "Test Emergency", response.Name)
+		assert.Equal(t, "Marko", response.FirstName)
+		assert.Equal(t, "Markovic", response.LastName)
 		assert.Equal(t, "test@example.com", response.Email)
 		assert.Equal(t, "+1234567890", response.ContactPhone)
 		assert.Equal(t, "Test Location", response.Location)

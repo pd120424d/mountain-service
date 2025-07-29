@@ -44,12 +44,12 @@ describe('ShiftManagementService', () => {
     },
     {
       id: 2,
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane.smith@example.com',
+      firstName: 'Marko',
+      lastName: 'Markovic',
+      email: 'marko.markovic@example.com',
       phone: '+1234567891',
       profileType: EmployeeResponseProfileTypeEnum.Technical,
-      username: 'janesmith',
+      username: 'markomarkovic',
       gender: 'Female'
     }
   ];

@@ -88,8 +88,8 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 			Employees: []employeeV1.EmployeeResponse{
 				{
 					ID:          1,
-					FirstName:   "John",
-					LastName:    "Doe",
+					FirstName:   "Marko",
+					LastName:    "Markovic",
 					Email:       "john@example.com",
 					Username:    "johndoe",
 					Gender:      "Male",
@@ -98,10 +98,10 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 				},
 				{
 					ID:          2,
-					FirstName:   "Jane",
-					LastName:    "Smith",
-					Email:       "jane@example.com",
-					Username:    "janesmith",
+					FirstName:   "Marko",
+					LastName:    "Markovic",
+					Email:       "marko@example.com",
+					Username:    "markomarkovic",
 					Gender:      "Female",
 					Phone:       "+1234567891",
 					ProfileType: "Technical",
@@ -122,11 +122,11 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, employees, 2)
 		assert.Equal(t, uint(1), employees[0].ID)
-		assert.Equal(t, "John", employees[0].FirstName)
-		assert.Equal(t, "Doe", employees[0].LastName)
+		assert.Equal(t, "Marko", employees[0].FirstName)
+		assert.Equal(t, "Markovic", employees[0].LastName)
 		assert.Equal(t, uint(2), employees[1].ID)
-		assert.Equal(t, "Jane", employees[1].FirstName)
-		assert.Equal(t, "Smith", employees[1].LastName)
+		assert.Equal(t, "Marko", employees[1].FirstName)
+		assert.Equal(t, "Markovic", employees[1].LastName)
 	})
 
 	t.Run("it successfully retrieves on-call employees with shift buffer", func(t *testing.T) {
@@ -137,8 +137,8 @@ func TestEmployeeClient_GetOnCallEmployees(t *testing.T) {
 			Employees: []employeeV1.EmployeeResponse{
 				{
 					ID:        1,
-					FirstName: "John",
-					LastName:  "Doe",
+					FirstName: "Marko",
+					LastName:  "Markovic",
 					Email:     "john@example.com",
 					Username:  "johndoe",
 				},
@@ -233,8 +233,8 @@ func TestEmployeeClient_GetAllEmployees(t *testing.T) {
 			Employees: []employeeV1.EmployeeResponse{
 				{
 					ID:          1,
-					FirstName:   "John",
-					LastName:    "Doe",
+					FirstName:   "Marko",
+					LastName:    "Markovic",
 					Email:       "john@example.com",
 					Username:    "johndoe",
 					Gender:      "Male",
@@ -243,10 +243,10 @@ func TestEmployeeClient_GetAllEmployees(t *testing.T) {
 				},
 				{
 					ID:          2,
-					FirstName:   "Jane",
-					LastName:    "Smith",
-					Email:       "jane@example.com",
-					Username:    "janesmith",
+					FirstName:   "Marko",
+					LastName:    "Markovic",
+					Email:       "marko@example.com",
+					Username:    "markomarkovic",
 					Gender:      "Female",
 					Phone:       "+1234567891",
 					ProfileType: "Technical",
@@ -267,11 +267,11 @@ func TestEmployeeClient_GetAllEmployees(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, employees, 2)
 		assert.Equal(t, uint(1), employees[0].ID)
-		assert.Equal(t, "John", employees[0].FirstName)
-		assert.Equal(t, "Doe", employees[0].LastName)
+		assert.Equal(t, "Marko", employees[0].FirstName)
+		assert.Equal(t, "Markovic", employees[0].LastName)
 		assert.Equal(t, uint(2), employees[1].ID)
-		assert.Equal(t, "Jane", employees[1].FirstName)
-		assert.Equal(t, "Smith", employees[1].LastName)
+		assert.Equal(t, "Marko", employees[1].FirstName)
+		assert.Equal(t, "Markovic", employees[1].LastName)
 	})
 
 	t.Run("handles HTTP client error", func(t *testing.T) {
@@ -345,8 +345,8 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 
 		mockResponse := employeeV1.EmployeeResponse{
 			ID:          1,
-			FirstName:   "John",
-			LastName:    "Doe",
+			FirstName:   "Marko",
+			LastName:    "Markovic",
 			Email:       "john@example.com",
 			Username:    "johndoe",
 			Gender:      "Male",
@@ -367,8 +367,8 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, employee)
 		assert.Equal(t, uint(1), employee.ID)
-		assert.Equal(t, "John", employee.FirstName)
-		assert.Equal(t, "Doe", employee.LastName)
+		assert.Equal(t, "Marko", employee.FirstName)
+		assert.Equal(t, "Markovic", employee.LastName)
 		assert.Equal(t, "john@example.com", employee.Email)
 	})
 

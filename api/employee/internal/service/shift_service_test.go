@@ -615,15 +615,15 @@ func TestShiftService_GetOnCallEmployees(t *testing.T) {
 			{
 				ID:          1,
 				Username:    "medic1",
-				FirstName:   "John",
-				LastName:    "Doe",
+				FirstName:   "Marko",
+				LastName:    "Markovic",
 				ProfileType: model.Medic,
 			},
 			{
 				ID:          2,
 				Username:    "tech1",
-				FirstName:   "Jane",
-				LastName:    "Smith",
+				FirstName:   "Marko",
+				LastName:    "Markovic",
 				ProfileType: model.Technical,
 			},
 		}

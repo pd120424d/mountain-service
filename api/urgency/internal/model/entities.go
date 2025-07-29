@@ -13,8 +13,9 @@ import (
 type Urgency struct {
 	gorm.Model
 	ID           uint                    `gorm:"primaryKey"`
-	Name         string                  `gorm:"not null"`
-	Email        string                  `gorm:"not null"`
+	FirstName    string                  `gorm:"not null"`
+	LastName     string                  `gorm:"not null"`
+	Email        string                  `gorm:""`
 	ContactPhone string                  `gorm:"not null"`
 	Location     string                  `gorm:"not null"`
 	Description  string                  `gorm:"not null"`
@@ -92,7 +93,8 @@ func UrgencyLevelFromString(s string) urgencyV1.UrgencyLevel {
 func (u *Urgency) ToResponse() urgencyV1.UrgencyResponse {
 	return urgencyV1.UrgencyResponse{
 		ID:           u.ID,
-		Name:         u.Name,
+		FirstName:    u.FirstName,
+		LastName:     u.LastName,
 		Email:        u.Email,
 		ContactPhone: u.ContactPhone,
 		Location:     u.Location,

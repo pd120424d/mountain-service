@@ -8,18 +8,20 @@ definitions:
         type: string
       email:
         type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
       level:
         $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel'
       location:
         type: string
-      name:
-        type: string
     required:
     - contactPhone
     - description
-    - email
+    - firstName
+    - lastName
     - location
-    - name
     type: object
   github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel:
     enum:
@@ -43,13 +45,15 @@ definitions:
         type: string
       email:
         type: string
+      firstName:
+        type: string
       id:
         type: integer
+      lastName:
+        type: string
       level:
         $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel'
       location:
-        type: string
-      name:
         type: string
       status:
         $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus'
@@ -76,15 +80,18 @@ definitions:
         type: string
       email:
         type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
       level:
         $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel'
       location:
         type: string
-      name:
-        type: string
       status:
         $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus'
     type: object
+host: localhost:8083
 info:
   contact: {}
   license:

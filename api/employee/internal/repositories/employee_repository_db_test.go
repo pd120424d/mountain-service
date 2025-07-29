@@ -89,7 +89,7 @@ func TestEmployeeRepository_GetAll(t *testing.T) {
 
 	t.Run("it returns all employees when they exist", func(t *testing.T) {
 		gormDB.Create(&model.Employee{Username: "test-user", FirstName: "Bruce", Email: "test-user@example.com", LastName: "Lee", Password: "Pass123!"})
-		gormDB.Create(&model.Employee{Username: "asmith", FirstName: "Alice", Email: "asmith@example.com", LastName: "Smith", Password: "Pass123!"})
+		gormDB.Create(&model.Employee{Username: "asmith", FirstName: "Alice", Email: "asmith@example.com", LastName: "Markovic", Password: "Pass123!"})
 
 		employees, err := repo.GetAll()
 		assert.NoError(t, err)

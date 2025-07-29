@@ -144,6 +144,7 @@ definitions:
     - ActivityNotificationSent
     - ActivityNotificationFailed
     - ActivitySystemReset
+host: localhost:8084
 info:
   contact:
     email: support@swagger.io

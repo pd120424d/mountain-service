@@ -86,11 +86,11 @@ func TestUrgencyService_CreateUrgency(t *testing.T) {
 		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return([]employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "+1987654321",
-				Email:     "jane@example.com",
-				Username:  "jane",
+				Email:     "marko@example.com",
+				Username:  "Marko",
 			},
 		}, nil)
 
@@ -305,17 +305,18 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		employees := []employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "+1987654321",
-				Email:     "jane@example.com",
+				Email:     "marko@example.com",
 			},
 		}
 		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "John Doe",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Location:     "Mountain Peak",
 			ContactPhone: "+1234567890",
 			Description:  "Lost hiker",
@@ -324,10 +325,10 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 
 		employee := employeeV1.EmployeeResponse{
 			ID:        1,
-			FirstName: "Jane",
-			LastName:  "Smith",
+			FirstName: "Marko",
+			LastName:  "Markovic",
 			Phone:     "+1987654321",
-			Email:     "jane@example.com",
+			Email:     "marko@example.com",
 		}
 
 		mockAssignmentRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(assignment *model.EmergencyAssignment) error {
@@ -352,7 +353,7 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 
 		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
 			assert.Equal(t, model.NotificationEmail, notification.NotificationType)
-			assert.Equal(t, "jane@example.com", notification.Recipient)
+			assert.Equal(t, "marko@example.com", notification.Recipient)
 			return nil
 		})
 
@@ -377,17 +378,18 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		employees := []employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "",
-				Email:     "jane@example.com",
+				Email:     "marko@example.com",
 			},
 		}
 		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "John Doe",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Location:     "Mountain Peak",
 			ContactPhone: "+1234567890",
 			Description:  "Lost hiker",
@@ -398,7 +400,7 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 
 		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
 			assert.Equal(t, model.NotificationEmail, notification.NotificationType)
-			assert.Equal(t, "jane@example.com", notification.Recipient)
+			assert.Equal(t, "marko@example.com", notification.Recipient)
 			return nil
 		})
 
@@ -424,17 +426,18 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		employees := []employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "+1987654321",
-				Email:     "jane@example.com",
+				Email:     "marko@example.com",
 			},
 		}
 		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "John Doe",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Location:     "Mountain Peak",
 			ContactPhone: "+1234567890",
 			Description:  "Lost hiker",
@@ -464,17 +467,18 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		employees := []employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "+1987654321",
-				Email:     "jane@example.com",
+				Email:     "marko@example.com",
 			},
 		}
 		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "John Doe",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Location:     "Mountain Peak",
 			ContactPhone: "+1234567890",
 			Description:  "Lost hiker",
@@ -505,17 +509,18 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		employees := []employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "", // No phone, only email
-				Email:     "jane@example.com",
+				Email:     "marko@example.com",
 			},
 		}
 		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "John Doe",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Location:     "Mountain Peak",
 			ContactPhone: "+1234567890",
 			Description:  "Lost hiker",
@@ -546,8 +551,8 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		employees := []employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "", // No phone
 				Email:     "", // No email
 			},
@@ -556,7 +561,8 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "John Doe",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Location:     "Mountain Peak",
 			ContactPhone: "+1234567890",
 			Description:  "Lost hiker",
@@ -587,17 +593,18 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		employees := []employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "+1987654321",
-				Email:     "jane@example.com",
+				Email:     "marko@example.com",
 			},
 		}
 		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "John Doe",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Location:     "Mountain Peak",
 			ContactPhone: "+1234567890",
 			Description:  "Lost hiker",
@@ -615,7 +622,7 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		})
 		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
 			assert.Equal(t, model.NotificationEmail, notification.NotificationType)
-			assert.Equal(t, "jane@example.com", notification.Recipient)
+			assert.Equal(t, "marko@example.com", notification.Recipient)
 			return nil
 		})
 
@@ -639,15 +646,15 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		employees := []employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "+1987654321",
-				Email:     "jane@example.com",
+				Email:     "marko@example.com",
 			},
 			{
 				ID:        2,
-				FirstName: "John",
-				LastName:  "Doe",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "+1123456789",
 				Email:     "john@example.com",
 			},
@@ -656,7 +663,8 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "Emergency Situation",
+			FirstName:    "Emergency",
+			LastName:     "Situation",
 			Location:     "Mountain Peak",
 			ContactPhone: "+1234567890",
 			Description:  "Lost hiker",
@@ -695,17 +703,18 @@ func TestUrgencyService_buildNotificationMessage(t *testing.T) {
 		employees := []employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "+1987654321",
-				Email:     "jane@example.com",
+				Email:     "marko@example.com",
 			},
 		}
 		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "John Doe",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Location:     "Mountain Peak",
 			ContactPhone: "+1234567890",
 			Description:  "Lost hiker",
@@ -721,7 +730,7 @@ func TestUrgencyService_buildNotificationMessage(t *testing.T) {
 				"🚨 EMERGENCY:",
 				urgency.Description,
 				urgency.Location,
-				urgency.Name,
+				urgency.FirstName + " " + urgency.LastName,
 				urgency.ContactPhone,
 				string(urgency.Level),
 			}
@@ -735,7 +744,7 @@ func TestUrgencyService_buildNotificationMessage(t *testing.T) {
 
 		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
 			assert.Equal(t, model.NotificationEmail, notification.NotificationType)
-			assert.Equal(t, "jane@example.com", notification.Recipient)
+			assert.Equal(t, "marko@example.com", notification.Recipient)
 			return nil
 		})
 
@@ -760,17 +769,18 @@ func TestUrgencyService_buildNotificationMessage(t *testing.T) {
 		employees := []employeeV1.EmployeeResponse{
 			{
 				ID:        1,
-				FirstName: "Jane",
-				LastName:  "Smith",
+				FirstName: "Marko",
+				LastName:  "Markovic",
 				Phone:     "",
-				Email:     "jane@example.com",
+				Email:     "marko@example.com",
 			},
 		}
 		mockEmployeeClient.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "John Doe",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Location:     "Mountain Peak",
 			ContactPhone: "+1234567890",
 			Description:  "Lost hiker",
@@ -784,9 +794,9 @@ func TestUrgencyService_buildNotificationMessage(t *testing.T) {
 
 			expectedContent := []string{
 				"🚨 EMERGENCY ALERT 🚨",
-				"Hello Jane Smith",
+				"Hello Marko Markovic",
 				"📍 Location: " + urgency.Location,
-				"📞 Contact: " + urgency.Name,
+				"📞 Contact: " + urgency.FirstName + " " + urgency.LastName,
 				urgency.ContactPhone,
 				"📝 Description: " + urgency.Description,
 				"⚠️ Priority: " + string(urgency.Level),

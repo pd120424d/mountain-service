@@ -11,7 +11,8 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 
 	t.Run("it returns no error for a valid request", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
-			Name:         "Test Urgency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
@@ -23,9 +24,10 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("it returns an error for a missing name", func(t *testing.T) {
+	t.Run("it returns an error for a missing first name", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
-			Name:         "",
+			FirstName:    "",
+			LastName:     "Markovic",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
@@ -34,13 +36,14 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 
 		err := req.Validate()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "name is required")
+		assert.Contains(t, err.Error(), "first name is required")
 	})
 
-	t.Run("it returns an error for a missing email", func(t *testing.T) {
+	t.Run("it returns an error for a missing last name", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
-			Name:         "Test Urgency",
-			Email:        "",
+			FirstName:    "Marko",
+			LastName:     "",
+			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
 			Description:  "Test description",
@@ -48,12 +51,27 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 
 		err := req.Validate()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "email is required")
+		assert.Contains(t, err.Error(), "last name is required")
+	})
+
+	t.Run("it returns no error for a missing email", func(t *testing.T) {
+		req := &UrgencyCreateRequest{
+			FirstName:    "Marko",
+			LastName:     "Markovic",
+			Email:        "",
+			ContactPhone: "123456789",
+			Location:     "N 43.401123 E 22.662756",
+			Description:  "Test description",
+		}
+
+		err := req.Validate()
+		assert.NoError(t, err)
 	})
 
 	t.Run("it returns an error for an invalid email", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
-			Name:         "Test Urgency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "invalid-email",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
@@ -67,7 +85,8 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 
 	t.Run("it returns an error for a missing contact phone", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
-			Name:         "Test Urgency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "test@example.com",
 			ContactPhone: "",
 			Location:     "N 43.401123 E 22.662756",
@@ -81,7 +100,8 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 
 	t.Run("it returns an error for a missing location", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
-			Name:         "Test Urgency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "",
@@ -95,7 +115,8 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 
 	t.Run("it returns an error for a missing description", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
-			Name:         "Test Urgency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
@@ -109,7 +130,8 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 
 	t.Run("it returns an error for an invalid urgency level", func(t *testing.T) {
 		req := &UrgencyCreateRequest{
-			Name:         "Test Urgency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
@@ -128,7 +150,8 @@ func TestUrgencyUpdateRequest_Validate(t *testing.T) {
 
 	t.Run("it returns no error for a valid request", func(t *testing.T) {
 		req := &UrgencyUpdateRequest{
-			Name:         "Updated Urgency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "updated@example.com",
 			ContactPhone: "987654321",
 			Location:     "N 44.401123 E 23.662756",

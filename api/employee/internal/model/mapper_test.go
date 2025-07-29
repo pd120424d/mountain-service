@@ -21,7 +21,7 @@ func TestMapUpdateRequestToEmployee(t *testing.T) {
 		}
 		existing := &Employee{
 			FirstName:      "Alice",
-			LastName:       "Smith",
+			LastName:       "Markovic",
 			Email:          "asmith@example.com",
 			Gender:         "F",
 			Phone:          "987654321",

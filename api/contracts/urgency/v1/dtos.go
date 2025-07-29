@@ -29,8 +29,9 @@ const (
 // UrgencyCreateRequest DTO for creating a new urgency
 // swagger:model
 type UrgencyCreateRequest struct {
-	Name         string       `json:"name" binding:"required"`
-	Email        string       `json:"email" binding:"required"`
+	FirstName    string       `json:"firstName" binding:"required"`
+	LastName     string       `json:"lastName" binding:"required"`
+	Email        string       `json:"email"`
 	ContactPhone string       `json:"contactPhone" binding:"required"`
 	Location     string       `json:"location" binding:"required"`
 	Description  string       `json:"description" binding:"required"`
@@ -40,7 +41,8 @@ type UrgencyCreateRequest struct {
 // UrgencyUpdateRequest DTO for updating an urgency
 // swagger:model
 type UrgencyUpdateRequest struct {
-	Name         string        `json:"name"`
+	FirstName    string        `json:"firstName"`
+	LastName     string        `json:"lastName"`
 	Email        string        `json:"email"`
 	ContactPhone string        `json:"contactPhone"`
 	Location     string        `json:"location"`
@@ -53,7 +55,8 @@ type UrgencyUpdateRequest struct {
 // swagger:model
 type UrgencyResponse struct {
 	ID           uint          `json:"id"`
-	Name         string        `json:"name"`
+	FirstName    string        `json:"firstName"`
+	LastName     string        `json:"lastName"`
 	Email        string        `json:"email"`
 	ContactPhone string        `json:"contactPhone"`
 	Location     string        `json:"location"`
@@ -140,11 +143,14 @@ func (s UrgencyStatus) Valid() bool {
 }
 
 func (r *UrgencyCreateRequest) Validate() error {
-	if err := utils.ValidateRequiredField(r.Name, "name"); err != nil {
+	if err := utils.ValidateRequiredField(r.FirstName, "first name"); err != nil {
 		return err
 	}
-	if err := utils.ValidateEmail(r.Email); err != nil {
+	if err := utils.ValidateRequiredField(r.LastName, "last name"); err != nil {
 		return err
+	}
+	if err := utils.ValidateOptionalEmail(r.Email); err != nil {
+		return fmt.Errorf("invalid email format")
 	}
 	if err := utils.ValidateRequiredField(r.ContactPhone, "contact phone"); err != nil {
 		return err

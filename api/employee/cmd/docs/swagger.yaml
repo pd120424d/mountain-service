@@ -180,6 +180,7 @@ definitions:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
     type: object
+host: localhost:8082
 info:
   contact: {}
   license:

@@ -68,7 +68,8 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		payload := `{
-			"name": "Test Urgency",
+			"firstName": "Marko",
+			"lastName": "Markovic",
 			"email": "invalid-email",
 			"contactPhone": "123456789",
 			"location": "N 43.401123 E 22.662756",
@@ -156,7 +157,8 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		payload := `{
-			"name": "Test Urgency",
+			"firstName": "John",
+			"lastName": "Doe",
 			"email": "test@example.com",
 			"contactPhone": "123456789",
 			"location": "N 43.401123 E 22.662756",
@@ -181,7 +183,8 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		payload := `{
-			"name": "Test Urgency",
+			"firstName": "John",
+			"lastName": "Doe",
 			"email": "test@example.com",
 			"contactPhone": "123456789",
 			"location": "N 43.401123 E 22.662756",
@@ -209,7 +212,8 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		payload := `{
-			"name": "Test Urgency",
+			"firstName": "John",
+			"lastName": "Doe",
 			"email": "test@example.com",
 			"contactPhone": "123456789",
 			"location": "N 43.401123 E 22.662756",
@@ -231,7 +235,8 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 		handler.CreateUrgency(ctx)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
-		assert.Contains(t, w.Body.String(), "Test Urgency")
+		assert.Contains(t, w.Body.String(), "John")
+		assert.Contains(t, w.Body.String(), "Doe")
 		assert.Contains(t, w.Body.String(), "test@example.com")
 		assert.Contains(t, w.Body.String(), "high")
 	})
@@ -286,7 +291,8 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		urgencies := []model.Urgency{
 			{
 				ID:           1,
-				Name:         "Test Urgency 1",
+				FirstName:    "Marko",
+				LastName:     "Markovic",
 				Email:        "test1@example.com",
 				ContactPhone: "123456789",
 				Location:     "N 43.401123 E 22.662756",
@@ -296,7 +302,8 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 			},
 			{
 				ID:           2,
-				Name:         "Test Urgency 2",
+				FirstName:    "Marko",
+				LastName:     "Markovic",
 				Email:        "test2@example.com",
 				ContactPhone: "987654321",
 				Location:     "N 44.401123 E 23.662756",
@@ -313,8 +320,10 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		handler.ListUrgencies(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "Test Urgency 1")
-		assert.Contains(t, w.Body.String(), "Test Urgency 2")
+		assert.Contains(t, w.Body.String(), "Marko")
+		assert.Contains(t, w.Body.String(), "Markovic")
+		assert.Contains(t, w.Body.String(), "Marko")
+		assert.Contains(t, w.Body.String(), "Markovic")
 		assert.Contains(t, w.Body.String(), "test1@example.com")
 		assert.Contains(t, w.Body.String(), "test2@example.com")
 	})
@@ -387,7 +396,8 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 
 		urgency := &model.Urgency{
 			ID:           1,
-			Name:         "Test Urgency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
@@ -403,7 +413,8 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 		handler.GetUrgency(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "Test Urgency")
+		assert.Contains(t, w.Body.String(), "Marko")
+		assert.Contains(t, w.Body.String(), "Markovic")
 		assert.Contains(t, w.Body.String(), "test@example.com")
 		assert.Contains(t, w.Body.String(), "high")
 	})
@@ -546,7 +557,8 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 
 		existingUrgency := &model.Urgency{
 			ID:           1,
-			Name:         "Test Urgency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
@@ -576,7 +588,8 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
 		payload := `{
-			"name": "Updated Urgency",
+			"firstName": "Updated",
+			"lastName": "Urgency",
 			"email": "updated@example.com",
 			"status": "in_progress"
 		}`
@@ -585,7 +598,8 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 
 		existingUrgency := &model.Urgency{
 			ID:           1,
-			Name:         "Test Urgency",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "test@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
@@ -602,7 +616,8 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 		handler.UpdateUrgency(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "Updated Urgency")
+		assert.Contains(t, w.Body.String(), "Updated")
+		assert.Contains(t, w.Body.String(), "Urgency")
 		assert.Contains(t, w.Body.String(), "updated@example.com")
 		assert.Contains(t, w.Body.String(), "in_progress")
 	})

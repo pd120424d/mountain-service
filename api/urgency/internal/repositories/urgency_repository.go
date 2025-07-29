@@ -91,7 +91,8 @@ func (r *urgencyRepository) ResetAllData() error {
 
 func (r *urgencyRepository) allowedColumns() map[string]bool {
 	return map[string]bool{
-		"name":          true,
+		"first_name":    true,
+		"last_name":     true,
 		"email":         true,
 		"contact_phone": true,
 		"description":   true,

@@ -396,17 +396,17 @@ func TestEmployeeService_ListEmployees(t *testing.T) {
 			{
 				ID:          1,
 				Username:    "user1",
-				FirstName:   "John",
-				LastName:    "Doe",
+				FirstName:   "Marko",
+				LastName:    "Markovic",
 				Email:       "john@example.com",
 				ProfileType: model.Medic,
 			},
 			{
 				ID:          2,
 				Username:    "user2",
-				FirstName:   "Jane",
-				LastName:    "Smith",
-				Email:       "jane@example.com",
+				FirstName:   "Marko",
+				LastName:    "Markovic",
+				Email:       "marko@example.com",
 				ProfileType: model.Technical,
 			},
 		}

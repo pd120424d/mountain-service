@@ -35,7 +35,8 @@ func TestUrgencyRepository_Create(t *testing.T) {
 	repo := NewUrgencyRepository(log, db)
 
 	urgency := &model.Urgency{
-		Name:         "Test Urgency",
+		FirstName:    "Marko",
+		LastName:     "Markovic",
 		Email:        "test@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description",
@@ -54,7 +55,8 @@ func TestUrgencyRepository_GetAll(t *testing.T) {
 	repo := NewUrgencyRepository(log, db)
 
 	urgency1 := &model.Urgency{
-		Name:         "Test Urgency 1",
+		FirstName:    "Marko",
+		LastName:     "Markovic",
 		Email:        "test1@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description 1",
@@ -62,7 +64,8 @@ func TestUrgencyRepository_GetAll(t *testing.T) {
 		Status:       urgencyV1.Open,
 	}
 	urgency2 := &model.Urgency{
-		Name:         "Test Urgency 2",
+		FirstName:    "Marko",
+		LastName:     "Markovic",
 		Email:        "test2@example.com",
 		ContactPhone: "987654321",
 		Description:  "Test description 2",
@@ -86,7 +89,8 @@ func TestUrgencyRepository_GetByID(t *testing.T) {
 	repo := NewUrgencyRepository(log, db)
 
 	urgency := &model.Urgency{
-		Name:         "Test Urgency",
+		FirstName:    "Marko",
+		LastName:     "Markovic",
 		Email:        "test@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description",
@@ -100,7 +104,8 @@ func TestUrgencyRepository_GetByID(t *testing.T) {
 	var retrieved model.Urgency
 	err = repo.GetByID(urgency.ID, &retrieved)
 	assert.NoError(t, err)
-	assert.Equal(t, urgency.Name, retrieved.Name)
+	assert.Equal(t, urgency.FirstName, retrieved.FirstName)
+	assert.Equal(t, urgency.LastName, retrieved.LastName)
 	assert.Equal(t, urgency.Email, retrieved.Email)
 }
 
@@ -110,7 +115,8 @@ func TestUrgencyRepository_Update(t *testing.T) {
 	repo := NewUrgencyRepository(log, db)
 
 	urgency := &model.Urgency{
-		Name:         "Test Urgency",
+		FirstName:    "Marko",
+		LastName:     "Markovic",
 		Email:        "test@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description",
@@ -121,7 +127,8 @@ func TestUrgencyRepository_Update(t *testing.T) {
 	err := repo.Create(urgency)
 	require.NoError(t, err)
 
-	urgency.Name = "Updated Urgency"
+	urgency.FirstName = "Marko"
+	urgency.LastName = "Markovic"
 	urgency.Status = urgencyV1.InProgress
 
 	err = repo.Update(urgency)
@@ -130,7 +137,8 @@ func TestUrgencyRepository_Update(t *testing.T) {
 	var updated model.Urgency
 	err = repo.GetByID(urgency.ID, &updated)
 	require.NoError(t, err)
-	assert.Equal(t, "Updated Urgency", updated.Name)
+	assert.Equal(t, "Marko", updated.FirstName)
+	assert.Equal(t, "Markovic", updated.LastName)
 	assert.Equal(t, urgencyV1.InProgress, updated.Status)
 }
 
@@ -140,7 +148,8 @@ func TestUrgencyRepository_Delete(t *testing.T) {
 	repo := NewUrgencyRepository(log, db)
 
 	urgency := &model.Urgency{
-		Name:         "Test Urgency",
+		FirstName:    "Marko",
+		LastName:     "Markovic",
 		Email:        "test@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description",
@@ -167,7 +176,8 @@ func TestUrgencyRepository_List(t *testing.T) {
 	repo := NewUrgencyRepository(log, db)
 
 	urgency1 := &model.Urgency{
-		Name:         "Emergency Service",
+		FirstName:    "Emergency",
+		LastName:     "Service",
 		Email:        "rescue@example.com",
 		ContactPhone: "123456789",
 		Description:  "Mountain rescue needed",
@@ -175,7 +185,8 @@ func TestUrgencyRepository_List(t *testing.T) {
 		Status:       urgencyV1.Open,
 	}
 	urgency2 := &model.Urgency{
-		Name:         "Medical Help",
+		FirstName:    "Medical",
+		LastName:     "Help",
 		Email:        "medical@example.com",
 		ContactPhone: "987654321",
 		Description:  "Medical assistance required",
@@ -183,7 +194,8 @@ func TestUrgencyRepository_List(t *testing.T) {
 		Status:       urgencyV1.InProgress,
 	}
 	urgency3 := &model.Urgency{
-		Name:         "Equipment Issue",
+		FirstName:    "Equipment",
+		LastName:     "Issue",
 		Email:        "equipment@example.com",
 		ContactPhone: "555666777",
 		Description:  "Equipment malfunction",
@@ -208,7 +220,8 @@ func TestUrgencyRepository_List(t *testing.T) {
 		urgencies, err := repo.List(filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
-		assert.Equal(t, "Medical Help", urgencies[0].Name)
+		assert.Equal(t, "Medical", urgencies[0].FirstName)
+		assert.Equal(t, "Help", urgencies[0].LastName)
 	})
 
 	t.Run("it returns urgencies filtered by status", func(t *testing.T) {
@@ -218,17 +231,19 @@ func TestUrgencyRepository_List(t *testing.T) {
 		urgencies, err := repo.List(filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
-		assert.Equal(t, "Emergency Service", urgencies[0].Name)
+		assert.Equal(t, "Emergency", urgencies[0].FirstName)
+		assert.Equal(t, "Service", urgencies[0].LastName)
 	})
 
-	t.Run("it returns urgencies filtered by name (partial match)", func(t *testing.T) {
+	t.Run("it returns urgencies filtered by first_name (partial match)", func(t *testing.T) {
 		filters := map[string]interface{}{
-			"name": "Medical",
+			"first_name": "Medical",
 		}
 		urgencies, err := repo.List(filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
-		assert.Equal(t, "Medical Help", urgencies[0].Name)
+		assert.Equal(t, "Medical", urgencies[0].FirstName)
+		assert.Equal(t, "Help", urgencies[0].LastName)
 	})
 
 	t.Run("it returns urgencies filtered by email (partial match)", func(t *testing.T) {
@@ -238,7 +253,8 @@ func TestUrgencyRepository_List(t *testing.T) {
 		urgencies, err := repo.List(filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
-		assert.Equal(t, "Emergency Service", urgencies[0].Name)
+		assert.Equal(t, "Emergency", urgencies[0].FirstName)
+		assert.Equal(t, "Service", urgencies[0].LastName)
 	})
 
 	t.Run("it returns urgencies filtered by multiple filters", func(t *testing.T) {
@@ -249,7 +265,8 @@ func TestUrgencyRepository_List(t *testing.T) {
 		urgencies, err := repo.List(filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
-		assert.Equal(t, "Equipment Issue", urgencies[0].Name)
+		assert.Equal(t, "Equipment", urgencies[0].FirstName)
+		assert.Equal(t, "Issue", urgencies[0].LastName)
 	})
 
 	t.Run("it returns an error when an invalid filter key is provided", func(t *testing.T) {
@@ -264,17 +281,17 @@ func TestUrgencyRepository_List(t *testing.T) {
 
 	t.Run("it returns an error when an unsupported filter value type is provided", func(t *testing.T) {
 		filters := map[string]interface{}{
-			"name": []string{"test"},
+			"first_name": []string{"test"},
 		}
 		urgencies, err := repo.List(filters)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "unsupported type for filter key: name")
+		assert.Contains(t, err.Error(), "unsupported type for filter key: first_name")
 		assert.Nil(t, urgencies)
 	})
 
 	t.Run("it returns an empty slice when no matches are found", func(t *testing.T) {
 		filters := map[string]interface{}{
-			"name": "NonExistent",
+			"first_name": "NonExistent",
 		}
 		urgencies, err := repo.List(filters)
 		assert.NoError(t, err)
@@ -288,7 +305,8 @@ func TestUrgencyRepository_ResetAllData(t *testing.T) {
 	repo := NewUrgencyRepository(log, db)
 
 	urgency1 := &model.Urgency{
-		Name:         "Test Urgency 1",
+		FirstName:    "Marko",
+		LastName:     "Markovic",
 		Email:        "test1@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description 1",
@@ -296,7 +314,8 @@ func TestUrgencyRepository_ResetAllData(t *testing.T) {
 		Status:       urgencyV1.Open,
 	}
 	urgency2 := &model.Urgency{
-		Name:         "Test Urgency 2",
+		FirstName:    "Marko",
+		LastName:     "Markovic",
 		Email:        "test2@example.com",
 		ContactPhone: "987654321",
 		Description:  "Test description 2",

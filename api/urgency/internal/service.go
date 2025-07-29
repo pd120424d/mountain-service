@@ -48,7 +48,7 @@ func NewUrgencyService(
 }
 
 func (s *urgencyService) CreateUrgency(urgency *model.Urgency) error {
-	s.log.Infof("Creating urgency: %s", urgency.Name)
+	s.log.Infof("Creating urgency: %s %s", urgency.FirstName, urgency.LastName)
 	err := s.repo.Create(urgency)
 
 	if err != nil {
@@ -165,7 +165,7 @@ func (s *urgencyService) buildNotificationMessage(urgency *model.Urgency, employ
 		employee.FirstName,
 		employee.LastName,
 		urgency.Location,
-		urgency.Name,
+		urgency.FirstName+" "+urgency.LastName,
 		urgency.ContactPhone,
 		urgency.Description,
 		urgency.Level,
@@ -177,7 +177,7 @@ func (s *urgencyService) buildNotificationMessage(urgency *model.Urgency, employ
 			"🚨 EMERGENCY: %s at %s. Contact: %s (%s). Priority: %s. Please respond ASAP.",
 			urgency.Description,
 			urgency.Location,
-			urgency.Name,
+			urgency.FirstName+" "+urgency.LastName,
 			urgency.ContactPhone,
 			urgency.Level,
 		)

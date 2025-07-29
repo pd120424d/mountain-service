@@ -9,6 +9,7 @@
         },
         "version": "1.0"
     },
+    "host": "localhost:8082",
     "basePath": "/api/v1",
     "paths": {
         "/admin/reset": {

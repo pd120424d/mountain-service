@@ -9,6 +9,7 @@
         },
         "version": "1.0"
     },
+    "host": "localhost:8083",
     "basePath": "/api/v1",
     "paths": {
         "/admin/urgencies/reset": {
@@ -209,9 +210,9 @@
             "required": [
                 "contactPhone",
                 "description",
-                "email",
-                "location",
-                "name"
+                "firstName",
+                "lastName",
+                "location"
             ],
             "properties": {
                 "contactPhone": {
@@ -223,13 +224,16 @@
                 "email": {
                     "type": "string"
                 },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
                 "level": {
                     "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
                 },
                 "location": {
-                    "type": "string"
-                },
-                "name": {
                     "type": "string"
                 }
             }
@@ -264,16 +268,19 @@
                 "email": {
                     "type": "string"
                 },
+                "firstName": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "lastName": {
+                    "type": "string"
                 },
                 "level": {
                     "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
                 },
                 "location": {
-                    "type": "string"
-                },
-                "name": {
                     "type": "string"
                 },
                 "status": {
@@ -311,13 +318,16 @@
                 "email": {
                     "type": "string"
                 },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
                 "level": {
                     "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
                 },
                 "location": {
-                    "type": "string"
-                },
-                "name": {
                     "type": "string"
                 },
                 "status": {

@@ -205,7 +205,8 @@ func TestAssignmentRepository_GetByEmployeeID(t *testing.T) {
 
 		urgency1 := createTestUrgency(t, db)
 		urgency2 := &model.Urgency{
-			Name:         "Test Urgency 2",
+			FirstName:    "Marko",
+			LastName:     "Markovic",
 			Email:        "test2@example.com",
 			ContactPhone: "987654321",
 			Description:  "Test description 2",
@@ -531,7 +532,8 @@ func setupAssignmentTestDB(t *testing.T) *gorm.DB {
 
 func createTestUrgency(t *testing.T, db *gorm.DB) *model.Urgency {
 	urgency := &model.Urgency{
-		Name:         "Test Urgency",
+		FirstName:    "Marko",
+		LastName:     "Markovic",
 		Email:        "test@example.com",
 		ContactPhone: "123456789",
 		Description:  "Test description",

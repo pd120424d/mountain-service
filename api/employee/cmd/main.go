@@ -35,7 +35,7 @@ import (
 
 // @security OAuth2Password
 
-// @host
+// @host localhost:8082
 // @BasePath /api/v1
 func main() {
 	svcName := globConf.EmployeeServiceName
@@ -104,6 +104,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		authorized.POST("/employees/:id/shifts", employeeHandler.AssignShift)
 		authorized.PUT("/employees/:id", employeeHandler.UpdateEmployee)
 		authorized.GET("/employees/:id/shifts", employeeHandler.GetShifts)
+		authorized.GET("/employees/:id/shift-warnings", employeeHandler.GetShiftWarnings)
 		authorized.GET("/shifts/availability", employeeHandler.GetShiftsAvailability)
 		authorized.DELETE("/employees/:id/shifts", employeeHandler.RemoveShift)
 

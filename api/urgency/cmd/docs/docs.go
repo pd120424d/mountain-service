@@ -217,9 +217,9 @@ const docTemplate = `{
             "required": [
                 "contactPhone",
                 "description",
-                "email",
-                "location",
-                "name"
+                "firstName",
+                "lastName",
+                "location"
             ],
             "properties": {
                 "contactPhone": {
@@ -231,13 +231,16 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
                 "level": {
                     "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
                 },
                 "location": {
-                    "type": "string"
-                },
-                "name": {
                     "type": "string"
                 }
             }
@@ -272,16 +275,19 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "firstName": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "lastName": {
+                    "type": "string"
                 },
                 "level": {
                     "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
                 },
                 "location": {
-                    "type": "string"
-                },
-                "name": {
                     "type": "string"
                 },
                 "status": {
@@ -319,13 +325,16 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
                 "level": {
                     "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
                 },
                 "location": {
-                    "type": "string"
-                },
-                "name": {
                     "type": "string"
                 },
                 "status": {
@@ -355,7 +364,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "",
+	Host:             "localhost:8083",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "API Сервис за Ургентне ситуације",

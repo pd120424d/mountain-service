@@ -60,7 +60,8 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 
 	t.Run("it successfully completes the urgency lifecycle (POST, GET, PUT and DELETE)", func(t *testing.T) {
 		createReq := urgencyV1.UrgencyCreateRequest{
-			Name:         "Mountain Service Emergency",
+			FirstName:    "Mountain",
+			LastName:     "Service",
 			Email:        "rescue@example.com",
 			ContactPhone: "123456789",
 			Location:     "N 43.401123 E 22.662756",
@@ -81,7 +82,8 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 		var createResponse urgencyv1.UrgencyResponse
 		err := json.Unmarshal(w.Body.Bytes(), &createResponse)
 		require.NoError(t, err)
-		assert.Equal(t, "Mountain Service Emergency", createResponse.Name)
+		assert.Equal(t, "Mountain", createResponse.FirstName)
+		assert.Equal(t, "Service", createResponse.LastName)
 		assert.Equal(t, "N 43.401123 E 22.662756", createResponse.Location)
 		assert.Equal(t, "open", string(createResponse.Status))
 		urgencyID := createResponse.ID
@@ -112,7 +114,8 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 		err = json.Unmarshal(w.Body.Bytes(), &getResponse)
 		require.NoError(t, err)
 		assert.Equal(t, urgencyID, getResponse.ID)
-		assert.Equal(t, "Mountain Service Emergency", getResponse.Name)
+		assert.Equal(t, "Mountain", getResponse.FirstName)
+		assert.Equal(t, "Service", getResponse.LastName)
 
 		updateReq := urgencyV1.UrgencyUpdateRequest{
 			Status: urgencyV1.InProgress,
@@ -176,7 +179,8 @@ func TestIntegration_AdminOperations(t *testing.T) {
 
 	t.Run("it successfully resets all urgencies as admininistrator", func(t *testing.T) {
 		urgency1 := model.Urgency{
-			Name:         "Test 1",
+			FirstName:    "Test",
+			LastName:     "One",
 			Email:        "test1@example.com",
 			ContactPhone: "123456789",
 			Description:  "Test description 1",
@@ -184,7 +188,8 @@ func TestIntegration_AdminOperations(t *testing.T) {
 			Status:       urgencyV1.Open,
 		}
 		urgency2 := model.Urgency{
-			Name:         "Test 2",
+			FirstName:    "Test",
+			LastName:     "Two",
 			Email:        "test2@example.com",
 			ContactPhone: "987654321",
 			Description:  "Test description 2",

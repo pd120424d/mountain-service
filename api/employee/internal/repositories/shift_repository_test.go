@@ -188,8 +188,8 @@ func TestShiftRepositoryMockDB_GetOnCallEmployees(t *testing.T) {
 
 	t.Run("it successfully returns on-call employees", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "username", "password", "first_name", "last_name", "gender", "phone", "email", "profile_picture", "profile_type"}).
-			AddRow(1, time.Now(), time.Now(), nil, "john_doe", "hashed_password", "John", "Doe", "M", "123456789", "john@example.com", "", "Medic").
-			AddRow(2, time.Now(), time.Now(), nil, "jane_smith", "hashed_password", "Jane", "Smith", "F", "987654321", "jane@example.com", "", "Technical")
+			AddRow(1, time.Now(), time.Now(), nil, "petar_petrovic", "hashed_password", "Petar", "Petrovic", "M", "123456789", "petar@example.com", "", "Medic").
+			AddRow(2, time.Now(), time.Now(), nil, "marko_markovic", "hashed_password", "Marko", "Markovic", "F", "987654321", "marko@example.com", "", "Technical")
 
 		mock.ExpectQuery(`SELECT DISTINCT employees\.\* FROM "employees" JOIN employee_shifts ON employees\.id = employee_shifts\.employee_id JOIN shifts ON employee_shifts\.shift_id = shifts\.id WHERE \(\(shifts\.shift_date = \$1 AND shifts\.shift_type = \$2\)\) AND "employees"\."deleted_at" IS NULL`).
 			WillReturnRows(rows)
@@ -199,8 +199,8 @@ func TestShiftRepositoryMockDB_GetOnCallEmployees(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, employees, 2)
-		assert.Equal(t, "john_doe", employees[0].Username)
-		assert.Equal(t, "jane_smith", employees[1].Username)
+		assert.Equal(t, "petar_petrovic", employees[0].Username)
+		assert.Equal(t, "marko_markovic", employees[1].Username)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 

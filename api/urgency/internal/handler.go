@@ -56,7 +56,8 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 	}
 
 	urgency := model.Urgency{
-		Name:         req.Name,
+		FirstName:    req.FirstName,
+		LastName:     req.LastName,
 		Email:        req.Email,
 		ContactPhone: req.ContactPhone,
 		Location:     req.Location,
@@ -178,8 +179,11 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 	}
 
 	// Update fields if provided
-	if req.Name != "" {
-		urgency.Name = req.Name
+	if req.FirstName != "" {
+		urgency.FirstName = req.FirstName
+	}
+	if req.LastName != "" {
+		urgency.LastName = req.LastName
 	}
 	if req.Email != "" {
 		urgency.Email = req.Email
