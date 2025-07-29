@@ -35,7 +35,7 @@
       <tbody>
         <tr *ngFor="let urgency of urgencies" class="urgency-row">
           <td>{{ urgency.id }}</td>
-          <td>{{ urgency.name }}</td>
+          <td>{{ getDisplayName(urgency) }}</td>
           <td>{{ urgency.location }}</td>
           <td>
             <span class="level-badge" [ngClass]="getLevelClass(urgency.level!)">

@@ -21,9 +21,12 @@
     },
     "UrgencyCreateRequest": {
       "type": "object",
-      "required": ["name", "email", "contactPhone", "location", "description"],
+      "required": ["firstName", "lastName", "contactPhone", "location", "description"],
       "properties": {
-        "name": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
           "type": "string"
         },
         "email": {
@@ -47,7 +50,10 @@
     "UrgencyUpdateRequest": {
       "type": "object",
       "properties": {
-        "name": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
           "type": "string"
         },
         "email": {
@@ -78,7 +84,10 @@
           "type": "integer",
           "format": "int64"
         },
-        "name": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
           "type": "string"
         },
         "email": {

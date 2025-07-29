@@ -53,7 +53,8 @@ describe('UrgencyFormComponent', () => {
 
   it('should initialize form with default values', () => {
     expect(component.urgencyForm).toBeDefined();
-    expect(component.urgencyForm.get('name')?.value).toBe('');
+    expect(component.urgencyForm.get('firstName')?.value).toBe('');
+    expect(component.urgencyForm.get('lastName')?.value).toBe('');
     expect(component.urgencyForm.get('email')?.value).toBe('');
     expect(component.urgencyForm.get('contactPhone')?.value).toBe('');
     expect(component.urgencyForm.get('location')?.value).toBe('');
@@ -68,7 +69,8 @@ describe('UrgencyFormComponent', () => {
     expect(form.valid).toBeFalsy();
 
     // Check individual field validations
-    expect(form.get('name')?.hasError('required')).toBeTruthy();
+    expect(form.get('firstName')?.hasError('required')).toBeTruthy();
+    expect(form.get('lastName')?.hasError('required')).toBeTruthy();
     expect(form.get('email')?.hasError('required')).toBeTruthy();
     expect(form.get('contactPhone')?.hasError('required')).toBeTruthy();
     expect(form.get('location')?.hasError('required')).toBeTruthy();
@@ -89,7 +91,8 @@ describe('UrgencyFormComponent', () => {
     it('should submit form when valid', () => {
       // Fill form with valid data
       component.urgencyForm.patchValue({
-        name: 'Test Emergency',
+        firstName: 'John',
+        lastName: 'Doe',
         email: 'test@example.com',
         contactPhone: '1234567890',
         location: 'Test Location',
@@ -97,7 +100,7 @@ describe('UrgencyFormComponent', () => {
         level: UrgencyLevel.High
       });
 
-      const mockResponse = { id: 1, name: 'Test Emergency' };
+      const mockResponse = { id: 1, firstName: 'John', lastName: 'Doe' };
       urgencyService.addUrgency.and.returnValue(of(mockResponse));
 
       component.onSubmit();
@@ -110,7 +113,8 @@ describe('UrgencyFormComponent', () => {
     it('should handle submission error', () => {
       // Fill form with valid data
       component.urgencyForm.patchValue({
-        name: 'Test Emergency',
+        firstName: 'John',
+        lastName: 'Doe',
         email: 'test@example.com',
         contactPhone: '1234567890',
         location: 'Test Location',
@@ -162,31 +166,31 @@ describe('UrgencyFormComponent', () => {
 
   describe('isFieldInvalid', () => {
     it('should return true for invalid touched field', () => {
-      const nameControl = component.urgencyForm.get('name');
-      nameControl?.markAsTouched();
+      const firstNameControl = component.urgencyForm.get('firstName');
+      firstNameControl?.markAsTouched();
 
-      expect(component.isFieldInvalid('name')).toBe(true);
+      expect(component.isFieldInvalid('firstName')).toBe(true);
     });
 
     it('should return false for valid field', () => {
-      const nameControl = component.urgencyForm.get('name');
-      nameControl?.setValue('Valid Name');
-      nameControl?.markAsTouched();
+      const firstNameControl = component.urgencyForm.get('firstName');
+      firstNameControl?.setValue('Valid Name');
+      firstNameControl?.markAsTouched();
 
-      expect(component.isFieldInvalid('name')).toBe(false);
+      expect(component.isFieldInvalid('firstName')).toBe(false);
     });
 
     it('should return false for invalid untouched field', () => {
-      expect(component.isFieldInvalid('name')).toBe(false);
+      expect(component.isFieldInvalid('firstName')).toBe(false);
     });
   });
 
   describe('getFieldError', () => {
     it('should return required error message', () => {
-      const nameControl = component.urgencyForm.get('name');
-      nameControl?.markAsTouched();
+      const firstNameControl = component.urgencyForm.get('firstName');
+      firstNameControl?.markAsTouched();
 
-      expect(component.getFieldError('name')).toBe('NAME_FORM.REQUIRED');
+      expect(component.getFieldError('firstName')).toBe('FIRSTNAME_FORM.REQUIRED');
     });
 
     it('should return email error message', () => {
@@ -198,18 +202,18 @@ describe('UrgencyFormComponent', () => {
     });
 
     it('should return minlength error message', () => {
-      const nameControl = component.urgencyForm.get('name');
-      nameControl?.setValue('a');
-      nameControl?.markAsTouched();
+      const firstNameControl = component.urgencyForm.get('firstName');
+      firstNameControl?.setValue('a');
+      firstNameControl?.markAsTouched();
 
-      expect(component.getFieldError('name')).toBe('NAME_FORM.MIN_LENGTH');
+      expect(component.getFieldError('firstName')).toBe('FIRSTNAME_FORM.MIN_LENGTH');
     });
 
     it('should return empty string for valid field', () => {
-      const nameControl = component.urgencyForm.get('name');
-      nameControl?.setValue('Valid Name');
+      const firstNameControl = component.urgencyForm.get('firstName');
+      firstNameControl?.setValue('Valid Name');
 
-      expect(component.getFieldError('name')).toBe('');
+      expect(component.getFieldError('firstName')).toBe('');
     });
   });
 });

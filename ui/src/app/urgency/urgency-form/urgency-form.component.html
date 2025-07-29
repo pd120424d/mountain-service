@@ -2,17 +2,31 @@
   <h2>{{ 'URGENCY_FORM.TITLE' | translate }}</h2>
 
   <form [formGroup]="urgencyForm" (ngSubmit)="onSubmit()">
-    <!-- Name Field -->
+    <!-- First Name Field -->
     <div class="form-group">
-      <label for="name">{{ 'URGENCY_FORM.NAME' | translate }}:</label>
+      <label for="firstName">{{ 'URGENCY_FORM.FIRST_NAME' | translate }}:</label>
       <input
-        id="name"
-        formControlName="name"
+        id="firstName"
+        formControlName="firstName"
         type="text"
-        [class.error]="isFieldInvalid('name')"
-        placeholder="{{ 'URGENCY_FORM.NAME_PLACEHOLDER' | translate }}">
-      <div *ngIf="isFieldInvalid('name')" class="error-message">
-        {{ getFieldError('name') | translate }}
+        [class.error]="isFieldInvalid('firstName')"
+        placeholder="{{ 'URGENCY_FORM.FIRST_NAME_PLACEHOLDER' | translate }}">
+      <div *ngIf="isFieldInvalid('firstName')" class="error-message">
+        {{ getFieldError('firstName') | translate }}
+      </div>
+    </div>
+
+    <!-- Last Name Field -->
+    <div class="form-group">
+      <label for="lastName">{{ 'URGENCY_FORM.LAST_NAME' | translate }}:</label>
+      <input
+        id="lastName"
+        formControlName="lastName"
+        type="text"
+        [class.error]="isFieldInvalid('lastName')"
+        placeholder="{{ 'URGENCY_FORM.LAST_NAME_PLACEHOLDER' | translate }}">
+      <div *ngIf="isFieldInvalid('lastName')" class="error-message">
+        {{ getFieldError('lastName') | translate }}
       </div>
     </div>
 

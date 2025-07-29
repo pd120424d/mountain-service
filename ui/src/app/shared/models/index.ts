@@ -95,6 +95,9 @@ export enum EmployeeUpdateRequestProfileTypeEnum {
 // Re-export urgency utilities
 export {
   type Urgency,
+  type UrgencyWithDisplayName,
+  createUrgencyDisplayName,
+  withDisplayName,
   getUrgencyLevelColor,
   getUrgencyStatusColor
 } from './extensions/urgency-extensions';

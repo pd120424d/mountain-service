@@ -25,7 +25,8 @@ export enum UrgencyStatus {
 }
 
 export interface UrgencyCreateRequest {
-  name: string;
+  firstName: string;
+  lastName: string;
   /** @format email */
   email: string;
   contactPhone: string;
@@ -35,7 +36,8 @@ export interface UrgencyCreateRequest {
 }
 
 export interface UrgencyUpdateRequest {
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   /** @format email */
   email?: string;
   contactPhone?: string;
@@ -48,7 +50,8 @@ export interface UrgencyUpdateRequest {
 export interface UrgencyResponse {
   /** @format int64 */
   id?: number;
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   contactPhone?: string;
   location?: string;

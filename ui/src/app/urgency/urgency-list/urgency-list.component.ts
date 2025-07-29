@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
-import { Urgency, UrgencyLevel, UrgencyStatus, UrgencyStatus as GeneratedUrgencyStatus, UrgencyLevel as GeneratedUrgencyLevel } from '../../shared/models';
+import { Urgency, UrgencyLevel, UrgencyStatus, UrgencyStatus as GeneratedUrgencyStatus, UrgencyLevel as GeneratedUrgencyLevel, createUrgencyDisplayName } from '../../shared/models';
 
 @Component({
   selector: 'app-urgency-list',
@@ -52,6 +52,10 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   viewUrgency(id: number): void {
     // TODO: Implement view urgency
     console.log('Viewing urgency:', id);
+  }
+
+  getDisplayName(urgency: Urgency): string {
+    return createUrgencyDisplayName(urgency);
   }
 
   getStatusClass(status: GeneratedUrgencyStatus): string {

@@ -17,7 +17,8 @@ describe('UrgencyListComponent', () => {
   const mockUrgencies: Urgency[] = [
     {
       id: 1,
-      name: 'Test Urgency 1',
+      firstName: 'John',
+      lastName: 'Doe',
       email: 'test1@example.com',
       contactPhone: '1234567890',
       location: 'Test Location 1',
@@ -29,7 +30,8 @@ describe('UrgencyListComponent', () => {
     },
     {
       id: 2,
-      name: 'Test Urgency 2',
+      firstName: 'Jane',
+      lastName: 'Smith',
       email: 'test2@example.com',
       contactPhone: '0987654321',
       location: 'Test Location 2',

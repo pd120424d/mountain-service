@@ -39,7 +39,8 @@ describe('UrgencyService', () => {
     const mockUrgencies: Urgency[] = [
       {
         id: 1,
-        name: 'Urgency 1',
+        firstName: 'John',
+        lastName: 'Doe',
         email: 'urgency1@example.com',
         contactPhone: '1234567890',
         location: 'Location 1',
@@ -51,7 +52,8 @@ describe('UrgencyService', () => {
       },
       {
         id: 2,
-        name: 'Urgency 2',
+        firstName: 'Jane',
+        lastName: 'Smith',
         email: 'urgency2@example.com',
         contactPhone: '0987654321',
         location: 'Location 2',
@@ -75,7 +77,8 @@ describe('UrgencyService', () => {
   it('should fetch urgency by ID', () => {
     const mockUrgency: Urgency = {
       id: 1,
-      name: 'Urgency 1',
+      firstName: 'John',
+      lastName: 'Doe',
       email: 'urgency1@example.com',
       contactPhone: '1234567890',
       location: 'Location 1',
@@ -97,7 +100,8 @@ describe('UrgencyService', () => {
 
   it('should add urgency', () => {
     const mockUrgencyCreateRequest: UrgencyCreateRequest = {
-      name: 'Urgency 1',
+      firstName: 'John',
+      lastName: 'Doe',
       email: 'urgency1@example.com',
       contactPhone: '1234567890',
       location: 'Location 1',
@@ -107,7 +111,8 @@ describe('UrgencyService', () => {
 
     const mockUrgencyResponse: Urgency = {
       id: 1,
-      name: 'Urgency 1',
+      firstName: 'John',
+      lastName: 'Doe',
       email: 'urgency1@example.com',
       contactPhone: '1234567890',
       location: 'Location 1',
@@ -130,7 +135,8 @@ describe('UrgencyService', () => {
 
   it('should update urgency', () => {
     const mockUrgencyUpdateRequest: UrgencyUpdateRequest = {
-      name: 'Urgency 1',
+      firstName: 'John',
+      lastName: 'Doe',
       email: 'urgency1@example.com',
       contactPhone: '1234567890',
       location: 'Location 1',
@@ -141,7 +147,8 @@ describe('UrgencyService', () => {
 
     const mockUrgencyResponse: Urgency = {
       id: 1,
-      name: 'Urgency 1',
+      firstName: 'John',
+      lastName: 'Doe',
       email: 'urgency1@example.com',
       contactPhone: '1234567890',
       location: 'Location 1',
