@@ -1,865 +1,812 @@
 package handler
 
 import (
-	"errors"
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
 
-	"gorm.io/gorm"
-
-	"github.com/pd120424d/mountain-service/api/employee/internal/model"
-	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
-	"github.com/pd120424d/mountain-service/api/shared/utils"
-
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
+	"github.com/pd120424d/mountain-service/api/employee/internal/model"
+	"github.com/pd120424d/mountain-service/api/employee/internal/service"
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
 func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 	t.Parallel()
 
-	log := utils.NewTestLogger()
-
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		invalidPayload := `{
-			"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(invalidPayload))
+		invalidJSON := `{"username": "test", "invalid": json}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/register", strings.NewReader(invalidJSON))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler := NewEmployeeHandler(log, nil, nil)
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"Invalid request payload: invalid character '\\\\n' in string literal\"}")
-	})
-
-	t.Run("it returns an error when profile type is invalid", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		payload := `{
-			"username": "test-user",
-			"password": "Pass123!",
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "blabla"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		handler := NewEmployeeHandler(log, nil, nil)
-		handler.RegisterEmployee(ctx)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid profile type")
-	})
-
-	t.Run("it returns an error when it fails to list employees by username", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		payload := `{
-			"username": "test-user",
-			"password": "Pass123!",
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "Medic"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return(nil, gorm.ErrRecordNotFound).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.RegisterEmployee(ctx)
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"Failed to check for existing username\"}")
-	})
-
-	t.Run("it returns an error when employee with same username already exists", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		payload := `{
-			"username": "test-user",
-			"password": "Pass123!",
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "Medic"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		existingEmployee := model.Employee{Username: "test-user"}
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{existingEmployee}, nil).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.RegisterEmployee(ctx)
-
-		assert.Equal(t, http.StatusConflict, w.Code)
-		assert.Contains(t, w.Body.String(), "Username already exists")
-	})
-
-	t.Run("it returns an error when it fails to list employees by email", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		payload := `{
-			"username": "test-user",
-			"password": "Pass123!",
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "Medic"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		usernameFilter := map[string]interface{}{
-			"username": "test-user",
-		}
-		emplRepoMock.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return(nil, gorm.ErrRecordNotFound).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.RegisterEmployee(ctx)
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"Failed to check for existing email\"}")
-	})
-
-	t.Run("it returns an error when employee with same email already exists", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		payload := `{
-			"username": "test-user",
-			"password": "Pass123!",
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "Medic"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		existingEmployee := model.Employee{Email: "test-user@example.com"}
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		usernameFilter := map[string]interface{}{
-			"username": "test-user",
-		}
-		emplRepoMock.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{existingEmployee}, nil).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.RegisterEmployee(ctx)
-
-		assert.Equal(t, http.StatusConflict, w.Code)
-		assert.Contains(t, w.Body.String(), "Email already exists")
+		assert.Contains(t, w.Body.String(), "Invalid request payload")
 	})
 
 	tests := []struct {
 		name     string
-		password string
-		error    string
+		errCode  int
+		errMsg   string
+		err      error
+		response *employeeV1.EmployeeResponse
 	}{
 		{
-			name:     "it returns an error when password is too short",
-			password: "short",
-			error:    utils.ErrPasswordLength,
+			name:    "it returns StatusConflict when username already exists",
+			errCode: http.StatusConflict,
+			errMsg:  "Username already exists",
+			err:     fmt.Errorf("username already exists"),
 		},
 		{
-			name:     "it returns an error when password is too long",
-			password: "verylongpasswordthatexceedstheallowedlength",
-			error:    utils.ErrPasswordLength,
+			name:    "it returns StatusConflict when email already exists",
+			errCode: http.StatusConflict,
+			errMsg:  "Email already exists",
+			err:     fmt.Errorf("email already exists"),
 		},
 		{
-			name:     "it returns an error when password Lees not contain an uppercase letter",
-			password: "pass123!",
-			error:    utils.ErrPasswordUppercase,
+			name:    "it returns StatusBadRequest when profile type is invalid",
+			errCode: http.StatusBadRequest,
+			errMsg:  "Invalid profile type",
+			err:     fmt.Errorf("invalid profile type"),
+		},
+		{
+			name:    "it returns StatusInternalServerError when it fails to check for existing username",
+			errCode: http.StatusInternalServerError,
+			errMsg:  "Failed to check for existing username",
+			err:     fmt.Errorf("failed to check for existing username"),
+		},
+		{
+			name:    "it returns StatusInternalServerError when it fails to check for existing email",
+			errCode: http.StatusInternalServerError,
+			errMsg:  "Failed to check for existing email",
+			err:     fmt.Errorf("failed to check for existing email"),
+		},
+		{
+			name:    "it returns StatusBadRequest when password validation fails",
+			errCode: http.StatusBadRequest,
+			errMsg:  "password must be between 6 and 10 characters long",
+			err:     fmt.Errorf("password must be between 6 and 10 characters long"),
+		},
+		{
+			name:    "it returns StatusInternalServerError when database creation fails",
+			errCode: http.StatusInternalServerError,
+			errMsg:  "invalid db state",
+			err:     fmt.Errorf("invalid db state"),
+		},
+		{
+			name:    "it returns StatusInternalServerError when it fails to register employee with any other reason",
+			errCode: http.StatusInternalServerError,
+			errMsg:  "Failed to register employee",
+			err:     fmt.Errorf("any other error"),
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockEmplSvc := service.NewMockEmployeeService(ctrl)
+			mockShiftSvc := service.NewMockShiftService(ctrl)
+			log := utils.NewTestLogger()
+			handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
 			ctx, _ := gin.CreateTestContext(w)
 
-			payload := `{
-				"username": "test-user",
-				"password": "` + test.password + `",
-				"firstName": "Bruce", 
-				"lastName": "Lee",
-				"gender": "M", 
-				"phone": "123456789",
-				"email": "test-user@example.com", 
-				"profileType": "Medic"
-			}`
-			ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(payload))
+			req := employeeV1.EmployeeCreateRequest{
+				FirstName:   "Test",
+				LastName:    "User",
+				Username:    "existinguser",
+				Password:    "Pass123!",
+				Email:       "test@example.com",
+				Gender:      "Male",
+				Phone:       "123456789",
+				ProfileType: "Medic",
+			}
+			payload, _ := json.Marshal(req)
+			ctx.Request = httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(payload))
 			ctx.Request.Header.Set("Content-Type", "application/json")
 
-			usernameFilter := map[string]interface{}{
-				"username": "test-user",
-			}
-			emailFilter := map[string]interface{}{
-				"email": "test-user@example.com",
-			}
-			emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-			emplRepoMock.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
-			emplRepoMock.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(1)
+			mockEmplSvc.EXPECT().RegisterEmployee(req).Return(nil, test.err)
 
-			handler := NewEmployeeHandler(log, emplRepoMock, nil)
 			handler.RegisterEmployee(ctx)
 
-			if test.error != "" {
-				assert.Equal(t, http.StatusBadRequest, w.Code)
-				assert.Contains(t, w.Body.String(), test.error)
-			} else {
-				assert.Equal(t, http.StatusCreated, w.Code)
-			}
+			assert.Equal(t, test.errCode, w.Code)
+			assert.Contains(t, w.Body.String(), test.errMsg)
 		})
 	}
 
-	t.Run("it returns an error when it fails to create employee", func(t *testing.T) {
+	t.Run("it successfully registers employee", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		payload := `{
-			"username": "test-user",
-			"password": "Pass123!",
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "Medic"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(payload))
+		req := employeeV1.EmployeeCreateRequest{
+			FirstName:   "Test",
+			LastName:    "User",
+			Username:    "testuser",
+			Password:    "Pass123!",
+			Email:       "test@example.com",
+			Gender:      "Male",
+			Phone:       "123456789",
+			ProfileType: "Medic",
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		usernameFilter := map[string]interface{}{
-			"username": "test-user",
+		response := &employeeV1.EmployeeResponse{
+			ID:        1,
+			Username:  "testuser",
+			FirstName: "Test",
+			LastName:  "User",
+			Email:     "test@example.com",
 		}
-		emailFilter := map[string]interface{}{
-			"email": "test-user@example.com",
-		}
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
-		emplRepoMock.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(1)
-		emplRepoMock.EXPECT().Create(gomock.Any()).Return(gorm.ErrInvalidDB).Times(1)
 
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.RegisterEmployee(ctx)
+		mockEmplSvc.EXPECT().RegisterEmployee(req).Return(response, nil)
 
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"invalid db\"}")
-	})
-
-	t.Run("it creates an employee when data is valid", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		payload := `{
-			"username": "test-user",
-			"password": "Pass123!",
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "Medic"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		usernameFilter := map[string]interface{}{
-			"username": "test-user",
-		}
-		emailFilter := map[string]interface{}{
-			"email": "test-user@example.com",
-		}
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
-		emplRepoMock.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(1)
-		emplRepoMock.EXPECT().Create(gomock.Any()).Return(nil).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.RegisterEmployee(ctx)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"id\":0,\"username\":\"test-user\",\"firstName\":\"Bruce\",\"lastName\":\"Lee\",\"gender\":\"M\",\"phone\":\"123456789\",\"email\":\"test-user@example.com\",\"profilePicture\":\"\",\"profileType\":\"Medic\"}")
+		assert.Contains(t, w.Body.String(), "testuser")
 	})
 }
 
 func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 	t.Parallel()
-	log := utils.NewTestLogger()
 
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		invalidPayload := `{
-			"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(invalidPayload))
+		invalidJSON := `{"username": "test", "invalid": json}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(invalidJSON))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler := NewEmployeeHandler(log, nil, nil)
 		handler.LoginEmployee(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"Invalid request payload: invalid character '\\\\n' in string literal\"}")
+		assert.Contains(t, w.Body.String(), "Invalid request payload")
 	})
 
-	t.Run("it returns an error when employee Lees not exist", func(t *testing.T) {
+	t.Run("it returns an error when admin login has invalid password", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		payload := `{
-			"username": "test-user",
-			"password": "Pass123!"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(payload))
+		req := employeeV1.EmployeeLogin{
+			Username: "admin",
+			Password: "wrongpass",
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByUsername("test-user").Return(nil, gorm.ErrRecordNotFound).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.LoginEmployee(ctx)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 		assert.Contains(t, w.Body.String(), "Invalid credentials")
 	})
 
-	t.Run("it returns an error when password is incorrect", func(t *testing.T) {
+	t.Run("it successfully logs in admin", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		// Set admin password and JWT secret before test
+		os.Setenv("ADMIN_PASSWORD", "admin123")
+		os.Setenv("JWT_SECRET", "test-secret-key")
+		defer func() {
+			os.Unsetenv("ADMIN_PASSWORD")
+			os.Unsetenv("JWT_SECRET")
+		}()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		payload := `{
-			"username": "test-user",
-			"password": "WrongPassword!"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(payload))
+		req := employeeV1.EmployeeLogin{
+			Username: "admin",
+			Password: "admin123",
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByUsername("test-user").Return(&model.Employee{Password: "Pass123!"}, nil).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.LoginEmployee(ctx)
-
-		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid credentials")
-	})
-
-	t.Run("it returns a JWT token when login is successful", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		payload := `{
-			"username": "test-user",
-			"password": "Pass123!"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByUsername("test-user").Return(&model.Employee{Username: "test-user", Password: "$2a$10$wq8KS0Dy7tGWM5pnCqPhfO.uY1vvVzZb5.CWsqqCyEQv89Uu6QDaK"}, nil).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.LoginEmployee(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "token")
 	})
 
-	t.Run("it returns a JWT token when admin login is successful", func(t *testing.T) {
-		os.Setenv("ADMIN_PASSWORD", "admin123")
-		defer os.Unsetenv("ADMIN_PASSWORD")
+	t.Run("it returns an error when credentials are invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		payload := `{
-			"username": "admin",
-			"password": "admin123"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(payload))
+		req := employeeV1.EmployeeLogin{
+			Username: "testuser",
+			Password: "wrongpass",
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler := NewEmployeeHandler(log, nil, nil)
-		handler.LoginEmployee(ctx)
+		mockEmplSvc.EXPECT().LoginEmployee(req).Return("", fmt.Errorf("invalid credentials"))
 
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "token")
-	})
-
-	t.Run("it returns error when admin password is wrong", func(t *testing.T) {
-		os.Setenv("ADMIN_PASSWORD", "admin123")
-		defer os.Unsetenv("ADMIN_PASSWORD")
-
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		payload := `{
-			"username": "admin",
-			"password": "wrongpassword"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		handler := NewEmployeeHandler(log, nil, nil)
 		handler.LoginEmployee(ctx)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 		assert.Contains(t, w.Body.String(), "Invalid credentials")
 	})
 
+	t.Run("it returns an error when employee login fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		req := employeeV1.EmployeeLogin{
+			Username: "testuser",
+			Password: "Pass123!",
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		mockEmplSvc.EXPECT().LoginEmployee(req).Return("", fmt.Errorf("any other error"))
+
+		handler.LoginEmployee(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "Failed to login user")
+	})
+
+	t.Run("it successfully logs in employee", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		req := employeeV1.EmployeeLogin{
+			Username: "testuser",
+			Password: "Pass123!",
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		mockEmplSvc.EXPECT().LoginEmployee(req).Return("jwt-token", nil)
+
+		handler.LoginEmployee(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "jwt-token")
+	})
+}
+
+func TestEmployeeHandler_OAuth2Token(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns an error when username is not provided", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		// Send form data with only password
+		formData := "password=test"
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/oauth2/token", strings.NewReader(formData))
+		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		handler.OAuth2Token(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "username and password are required")
+	})
+
+	t.Run("it returns an error when password is not provided", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		// Send form data with only username
+		formData := "username=test"
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/oauth2/token", strings.NewReader(formData))
+		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		handler.OAuth2Token(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "username and password are required")
+	})
+
+	t.Run("it returns an error when admin password is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		os.Setenv("ADMIN_PASSWORD", "admin123")
+		defer os.Unsetenv("ADMIN_PASSWORD")
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		formData := "username=admin&password=wrongpass"
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/oauth2/token", strings.NewReader(formData))
+		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		handler.OAuth2Token(ctx)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid credentials")
+	})
+
+	t.Run("it successfully authenticates admin via OAuth2", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		os.Setenv("ADMIN_PASSWORD", "admin123")
+		os.Setenv("JWT_SECRET", "test-secret-key")
+		defer func() {
+			os.Unsetenv("ADMIN_PASSWORD")
+			os.Unsetenv("JWT_SECRET")
+		}()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		// Create form data for OAuth2 endpoint with correct admin credentials
+		formData := "username=admin&password=admin123"
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/oauth2/token", strings.NewReader(formData))
+		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		handler.OAuth2Token(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "access_token")
+		assert.Contains(t, w.Body.String(), "Bearer")
+		assert.Contains(t, w.Body.String(), "expires_in")
+	})
+
+	t.Run("it returns an error when LoginEmployee call fails for regular employee", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		// Create form data for OAuth2 endpoint with correct employee credentials
+		formData := "username=testuser&password=Pass123!"
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/oauth2/token", strings.NewReader(formData))
+		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		mockEmplSvc.EXPECT().LoginEmployee(employeeV1.EmployeeLogin{
+			Username: "testuser",
+			Password: "Pass123!",
+		}).Return("", fmt.Errorf("invalid credentials provided"))
+
+		handler.OAuth2Token(ctx)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid credentials")
+	})
+
+	t.Run("it successfully authenticates employee via OAuth2", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		// Create form data for OAuth2 endpoint with correct employee credentials
+		formData := "username=testuser&password=Pass123!"
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/oauth2/token", strings.NewReader(formData))
+		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		mockEmplSvc.EXPECT().LoginEmployee(employeeV1.EmployeeLogin{
+			Username: "testuser",
+			Password: "Pass123!",
+		}).Return("jwt-token", nil)
+
+		handler.OAuth2Token(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "access_token")
+		assert.Contains(t, w.Body.String(), "Bearer")
+		assert.Contains(t, w.Body.String(), "expires_in")
+	})
 }
 
 func TestEmployeeHandler_ListEmployees(t *testing.T) {
-	log := utils.NewTestLogger()
+	t.Parallel()
 
-	t.Run("it returns an error when it fails to retrieve employees", func(t *testing.T) {
+	t.Run("it returns StatusInternalServerError when service call fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetAll().Return(nil, gorm.ErrRecordNotFound).Times(1)
+		mockEmplSvc.EXPECT().ListEmployees().Return(nil, fmt.Errorf("any other error"))
 
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.ListEmployees(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"record not found\"}")
+		assert.Contains(t, w.Body.String(), "Failed to retrieve employees")
 	})
 
-	t.Run("it returns an empty list when no employees exist", func(t *testing.T) {
+	t.Run("it successfully returns employees", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetAll().Return([]model.Employee{}, nil).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.ListEmployees(ctx)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "[]")
-	})
-
-	t.Run("it returns a list of employees when employees exist", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		employees := []model.Employee{
-			{Username: "test-user", FirstName: "Bruce", LastName: "Lee", Password: "Pass123!"},
-			{Username: "asmith", FirstName: "Alice", LastName: "Smith", Password: "Pass123!"},
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				Username:  "testuser",
+				FirstName: "Test",
+				LastName:  "User",
+				Email:     "test@example.com",
+			},
 		}
 
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetAll().Return(employees, nil).Times(1)
+		mockEmplSvc.EXPECT().ListEmployees().Return(employees, nil)
 
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.ListEmployees(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "[{\"id\":0,\"username\":\"test-user\",\"firstName\":\"Bruce\",\"lastName\":\"Lee\",\"gender\":\"\",\"phone\":\"\",\"email\":\"\",\"profilePicture\":\"\",\"profileType\":\"Unknown\"},{\"id\":0,\"username\":\"asmith\",\"firstName\":\"Alice\",\"lastName\":\"Smith\",\"gender\":\"\",\"phone\":\"\",\"email\":\"\",\"profilePicture\":\"\",\"profileType\":\"Unknown\"}]")
+		assert.Contains(t, w.Body.String(), "testuser")
 	})
-
 }
 
 func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 	t.Parallel()
-	log := utils.NewTestLogger()
+
+	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
+
+		req := employeeV1.EmployeeUpdateRequest{
+			FirstName: "Updated",
+			LastName:  "User",
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/invalid", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.UpdateEmployee(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid employee ID")
+	})
 
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
 
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-
-		invalidPayload := `{
-			"
-		}`
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-
-		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", strings.NewReader(invalidPayload))
+		invalidJSON := `{"firstName": "test", "invalid": json}`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", strings.NewReader(invalidJSON))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.UpdateEmployee(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"Invalid request payload\"}")
+		assert.Contains(t, w.Body.String(), "Invalid request payload")
 	})
 
-	t.Run("it returns an error when employee does not exist", func(t *testing.T) {
+	tests := []struct {
+		name    string
+		errCode int
+		errMsg  string
+		err     error
+	}{
+		{
+			name:    "it returns StatusNotFound when employee not found",
+			errCode: http.StatusNotFound,
+			errMsg:  "Employee not found",
+			err:     fmt.Errorf("employee not found"),
+		},
+		{
+			name:    "it returns StatusBadRequest when email validation fails",
+			errCode: http.StatusBadRequest,
+			errMsg:  "invalid email format",
+			err:     fmt.Errorf("mail: invalid email format"),
+		},
+		{
+			name:    "it returns StatusInternalServerError when update fails with other error",
+			errCode: http.StatusInternalServerError,
+			errMsg:  "Failed to update employee",
+			err:     fmt.Errorf("database connection failed"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockEmplSvc := service.NewMockEmployeeService(ctrl)
+			mockShiftSvc := service.NewMockShiftService(ctrl)
+			log := utils.NewTestLogger()
+			handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+			gin.SetMode(gin.TestMode)
+			w := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(w)
+			ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+			req := employeeV1.EmployeeUpdateRequest{
+				FirstName: "Updated",
+				LastName:  "User",
+				Email:     "updated@example.com",
+			}
+			payload, _ := json.Marshal(req)
+			ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", bytes.NewReader(payload))
+			ctx.Request.Header.Set("Content-Type", "application/json")
+
+			mockEmplSvc.EXPECT().UpdateEmployee(uint(1), req).Return(nil, test.err)
+
+			handler.UpdateEmployee(ctx)
+
+			assert.Equal(t, test.errCode, w.Code)
+			assert.Contains(t, w.Body.String(), test.errMsg)
+		})
+	}
+
+	t.Run("it successfully updates employee", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
 
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-
-		payload := `{
-			"firstName": "Bruce",
-			"lastName": "Lee",
-			"age": 30,
-			"email": "test-user@example.com"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", strings.NewReader(payload))
+		req := employeeV1.EmployeeUpdateRequest{
+			FirstName: "Updated",
+			LastName:  "User",
+			Email:     "updated@example.com",
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(gorm.ErrRecordNotFound).Times(1)
+		response := &employeeV1.EmployeeResponse{
+			ID:        1,
+			Username:  "testuser",
+			FirstName: "Updated",
+			LastName:  "User",
+			Email:     "updated@example.com",
+		}
 
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.UpdateEmployee(ctx)
+		mockEmplSvc.EXPECT().UpdateEmployee(uint(1), req).Return(response, nil)
 
-		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"Employee not found\"}")
-	})
-
-	t.Run("it returns an error when validation fails", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
-
-		payload := `{
-			"firstName": "B",
-			"lastName": "L",
-			"email": "invalid-email.com"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.UpdateEmployee(ctx)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"mail: missing '@' or angle-addr\"}")
-	})
-
-	t.Run("it returns an error when it fails to update an existing employee", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
-
-		payload := `{
-			"firstName": "Bruce",
-			"lastName": "Lee",
-			"age": 30,
-			"email": "test-user@example.com"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		emplRepoMock.EXPECT().UpdateEmployee(gomock.Any()).Return(gorm.ErrRecordNotFound).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.UpdateEmployee(ctx)
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"error\":\"Failed to update employee\"}")
-	})
-
-	t.Run("it successfully updates an existing employee when it exists", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(nil).Times(1)
-
-		payload := `{
-			"firstName": "Bruce",
-			"lastName": "Lee",
-			"age": 30,
-			"email": "test-user@example.com"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", strings.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		emplRepoMock.EXPECT().UpdateEmployee(gomock.Any()).Return(nil).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.UpdateEmployee(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "{\"id\":0,\"username\":\"\",\"firstName\":\"Bruce\",\"lastName\":\"Lee\",\"gender\":\"\",\"phone\":\"\",\"email\":\"test-user@example.com\",\"profilePicture\":\"\",\"profileType\":\"Unknown\"}")
-	})
-
-}
-
-func TestEmployeeHandler_CreateEmployee(t *testing.T) {
-	t.Parallel()
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockEmplRepo := repositories.NewMockEmployeeRepository(ctrl)
-	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
-	log := utils.NewTestLogger()
-	handler := NewEmployeeHandler(log, mockEmplRepo, mockShiftRepo)
-
-	gin.SetMode(gin.TestMode)
-
-	t.Run("it returns an error when password validation fails", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		usernameFilter := map[string]interface{}{
-			"username": "test-user",
-		}
-		emailFilter := map[string]interface{}{
-			"email": "test-user@example.com",
-		}
-		mockEmplRepo.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
-		mockEmplRepo.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(1)
-		mockEmplRepo.EXPECT().Create(gomock.Any()).Return(nil).Times(0)
-		invalidEmployee := `{
-			"username": "test-user",
-			"password": "short", 
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "Medic"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(invalidEmployee))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		handler.RegisterEmployee(ctx)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), utils.ErrPasswordLength)
-	})
-
-	t.Run("it returns an error when employee already exists", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		usernameFilter := map[string]interface{}{
-			"username": "test-user",
-		}
-		emailFilter := map[string]interface{}{
-			"email": "test-user@example.com",
-		}
-		mockEmplRepo.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{{}}, nil).Times(1)
-		mockEmplRepo.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(0)
-		mockEmplRepo.EXPECT().Create(gomock.Any()).Return(nil).Times(0)
-		existingEmployee := `{
-			"username": "test-user",
-			"password": "Pass123!",
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "Medic"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(existingEmployee))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		handler.RegisterEmployee(ctx)
-
-		assert.Equal(t, http.StatusConflict, w.Code)
-		assert.Contains(t, w.Body.String(), "Username already exists")
-	})
-
-	t.Run("it returns an error when email already exists", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		usernameFilter := map[string]interface{}{
-			"username": "test-user",
-		}
-		emailFilter := map[string]interface{}{
-			"email": "test-user@example.com",
-		}
-		mockEmplRepo.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
-		mockEmplRepo.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{{}}, nil).Times(1)
-		mockEmplRepo.EXPECT().Create(gomock.Any()).Return(nil).Times(0)
-		existingEmployee := `{
-			"username": "test-user",
-			"password": "Pass123!",
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "Medic"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(existingEmployee))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		handler.RegisterEmployee(ctx)
-
-		assert.Equal(t, http.StatusConflict, w.Code)
-		assert.Contains(t, w.Body.String(), "Email already exists")
-	})
-
-	t.Run("it creates an employee when data is valid", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		usernameFilter := map[string]interface{}{
-			"username": "test-user",
-		}
-		emailFilter := map[string]interface{}{
-			"email": "test-user@example.com",
-		}
-		mockEmplRepo.EXPECT().ListEmployees(usernameFilter).Return([]model.Employee{}, nil).Times(1)
-		mockEmplRepo.EXPECT().ListEmployees(emailFilter).Return([]model.Employee{}, nil).Times(1)
-		mockEmplRepo.EXPECT().Create(gomock.Any()).Return(nil).Times(1)
-		validEmployee := `{
-			"username": "test-user",
-			"password": "Pass123!",
-			"firstName": "Bruce", 
-			"lastName": "Lee",
-			"gender": "M", 
-			"phone": "123456789",
-			"email": "test-user@example.com", 
-			"profileType": "Medic"
-		}`
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees", strings.NewReader(validEmployee))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		handler.RegisterEmployee(ctx)
-
-		assert.Equal(t, http.StatusCreated, w.Code)
-		assert.Equal(t, `{"id":0,"username":"test-user","firstName":"Bruce","lastName":"Lee","gender":"M","phone":"123456789","email":"test-user@example.com","profilePicture":"","profileType":"Medic"}`, w.Body.String())
-	})
-}
-
-func TestEmployeeHandler_GetAllEmployees(t *testing.T) {
-	t.Parallel()
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
-	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
-	log := utils.NewTestLogger()
-	handler := NewEmployeeHandler(log, mockRepo, mockShiftRepo)
-
-	gin.SetMode(gin.TestMode)
-
-	t.Run("it returns an empty list when no employees exist", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		mockRepo.EXPECT().GetAll().Return([]model.Employee{}, nil).Times(1)
-
-		handler.ListEmployees(ctx)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.JSONEq(t, `[]`, w.Body.String())
-	})
-
-	t.Run("it returns a list of employees when employees exist", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		employees := []model.Employee{
-			{Username: "test-user", FirstName: "Bruce", LastName: "Lee", Password: "Pass123!"},
-			{Username: "asmith", FirstName: "Alice", LastName: "Smith", Password: "Pass123!"},
-		}
-
-		mockRepo.EXPECT().GetAll().Return(employees, nil).Times(1)
-
-		handler.ListEmployees(ctx)
-
-		expectedJSON := `[
-			{"id":0,"username":"test-user","firstName":"Bruce","lastName":"Lee","gender":"","phone":"","email":"","profilePicture":"","profileType":"Unknown"},
-			{"id":0,"username":"asmith","firstName":"Alice","lastName":"Smith","gender":"","phone":"","email":"","profilePicture":"","profileType":"Unknown"}
-		]`
-
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.JSONEq(t, expectedJSON, w.Body.String())
+		assert.Contains(t, w.Body.String(), "Updated")
+		assert.Contains(t, w.Body.String(), "updated@example.com")
 	})
 }
 
 func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 	t.Parallel()
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := repositories.NewMockEmployeeRepository(ctrl)
-	mockShiftRepo := repositories.NewMockShiftRepository(ctrl)
-	log := utils.NewTestLogger()
-	handler := NewEmployeeHandler(log, mockRepo, mockShiftRepo)
-
-	gin.SetMode(gin.TestMode)
 
 	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
 
-		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/invalid", nil)
+
 		handler.DeleteEmployee(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "Invalid employee ID")
 	})
 
-	t.Run("it returns an error when employee Lees not exist", func(t *testing.T) {
+	t.Run("it returns StatusInternalServerError when delete fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
 
-		mockRepo.EXPECT().Delete(uint(1)).Return(gorm.ErrRecordNotFound).Times(1)
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1", nil)
 
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		mockEmplSvc.EXPECT().DeleteEmployee(uint(1)).Return(fmt.Errorf("database error"))
+
 		handler.DeleteEmployee(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "Failed to delete employee")
 	})
 
-	t.Run("it deletes an existing employee", func(t *testing.T) {
+	t.Run("it successfully deletes employee", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
 
-		mockRepo.EXPECT().Delete(uint(1)).Return(nil).Times(1)
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1", nil)
 
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		mockEmplSvc.EXPECT().DeleteEmployee(uint(1)).Return(nil)
+
 		handler.DeleteEmployee(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -870,15 +817,55 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 func TestEmployeeHandler_AssignShift(t *testing.T) {
 	t.Parallel()
 
-	log := utils.NewTestLogger()
-
 	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
 
-		// Create handler with nil dependencies since we're only testing ID parsing
-		handler := NewEmployeeHandler(log, nil, nil)
-		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
+		req := employeeV1.AssignShiftRequest{
+			ShiftDate: "2024-01-15",
+			ShiftType: 1,
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/invalid/shifts", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "invalid employee ID")
+	})
+
+	t.Run("it returns an error when employee ID is zero or negative", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "0"}}
+
+		req := employeeV1.AssignShiftRequest{
+			ShiftDate: "2024-01-15",
+			ShiftType: 1,
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/0/shifts", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		handler.AssignShift(ctx)
 
@@ -887,14 +874,21 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 	})
 
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
 
-		// Create handler with nil dependencies since we're only testing JSON parsing
-		handler := NewEmployeeHandler(log, nil, nil)
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader("invalid json"))
+		invalidJSON := `{"shiftDate": "2024-01-15", "invalid": json}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", strings.NewReader(invalidJSON))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		handler.AssignShift(ctx)
@@ -902,62 +896,396 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
+	tests := []struct {
+		name    string
+		errCode int
+		errMsg  string
+		err     error
+	}{
+		{
+			name:    "it returns StatusNotFound when employee not found",
+			errCode: http.StatusNotFound,
+			errMsg:  "employee not found",
+			err:     fmt.Errorf("employee not found"),
+		},
+		{
+			name:    "it returns StatusBadRequest when shift date format is invalid",
+			errCode: http.StatusBadRequest,
+			errMsg:  "invalid shift date format",
+			err:     fmt.Errorf("invalid shift date format"),
+		},
+		{
+			name:    "it returns StatusBadRequest when shift is in the past",
+			errCode: http.StatusBadRequest,
+			errMsg:  "cannot assign shift in the past",
+			err:     fmt.Errorf("cannot assign shift in the past"),
+		},
+		{
+			name:    "it returns StatusBadRequest when shift is too far in advance",
+			errCode: http.StatusBadRequest,
+			errMsg:  "cannot assign shift more than 3 months in advance",
+			err:     fmt.Errorf("cannot assign shift more than 3 months in advance"),
+		},
+		{
+			name:    "it returns StatusConflict when employee already assigned to shift",
+			errCode: http.StatusConflict,
+			errMsg:  "employee is already assigned to this shift",
+			err:     fmt.Errorf("employee is already assigned to this shift"),
+		},
+		{
+			name:    "it returns StatusConflict when maximum capacity reached",
+			errCode: http.StatusConflict,
+			errMsg:  "maximum capacity for this role reached in the selected shift",
+			err:     fmt.Errorf("maximum capacity for this role reached in the selected shift"),
+		},
+		{
+			name:    "it returns StatusInternalServerError when assign fails with other error",
+			errCode: http.StatusInternalServerError,
+			errMsg:  "internal server error",
+			err:     fmt.Errorf("database connection failed"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockEmplSvc := service.NewMockEmployeeService(ctrl)
+			mockShiftSvc := service.NewMockShiftService(ctrl)
+			log := utils.NewTestLogger()
+			handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+			gin.SetMode(gin.TestMode)
+			w := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(w)
+			ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+			req := employeeV1.AssignShiftRequest{
+				ShiftDate: "2024-01-15",
+				ShiftType: 1,
+			}
+			payload, _ := json.Marshal(req)
+			ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", bytes.NewReader(payload))
+			ctx.Request.Header.Set("Content-Type", "application/json")
+
+			mockShiftSvc.EXPECT().AssignShift(uint(1), req).Return(nil, test.err)
+
+			handler.AssignShift(ctx)
+
+			assert.Equal(t, test.errCode, w.Code)
+			assert.Contains(t, w.Body.String(), test.errMsg)
+		})
+	}
+
+	t.Run("it successfully assigns shift", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		req := employeeV1.AssignShiftRequest{
+			ShiftDate: "2024-01-15",
+			ShiftType: 1,
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		response := &employeeV1.AssignShiftResponse{
+			ID:        1,
+			ShiftDate: "2024-01-15",
+			ShiftType: 1,
+		}
+
+		mockShiftSvc.EXPECT().AssignShift(uint(1), req).Return(response, nil)
+
+		handler.AssignShift(ctx)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+		assert.Contains(t, w.Body.String(), "2024-01-15")
+	})
 }
 
 func TestEmployeeHandler_GetShifts(t *testing.T) {
 	t.Parallel()
 
-	log := utils.NewTestLogger()
-
 	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
 
-		// Create handler with nil dependencies since we're only testing ID parsing
-		handler := NewEmployeeHandler(log, nil, nil)
-		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/invalid/shifts", nil)
 
 		handler.GetShifts(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "Invalid employee ID")
 	})
+
+	t.Run("it returns an error when employee ID is zero or negative", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "0"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/0/shifts", nil)
+
+		handler.GetShifts(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid employee ID")
+	})
+
+	t.Run("it returns StatusInternalServerError when service call fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/shifts", nil)
+
+		mockShiftSvc.EXPECT().GetShifts(uint(1)).Return(nil, fmt.Errorf("database error"))
+
+		handler.GetShifts(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "internal server error")
+	})
+
+	t.Run("it successfully returns shifts", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/shifts", nil)
+
+		shifts := []employeeV1.ShiftResponse{
+			{
+				ID:        1,
+				ShiftType: 1,
+			},
+		}
+
+		mockShiftSvc.EXPECT().GetShifts(uint(1)).Return(shifts, nil)
+
+		handler.GetShifts(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), `"id":1`)
+	})
 }
 
 func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 	t.Parallel()
 
-	log := utils.NewTestLogger()
-
 	t.Run("it returns an error when days parameter is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		// Create handler with nil dependencies since we're only testing parameter parsing
-		handler := NewEmployeeHandler(log, nil, nil)
-		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/shifts?days=invalid", nil)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability?days=invalid", nil)
 
 		handler.GetShiftsAvailability(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "Invalid days parameter")
 	})
+
+	t.Run("it returns an error when days parameter is zero or negative", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability?days=0", nil)
+
+		handler.GetShiftsAvailability(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid days parameter")
+	})
+
+	t.Run("it returns StatusInternalServerError when service call fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability?days=7", nil)
+
+		mockShiftSvc.EXPECT().GetShiftsAvailability(7).Return(nil, fmt.Errorf("database error"))
+
+		handler.GetShiftsAvailability(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "internal server error")
+	})
+
+	t.Run("it successfully returns shifts availability with default days", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability", nil)
+
+		response := &employeeV1.ShiftAvailabilityResponse{}
+
+		mockShiftSvc.EXPECT().GetShiftsAvailability(7).Return(response, nil)
+
+		handler.GetShiftsAvailability(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("it successfully returns shifts availability with custom days", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability?days=14", nil)
+
+		response := &employeeV1.ShiftAvailabilityResponse{}
+
+		mockShiftSvc.EXPECT().GetShiftsAvailability(14).Return(response, nil)
+
+		handler.GetShiftsAvailability(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
 }
 
 func TestEmployeeHandler_RemoveShift(t *testing.T) {
 	t.Parallel()
 
-	log := utils.NewTestLogger()
-
 	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
 
-		// Create handler with nil dependencies since we're only testing ID parsing
-		handler := NewEmployeeHandler(log, nil, nil)
-		payload := `{"shiftType":1,"shiftDate":"2025-02-03"}`
-		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
-		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/invalid/shifts", strings.NewReader(payload))
+		req := employeeV1.RemoveShiftRequest{
+			ShiftDate: "2024-01-15",
+			ShiftType: 1,
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/invalid/shifts", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.RemoveShift(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid employee ID")
+	})
+
+	t.Run("it returns an error when employee ID is zero or negative", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "0"}}
+
+		req := employeeV1.RemoveShiftRequest{
+			ShiftDate: "2024-01-15",
+			ShiftType: 1,
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/0/shifts", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		handler.RemoveShift(ctx)
@@ -967,13 +1295,21 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 	})
 
 	t.Run("it returns an error when request payload is invalid json", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
 
-		// Create handler with nil dependencies since we're only testing JSON parsing
-		handler := NewEmployeeHandler(log, nil, nil)
-		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
-		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", strings.NewReader("invalid json"))
+		invalidJSON := `{"shiftDate": "2024-01-15", "invalid": json}`
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", strings.NewReader(invalidJSON))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		handler.RemoveShift(ctx)
@@ -981,40 +1317,489 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
+	t.Run("it returns StatusBadRequest when shift date format is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		req := employeeV1.RemoveShiftRequest{
+			ShiftDate: "2024-01-15",
+			ShiftType: 1,
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		mockShiftSvc.EXPECT().RemoveShift(uint(1), req).Return(fmt.Errorf("invalid shift date format"))
+
+		handler.RemoveShift(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "invalid shift date format")
+	})
+
+	t.Run("it returns StatusInternalServerError when remove fails with other error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		req := employeeV1.RemoveShiftRequest{
+			ShiftDate: "2024-01-15",
+			ShiftType: 1,
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		mockShiftSvc.EXPECT().RemoveShift(uint(1), req).Return(fmt.Errorf("database error"))
+
+		handler.RemoveShift(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "internal server error")
+	})
+
+	t.Run("it successfully removes shift", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		req := employeeV1.RemoveShiftRequest{
+			ShiftDate: "2024-01-15",
+			ShiftType: 1,
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		mockShiftSvc.EXPECT().RemoveShift(uint(1), req).Return(nil)
+
+		handler.RemoveShift(ctx)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
 }
 
 func TestEmployeeHandler_ResetAllData(t *testing.T) {
 	t.Parallel()
 
-	log := utils.NewTestLogger()
+	t.Run("it returns StatusInternalServerError when reset fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-	t.Run("it successfully resets all data", func(t *testing.T) {
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/admin/reset", nil)
 
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().ResetAllData().Return(nil).Times(1)
+		mockEmplSvc.EXPECT().ResetAllData().Return(fmt.Errorf("database error"))
 
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
-		handler.ResetAllData(ctx)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "successfully reset")
-	})
-
-	t.Run("it returns error when reset fails", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-		ctx.Request = httptest.NewRequest(http.MethodDelete, "/admin/reset", nil)
-
-		emplRepoMock := repositories.NewMockEmployeeRepository(gomock.NewController(t))
-		emplRepoMock.EXPECT().ResetAllData().Return(errors.New("database error")).Times(1)
-
-		handler := NewEmployeeHandler(log, emplRepoMock, nil)
 		handler.ResetAllData(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "Failed to reset data")
+	})
+
+	t.Run("it successfully resets all data", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/admin/reset", nil)
+
+		mockEmplSvc.EXPECT().ResetAllData().Return(nil)
+
+		handler.ResetAllData(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "All data has been successfully reset")
+	})
+}
+
+func TestEmployeeHandler_GetOnCallEmployees(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns an error when shift_buffer parameter is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/on-call?shift_buffer=invalid", nil)
+
+		handler.GetOnCallEmployees(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid shift_buffer format")
+	})
+
+	t.Run("it returns StatusInternalServerError when service call fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/on-call", nil)
+
+		mockShiftSvc.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("database error"))
+
+		handler.GetOnCallEmployees(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "Failed to retrieve on-call employees")
+	})
+
+	t.Run("it successfully returns on-call employees without shift_buffer", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/on-call", nil)
+
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				Username:  "testuser",
+				FirstName: "Test",
+				LastName:  "User",
+			},
+		}
+
+		mockShiftSvc.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
+
+		handler.GetOnCallEmployees(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "testuser")
+	})
+
+	t.Run("it successfully returns on-call employees with shift_buffer", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/on-call?shift_buffer=1h", nil)
+
+		employees := []employeeV1.EmployeeResponse{
+			{
+				ID:        1,
+				Username:  "testuser",
+				FirstName: "Test",
+				LastName:  "User",
+			},
+		}
+
+		mockShiftSvc.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
+
+		handler.GetOnCallEmployees(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "testuser")
+	})
+}
+
+func TestEmployeeHandler_CheckActiveEmergencies(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/invalid/emergencies", nil)
+
+		handler.CheckActiveEmergencies(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid employee ID")
+	})
+
+	t.Run("it returns StatusNotFound when employee not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/emergencies", nil)
+
+		mockEmplSvc.EXPECT().GetEmployeeByID(uint(1)).Return(nil, fmt.Errorf("employee not found"))
+
+		handler.CheckActiveEmergencies(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "Employee not found")
+	})
+
+	t.Run("it successfully returns active emergencies status", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/emergencies", nil)
+
+		// Import the model package to use the correct type
+		employee := &model.Employee{
+			ID:       1,
+			Username: "testuser",
+		}
+
+		mockEmplSvc.EXPECT().GetEmployeeByID(uint(1)).Return(employee, nil)
+
+		handler.CheckActiveEmergencies(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "hasActiveEmergencies")
+		assert.Contains(t, w.Body.String(), "false") // Currently always returns false as per TODO
+	})
+}
+
+func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns an error when employee ID is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/invalid/shift-warnings", nil)
+
+		handler.GetShiftWarnings(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid employee ID")
+	})
+
+	t.Run("it returns an error when employee ID is zero or negative", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "0"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/0/shift-warnings", nil)
+
+		handler.GetShiftWarnings(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid employee ID")
+	})
+
+	t.Run("it returns StatusNotFound when employee not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/shift-warnings", nil)
+
+		mockShiftSvc.EXPECT().GetShiftWarnings(uint(1)).Return(nil, fmt.Errorf("employee not found"))
+
+		handler.GetShiftWarnings(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "employee not found")
+	})
+
+	t.Run("it returns StatusInternalServerError when service call fails with other error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/shift-warnings", nil)
+
+		mockShiftSvc.EXPECT().GetShiftWarnings(uint(1)).Return(nil, fmt.Errorf("database connection failed"))
+
+		handler.GetShiftWarnings(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "internal server error")
+	})
+
+	t.Run("it successfully returns shift warnings when warnings exist", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/shift-warnings", nil)
+
+		warnings := []string{
+			"You have only 3 shifts scheduled in the next 2 weeks. Consider scheduling more shifts to meet the 5 days/week quota.",
+			"There is insufficient coverage for some shifts in the next 2 weeks.",
+		}
+
+		mockShiftSvc.EXPECT().GetShiftWarnings(uint(1)).Return(warnings, nil)
+
+		handler.GetShiftWarnings(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "warnings")
+		assert.Contains(t, w.Body.String(), "only 3 shifts scheduled")
+		assert.Contains(t, w.Body.String(), "insufficient coverage")
+	})
+
+	t.Run("it successfully returns empty warnings when no warnings exist", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/shift-warnings", nil)
+
+		warnings := []string{} // Empty warnings array
+
+		mockShiftSvc.EXPECT().GetShiftWarnings(uint(1)).Return(warnings, nil)
+
+		handler.GetShiftWarnings(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "warnings")
+		assert.Contains(t, w.Body.String(), "[]") // Empty array in JSON
 	})
 }

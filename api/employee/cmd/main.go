@@ -7,6 +7,8 @@ import (
 	"github.com/pd120424d/mountain-service/api/employee/internal/handler"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
+	"github.com/pd120424d/mountain-service/api/employee/internal/service"
+
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	globConf "github.com/pd120424d/mountain-service/api/shared/config"
 	"github.com/pd120424d/mountain-service/api/shared/server"
@@ -81,10 +83,16 @@ func main() {
 func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	log.Info("Setting up custom employee routes")
 
-	// Initialize repositories and handler
+	// Initialize repositories
 	employeeRepo := repositories.NewEmployeeRepository(log, db)
 	shiftsRepo := repositories.NewShiftRepository(log, db)
-	employeeHandler := handler.NewEmployeeHandler(log, employeeRepo, shiftsRepo)
+
+	// Initialize services
+	employeeService := service.NewEmployeeService(log, employeeRepo)
+	shiftService := service.NewShiftService(log, employeeRepo, shiftsRepo)
+
+	// Initialize handler with services
+	employeeHandler := handler.NewEmployeeHandler(log, employeeService, shiftService)
 
 	r.POST("/api/v1/employees", employeeHandler.RegisterEmployee)
 	r.POST("/api/v1/login", employeeHandler.LoginEmployee)

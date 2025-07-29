@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
-	"github.com/pd120424d/mountain-service/api/employee/internal/model"
-	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/employee/internal/service"
 	sharedAuth "github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
@@ -42,17 +40,16 @@ type EmployeeHandler interface {
 }
 
 type employeeHandler struct {
-	log      utils.Logger
-	service  service.EmployeeService
-	emplRepo repositories.EmployeeRepository
+	log          utils.Logger
+	emplService  service.EmployeeService
+	shiftService service.ShiftService
 }
 
-func NewEmployeeHandler(log utils.Logger, emplRepo repositories.EmployeeRepository, shiftsRepo repositories.ShiftRepository) EmployeeHandler {
-	employeeService := service.NewEmployeeService(log, emplRepo, shiftsRepo)
+func NewEmployeeHandler(log utils.Logger, employeeService service.EmployeeService, shiftService service.ShiftService) EmployeeHandler {
 	return &employeeHandler{
-		log:      log.WithName("employeeHandler"),
-		service:  employeeService,
-		emplRepo: emplRepo,
+		log:          log.WithName("employeeHandler"),
+		emplService:  employeeService,
+		shiftService: shiftService,
 	}
 }
 
@@ -74,79 +71,33 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 		return
 	}
 
-	h.log.Infof("Creating new employee with data: %s", req.ToString())
-
-	profileType := model.ProfileTypeFromString(req.ProfileType)
-	if !profileType.Valid() {
-		h.log.Errorf("invalid profile type: %s", req.ProfileType)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile type"})
-		return
-	}
-
-	employee := model.Employee{
-		Username:       req.Username,
-		FirstName:      req.FirstName,
-		LastName:       req.LastName,
-		Password:       req.Password,
-		Gender:         req.Gender,
-		Phone:          req.Phone,
-		Email:          req.Email,
-		ProfilePicture: req.ProfilePicture,
-		ProfileType:    profileType,
-	}
-
-	usernameFilter := map[string]any{
-		"username": employee.Username,
-	}
-	existingEmployees, err := h.emplRepo.ListEmployees(usernameFilter)
+	response, err := h.emplService.RegisterEmployee(*req)
 	if err != nil {
-		h.log.Error("failed to check for existing username", zap.Error(err))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check for existing username"})
-		return
-	}
-	if len(existingEmployees) > 0 {
-		h.log.Errorf("username %s already exists", employee.Username)
-		ctx.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
-		return
-	}
+		h.log.Errorf("failed to register employee: %v", err)
 
-	emailFilter := map[string]any{
-		"email": employee.Email,
-	}
-	existingEmployees, err = h.emplRepo.ListEmployees(emailFilter)
-	if err != nil {
-		h.log.Error("failed to register employee, checking for employee with email failed: %v", zap.Error(err))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check for existing email"})
+		// Handle specific error types
+		switch err.Error() {
+		case "username already exists":
+			ctx.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		case "email already exists":
+			ctx.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+		case "invalid profile type":
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile type"})
+		case "failed to check for existing username":
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check for existing username"})
+		case "failed to check for existing email":
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check for existing email"})
+		default:
+			// Check if it's a password validation error
+			if strings.Contains(err.Error(), "password must") {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			} else if strings.Contains(err.Error(), "invalid db") {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			} else {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register employee"})
+			}
+		}
 		return
-	}
-	if len(existingEmployees) > 0 {
-		h.log.Errorf("failed to register employee: email %s already exists", employee.Email)
-		ctx.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
-		return
-	}
-
-	if err := utils.ValidatePassword(employee.Password); err != nil {
-		h.log.Errorf("failed to validate password: %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := h.emplRepo.Create(&employee); err != nil {
-		h.log.Errorf("failed to create employee: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	response := employeeV1.EmployeeResponse{
-		ID:             employee.ID,
-		Username:       employee.Username,
-		FirstName:      employee.FirstName,
-		LastName:       employee.LastName,
-		Gender:         employee.Gender,
-		Phone:          employee.Phone,
-		Email:          employee.Email,
-		ProfilePicture: employee.ProfilePicture,
-		ProfileType:    employee.ProfileType.String(),
 	}
 
 	ctx.JSON(http.StatusCreated, response)
@@ -192,27 +143,19 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		return
 	}
 
-	employee, err := h.emplRepo.GetEmployeeByUsername(req.Username)
+	token, err := h.emplService.LoginEmployee(req)
 	if err != nil {
-		h.log.Errorf("failed to retrieve employee: %v", err)
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		h.log.Errorf("failed to login employee: %v", err)
+
+		if err.Error() == "invalid credentials" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login user"})
+		}
 		return
 	}
 
-	if !sharedAuth.CheckPassword(employee.Password, req.Password) {
-		h.log.Error("failed to verify password")
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	token, err := sharedAuth.GenerateJWT(employee.ID, employee.Role())
-	if err != nil {
-		h.log.Errorf("failed to generate token: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	h.log.Info("Successfully validate employee and generated JWT token")
+	h.log.Info("Successfully validated employee and generated JWT token")
 	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }
 
@@ -265,23 +208,15 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 		return
 	}
 
-	employee, err := h.emplRepo.GetEmployeeByUsername(username)
-	if err != nil {
-		h.log.Errorf("failed to retrieve employee: %v", err)
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
+	req := employeeV1.EmployeeLogin{
+		Username: username,
+		Password: password,
 	}
 
-	if !sharedAuth.CheckPassword(employee.Password, password) {
-		h.log.Error("failed to verify password")
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	token, err := sharedAuth.GenerateJWT(employee.ID, employee.Role())
+	token, err := h.emplService.LoginEmployee(req)
 	if err != nil {
-		h.log.Errorf("failed to generate token: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		h.log.Errorf("failed to login employee: %v", err)
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
@@ -304,32 +239,15 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 	h.log.Info("Received List Employees request")
 
-	employees, err := h.emplRepo.GetAll()
+	employees, err := h.emplService.ListEmployees()
 	if err != nil {
 		h.log.Errorf("failed to retrieve employees: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve employees"})
 		return
 	}
 
 	h.log.Infof("Successfully retrieved %d employees", len(employees))
-	response := make([]employeeV1.EmployeeResponse, 0)
-	for _, emp := range employees {
-		response = append(response, employeeV1.EmployeeResponse{
-			ID:             emp.ID,
-			Username:       emp.Username,
-			FirstName:      emp.FirstName,
-			LastName:       emp.LastName,
-			Gender:         emp.Gender,
-			Phone:          emp.Phone,
-			Email:          emp.Email,
-			ProfilePicture: emp.ProfilePicture,
-			ProfileType:    emp.ProfileType.String(),
-		})
-	}
-
-	h.log.Info("Successfully mapped employees to response format")
-	h.log.Infof("Returning %d employees", len(response))
-	ctx.JSON(http.StatusOK, response)
+	ctx.JSON(http.StatusOK, employees)
 }
 
 // UpdateEmployee Ажурирање запосленог
@@ -361,30 +279,25 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 		return
 	}
 
-	var employee model.Employee
-	if err := h.emplRepo.GetEmployeeByID(uint(employeeID), &employee); err != nil {
-		h.log.Error("failed to get employee: %v", zap.Error(err))
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
-		return
-	}
-
-	// Validate here or in middleware
-	if validationErr := utils.ValidateOptionalEmail(req.Email); validationErr != nil {
-		h.log.Errorf("failed to update employee, validation failed: %v", validationErr)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
-		return
-	}
-
-	model.MapUpdateRequestToEmployee(&req, &employee)
-
-	if err := h.emplRepo.UpdateEmployee(&employee); err != nil {
+	response, err := h.emplService.UpdateEmployee(uint(employeeID), req)
+	if err != nil {
 		h.log.Errorf("failed to update employee: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update employee"})
+
+		switch err.Error() {
+		case "employee not found":
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
+		default:
+			// Check if it's a validation error
+			if strings.Contains(err.Error(), "mail:") || strings.Contains(err.Error(), "@") {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			} else {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update employee"})
+			}
+		}
 		return
 	}
 
-	resp := employee.UpdateResponseFromEmployee()
-	ctx.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusOK, response)
 }
 
 // DeleteEmployee Брисање запосленог
@@ -407,7 +320,8 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.emplRepo.Delete(uint(employeeID)); err != nil {
+	err = h.emplService.DeleteEmployee(uint(employeeID))
+	if err != nil {
 		h.log.Errorf("failed to delete employee: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete employee"})
 		return
@@ -445,7 +359,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 		return
 	}
 
-	response, err := h.service.AssignShift(uint(employeeID), req)
+	response, err := h.shiftService.AssignShift(uint(employeeID), req)
 	if err != nil {
 		h.log.Errorf("failed to assign shift: %v", err)
 
@@ -485,7 +399,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 		return
 	}
 
-	response, err := h.service.GetShifts(uint(employeeID))
+	response, err := h.shiftService.GetShifts(uint(employeeID))
 	if err != nil {
 		h.log.Errorf("failed to get shifts for employee ID %d: %v", employeeID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -516,7 +430,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 		return
 	}
 
-	response, err := h.service.GetShiftsAvailability(days)
+	response, err := h.shiftService.GetShiftsAvailability(days)
 	if err != nil {
 		h.log.Errorf("failed to get shifts availability: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -555,7 +469,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 		return
 	}
 
-	err = h.service.RemoveShift(uint(employeeID), req)
+	err = h.shiftService.RemoveShift(uint(employeeID), req)
 	if err != nil {
 		h.log.Errorf("failed to remove shift: %v", err)
 
@@ -584,7 +498,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 	h.log.Warn("Admin data reset request received")
 
-	err := h.emplRepo.ResetAllData()
+	err := h.emplService.ResetAllData()
 	if err != nil {
 		h.log.Errorf("Failed to reset all data: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset data"})
@@ -621,7 +535,7 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 		}
 	}
 
-	employeeResponses, err := h.service.GetOnCallEmployees(time.Now(), shiftBuffer)
+	employeeResponses, err := h.shiftService.GetOnCallEmployees(time.Now(), shiftBuffer)
 	if err != nil {
 		h.log.Errorf("Failed to get on-call employees: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve on-call employees"})
@@ -661,8 +575,8 @@ func (h *employeeHandler) CheckActiveEmergencies(ctx *gin.Context) {
 	h.log.Infof("Checking active emergencies for employee %d", employeeID)
 
 	// Check if employee exists
-	var employee model.Employee
-	if err := h.emplRepo.GetEmployeeByID(uint(employeeID), &employee); err != nil {
+	_, err = h.emplService.GetEmployeeByID(uint(employeeID))
+	if err != nil {
 		h.log.Errorf("Employee not found: %v", err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
 		return
@@ -700,7 +614,7 @@ func (h *employeeHandler) GetShiftWarnings(ctx *gin.Context) {
 		return
 	}
 
-	warnings, err := h.service.GetShiftWarnings(uint(employeeID))
+	warnings, err := h.shiftService.GetShiftWarnings(uint(employeeID))
 	if err != nil {
 		h.log.Errorf("failed to get shift warnings for employee ID %d: %v", employeeID, err)
 

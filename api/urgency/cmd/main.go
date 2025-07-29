@@ -104,9 +104,12 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	urgencySvc := internal.NewUrgencyService(log, urgencyRepo, assignmentRepo, notificationRepo, serviceClients.EmployeeClient)
 	urgencyHandler := internal.NewUrgencyHandler(log, urgencySvc)
 
+	// Public routes (no authentication required) - registering a new urgency
+	r.POST("/api/v1/urgencies", urgencyHandler.CreateUrgency)
+
+	// Protected routes (authentication required)
 	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log))
 	{
-		authorized.POST("/urgencies", urgencyHandler.CreateUrgency)
 		authorized.GET("/urgencies", urgencyHandler.ListUrgencies)
 		authorized.GET("/urgencies/:id", urgencyHandler.GetUrgency)
 		authorized.PUT("/urgencies/:id", urgencyHandler.UpdateUrgency)
