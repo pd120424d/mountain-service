@@ -152,7 +152,10 @@
     },
     "URGENCY_FORM": {
         "TITLE": "Urgentna Situacija",
-        "NAME": "Naziv",
+        "FIRST_NAME": "Ime",
+        "FIRST_NAME_PLACEHOLDER": "Unesite vaše ime",
+        "LAST_NAME": "Prezime",
+        "LAST_NAME_PLACEHOLDER": "Unesite vaše prezime",
         "EMAIL": "E-mail",
         "CONTACT_PHONE": "Kontakt telefon",
         "LOCATION": "Lokacija",
@@ -167,6 +170,33 @@
         "CONTACT_PHONE_PLACEHOLDER": "Unesite kontakt telefon",
         "LOCATION_PLACEHOLDER": "Unesite lokaciju incidenta",
         "DESCRIPTION_PLACEHOLDER": "Opišite situaciju detaljno"
+    },
+    "FIRSTNAME_FORM": {
+        "REQUIRED": "Ime je obavezno",
+        "MIN_LENGTH": "Ime mora imati najmanje 2 karaktera"
+    },
+    "LASTNAME_FORM": {
+        "REQUIRED": "Prezime je obavezno",
+        "MIN_LENGTH": "Prezime mora imati najmanje 2 karaktera"
+    },
+    "EMAIL_FORM": {
+        "REQUIRED": "E-mail je obavezan",
+        "INVALID_EMAIL": "Molimo unesite ispravan e-mail"
+    },
+    "CONTACTPHONE_FORM": {
+        "REQUIRED": "Kontakt telefon je obavezan",
+        "MIN_LENGTH": "Kontakt telefon mora imati najmanje 8 karaktera"
+    },
+    "LOCATION_FORM": {
+        "REQUIRED": "Lokacija je obavezna",
+        "MIN_LENGTH": "Lokacija mora imati najmanje 3 karaktera"
+    },
+    "DESCRIPTION_FORM": {
+        "REQUIRED": "Opis je obavezan",
+        "MIN_LENGTH": "Opis mora imati najmanje 10 karaktera"
+    },
+    "LEVEL_FORM": {
+        "REQUIRED": "Nivo urgentnosti je obavezan"
     },
     "URGENCY_LEVEL": {
         "LOW": "Nisak",

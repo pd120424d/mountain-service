@@ -135,8 +135,10 @@
     },
     "URGENCY_FORM": {
         "TITLE": "Report Emergency",
-        "NAME": "Full Name",
-        "NAME_PLACEHOLDER": "Enter your full name",
+        "FIRST_NAME": "First Name",
+        "FIRST_NAME_PLACEHOLDER": "Enter your first name",
+        "LAST_NAME": "Last Name",
+        "LAST_NAME_PLACEHOLDER": "Enter your last name",
         "EMAIL": "Email Address",
         "EMAIL_PLACEHOLDER": "Enter your email address",
         "CONTACT_PHONE": "Contact Phone",
@@ -153,6 +155,33 @@
         "REQUIRED": "This field is required",
         "INVALID_EMAIL": "Please enter a valid email address",
         "MIN_LENGTH": "This field is too short"
+    },
+    "FIRSTNAME_FORM": {
+        "REQUIRED": "First name is required",
+        "MIN_LENGTH": "First name must be at least 2 characters long"
+    },
+    "LASTNAME_FORM": {
+        "REQUIRED": "Last name is required",
+        "MIN_LENGTH": "Last name must be at least 2 characters long"
+    },
+    "EMAIL_FORM": {
+        "REQUIRED": "Email is required",
+        "INVALID_EMAIL": "Please enter a valid email address"
+    },
+    "CONTACTPHONE_FORM": {
+        "REQUIRED": "Contact phone is required",
+        "MIN_LENGTH": "Contact phone must be at least 8 characters long"
+    },
+    "LOCATION_FORM": {
+        "REQUIRED": "Location is required",
+        "MIN_LENGTH": "Location must be at least 3 characters long"
+    },
+    "DESCRIPTION_FORM": {
+        "REQUIRED": "Description is required",
+        "MIN_LENGTH": "Description must be at least 10 characters long"
+    },
+    "LEVEL_FORM": {
+        "REQUIRED": "Urgency level is required"
     },
     "URGENCY_LEVEL": {
         "LOW": "Low",

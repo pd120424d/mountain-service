@@ -142,7 +142,8 @@ describe('UrgencyFormComponent', () => {
 
     it('should not submit when already submitting', () => {
       component.urgencyForm.patchValue({
-        name: 'Test Emergency',
+        firstName: 'John',
+        lastName: 'Doe',
         email: 'test@example.com',
         contactPhone: '1234567890',
         location: 'Test Location',
