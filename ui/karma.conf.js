@@ -37,16 +37,11 @@ module.exports = function (config) {
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-gpu',
-            '--remote-debugging-port=9222',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
+            '--remote-debugging-port=9222'
           ]
         }
       },
-      browserDisconnectTimeout: 10000,
-      browserDisconnectTolerance: 1,
-      browserNoActivityTimeout: 30000,
-      captureTimeout: 10000,
+
       singleRun: false,
       restartOnFileChange: true
     });

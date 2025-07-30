@@ -1,10 +1,13 @@
 import {
   getUrgencyLevelColor,
-  getUrgencyStatusColor
+  getUrgencyStatusColor,
+  createUrgencyDisplayName,
+  withDisplayName
 } from './urgency-extensions';
 import {
   UrgencyLevel,
-  UrgencyStatus
+  UrgencyStatus,
+  UrgencyResponse
 } from '../generated/urgency';
 
 describe('Urgency Extensions', () => {
@@ -49,6 +52,96 @@ describe('Urgency Extensions', () => {
 
     it('should return gray for unknown status', () => {
       expect(getUrgencyStatusColor('unknown' as any)).toBe('gray');
+    });
+  });
+
+  describe('createUrgencyDisplayName', () => {
+    it('should create display name from first and last name', () => {
+      const urgency: UrgencyResponse = {
+        id: 1,
+        firstName: 'John',
+        lastName: 'Doe',
+        level: UrgencyLevel.High,
+        status: UrgencyStatus.Open,
+        description: 'Test urgency'
+      };
+      expect(createUrgencyDisplayName(urgency)).toBe('John Doe');
+    });
+
+    it('should handle only first name', () => {
+      const urgency: UrgencyResponse = {
+        id: 1,
+        firstName: 'John',
+        lastName: '',
+        level: UrgencyLevel.High,
+        status: UrgencyStatus.Open,
+        description: 'Test urgency'
+      };
+      expect(createUrgencyDisplayName(urgency)).toBe('John');
+    });
+
+    it('should handle only last name', () => {
+      const urgency: UrgencyResponse = {
+        id: 1,
+        firstName: '',
+        lastName: 'Doe',
+        level: UrgencyLevel.High,
+        status: UrgencyStatus.Open,
+        description: 'Test urgency'
+      };
+      expect(createUrgencyDisplayName(urgency)).toBe('Doe');
+    });
+
+    it('should handle whitespace trimming', () => {
+      const urgency: UrgencyResponse = {
+        id: 1,
+        firstName: '  John  ',
+        lastName: '  Doe  ',
+        level: UrgencyLevel.High,
+        status: UrgencyStatus.Open,
+        description: 'Test urgency'
+      };
+      expect(createUrgencyDisplayName(urgency)).toBe('John Doe');
+    });
+
+    it('should return Unknown for empty names', () => {
+      const urgency: UrgencyResponse = {
+        id: 1,
+        firstName: '',
+        lastName: '',
+        level: UrgencyLevel.High,
+        status: UrgencyStatus.Open,
+        description: 'Test urgency'
+      };
+      expect(createUrgencyDisplayName(urgency)).toBe('Unknown');
+    });
+
+    it('should return Unknown for undefined names', () => {
+      const urgency: UrgencyResponse = {
+        id: 1,
+        level: UrgencyLevel.High,
+        status: UrgencyStatus.Open,
+        description: 'Test urgency'
+      };
+      expect(createUrgencyDisplayName(urgency)).toBe('Unknown');
+    });
+  });
+
+  describe('withDisplayName', () => {
+    it('should add display name to urgency object', () => {
+      const urgency: UrgencyResponse = {
+        id: 1,
+        firstName: 'John',
+        lastName: 'Doe',
+        level: UrgencyLevel.High,
+        status: UrgencyStatus.Open,
+        description: 'Test urgency'
+      };
+      const result = withDisplayName(urgency);
+      expect(result.displayName).toBe('John Doe');
+      expect(result.id).toBe(1);
+      expect(result.firstName).toBe('John');
+      expect(result.lastName).toBe('Doe');
     });
   });
 });

@@ -122,4 +122,32 @@ describe('AuthService', () => {
     service.resetAllData().subscribe();
     expect(service['http'].delete).toHaveBeenCalled();
   });
+
+  it('should check if route is authorized', () => {
+    // Test unauthorized routes
+    Object.defineProperty(routerSpy, 'url', { value: '/home', writable: true });
+    expect(service['isAauthorizedRoute']()).toBeFalse();
+
+    Object.defineProperty(routerSpy, 'url', { value: '/login', writable: true });
+    expect(service['isAauthorizedRoute']()).toBeFalse();
+
+    Object.defineProperty(routerSpy, 'url', { value: '/employees/new', writable: true });
+    expect(service['isAauthorizedRoute']()).toBeFalse();
+
+    // Test authorized route
+    Object.defineProperty(routerSpy, 'url', { value: '/employees', writable: true });
+    expect(service['isAauthorizedRoute']()).toBeTrue();
+  });
+
+  it('should stop periodic check when interval exists', () => {
+    // Create a mock subscription
+    const mockSubscription = jasmine.createSpyObj('Subscription', ['unsubscribe']);
+    service['intervalSub'] = mockSubscription;
+
+    service.stopPeriodicCheck();
+
+    expect(mockSubscription.unsubscribe).toHaveBeenCalled();
+    // The method doesn't set intervalSub to undefined, it just unsubscribes
+    expect(service['intervalSub']).toBe(mockSubscription);
+  });
 });

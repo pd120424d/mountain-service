@@ -66,7 +66,7 @@ services:
   employee-service:
     image: ${EMPLOYEE_SERVICE_IMAGE:-employee-service:latest}
     build:
-      context: ${BUILD_CONTEXT}
+      context: ./api
       dockerfile: employee/Dockerfile
     environment:
       - DB_HOST=employee-db
@@ -99,7 +99,7 @@ services:
   urgency-service:
     image: ${URGENCY_SERVICE_IMAGE:-urgency-service:latest}
     build:
-      context: ${BUILD_CONTEXT}
+      context: ./api
       dockerfile: urgency/Dockerfile
     environment:
       - DB_HOST=urgency-db
@@ -134,7 +134,7 @@ services:
   activity-service:
     image: ${ACTIVITY_SERVICE_IMAGE:-activity-service:latest}
     build:
-      context: ${BUILD_CONTEXT}
+      context: ./api
       dockerfile: activity/Dockerfile
     environment:
       - DB_HOST=activity-db
@@ -167,7 +167,7 @@ services:
   version-service:
     image: ${VERSION_SERVICE_IMAGE:-version-service:latest}
     build:
-      context: ${BUILD_CONTEXT}
+      context: ./api
       dockerfile: version-service/Dockerfile
     ports:
       - "8090:8090"
@@ -186,7 +186,7 @@ services:
   frontend:
     image: ${FRONTEND_IMAGE:-frontend:latest}
     build:
-      context: ${BUILD_CONTEXT}
+      context: ./ui
     ports:
       - "${FRONTEND_HTTP_PORT:-80}:80"
       - "${FRONTEND_HTTPS_PORT:-443}:443"

@@ -38,4 +38,32 @@ describe('LoggingService', () => {
     service.debug('Test debug message');
     expect(spy).toHaveBeenCalledWith('[DEBUG] Test debug message', '');
   });
+
+  it('should log info message with data', () => {
+    const spy = spyOn(console, 'info');
+    const testData = { key: 'value' };
+    service.info('Test info message', testData);
+    expect(spy).toHaveBeenCalledWith('[INFO] Test info message', testData);
+  });
+
+  it('should log warn message with data', () => {
+    const spy = spyOn(console, 'warn');
+    const testData = { error: 'warning' };
+    service.warn('Test warn message', testData);
+    expect(spy).toHaveBeenCalledWith('[WARN] Test warn message', testData);
+  });
+
+  it('should log error message with data', () => {
+    const spy = spyOn(console, 'error');
+    const testData = { stack: 'error stack' };
+    service.error('Test error message', testData);
+    expect(spy).toHaveBeenCalledWith('[ERROR] Test error message', testData);
+  });
+
+  it('should log debug message with data', () => {
+    const spy = spyOn(console, 'debug');
+    const testData = { debug: 'info' };
+    service.debug('Test debug message', testData);
+    expect(spy).toHaveBeenCalledWith('[DEBUG] Test debug message', testData);
+  });
 });

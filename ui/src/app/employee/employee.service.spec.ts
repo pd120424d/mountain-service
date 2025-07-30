@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { EmployeeService } from './employee.service';
 import { Employee, EmployeeCreateRequest, EmployeeUpdateRequest, EmployeeResponseProfileTypeEnum, EmployeeCreateRequestProfileTypeEnum, EmployeeUpdateRequestProfileTypeEnum } from '../shared/models';
 import { environment } from '../../environments/environment';
@@ -199,5 +200,79 @@ describe('EmployeeService', () => {
     expect(loggingServiceSpy.info).toHaveBeenCalledWith('Fetching employee with ID: 999');
     const req = httpMock.expectOne(`${expectedEmployeeUrl}/999`);
     req.flush(errorMessage, { status: 404, statusText: 'Not Found' });
+  });
+
+  it('should handle 409 conflict error', () => {
+    const mockEmployeeCreateRequest: EmployeeCreateRequest = {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      phone: '+1234567890',
+      profileType: EmployeeCreateRequestProfileTypeEnum.Medic,
+      username: 'johndoe',
+      password: 'password123',
+      gender: 'Male'
+    };
+
+    const errorResponse = new HttpErrorResponse({
+      error: { error: 'Employee already exists' },
+      status: 409,
+      statusText: 'Conflict'
+    });
+
+    service.addEmployee(mockEmployeeCreateRequest).subscribe({
+      next: () => fail('should have failed with conflict error'),
+      error: (error) => {
+        expect(error.message).toBe('Employee already exists');
+      }
+    });
+
+    const req = httpMock.expectOne(expectedEmployeeUrl);
+    req.flush({ error: 'Employee already exists' }, errorResponse);
+  });
+
+  it('should handle 400 bad request error', () => {
+    const mockEmployeeCreateRequest: EmployeeCreateRequest = {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      phone: '+1234567890',
+      profileType: EmployeeCreateRequestProfileTypeEnum.Medic,
+      username: 'johndoe',
+      password: 'password123',
+      gender: 'Male'
+    };
+
+    const errorResponse = new HttpErrorResponse({
+      error: { error: 'Invalid data provided' },
+      status: 400,
+      statusText: 'Bad Request'
+    });
+
+    service.addEmployee(mockEmployeeCreateRequest).subscribe({
+      next: () => fail('should have failed with bad request error'),
+      error: (error) => {
+        expect(error.message).toBe('Invalid data provided');
+      }
+    });
+
+    const req = httpMock.expectOne(expectedEmployeeUrl);
+    req.flush({ error: 'Invalid data provided' }, errorResponse);
+  });
+
+  it('should handle client-side error', () => {
+    const errorEvent = new ErrorEvent('Network error', {
+      message: 'Connection failed'
+    });
+
+    service.getEmployees().subscribe({
+      next: () => fail('should have failed with client error'),
+      error: (error) => {
+        expect(error.message).toBe('Client error: Connection failed');
+      }
+    });
+
+    const req = httpMock.expectOne(expectedEmployeeUrl);
+    req.error(errorEvent);
   });
 });
