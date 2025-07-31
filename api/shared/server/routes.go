@@ -39,8 +39,10 @@ func SetupSwaggerEndpoints(log utils.Logger, r *gin.Engine, config RouteConfig) 
 		)(c)
 	})
 
-	// Setup swagger.json endpoint
+	// Setup swagger.json endpoint - serve from the docs directory in the container
 	r.GET("/swagger.json", func(c *gin.Context) {
+		log.Infof("Serving swagger.json for %s", config.ServiceName)
+		c.Header("Content-Type", "application/json")
 		c.File("/docs/swagger.json")
 	})
 }

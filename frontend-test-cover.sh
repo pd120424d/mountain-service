@@ -27,6 +27,5 @@ if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
   echo "Frontend coverage: $COVERAGE% (below $THRESHOLD%)"
   exit 1
 else
-else
   echo "Frontend coverage: $COVERAGE%"
 fi

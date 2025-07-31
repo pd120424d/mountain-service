@@ -98,7 +98,16 @@ jobs:
         INSTANCE_USER=${{ env.CLOUD_INSTANCE_USER }}
         SSH_KEY_PATH=~/.ssh/deploy_key
 
-        # Frontend Docker Image
+        # Environment Configuration
+        APP_ENV=production
+        NODE_ENV=production
+
+        # Frontend Configuration
+        FRONTEND_HTTP_PORT=80
+        FRONTEND_HTTPS_PORT=443
+        SSL_CERT_PATH=/etc/nginx/ssl
+
+        # Frontend Docker Image (dynamically set with actual version)
         FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}
 
         # GitHub Container Registry Authentication
@@ -106,7 +115,7 @@ jobs:
         GITHUB_ACTOR=${{ github.actor }}
         EOF
 
-        echo "Frontend deployment .env file created"
+        echo "Frontend deployment .env file created with image: ${{ env.FRONTEND_IMAGE }}"
 
     - name: Setup SSH key
       run: |
@@ -125,8 +134,8 @@ jobs:
         # Make deployment script executable
         chmod +x ./deploy-frontend.sh
 
-        # Run frontend deployment
-        ./deploy-frontend.sh .env.aws
+        # Run frontend deployment using the dynamically created .env.frontend file
+        ./deploy-frontend.sh .env.frontend
 
     - name: Verify frontend deployment
       run: |
