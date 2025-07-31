@@ -147,6 +147,10 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
         exit 1
     fi
     
+    # Ensure network exists and connect to it
+    echo "Ensuring Docker network exists..."
+    docker network create mountain-service-deployment_web 2>/dev/null || true
+
     # Deploy frontend service
     echo "Deploying frontend service..."
     docker-compose -f docker-compose-frontend.yml --env-file .env.frontend up -d --force-recreate

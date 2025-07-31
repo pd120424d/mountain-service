@@ -219,18 +219,37 @@ jobs:
         echo "Waiting for backend services to start..."
         sleep 30
 
-        # Test backend services through nginx proxy
-        echo "Testing employee service health through proxy..."
-        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/health || echo "Employee service health check failed"
+        # Colors for output
+        RED='\033[0;31m'
+        GREEN='\033[0;32m'
+        YELLOW='\033[1;33m'
+        NC='\033[0m' # No Color
 
-        echo "Testing version service through proxy..."
-        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/version || echo "Version service check failed"
+        echo "Testing backend services through nginx proxy..."
+
+        # Test employee service health
+        echo -n "Testing employee service health... "
+        if curl -f -s http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/health > /dev/null 2>&1; then
+          echo -e "${GREEN}✅ PASSED${NC}"
+        else
+          echo -e "${RED}❌ FAILED${NC}"
+          echo -e "${YELLOW}⚠️  WARNING: Employee service health check failed - this may cause 502 errors${NC}"
+        fi
+
+        # Test version service
+        echo -n "Testing version service... "
+        if curl -f -s http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/version > /dev/null 2>&1; then
+          echo -e "${GREEN}✅ PASSED${NC}"
+        else
+          echo -e "${RED}❌ FAILED${NC}"
+          echo -e "${YELLOW}⚠️  WARNING: Version service check failed${NC}"
+        fi
 
         # Verify all backend containers are running
-        echo "Verifying all backend services are running..."
+        echo "Verifying all backend containers are running..."
         ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.CLOUD_INSTANCE_USER }}@${{ env.CLOUD_INSTANCE_IP }} "docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E '(employee|urgency|activity|version)'"
 
-        echo "Backend deployment verification completed!"
+        echo -e "${GREEN}✅ Backend deployment verification completed!${NC}"
 
     - name: Cleanup
       if: always()

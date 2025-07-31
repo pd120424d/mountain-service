@@ -142,15 +142,33 @@ jobs:
         echo "Waiting for frontend to start..."
         sleep 15
 
+        # Colors for output
+        RED='\033[0;31m'
+        GREEN='\033[0;32m'
+        YELLOW='\033[1;33m'
+        NC='\033[0m' # No Color
+
+        echo "🔍 Testing frontend deployment..."
+
         # Test frontend health
-        echo "Testing frontend health..."
-        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/health || echo "Frontend health check failed"
+        echo -n "Testing frontend health endpoint... "
+        if curl -f -s http://${{ env.CLOUD_INSTANCE_IP }}/health > /dev/null 2>&1; then
+          echo -e "${GREEN}✅ PASSED${NC}"
+        else
+          echo -e "${RED}❌ FAILED${NC}"
+          echo -e "${YELLOW}⚠️  WARNING: Frontend health check failed${NC}"
+        fi
 
         # Test frontend is serving the app
-        echo "Testing frontend application..."
-        curl -f http://${{ env.CLOUD_INSTANCE_IP }}/ || echo "Frontend application check failed"
+        echo -n "Testing frontend application... "
+        if curl -f -s http://${{ env.CLOUD_INSTANCE_IP }}/ > /dev/null 2>&1; then
+          echo -e "${GREEN}✅ PASSED${NC}"
+        else
+          echo -e "${RED}❌ FAILED${NC}"
+          echo -e "${YELLOW}⚠️  WARNING: Frontend application check failed${NC}"
+        fi
 
-        echo "Frontend deployment verification completed!"
+        echo -e "${GREEN}✅ Frontend deployment verification completed!${NC}"
 
     - name: Cleanup
       if: always()

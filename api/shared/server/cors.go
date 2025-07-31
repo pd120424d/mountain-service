@@ -22,13 +22,23 @@ type CORSConfig struct {
 
 func DefaultCORSConfig() CORSConfig {
 	return CORSConfig{
-		AllowedOrigins:     []string{"http://localhost:3000", "http://localhost:4200", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "http://localhost:8083", "http://localhost:8084"},
+		AllowedOrigins:     getCORSOrigins(),
 		AllowedMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 		AllowedHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With"},
 		ExposeHeaders:      []string{"Content-Length"},
 		AllowCredentials:   true,
 		UseGorillaHandlers: false,
 	}
+}
+
+// getCORSOrigins returns CORS origins based on environment
+func getCORSOrigins() []string {
+	corsOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if corsOrigins != "" {
+		return strings.Split(corsOrigins, ",")
+	}
+	// Default to localhost for development
+	return []string{"http://localhost:3000", "http://localhost:4200", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "http://localhost:8083", "http://localhost:8084"}
 }
 
 func SetupCORS(log utils.Logger, r *gin.Engine, config CORSConfig) http.Handler {

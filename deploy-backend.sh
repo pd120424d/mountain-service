@@ -118,6 +118,10 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
         exit 1
     fi
     
+    # Create network if it doesn't exist
+    echo "Creating Docker network if it doesn't exist..."
+    docker network create mountain-service-deployment_web 2>/dev/null || true
+
     # Deploy backend services
     echo "Deploying backend services..."
     docker-compose up -d --force-recreate employee-db urgency-db activity-db employee-service urgency-service activity-service version-service

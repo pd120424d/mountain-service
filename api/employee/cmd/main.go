@@ -37,6 +37,7 @@ import (
 
 // @host localhost:8082
 // @BasePath /api/v1
+
 func main() {
 	svcName := globConf.EmployeeServiceName
 	log, err := utils.NewLogger(svcName)
@@ -58,14 +59,7 @@ func main() {
 			[]interface{}{&model.Employee{}, &model.Shift{}, &model.EmployeeShift{}},
 			globConf.EmployeeDBName,
 		),
-		CORSConfig: server.CORSConfig{
-			AllowedOrigins:     []string{"http://localhost:4200"},
-			AllowedMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-			AllowedHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Requested-With"},
-			ExposeHeaders:      []string{"Content-Length"},
-			AllowCredentials:   true,
-			UseGorillaHandlers: true,
-		},
+		CORSConfig: server.DefaultCORSConfig(),
 		RouteConfig: server.RouteConfig{
 			ServiceName: svcName,
 		},

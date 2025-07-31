@@ -58,14 +58,7 @@ func main() {
 			[]interface{}{&model.Urgency{}, &model.EmergencyAssignment{}, &model.Notification{}},
 			globConf.UrgencyDBName,
 		),
-		CORSConfig: server.CORSConfig{
-			AllowedOrigins:     []string{"*"},
-			AllowedMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowedHeaders:     []string{"*"},
-			ExposeHeaders:      []string{"Content-Length"},
-			AllowCredentials:   true,
-			UseGorillaHandlers: true,
-		},
+		CORSConfig: server.DefaultCORSConfig(),
 		RouteConfig: server.RouteConfig{
 			ServiceName: svcName,
 		},
