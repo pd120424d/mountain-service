@@ -25,5 +25,3 @@ services:
 
 networks:
   web:
-    external: true
-    name: mountain-service-deployment_web
