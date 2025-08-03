@@ -25,8 +25,8 @@ RUN apk add --no-cache curl wget netcat-openbsd bind-tools
 # Copy production NGINX config
 COPY nginx.production.conf /etc/nginx/nginx.conf
 
-# Copy built Angular app to NGINX
-COPY --from=builder /app/dist/ui /usr/share/nginx/html
+# Copy built Angular app to NGINX (Angular 19 outputs to browser subdirectory)
+COPY --from=builder /app/dist/ui/browser /usr/share/nginx/html
 
 # Create directory for SSL certificates (optional)
 RUN mkdir -p /etc/nginx/ssl

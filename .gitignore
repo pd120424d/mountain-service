@@ -62,3 +62,6 @@ api/vendor/*
 ui/coverage/*
 api/coverage.txt
 .env
+
+# Ignore files used for debugging
+*debug*
