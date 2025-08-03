@@ -31,13 +31,14 @@ COPY --from=builder /app/dist/ui/browser /usr/share/nginx/html
 # Create directory for SSL certificates (optional)
 RUN mkdir -p /etc/nginx/ssl
 
-# Create log directory
-RUN mkdir -p /var/log/nginx
-
-# Set proper permissions
-RUN chown -R nginx:nginx /usr/share/nginx/html && \
+# Create log directories and ensure proper permissions
+RUN mkdir -p /var/log/nginx /var/log && \
+    touch /var/log/frontend-access.log /var/log/frontend-error.log && \
+    chown -R nginx:nginx /usr/share/nginx/html && \
     chown -R nginx:nginx /var/log/nginx && \
-    chown -R nginx:nginx /etc/nginx/ssl
+    chown -R nginx:nginx /etc/nginx/ssl && \
+    chown nginx:nginx /var/log/frontend-*.log && \
+    chmod 644 /var/log/frontend-*.log
 
 # Expose ports
 EXPOSE 80 443

@@ -5,11 +5,15 @@
 services:
   frontend:
     image: ${FRONTEND_IMAGE}
-    network_mode: host
+    ports:
+      - "${FRONTEND_HTTP_PORT:-80}:80"
+      - "${FRONTEND_HTTPS_PORT:-443}:443"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
     volumes:
       - /var/log:/var/log
+    networks:
+      - web
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
@@ -18,4 +22,7 @@ services:
       retries: 3
       start_period: 10s
 
-# Note: Using host network mode, so no custom networks needed
+networks:
+  web:
+    external: true
+    name: mountain-service-deployment_web

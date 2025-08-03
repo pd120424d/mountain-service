@@ -28,12 +28,13 @@ COPY nginx.staging.conf /etc/nginx/nginx.conf
 # Copy built Angular app to NGINX
 COPY --from=builder /app/dist/ui/browser /usr/share/nginx/html
 
-# Create log directory
-RUN mkdir -p /var/log/nginx
-
-# Set proper permissions
-RUN chown -R nginx:nginx /usr/share/nginx/html && \
-    chown -R nginx:nginx /var/log/nginx
+# Create log directories and ensure proper permissions
+RUN mkdir -p /var/log/nginx /var/log && \
+    touch /var/log/frontend-access.log /var/log/frontend-error.log && \
+    chown -R nginx:nginx /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown nginx:nginx /var/log/frontend-*.log && \
+    chmod 644 /var/log/frontend-*.log
 
 EXPOSE 80
 
