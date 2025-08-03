@@ -205,7 +205,6 @@ services:
       - web
     volumes:
       - /var/log:/var/log
-      - ${SSL_CERT_PATH:-./ssl}:/etc/nginx/ssl:ro
     restart: unless-stopped
 
   # Swagger UI services (optional - controlled by ENABLE_SWAGGER)

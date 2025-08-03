@@ -5,16 +5,11 @@
 services:
   frontend:
     image: ${FRONTEND_IMAGE}
-    ports:
-      - "${FRONTEND_HTTP_PORT:-80}:80"
-      - "${FRONTEND_HTTPS_PORT:-443}:443"
+    network_mode: host
     environment:
       - NODE_ENV=${NODE_ENV:-production}
-    networks:
-      - web
     volumes:
       - /var/log:/var/log
-      - ${SSL_CERT_PATH:-./ssl}:/etc/nginx/ssl:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
@@ -23,5 +18,4 @@ services:
       retries: 3
       start_period: 10s
 
-networks:
-  web:
+# Note: Using host network mode, so no custom networks needed

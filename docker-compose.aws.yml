@@ -188,7 +188,6 @@ services:
       - web
     volumes:
       - /var/log:/var/log
-      - ${SSL_CERT_PATH:-./ssl}:/etc/nginx/ssl:ro
     restart: unless-stopped
 
 networks:
