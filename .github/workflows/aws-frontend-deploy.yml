@@ -35,7 +35,7 @@ jobs:
     - name: Get Git tag and SHA
       id: version
       run: |
-        echo "VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo dev)" >> $GITHUB_OUTPUT
+        echo "VERSION=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "dev-$(git rev-parse --short HEAD)")" >> $GITHUB_OUTPUT
         echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
   build-frontend:
@@ -86,7 +86,7 @@ jobs:
         # Use AWS-prefixed secrets
         echo "CLOUD_INSTANCE_IP=${{ secrets.AWS_INSTANCE_IP }}" >> $GITHUB_ENV
         echo "CLOUD_INSTANCE_USER=${{ secrets.AWS_INSTANCE_USER }}" >> $GITHUB_ENV
-        echo "FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/frontend:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        echo "FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/frontend:latest" >> $GITHUB_ENV
 
     - name: Create frontend deployment environment file
       run: |
