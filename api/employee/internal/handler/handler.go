@@ -37,6 +37,7 @@ type EmployeeHandler interface {
 
 	// Admin operations
 	ResetAllData(ctx *gin.Context)
+	GetAdminShiftsAvailability(ctx *gin.Context)
 }
 
 type employeeHandler struct {
@@ -522,6 +523,44 @@ func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 
 	h.log.Info("Successfully reset all system data")
 	ctx.JSON(http.StatusOK, gin.H{"message": "All data has been successfully reset"})
+}
+
+// GetAdminShiftsAvailability Дохватање доступности смена за админе
+// @Summary Дохватање доступности смена за админе
+// @Description Дохватање доступности смена за све запослене (само за админе)
+// @Tags админ
+// @Security OAuth2Password
+// @Param days query int false "Број дана за које се проверава доступност (подразумевано 7)"
+// @Success 200 {object} employeeV1.AdminShiftAvailabilityResponse
+// @Failure 400 {object} employeeV1.ErrorResponse
+// @Failure 500 {object} employeeV1.ErrorResponse
+// @Router /admin/shifts/availability [get]
+func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
+	h.log.Info("Admin shifts availability request received")
+
+	// Parse days parameter (default to 7)
+	days := 7
+	if daysStr := ctx.Query("days"); daysStr != "" {
+		var err error
+		days, err = strconv.Atoi(daysStr)
+		if err != nil || days <= 0 || days > 90 {
+			h.log.Errorf("Invalid days parameter: %s", daysStr)
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Days must be a number between 1 and 90"})
+			return
+		}
+	}
+
+	// For admin, we can get availability for all employees or system-wide availability
+	// For now, let's return system-wide availability (we can use employee ID 1 as a reference)
+	response, err := h.shiftService.GetShiftsAvailability(1, days)
+	if err != nil {
+		h.log.Errorf("failed to get admin shifts availability: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve shifts availability"})
+		return
+	}
+
+	h.log.Infof("Successfully retrieved admin shifts availability for %d days", days)
+	ctx.JSON(http.StatusOK, response)
 }
 
 // GetOnCallEmployees Претрага запослених који су тренутно на дужности

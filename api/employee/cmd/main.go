@@ -111,5 +111,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log))
 	{
 		admin.DELETE("/reset", employeeHandler.ResetAllData)
+		admin.GET("/shifts/availability", employeeHandler.GetAdminShiftsAvailability)
+		admin.GET("/employees/:id/shift-warnings", employeeHandler.GetShiftWarnings)
 	}
 }
