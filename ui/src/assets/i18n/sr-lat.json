@@ -133,7 +133,14 @@
         "FULLY_BOOKED": "Potpuno popunjeno",
         "LOW_CAPACITY": "Nizak kapacitet",
         "CONFIRM_ASSIGN": "Da li ste sigurni da želite da se dodelite na {{shift}} dana {{date}}?",
-        "CONFIRM_REMOVE": "Da li ste sigurni da želite da se uklonite sa {{shift}} dana {{date}}?"
+        "CONFIRM_REMOVE": "Da li ste sigurni da želite da se uklonite sa {{shift}} dana {{date}}?",
+        "WARNINGS": "Upozorenja"
+    },
+    "SHIFT_WARNINGS": {
+        "INSUFFICIENT_SHIFTS": "Imate samo {{shiftsCount}} smena zakazanih u narednih {{daysCount}} dana. Razmislite o zakazivanju više smena da ispunite normu od {{requiredDays}} dana/nedeljа."
+    },
+    "SHIFT_ERRORS": {
+        "CONSECUTIVE_SHIFTS_LIMIT": "Dodeljivanje ove smene bi rezultovalo sa {{consecutiveCount}} uzastopnih smena, što prevazilazi maksimalni limit od 6 uzastopnih smena."
     },
     "ADMIN_PANEL": {
         "TITLE": "Admin Panel",

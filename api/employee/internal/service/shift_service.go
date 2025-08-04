@@ -292,7 +292,7 @@ func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
 
 		// Check if employee has less than 5 days in next two weeks
 		if len(employeeShifts) < 5 {
-			warnings = append(warnings, fmt.Sprintf("You have only %d shifts scheduled in the next 2 weeks. Consider scheduling more shifts to meet the 5 days/week quota.", len(employeeShifts)))
+			warnings = append(warnings, fmt.Sprintf("%s|%d|14|5", model.WarningInsufficientShifts, len(employeeShifts)))
 		}
 	}
 
@@ -344,7 +344,7 @@ func (s *shiftService) validateConsecutiveShifts(employeeID uint, shiftDate time
 	}
 
 	if maxConsecutive > 6 {
-		return fmt.Errorf("assigning this shift would result in more than 6 consecutive shifts")
+		return fmt.Errorf("%s|%d", model.ErrorConsecutiveShiftsLimit, maxConsecutive)
 	}
 
 	return nil

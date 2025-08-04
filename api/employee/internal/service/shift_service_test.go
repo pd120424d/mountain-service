@@ -257,7 +257,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
-		assert.Equal(t, "assigning this shift would result in more than 6 consecutive shifts", err.Error())
+		assert.Equal(t, "SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT|7", err.Error())
 	})
 
 	t.Run("it fails when create repository call fails", func(t *testing.T) {
@@ -903,6 +903,6 @@ func TestShiftService_GetShiftWarnings(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, warnings)
 		assert.Equal(t, 1, len(warnings))
-		assert.Contains(t, warnings[0], "You have only 2 shifts scheduled in the next 2 weeks")
+		assert.Equal(t, "SHIFT_WARNINGS.INSUFFICIENT_SHIFTS|2|14|5", warnings[0])
 	})
 }

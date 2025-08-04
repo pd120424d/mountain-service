@@ -128,8 +128,9 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
         console.error('Assignment failed:', error);
         this.isAssigning = false;
         this.spinner.hide();
-        const errorMessage = error?.message || this.translate.instant('SHIFT_MANAGEMENT.TOAST_ASSIGN_ERROR');
-        this.toastr.error(errorMessage);
+        const rawErrorMessage = error?.message || this.translate.instant('SHIFT_MANAGEMENT.TOAST_ASSIGN_ERROR');
+        const translatedErrorMessage = this.getTranslatedErrorMessage(rawErrorMessage);
+        this.toastr.error(translatedErrorMessage);
       },
       complete: () => {
         this.isAssigning = false;
@@ -262,6 +263,52 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
 
     // Consider low capacity if less than 50% available for either role
     return medicSlots <= 1 || technicalSlots <= 2;
+  }
+
+  getTranslatedWarning(warning: string): string {
+    // Check if the warning is in the new format with translation key
+    if (warning.includes('|')) {
+      const parts = warning.split('|');
+      if (parts.length === 4) {
+        const [translationKey, shiftsCount, daysCount, requiredDays] = parts;
+        return this.translate.instant(translationKey, {
+          shiftsCount: shiftsCount,
+          daysCount: daysCount,
+          requiredDays: requiredDays
+        });
+      }
+    }
+
+    // Fallback to original warning text for backward compatibility
+    return warning;
+  }
+
+  getTranslatedErrorMessage(errorMessage: string): string {
+    // Extract the actual error message from the service error format
+    // Format: "Server error: 400 - Bad Request - SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT|7"
+    let actualError = errorMessage;
+
+    // Try to extract the backend error message
+    const serverErrorMatch = errorMessage.match(/Server error: \d+ - [^-]+ - (.+)$/);
+    if (serverErrorMatch) {
+      actualError = serverErrorMatch[1];
+    }
+
+    // Check if the error is in the new format with translation key
+    if (actualError.includes('|')) {
+      const parts = actualError.split('|');
+      if (parts.length === 2) {
+        const [translationKey, consecutiveCount] = parts;
+        if (translationKey === 'SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT') {
+          return this.translate.instant(translationKey, {
+            consecutiveCount: consecutiveCount
+          });
+        }
+      }
+    }
+
+    // Fallback to original error message for backward compatibility
+    return errorMessage;
   }
 
   getShiftLabel(type: number): string {

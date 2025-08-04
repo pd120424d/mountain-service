@@ -186,6 +186,58 @@ describe('ShiftManagementComponent', () => {
     expect(component['shiftService'].getShiftWarnings).not.toHaveBeenCalled();
   });
 
+  it('should translate warning messages with new format', () => {
+    spyOn(component['translate'], 'instant').and.returnValue('You have only 4 shifts scheduled in the next 14 days. Consider scheduling more shifts to meet the 5 days/week quota.');
+
+    const warning = 'SHIFT_WARNINGS.INSUFFICIENT_SHIFTS|4|14|5';
+    const result = component.getTranslatedWarning(warning);
+
+    expect(component['translate'].instant).toHaveBeenCalledWith('SHIFT_WARNINGS.INSUFFICIENT_SHIFTS', {
+      shiftsCount: '4',
+      daysCount: '14',
+      requiredDays: '5'
+    });
+    expect(result).toBe('You have only 4 shifts scheduled in the next 14 days. Consider scheduling more shifts to meet the 5 days/week quota.');
+  });
+
+  it('should return original warning for backward compatibility', () => {
+    const warning = 'You have only 4 shifts scheduled in the next 2 weeks. Consider scheduling more shifts to meet the 5 days/week quota.';
+    const result = component.getTranslatedWarning(warning);
+
+    expect(result).toBe(warning);
+  });
+
+  it('should translate error messages with new format', () => {
+    spyOn(component['translate'], 'instant').and.returnValue('Assigning this shift would result in 7 consecutive shifts, which exceeds the maximum limit of 6 consecutive shifts.');
+
+    const errorMessage = 'Server error: 400 - Bad Request - SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT|7';
+    const result = component.getTranslatedErrorMessage(errorMessage);
+
+    expect(component['translate'].instant).toHaveBeenCalledWith('SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT', {
+      consecutiveCount: '7'
+    });
+    expect(result).toBe('Assigning this shift would result in 7 consecutive shifts, which exceeds the maximum limit of 6 consecutive shifts.');
+  });
+
+  it('should return original error message for backward compatibility', () => {
+    const errorMessage = 'Server error: 400 - Bad Request - Some other error';
+    const result = component.getTranslatedErrorMessage(errorMessage);
+
+    expect(result).toBe(errorMessage);
+  });
+
+  it('should handle simple error messages without server error format', () => {
+    const errorMessage = 'SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT|8';
+    spyOn(component['translate'], 'instant').and.returnValue('Assigning this shift would result in 8 consecutive shifts, which exceeds the maximum limit of 6 consecutive shifts.');
+
+    const result = component.getTranslatedErrorMessage(errorMessage);
+
+    expect(component['translate'].instant).toHaveBeenCalledWith('SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT', {
+      consecutiveCount: '8'
+    });
+    expect(result).toBe('Assigning this shift would result in 8 consecutive shifts, which exceeds the maximum limit of 6 consecutive shifts.');
+  });
+
   it('should handle missing day data in getAvailableMedics', () => {
     component.shiftAvailability = { days: {} };
     spyOn(console, 'warn');

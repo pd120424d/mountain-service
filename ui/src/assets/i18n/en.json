@@ -136,6 +136,12 @@
         "CONFIRM_ASSIGN": "Are you sure you want to assign to {{shift}} on {{date}}?",
         "CONFIRM_REMOVE": "Are you sure you want to remove from {{shift}} on {{date}}?"
     },
+    "SHIFT_WARNINGS": {
+        "INSUFFICIENT_SHIFTS": "You have only {{shiftsCount}} shifts scheduled in the next {{daysCount}} days. Consider scheduling more shifts to meet the {{requiredDays}} days/week quota."
+    },
+    "SHIFT_ERRORS": {
+        "CONSECUTIVE_SHIFTS_LIMIT": "Assigning this shift would result in {{consecutiveCount}} consecutive shifts, which exceeds the maximum limit of 6 consecutive shifts."
+    },
     "ADMIN_PANEL": {
         "TITLE": "Admin Panel",
         "API_OVERVIEW": {
