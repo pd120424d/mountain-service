@@ -1,6 +1,10 @@
 # Step 1: Build
 FROM golang:1.23-alpine AS build
 
+# Build arguments to bust cache when needed
+ARG BUILD_TIMESTAMP
+ARG GIT_COMMIT_SHA
+
 WORKDIR /app
 
 # Copy module files

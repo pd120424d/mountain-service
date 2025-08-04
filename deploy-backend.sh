@@ -111,12 +111,28 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
     docker-compose stop employee-service urgency-service activity-service version-service employee-db urgency-db activity-db 2>/dev/null || true
     docker-compose rm -f employee-service urgency-service activity-service version-service employee-db urgency-db activity-db 2>/dev/null || true
     
-    # Pull backend service images
-    echo "Pulling backend service images..."
+    # Clear Docker image cache to prevent stale images
+    echo "Clearing Docker image cache to ensure fresh images..."
+    docker system prune -f --volumes || true
+    docker image prune -a -f || true
+
+    # Pull backend service images with --no-cache equivalent
+    echo "Pulling backend service images (forcing fresh pull)..."
+
+    # Remove existing images to force fresh pull
+    docker rmi $(docker images -q ghcr.io/$GITHUB_ACTOR/employee-service) 2>/dev/null || true
+    docker rmi $(docker images -q ghcr.io/$GITHUB_ACTOR/urgency-service) 2>/dev/null || true
+    docker rmi $(docker images -q ghcr.io/$GITHUB_ACTOR/activity-service) 2>/dev/null || true
+    docker rmi $(docker images -q ghcr.io/$GITHUB_ACTOR/version-service) 2>/dev/null || true
+
     if ! docker-compose pull employee-db urgency-db activity-db employee-service urgency-service activity-service version-service; then
         echo "ERROR: Failed to pull backend Docker images from registry."
         exit 1
     fi
+
+    # Verify we have the correct images by showing their digests
+    echo "Verifying pulled images:"
+    docker images --digests | grep -E "(employee-service|urgency-service|activity-service|version-service)" || true
     
     # Create network if it doesn't exist
     echo "Creating Docker network if it doesn't exist..."

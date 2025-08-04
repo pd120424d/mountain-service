@@ -87,13 +87,15 @@ jobs:
 
     - name: Build Docker image for ${{ matrix.service.name }}
       run: |
-        NO_CACHE_FLAG=""
-        if [ "${{ github.event.inputs.force_rebuild }}" = "true" ]; then
-          NO_CACHE_FLAG="--no-cache"
-        fi
+        # Always use --no-cache to ensure fresh builds
+        # This prevents issues with cached layers containing old code
+        NO_CACHE_FLAG="--no-cache"
 
-        # Add a unique build arg to bust cache if needed
+        # Add a unique build arg to bust cache and ensure fresh builds
         BUILD_TIMESTAMP=$(date +%s)
+
+        # Add git commit SHA to ensure unique builds per commit
+        GIT_COMMIT_SHA="${{ github.sha }}"
 
         if [ "${{ matrix.service.build_args }}" != "" ]; then
           docker build \
@@ -102,6 +104,7 @@ jobs:
             --build-arg VERSION=${{ needs.get-version.outputs.version }} \
             --build-arg GIT_SHA=${{ needs.get-version.outputs.git_sha }} \
             --build-arg BUILD_TIMESTAMP=$BUILD_TIMESTAMP \
+            --build-arg GIT_COMMIT_SHA=$GIT_COMMIT_SHA \
             $NO_CACHE_FLAG \
             ${{ matrix.service.context }}
         else
@@ -109,6 +112,7 @@ jobs:
             -f ${{ matrix.service.dockerfile }} \
             -t ${{ matrix.service.name }}:latest \
             --build-arg BUILD_TIMESTAMP=$BUILD_TIMESTAMP \
+            --build-arg GIT_COMMIT_SHA=$GIT_COMMIT_SHA \
             $NO_CACHE_FLAG \
             ${{ matrix.service.context }}
         fi
@@ -117,13 +121,19 @@ jobs:
       run: |
         GHCR_IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}"
 
-        # Tag images
-        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:latest
-        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:${{ needs.get-version.outputs.version }}
+        # Create unique tag using commit SHA to prevent caching issues
+        COMMIT_TAG="${{ needs.get-version.outputs.git_sha }}"
+        VERSION_TAG="${{ needs.get-version.outputs.version }}"
 
-        # Push images
+        # Tag images with multiple tags for flexibility
+        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:latest
+        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:${VERSION_TAG}
+        docker tag ${{ matrix.service.name }}:latest ${GHCR_IMAGE_NAME}:${COMMIT_TAG}
+
+        # Push all tags
         docker push ${GHCR_IMAGE_NAME}:latest
-        docker push ${GHCR_IMAGE_NAME}:${{ needs.get-version.outputs.version }}
+        docker push ${GHCR_IMAGE_NAME}:${VERSION_TAG}
+        docker push ${GHCR_IMAGE_NAME}:${COMMIT_TAG}
 
   deploy-backend:
     needs: [get-version, build-backend]
@@ -147,11 +157,11 @@ jobs:
         echo "COMPOSE_ENV=production" >> $GITHUB_ENV
         echo "SWAGGER_API_URL=http://${{ secrets.AWS_INSTANCE_IP }}:8082/swagger.json" >> $GITHUB_ENV
         
-        # Set image names
-        echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
-        echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
-        echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
-        echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ needs.get-version.outputs.version }}" >> $GITHUB_ENV
+        # Set image names using commit SHA to ensure unique images and prevent caching issues
+        echo "EMPLOYEE_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/employee-service:${{ needs.get-version.outputs.git_sha }}" >> $GITHUB_ENV
+        echo "URGENCY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/urgency-service:${{ needs.get-version.outputs.git_sha }}" >> $GITHUB_ENV
+        echo "ACTIVITY_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/activity-service:${{ needs.get-version.outputs.git_sha }}" >> $GITHUB_ENV
+        echo "VERSION_SERVICE_IMAGE=ghcr.io/${{ github.repository_owner }}/version-service:${{ needs.get-version.outputs.git_sha }}" >> $GITHUB_ENV
 
     - name: Create backend deployment environment file
       run: |
