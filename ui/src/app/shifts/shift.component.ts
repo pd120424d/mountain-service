@@ -119,7 +119,9 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     this.shiftService.assignEmployeeToShift(shiftType, idToAssign, date).subscribe({
       next: (response) => {
         console.log('Assignment successful:', response);
+        // Reload data to reflect the assignment
         this.loadShifts();
+        this.loadShiftWarnings();
         this.isAssigning = false;
         this.spinner.hide();
         this.toastr.success(this.translate.instant('SHIFT_MANAGEMENT.TOAST_ASSIGN_SUCCESS'));
@@ -166,7 +168,9 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     this.shiftService.removeEmployeeFromShiftByDetails(idToRemove, shiftType, date).subscribe({
       next: (response) => {
         console.log('Removal successful:', response);
+        // Reload data to reflect the removal
         this.loadShifts();
+        this.loadShiftWarnings();
         this.isRemoving = false;
         this.spinner.hide();
         this.toastr.success(this.translate.instant('SHIFT_MANAGEMENT.TOAST_REMOVE_SUCCESS'));
@@ -261,8 +265,8 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     const medicSlots = this.getAvailableMedics(shiftType, date);
     const technicalSlots = this.getAvailableTechnicals(shiftType, date);
 
-    // Consider low capacity if less than 50% available for either role
-    return medicSlots <= 1 || technicalSlots <= 2;
+    // Consider low capacity if less than or equal to 1 slot available for either role
+    return medicSlots <= 1 || technicalSlots <= 1;
   }
 
   getTranslatedWarning(warning: string): string {

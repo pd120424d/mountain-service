@@ -238,6 +238,39 @@ describe('ShiftManagementComponent', () => {
     expect(result).toBe('Assigning this shift would result in 8 consecutive shifts, which exceeds the maximum limit of 6 consecutive shifts.');
   });
 
+  it('should correctly identify low capacity shifts with custom data', () => {
+    // Mock shift availability data
+    component.shiftAvailability = {
+      days: {
+        '2024-01-15': {
+          firstShift: {
+            medicSlotsAvailable: 1,
+            technicalSlotsAvailable: 2
+          },
+          secondShift: {
+            medicSlotsAvailable: 2,
+            technicalSlotsAvailable: 1
+          },
+          thirdShift: {
+            medicSlotsAvailable: 2,
+            technicalSlotsAvailable: 4
+          }
+        }
+      }
+    };
+
+    const testDate = new Date('2024-01-15');
+
+    // First shift should be low capacity (medics <= 1)
+    expect(component.isShiftLowCapacity(1, testDate)).toBe(true);
+
+    // Second shift should be low capacity (technicals <= 1)
+    expect(component.isShiftLowCapacity(2, testDate)).toBe(true);
+
+    // Third shift should NOT be low capacity (medics > 1 AND technicals > 1)
+    expect(component.isShiftLowCapacity(3, testDate)).toBe(false);
+  });
+
   it('should handle missing day data in getAvailableMedics', () => {
     component.shiftAvailability = { days: {} };
     spyOn(console, 'warn');
@@ -335,9 +368,9 @@ describe('ShiftManagementComponent', () => {
     it('should correctly identify low capacity shifts', () => {
       const testDate = new Date('2025-08-01T00:00:00.000Z');
 
-      expect(component.isShiftLowCapacity(1, testDate)).toBe(true); // 1 medic, 3 technical
-      expect(component.isShiftLowCapacity(2, testDate)).toBe(true); // 0 medic, 0 technical
-      expect(component.isShiftLowCapacity(3, testDate)).toBe(false); // 2 medic, 4 technical
+      expect(component.isShiftLowCapacity(1, testDate)).toBe(true); // 1 medic, 3 technical (medics <= 1)
+      expect(component.isShiftLowCapacity(2, testDate)).toBe(true); // 0 medic, 0 technical (both <= 1)
+      expect(component.isShiftLowCapacity(3, testDate)).toBe(false); // 2 medic, 4 technical (both > 1)
     });
 
     it('should change time span and reload shifts', () => {
