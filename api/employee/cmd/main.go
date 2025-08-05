@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"time"
 
 	_ "github.com/pd120424d/mountain-service/api/employee/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/employee/internal/handler"
@@ -124,9 +126,19 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		authorized.GET("/shifts/availability", employeeHandler.GetShiftsAvailability)
 		authorized.DELETE("/employees/:id/shifts", employeeHandler.RemoveShift)
 
-		// Service-to-service endpoints (for now using regular auth, will add service auth later)
-		authorized.GET("/employees/on-call", employeeHandler.GetOnCallEmployees)
-		authorized.GET("/employees/:id/active-emergencies", employeeHandler.CheckActiveEmergencies)
+		// Service-to-service endpoints with service authentication
+		serviceAuth := auth.NewServiceAuth(auth.ServiceAuthConfig{
+			Secret:      os.Getenv("SERVICE_AUTH_SECRET"),
+			ServiceName: "employee-service",
+			TokenTTL:    time.Hour,
+		})
+		serviceAuthMiddleware := auth.NewServiceAuthMiddleware(serviceAuth)
+
+		serviceRoutes := r.Group("/api/v1").Use(serviceAuthMiddleware)
+		{
+			serviceRoutes.GET("/employees/on-call", employeeHandler.GetOnCallEmployees)
+			serviceRoutes.GET("/employees/:id/active-emergencies", employeeHandler.CheckActiveEmergencies)
+		}
 
 		// File upload endpoints
 		if fileHandler != nil {
