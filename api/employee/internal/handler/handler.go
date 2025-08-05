@@ -56,16 +56,26 @@ func NewEmployeeHandler(log utils.Logger, employeeService service.EmployeeServic
 
 // RegisterEmployee Креирање новог запосленог
 // @Summary Креирање новог запосленог
-// @Description Креирање новог запосленог у систему
+// @Description Креирање новог запосленог у систему (supports both JSON and multipart form data)
 // @Tags запослени
-// @Accept  json
+// @Accept  json,multipart/form-data
 // @Produce  json
-// @Param employee body employeeV1.EmployeeCreateRequest true "Подаци о новом запосленом"
+// @Param employee body employeeV1.EmployeeCreateRequest true "Подаци о новом запосленом (JSON)"
+// @Param firstName formData string false "First Name (form data)"
+// @Param lastName formData string false "Last Name (form data)"
+// @Param username formData string false "Username (form data)"
+// @Param password formData string false "Password (form data)"
+// @Param email formData string false "Email (form data)"
+// @Param gender formData string false "Gender (form data)"
+// @Param phone formData string false "Phone (form data)"
+// @Param profileType formData string false "Profile Type (form data)"
+// @Param profilePicture formData file false "Profile Picture (form data)"
 // @Success 201 {object} employeeV1.EmployeeResponse
 // @Failure 400 {object} employeeV1.ErrorResponse
 // @Router /employees [post]
 func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	h.log.Info("Received Register Employee request")
+
 	req := &employeeV1.EmployeeCreateRequest{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
@@ -531,7 +541,7 @@ func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 // @Tags админ
 // @Security OAuth2Password
 // @Param days query int false "Број дана за које се проверава доступност (подразумевано 7)"
-// @Success 200 {object} employeeV1.AdminShiftAvailabilityResponse
+// @Success 200 {object} employeeV1.ShiftAvailabilityResponse
 // @Failure 400 {object} employeeV1.ErrorResponse
 // @Failure 500 {object} employeeV1.ErrorResponse
 // @Router /admin/shifts/availability [get]

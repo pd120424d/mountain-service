@@ -300,6 +300,15 @@ func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
 	return warnings, nil
 }
 
+func (s *shiftService) GetAdminShiftsAvailability(days int) (*employeeV1.ShiftAvailabilityResponse, error) {
+	s.log.Infof("Getting admin shifts availability for %d days", days)
+
+	// TODO: we need to return shift availability for all employees here, if it is possible somehow
+	return &employeeV1.ShiftAvailabilityResponse{
+		Days: make(map[time.Time]employeeV1.ShiftAvailabilityPerDay),
+	}, nil
+}
+
 // Helper methods
 
 func (s *shiftService) validateConsecutiveShifts(employeeID uint, shiftDate time.Time) error {

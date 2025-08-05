@@ -12,6 +12,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	globConf "github.com/pd120424d/mountain-service/api/shared/config"
 	"github.com/pd120424d/mountain-service/api/shared/server"
+	"github.com/pd120424d/mountain-service/api/shared/storage"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	// Import contracts for Swagger documentation
@@ -85,6 +86,20 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	employeeService := service.NewEmployeeService(log, employeeRepo)
 	shiftService := service.NewShiftService(log, employeeRepo, shiftsRepo)
 
+	// Initialize Azure Blob Storage service
+	blobConfig := storage.LoadConfigFromEnv()
+	blobService, err := storage.NewAzureBlobService(blobConfig, log)
+	if err != nil {
+		log.Warnf("Failed to initialize Azure Blob Storage: %v. File upload will be disabled.", err)
+		blobService = nil
+	}
+
+	// Initialize file handler
+	var fileHandler handler.FileHandler
+	if blobService != nil {
+		fileHandler = handler.NewFileHandler(log, blobService, employeeService)
+	}
+
 	// Initialize handler with services
 	employeeHandler := handler.NewEmployeeHandler(log, employeeService, shiftService)
 
@@ -105,6 +120,13 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		// Service-to-service endpoints (for now using regular auth, will add service auth later)
 		authorized.GET("/employees/on-call", employeeHandler.GetOnCallEmployees)
 		authorized.GET("/employees/:id/active-emergencies", employeeHandler.CheckActiveEmergencies)
+
+		// File upload endpoints
+		if fileHandler != nil {
+			authorized.POST("/employees/:employeeId/profile-picture", fileHandler.UploadProfilePicture)
+			authorized.DELETE("/employees/:employeeId/profile-picture", fileHandler.DeleteProfilePicture)
+			authorized.GET("/files/profile-picture/info", fileHandler.GetProfilePictureInfo)
+		}
 	}
 
 	// Admin-only routes

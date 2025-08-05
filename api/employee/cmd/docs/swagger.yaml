@@ -10,6 +10,17 @@ definitions:
       message:
         type: string
     type: object
+  internal_handler.UploadProfilePictureResponse:
+    properties:
+      blobName:
+        type: string
+      blobUrl:
+        type: string
+      message:
+        type: string
+      size:
+        type: integer
+    type: object
   v1.ActiveEmergenciesResponse:
     properties:
       hasActiveEmergencies:
@@ -219,6 +230,32 @@ paths:
       summary: Ресетовање свих података
       tags:
       - админ
+  /admin/shifts/availability:
+    get:
+      description: Дохватање доступности смена за све запослене (само за админе)
+      parameters:
+      - description: Број дана за које се проверава доступност (подразумевано 7)
+        in: query
+        name: days
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.ShiftAvailabilityResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+      security:
+      - OAuth2Password: []
+      summary: Дохватање доступности смена за админе
+      tags:
+      - админ
   /employees:
     get:
       description: Преузимање свих запослених
@@ -241,14 +278,52 @@ paths:
     post:
       consumes:
       - application/json
-      description: Креирање новог запосленог у систему
+      - multipart/form-data
+      description: Креирање новог запосленог у систему (supports both JSON and multipart
+        form data)
       parameters:
-      - description: Подаци о новом запосленом
+      - description: Подаци о новом запосленом (JSON)
         in: body
         name: employee
         required: true
         schema:
           $ref: '#/definitions/v1.EmployeeCreateRequest'
+      - description: First Name (form data)
+        in: formData
+        name: firstName
+        type: string
+      - description: Last Name (form data)
+        in: formData
+        name: lastName
+        type: string
+      - description: Username (form data)
+        in: formData
+        name: username
+        type: string
+      - description: Password (form data)
+        in: formData
+        name: password
+        type: string
+      - description: Email (form data)
+        in: formData
+        name: email
+        type: string
+      - description: Gender (form data)
+        in: formData
+        name: gender
+        type: string
+      - description: Phone (form data)
+        in: formData
+        name: phone
+        type: string
+      - description: Profile Type (form data)
+        in: formData
+        name: profileType
+        type: string
+      - description: Profile Picture (form data)
+        in: formData
+        name: profilePicture
+        type: file
       produces:
       - application/json
       responses:
@@ -263,6 +338,76 @@ paths:
       summary: Креирање новог запосленог
       tags:
       - запослени
+  /employees/{employeeId}/profile-picture:
+    delete:
+      description: Delete a profile picture for an employee
+      parameters:
+      - description: Employee ID
+        in: path
+        name: employeeId
+        required: true
+        type: integer
+      - description: Blob name to delete
+        in: query
+        name: blobName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete profile picture
+      tags:
+      - files
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a profile picture for an employee
+      parameters:
+      - description: Employee ID
+        in: path
+        name: employeeId
+        required: true
+        type: integer
+      - description: Profile picture file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.UploadProfilePictureResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload profile picture
+      tags:
+      - files
   /employees/{id}:
     delete:
       description: Брисање запосленог по ID-ју
@@ -497,6 +642,36 @@ paths:
       summary: Претрага запослених који су тренутно на дужности
       tags:
       - запослени
+  /files/profile-picture/info:
+    get:
+      description: Get information about a profile picture
+      parameters:
+      - description: Blob name
+        in: query
+        name: blobName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get profile picture info
+      tags:
+      - files
   /login:
     post:
       consumes:

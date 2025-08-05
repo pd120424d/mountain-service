@@ -56,6 +56,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/shifts/availability": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Дохватање доступности смена за све запослене (само за админе)",
+                "tags": [
+                    "админ"
+                ],
+                "summary": "Дохватање доступности смена за админе",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Број дана за које се проверава доступност (подразумевано 7)",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ShiftAvailabilityResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/employees": {
             "get": {
                 "security": [
@@ -87,9 +129,10 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Креирање новог запосленог у систему",
+                "description": "Креирање новог запосленог у систему (supports both JSON and multipart form data)",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -100,13 +143,67 @@ const docTemplate = `{
                 "summary": "Креирање новог запосленог",
                 "parameters": [
                     {
-                        "description": "Подаци о новом запосленом",
+                        "description": "Подаци о новом запосленом (JSON)",
                         "name": "employee",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/v1.EmployeeCreateRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "First Name (form data)",
+                        "name": "firstName",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Name (form data)",
+                        "name": "lastName",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Username (form data)",
+                        "name": "username",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password (form data)",
+                        "name": "password",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email (form data)",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Gender (form data)",
+                        "name": "gender",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone (form data)",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Profile Type (form data)",
+                        "name": "profileType",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Profile Picture (form data)",
+                        "name": "profilePicture",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -168,6 +265,108 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/{employeeId}/profile-picture": {
+            "post": {
+                "description": "Upload a profile picture for an employee",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Upload profile picture",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Employee ID",
+                        "name": "employeeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Profile picture file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.UploadProfilePictureResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a profile picture for an employee",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Delete profile picture",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Employee ID",
+                        "name": "employeeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Blob name to delete",
+                        "name": "blobName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -492,6 +691,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/files/profile-picture/info": {
+            "get": {
+                "description": "Get information about a profile picture",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get profile picture info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Blob name",
+                        "name": "blobName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/login": {
             "post": {
                 "description": "Пријавање запосленог са корисничким именом и лозинком",
@@ -635,6 +878,23 @@ const docTemplate = `{
             "properties": {
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_handler.UploadProfilePictureResponse": {
+            "type": "object",
+            "properties": {
+                "blobName": {
+                    "type": "string"
+                },
+                "blobUrl": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
                 }
             }
         },

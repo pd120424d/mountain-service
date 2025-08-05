@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -1807,4 +1808,178 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "warnings")
 		assert.Contains(t, w.Body.String(), "[]") // Empty array in JSON
 	})
+}
+
+func TestEmployeeHandler_GetAdminShiftsAvailability(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns an error when days parameter is invalid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest("GET", "/admin/shifts/availability?days=invalid", nil)
+
+		handler.GetAdminShiftsAvailability(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Days must be a number between 1 and 90")
+	})
+
+	t.Run("it returns an error when days parameter is zero or negative", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest("GET", "/admin/shifts/availability?days=0", nil)
+
+		handler.GetAdminShiftsAvailability(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Days must be a number between 1 and 90")
+	})
+
+	t.Run("it returns an error when days parameter exceeds maximum", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest("GET", "/admin/shifts/availability?days=100", nil)
+
+		handler.GetAdminShiftsAvailability(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Days must be a number between 1 and 90")
+	})
+
+	tests := []struct {
+		name           string
+		queryParams    string
+		setupMocks     func(*service.MockShiftService)
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:        "it returns StatusInternalServerError when service call fails",
+			queryParams: "?days=7",
+			setupMocks: func(mockShiftSvc *service.MockShiftService) {
+				mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 7).Return(nil, fmt.Errorf("database error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   `"error":"Failed to retrieve shifts availability"`,
+		},
+		{
+			name:        "it successfully returns admin shifts availability with default days",
+			queryParams: "",
+			setupMocks: func(mockShiftSvc *service.MockShiftService) {
+				testDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+				response := &employeeV1.ShiftAvailabilityResponse{
+					Days: map[time.Time]employeeV1.ShiftAvailabilityPerDay{
+						testDate: {
+							FirstShift: employeeV1.ShiftAvailability{
+								MedicSlotsAvailable:     2,
+								TechnicalSlotsAvailable: 4,
+								IsAssignedToEmployee:    false,
+								IsFullyBooked:           false,
+							},
+							SecondShift: employeeV1.ShiftAvailability{
+								MedicSlotsAvailable:     1,
+								TechnicalSlotsAvailable: 2,
+								IsAssignedToEmployee:    false,
+								IsFullyBooked:           false,
+							},
+							ThirdShift: employeeV1.ShiftAvailability{
+								MedicSlotsAvailable:     2,
+								TechnicalSlotsAvailable: 4,
+								IsAssignedToEmployee:    false,
+								IsFullyBooked:           false,
+							},
+						},
+					},
+				}
+				mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 7).Return(response, nil)
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `"days"`,
+		},
+		{
+			name:        "it successfully returns admin shifts availability with custom days",
+			queryParams: "?days=14",
+			setupMocks: func(mockShiftSvc *service.MockShiftService) {
+				testDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+				response := &employeeV1.ShiftAvailabilityResponse{
+					Days: map[time.Time]employeeV1.ShiftAvailabilityPerDay{
+						testDate: {
+							FirstShift: employeeV1.ShiftAvailability{
+								MedicSlotsAvailable:     2,
+								TechnicalSlotsAvailable: 4,
+								IsAssignedToEmployee:    false,
+								IsFullyBooked:           false,
+							},
+							SecondShift: employeeV1.ShiftAvailability{
+								MedicSlotsAvailable:     1,
+								TechnicalSlotsAvailable: 2,
+								IsAssignedToEmployee:    false,
+								IsFullyBooked:           false,
+							},
+							ThirdShift: employeeV1.ShiftAvailability{
+								MedicSlotsAvailable:     2,
+								TechnicalSlotsAvailable: 4,
+								IsAssignedToEmployee:    false,
+								IsFullyBooked:           false,
+							},
+						},
+					},
+				}
+				mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 14).Return(response, nil)
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `"days"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockEmplSvc := service.NewMockEmployeeService(ctrl)
+			mockShiftSvc := service.NewMockShiftService(ctrl)
+			tt.setupMocks(mockShiftSvc)
+
+			log := utils.NewTestLogger()
+			handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+			gin.SetMode(gin.TestMode)
+			w := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(w)
+			ctx.Request = httptest.NewRequest("GET", "/admin/shifts/availability"+tt.queryParams, nil)
+
+			handler.GetAdminShiftsAvailability(ctx)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			assert.Contains(t, w.Body.String(), tt.expectedBody)
+		})
+	}
 }

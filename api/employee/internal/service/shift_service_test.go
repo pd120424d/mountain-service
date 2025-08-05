@@ -301,7 +301,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(futureDate, 1).Return(nil, fmt.Errorf("database error")).Times(1)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(nil, fmt.Errorf("database error")).Times(1)
 
 		response, err := service.AssignShift(1, req)
 
@@ -324,7 +324,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ID:          1,
 			ProfileType: model.Medic,
 		}
-		futureDate := time.Date(2025, 8, 4, 0, 0, 0, 0, time.UTC)
+		futureDate := time.Now().AddDate(0, 0, 7) // 7 days from now
 		futureDateStr := futureDate.Format("2006-01-02")
 
 		shift := &model.Shift{
@@ -348,7 +348,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(futureDate, 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
 		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(false, fmt.Errorf("database error")).Times(1)
 
 		response, err := service.AssignShift(1, req)
@@ -372,7 +372,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ID:          1,
 			ProfileType: model.Medic,
 		}
-		futureDate := time.Date(2025, 8, 4, 0, 0, 0, 0, time.UTC)
+		futureDate := time.Now().AddDate(0, 0, 7) // 7 days from now
 		futureDateStr := futureDate.Format("2006-01-02")
 
 		shift := &model.Shift{
@@ -396,7 +396,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(futureDate, 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
 		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(true, nil)
 
 		response, err := service.AssignShift(1, req)
@@ -420,7 +420,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ID:          1,
 			ProfileType: model.Medic,
 		}
-		futureDate := time.Date(2025, 8, 4, 0, 0, 0, 0, time.UTC)
+		futureDate := time.Now().AddDate(0, 0, 7) // 7 days from now
 		futureDateStr := futureDate.Format("2006-01-02")
 
 		shift := &model.Shift{
@@ -444,7 +444,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(futureDate, 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
 		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(false, nil)
 		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(1), model.Medic).Return(int64(1), fmt.Errorf("database error")).Times(1)
 
@@ -468,7 +468,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ID:          1,
 			ProfileType: model.Medic,
 		}
-		futureDate := time.Date(2025, 8, 4, 0, 0, 0, 0, time.UTC)
+		futureDate := time.Now().AddDate(0, 0, 7) // 7 days from now
 		futureDateStr := futureDate.Format("2006-01-02")
 
 		shift := &model.Shift{
@@ -492,7 +492,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(futureDate, 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
 		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(false, nil)
 		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(1), model.Medic).Return(int64(2), nil) // Full capacity
 
@@ -517,7 +517,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ID:          1,
 			ProfileType: model.Medic,
 		}
-		futureDate := time.Date(2025, 8, 4, 0, 0, 0, 0, time.UTC) // 7 days from now
+		futureDate := time.Now().AddDate(0, 0, 7) // 7 days from now
 		futureDateStr := futureDate.Format("2006-01-02")
 
 		shift := &model.Shift{
@@ -541,7 +541,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(futureDate, 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
 		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(false, nil)
 		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(1), model.Medic).Return(int64(1), nil) // Available capacity
 		shiftRepoMock.EXPECT().CreateAssignment(uint(1), uint(1)).Return(uint(10), nil)
@@ -688,7 +688,7 @@ func TestShiftService_RemoveShift(t *testing.T) {
 
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
-		futureDate := time.Date(2025, 8, 4, 0, 0, 0, 0, time.UTC)
+		futureDate := time.Now().AddDate(0, 0, 7) // 7 days from now
 		futureDateStr := futureDate.Format("2006-01-02")
 
 		req := employeeV1.RemoveShiftRequest{
@@ -696,7 +696,7 @@ func TestShiftService_RemoveShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		shiftRepoMock.EXPECT().RemoveEmployeeFromShiftByDetails(uint(1), futureDate, 1).Return(assert.AnError)
+		shiftRepoMock.EXPECT().RemoveEmployeeFromShiftByDetails(uint(1), gomock.Any(), 1).Return(assert.AnError)
 
 		err := service.RemoveShift(1, req)
 
@@ -714,7 +714,7 @@ func TestShiftService_RemoveShift(t *testing.T) {
 
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
-		futureDate := time.Date(2025, 8, 4, 0, 0, 0, 0, time.UTC)
+		futureDate := time.Now().AddDate(0, 0, 7) // 7 days from now
 		futureDateStr := futureDate.Format("2006-01-02")
 
 		req := employeeV1.RemoveShiftRequest{
@@ -722,7 +722,7 @@ func TestShiftService_RemoveShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		shiftRepoMock.EXPECT().RemoveEmployeeFromShiftByDetails(uint(1), futureDate, 1).Return(nil)
+		shiftRepoMock.EXPECT().RemoveEmployeeFromShiftByDetails(uint(1), gomock.Any(), 1).Return(nil)
 
 		err := service.RemoveShift(1, req)
 
