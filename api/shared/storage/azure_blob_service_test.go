@@ -65,7 +65,7 @@ func TestLoadConfigFromEnv(t *testing.T) {
 			expected: AzureBlobConfig{
 				AccountName:   "testaccount",
 				AccountKey:    "testkey",
-				ContainerName: "profile-pictures",
+				ContainerName: "employee-profiles",
 			},
 		},
 	}

@@ -19,7 +19,7 @@ import (
 
 const (
 	maxSize              = int64(5 * 1024 * 1024) // 5MB
-	defaultContainerName = "mountainserviceblob"
+	defaultContainerName = "employee-profiles"
 )
 
 // AzureBlobClient interface wraps the Azure blob client operations for testing
@@ -233,7 +233,7 @@ func LoadConfigFromEnv() AzureBlobConfig {
 	return AzureBlobConfig{
 		AccountName:   os.Getenv("AZURE_STORAGE_ACCOUNT_NAME"),
 		AccountKey:    os.Getenv("AZURE_STORAGE_ACCOUNT_KEY"),
-		ContainerName: getEnvOrDefault("AZURE_STORAGE_CONTAINER_NAME", "profile-pictures"),
+		ContainerName: getEnvOrDefault("AZURE_STORAGE_CONTAINER_NAME", "employee-profiles"),
 	}
 }
 
