@@ -35,6 +35,57 @@ describe('ShiftManagementComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  describe('Admin shift assignment logic', () => {
+    beforeEach(() => {
+      // Set up admin user
+      (component['auth'].getRole as jasmine.Spy).and.returnValue('Administrator');
+      component.userRole = 'Administrator';
+
+      // Mock employee shifts data
+      const mockEmployeeShifts = [
+        { id: 1, shiftDate: '2024-01-15', shiftType: 1, createdAt: '2024-01-15T00:00:00Z' },
+        { id: 2, shiftDate: '2024-01-15', shiftType: 2, createdAt: '2024-01-15T00:00:00Z' }
+      ];
+      component.selectedEmployeeShifts.set('123', mockEmployeeShifts);
+    });
+
+    it('should correctly identify when an employee is assigned to a shift', () => {
+      const testDate = new Date('2024-01-15');
+
+      // Employee 123 is assigned to shift type 1 on 2024-01-15
+      expect(component.isAssignedToShift(1, testDate, '123')).toBe(true);
+
+      // Employee 123 is assigned to shift type 2 on 2024-01-15
+      expect(component.isAssignedToShift(2, testDate, '123')).toBe(true);
+
+      // Employee 123 is NOT assigned to shift type 3 on 2024-01-15
+      expect(component.isAssignedToShift(3, testDate, '123')).toBe(false);
+
+      // Employee 456 (not in cache) is NOT assigned to any shift
+      expect(component.isAssignedToShift(1, testDate, '456')).toBe(false);
+    });
+
+    it('should disable assign button when employee is already assigned', () => {
+      const testDate = new Date('2024-01-15');
+
+      // Should not be able to assign employee 123 to shift 1 (already assigned)
+      expect(component.canAssignToShift(1, testDate, '123')).toBe(false);
+
+      // Should be able to assign employee 123 to shift 3 (not assigned)
+      expect(component.canAssignToShift(3, testDate, '123')).toBe(true);
+    });
+
+    it('should enable remove button when employee is assigned', () => {
+      const testDate = new Date('2024-01-15');
+
+      // Should be able to remove employee 123 from shift 1 (assigned)
+      expect(component.canRemoveFromShift(1, testDate, '123')).toBe(true);
+
+      // Should NOT be able to remove employee 123 from shift 3 (not assigned)
+      expect(component.canRemoveFromShift(3, testDate, '123')).toBe(false);
+    });
+  });
+
   it('should fetch role, userid and load shifts on init when user is non administrator', () => {
     // Services are already mocked in beforeEach, just verify the calls and state
     expect(component['shiftService'].getShiftAvailability).toHaveBeenCalled();

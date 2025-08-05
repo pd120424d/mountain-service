@@ -74,14 +74,15 @@
         {{ getTranslatedDate(day) }}
       </h3>
 
-      <div *ngFor="let shiftType of [1, 2, 3]" class="shift-card"
+      <div *ngFor="let shiftType of [1, 2, 3]; let i = index" class="shift-card"
            [ngClass]="{
              'shift-type-1': shiftType === 1,
              'shift-type-2': shiftType === 2,
              'shift-type-3': shiftType === 3,
              'assigned': isAssignedToShift(shiftType, day),
              'fully-booked': isShiftFullyBooked(shiftType, day)
-           }">
+           }"
+           #shiftCard>
         <h4 class="shift-title">
           <span class="badge" [ngClass]="'badge-' + shiftType">
             {{ getShiftLabel(shiftType) }}
@@ -137,7 +138,8 @@
           <label for="employeeSelect-{{ day.toDateString() }}-{{ shiftType }}">
             {{ 'SHIFT_MANAGEMENT.SELECT_EMPLOYEE' | translate }}
           </label>
-          <select #selectedEmployee id="employeeSelect-{{ day.toDateString() }}-{{ shiftType }}" class="select">
+          <select #selectedEmployee id="employeeSelect-{{ day.toDateString() }}-{{ shiftType }}" class="select"
+                  (change)="onEmployeeSelectionChange(selectedEmployee.value)">
             <option value="">-- {{ 'SHIFT_MANAGEMENT.SELECT_EMPLOYEE' | translate }} --</option>
             <option *ngFor="let e of employees" [value]="e.id">
               {{ e.firstName }} {{ e.lastName }}

@@ -1,5 +1,5 @@
 import { Component, OnInit } from "@angular/core";
-import { AdministratorRole, Employee, MedicRole, EmployeeRole, ShiftAvailabilityResponse } from "../shared/models";
+import { AdministratorRole, Employee, MedicRole, EmployeeRole, ShiftAvailabilityResponse, ShiftResponse } from "../shared/models";
 import { AuthService } from "../services/auth.service";
 import { TranslateModule, TranslateService } from "@ngx-translate/core";
 import { Router, RouterModule } from "@angular/router";
@@ -30,6 +30,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   isRemoving = false;
   shiftWarnings: string[] = [];
   selectedTimeSpan = 7; // Default to 1 week
+  selectedEmployeeShifts: Map<string, ShiftResponse[]> = new Map(); // Cache for employee shifts
 
   constructor(private shiftService: ShiftManagementService,
     private auth: AuthService,
@@ -78,6 +79,28 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     this.shiftService.getAllEmployees().subscribe(data => {
       this.employees = data;
     });
+  }
+
+  loadEmployeeShifts(employeeId: string) {
+    if (!employeeId || this.selectedEmployeeShifts.has(employeeId)) {
+      return; // Already loaded or no employee selected
+    }
+
+    this.shiftService.getEmployeeShifts(employeeId).subscribe({
+      next: (shifts) => {
+        this.selectedEmployeeShifts.set(employeeId, shifts);
+      },
+      error: (error) => {
+        console.error('Failed to load employee shifts:', error);
+        // Don't show error toast as this is not critical for the UI
+      }
+    });
+  }
+
+  onEmployeeSelectionChange(employeeId: string) {
+    if (employeeId) {
+      this.loadEmployeeShifts(employeeId);
+    }
   }
 
   loadShiftWarnings() {
@@ -229,7 +252,13 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     return result;
   }
 
-  isAssignedToShift(shiftType: number, date: Date): boolean {
+  isAssignedToShift(shiftType: number, date: Date, employeeId?: string): boolean {
+    // For admin users, check if the specific employee is assigned
+    if (this.canModifyOthers() && employeeId) {
+      return this.isEmployeeAssignedToShift(employeeId, shiftType, date);
+    }
+
+    // For normal users, check if the current user is assigned
     const key = date.toISOString().split('T')[0];
     const day = this.shiftAvailability?.days?.[key];
 
@@ -243,6 +272,18 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       case 3: return day.thirdShift?.isAssignedToEmployee || false;
       default: return false;
     }
+  }
+
+  private isEmployeeAssignedToShift(employeeId: string, shiftType: number, date: Date): boolean {
+    const employeeShifts = this.selectedEmployeeShifts.get(employeeId);
+    if (!employeeShifts) {
+      return false; // No shifts loaded for this employee yet
+    }
+
+    const dateStr = date.toISOString().split('T')[0];
+    return employeeShifts.some(shift =>
+      shift.shiftDate === dateStr && shift.shiftType === shiftType
+    );
   }
 
   isShiftFullyBooked(shiftType: number, date: Date): boolean {
@@ -347,7 +388,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     }
 
     // Can't assign if already assigned to this shift
-    if (this.isAssignedToShift(shiftType, date)) {
+    if (this.isAssignedToShift(shiftType, date, employeeId)) {
       return false;
     }
 
@@ -370,8 +411,8 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       return false;
     }
 
-    // For normal user, can only remove if assigned to this shift
-    if (!this.canModifyOthers() && !this.isAssignedToShift(shiftType, date)) {
+    // Can only remove if the employee (or current user) is assigned to this shift
+    if (!this.isAssignedToShift(shiftType, date, employeeId)) {
       return false;
     }
 
@@ -387,7 +428,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_SELECT_EMPLOYEE');
     }
 
-    if (this.isAssignedToShift(shiftType, date)) {
+    if (this.isAssignedToShift(shiftType, date, employeeId)) {
       return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_ALREADY_ASSIGNED');
     }
 
@@ -407,11 +448,31 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_SELECT_EMPLOYEE');
     }
 
-    if (!this.canModifyOthers() && !this.isAssignedToShift(shiftType, date)) {
+    if (!this.isAssignedToShift(shiftType, date, employeeId)) {
       return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_NOT_ASSIGNED');
     }
 
     return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_REMOVE');
+  }
+
+  shouldShowAssignedIndicator(shiftType: number, day: Date, selectedEmployeeId?: string): boolean {
+    // For admin users with an employee selected, check if that employee is assigned
+    if (this.canModifyOthers() && selectedEmployeeId) {
+      return this.isAssignedToShift(shiftType, day, selectedEmployeeId);
+    }
+
+    // For normal users or admin without employee selected, check if current user is assigned
+    return this.isAssignedToShift(shiftType, day);
+  }
+
+  shouldApplyAssignedClass(shiftType: number, day: Date, selectedEmployeeId?: string): boolean {
+    // For admin users with an employee selected, apply assigned class if that employee is assigned
+    if (this.canModifyOthers() && selectedEmployeeId) {
+      return this.isAssignedToShift(shiftType, day, selectedEmployeeId);
+    }
+
+    // For normal users or admin without employee selected, apply assigned class if current user is assigned
+    return this.isAssignedToShift(shiftType, day);
   }
 
   goBack(): void {
