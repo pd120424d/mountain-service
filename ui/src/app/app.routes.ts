@@ -6,6 +6,7 @@ import { NotFoundComponent } from './not-found/not-found.component';
 import { LoginComponent } from './login/login.component';
 import { AuthGuard } from './auth.guard';
 import { AdminGuard } from './admin.guard';
+import { NonAdminGuard } from './non-admin.guard';
 import { ShiftManagementComponent } from './shifts/shift.component';
 import { ToastSpinnerTestComponent } from './toast-spinner-test.component';
 import { AdminComponent } from './admin/admin.component';
@@ -23,7 +24,7 @@ export const routes: Routes = [
   { path: 'shifts', component: ShiftManagementComponent, canActivate: [AuthGuard] },
   { path: 'urgencies', component: UrgencyListComponent, canActivate: [AuthGuard] },
   { path: 'urgencies/new', component: UrgencyFormComponent },
-  { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
+  { path: 'profile', component: ProfileComponent, canActivate: [NonAdminGuard] },
   { path: 'admin', component: AdminComponent, canActivate: [AdminGuard] },
 
   { path: 'test-toast-spinner', component: ToastSpinnerTestComponent },
