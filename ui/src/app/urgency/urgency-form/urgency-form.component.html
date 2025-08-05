@@ -85,8 +85,8 @@
       <div class="location-coordinates" *ngIf="hasCoordinates()">
         <small class="text-muted">
           <i class="fas fa-map-marker-alt"></i>
-          {{ currentLocation?.coordinates?.latitude.toFixed(6) }},
-          {{ currentLocation?.coordinates?.longitude.toFixed(6) }}
+          {{ currentLocation?.coordinates?.latitude?.toFixed(6) }},
+          {{ currentLocation?.coordinates?.longitude?.toFixed(6) }}
           <button
             type="button"
             class="btn btn-link btn-sm p-0 ms-2"
