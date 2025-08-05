@@ -259,6 +259,21 @@
         },
         "VIEW": "Prikaži detalje"
     },
+    "LOCATION_MAP": {
+        "SEARCH_PLACEHOLDER": "Unesite lokaciju...",
+        "GET_CURRENT_LOCATION": "Pokaži trenutnu lokaciju",
+        "CURRENT_LOCATION": "Trenutna lokacija",
+        "CLEAR_LOCATION": "Ponovo izaberi lokaciju",
+        "CLEAR": "Ponovo izaberi",
+        "LOADING": "Učitavanje lokacije...",
+        "LOCATION": "Lokacija",
+        "INSTRUCTIONS": "Kliknite na mapu da izaberete lokaciju ili koristite pretragu gore",
+        "ERROR_GEOLOCATION": "Ne mogu da dobijem vašu trenutnu lokaciju",
+        "ERROR_SEARCH": "Pretraga lokacije nije uspela",
+        "ERROR_MAP_LOAD": "Ne mogu da učitam mapu",
+        "SHOW_MAP": "Pokaži mapu za izbor lokacije",
+        "HIDE_MAP": "Sakrij mapu"
+    },
     "PROFILE": {
         "TITLE": "Moj profil",
         "PROFILE_PICTURE": "Profilna slika",
@@ -271,7 +286,7 @@
         "PHONE": "Telefon",
         "ROLE": "Uloga",
         "GENDER": "Pol",
-        "GENDER": {
+        "GENDER_OPTIONS": {
             "MALE": "Muški",
             "FEMALE": "Ženski"
         },

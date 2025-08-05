@@ -283,7 +283,7 @@
         "PHONE": "Phone",
         "ROLE": "Role",
         "GENDER": "Gender",
-        "GENDER": {
+        "GENDER_OPTIONS": {
             "MALE": "Male",
             "FEMALE": "Female"
         },
