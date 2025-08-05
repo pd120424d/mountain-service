@@ -30,7 +30,13 @@
   <input id="email" formControlName="email" type="email">
 
   <label for="profilePicture">{{ 'EMPLOYEE_FORM.PROFILE_PICTURE' | translate }}:</label>
-  <input id="profilePicture" formControlName="profilePicture" type="file" accept="image/png, image/jpeg">
+  <app-image-upload
+    [employeeId]="employeeId"
+    [cacheKey]="'employee-form-' + (employeeId || 'new')"
+    [initialImageUrl]="currentProfilePictureUrl"
+    (imageSelected)="onImageSelected($event)"
+    (imageRemoved)="onImageRemoved()">
+  </app-image-upload>
 
   <label for="profileType">{{ 'EMPLOYEE_FORM.PROFILE_TYPE' | translate }}:</label>
   <select id="profileType" formControlName="profileType">

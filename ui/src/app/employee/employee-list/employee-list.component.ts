@@ -36,8 +36,14 @@ export class EmployeeListComponent extends BaseTranslatableComponent implements 
   }
 
   loadEmployees(): void {
-    this.employeeService.getEmployees().subscribe(data => {
-      this.employees = data;
+    this.employeeService.getEmployees().subscribe({
+      next: (data) => {
+        this.employees = data;
+      },
+      error: (error) => {
+        console.error('Error loading employees:', error);
+        this.employees = [];
+      }
     });
   }
 
@@ -52,8 +58,13 @@ export class EmployeeListComponent extends BaseTranslatableComponent implements 
   }
 
   deleteEmployee(id: number): void {
-    this.employeeService.deleteEmployee(id).subscribe(() => {
-      this.loadEmployees();
+    this.employeeService.deleteEmployee(id).subscribe({
+      next: () => {
+        this.loadEmployees();
+      },
+      error: (error) => {
+        console.error('Error deleting employee:', error);
+      }
     });
   }
 

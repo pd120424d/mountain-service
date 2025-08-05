@@ -80,6 +80,19 @@
         "NETWORK_ERROR": "Network error. Please check your connection and try again.",
         "SERVER_ERROR": "Server error. Please try again later."
     },
+    "IMAGE_UPLOAD": {
+        "DRAG_DROP_TEXT": "Drag and drop an image here",
+        "OR_CLICK_TEXT": "or click to select a file",
+        "REQUIREMENTS": "Max 5MB • JPEG, PNG, GIF, WebP",
+        "PREVIEW_ALT": "Image preview",
+        "REMOVE": "Remove image",
+        "UPLOADING": "Uploading...",
+        "UPLOAD_SUCCESS": "Image uploaded successfully",
+        "UPLOAD_ERROR": "Failed to upload image",
+        "INVALID_FILE_TYPE": "Invalid file type. Please select a JPEG, PNG, GIF, or WebP image.",
+        "FILE_TOO_LARGE": "File size exceeds 5MB limit",
+        "PROCESSING_ERROR": "Failed to process image"
+    },
     "NOT_FOUND": {
         "TITLE": "Page Not Found",
         "DESCRIPTION": "It looks like the page you are looking for does not exist"

@@ -12,19 +12,23 @@ import { ToastrService } from 'ngx-toastr';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { environment } from '../../../environments/environment';
+import { ImageUploadComponent, ImageUploadEvent } from '../../shared/components/image-upload/image-upload.component';
+import { ImageUploadService } from '../../services/image-upload.service';
 
 @Component({
   selector: 'app-employee-form',
   templateUrl: './employee-form.component.html',
   styleUrls: ['./employee-form.component.css'],
   standalone: true,
-  imports: [RouterModule, ReactiveFormsModule, CommonModule, TranslateModule, NgxSpinnerModule],
+  imports: [RouterModule, ReactiveFormsModule, CommonModule, TranslateModule, NgxSpinnerModule, ImageUploadComponent],
 })
 export class EmployeeFormComponent extends BaseTranslatableComponent implements OnInit {
   employeeForm: FormGroup;
   employeeId?: number;
   isEditMode = false;
   isSubmitting = false;
+  selectedImageFile: File | null = null;
+  currentProfilePictureUrl: string | undefined = undefined;
 
   constructor(
     private fb: FormBuilder,
@@ -32,7 +36,8 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
     private router: Router,
     translate: TranslateService,
     private toastr: ToastrService,
-    private spinner: NgxSpinnerService
+    private spinner: NgxSpinnerService,
+    private imageUploadService: ImageUploadService
   ) {
     super(translate);
     
@@ -73,6 +78,9 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
       email: employee.email,
       profileType: employee.profileType,
     });
+
+    // Set current profile picture URL for display
+    this.currentProfilePictureUrl = employee.profilePicture || undefined;
   }
 
   onSubmit(): void {
@@ -84,51 +92,10 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
 
       if (this.employeeId) {
         // Update existing employee
-        const employeeUpdate: EmployeeUpdateRequest = {
-          firstName: formValue.firstName,
-          lastName: formValue.lastName,
-          email: formValue.email,
-          phone: formValue.phoneNumber,
-          username: formValue.username,
-          profileType: formValue.profileType,
-          gender: formValue.gender,
-          profilePicture: formValue.profilePicture || undefined
-        };
-
-        this.employeeService.updateEmployee(this.employeeId, employeeUpdate).subscribe({
-          next: () => {
-            this.spinner.hide();
-            this.toastr.success(this.translate.instant('EMPLOYEE_FORM.UPDATE_SUCCESS'));
-            this.router.navigate(['/employees']);
-          },
-          error: (error) => {
-            this.handleError(error, 'UPDATE_ERROR');
-          }
-        });
+        this.updateEmployee(formValue);
       } else {
         // Create new employee
-        const employeeCreateRequest: EmployeeCreateRequest = {
-          firstName: formValue.firstName,
-          lastName: formValue.lastName,
-          email: formValue.email,
-          phone: formValue.phoneNumber,
-          username: formValue.username,
-          password: formValue.password,
-          profileType: formValue.profileType,
-          gender: formValue.gender,
-          profilePicture: formValue.profilePicture || undefined
-        };
-
-        this.employeeService.addEmployee(employeeCreateRequest).subscribe({
-          next: () => {
-            this.spinner.hide();
-            this.toastr.success(this.translate.instant('EMPLOYEE_FORM.CREATE_SUCCESS'));
-            this.router.navigate(['/employees']);
-          },
-          error: (error) => {
-            this.handleError(error, 'CREATE_ERROR');
-          }
-        });
+        this.createEmployee(formValue);
       }
     } else if (!this.employeeForm.valid) {
       // Show validation error
@@ -139,6 +106,23 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
 
   cancel(): void {
     this.router.navigate(['/employees']);
+  }
+
+  onImageSelected(event: ImageUploadEvent): void {
+    if (event.isValid && event.file) {
+      this.selectedImageFile = event.file;
+      // Update form control with preview URL for display purposes
+      this.employeeForm.patchValue({ profilePicture: event.preview });
+    } else {
+      this.selectedImageFile = null;
+      this.toastr.error(event.error || 'Invalid image file');
+    }
+  }
+
+  onImageRemoved(): void {
+    this.selectedImageFile = null;
+    this.currentProfilePictureUrl = undefined;
+    this.employeeForm.patchValue({ profilePicture: null });
   }
 
   /**
@@ -179,6 +163,118 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
     if (!environment.production) {
       console.error('Employee form error:', error);
     }
+  }
+
+  private createEmployee(formValue: any): void {
+    // Always create employee with JSON first, then upload image separately if needed
+    this.createEmployeeJSON(formValue);
+  }
+
+  private updateEmployee(formValue: any): void {
+    // For updates, we'll use JSON and handle image separately if needed
+    const employeeUpdate: EmployeeUpdateRequest = {
+      firstName: formValue.firstName,
+      lastName: formValue.lastName,
+      email: formValue.email,
+      phone: formValue.phoneNumber,
+      username: formValue.username,
+      profileType: formValue.profileType,
+      gender: formValue.gender,
+      profilePicture: this.currentProfilePictureUrl || undefined
+    };
+
+    this.employeeService.updateEmployee(this.employeeId!, employeeUpdate).subscribe({
+      next: (response) => {
+        // If there's a new image, upload it after update
+        if (this.selectedImageFile && response.id) {
+          this.uploadImageAfterUpdate(response.id);
+        } else {
+          this.spinner.hide();
+          this.toastr.success(this.translate.instant('EMPLOYEE_FORM.UPDATE_SUCCESS'));
+          this.router.navigate(['/employees']);
+        }
+      },
+      error: (error) => {
+        this.handleError(error, 'UPDATE_ERROR');
+      }
+    });
+  }
+
+  private createEmployeeJSON(formValue: any): void {
+    const employeeCreateRequest: EmployeeCreateRequest = {
+      firstName: formValue.firstName,
+      lastName: formValue.lastName,
+      email: formValue.email,
+      phone: formValue.phoneNumber,
+      username: formValue.username,
+      password: formValue.password,
+      profileType: formValue.profileType,
+      gender: formValue.gender
+    };
+
+    this.employeeService.addEmployee(employeeCreateRequest).subscribe({
+      next: (response) => {
+        // If there's a selected image, upload it after employee creation
+        if (this.selectedImageFile && response.id) {
+          this.uploadImageAfterCreation(response.id);
+        } else {
+          this.spinner.hide();
+          this.toastr.success(this.translate.instant('EMPLOYEE_FORM.CREATE_SUCCESS'));
+          this.router.navigate(['/employees']);
+        }
+      },
+      error: (error) => {
+        this.handleError(error, 'CREATE_ERROR');
+      }
+    });
+  }
+
+  private uploadImageAfterCreation(employeeId: number): void {
+    if (!this.selectedImageFile) {
+      this.spinner.hide();
+      this.toastr.success(this.translate.instant('EMPLOYEE_FORM.CREATE_SUCCESS'));
+      this.router.navigate(['/employees']);
+      return;
+    }
+
+    this.imageUploadService.uploadProfilePicture(employeeId, this.selectedImageFile).subscribe({
+      next: (progress) => {
+        if (progress.status === 'completed') {
+          this.spinner.hide();
+          this.toastr.success(this.translate.instant('EMPLOYEE_FORM.CREATE_SUCCESS'));
+          this.router.navigate(['/employees']);
+        }
+      },
+      error: (error) => {
+        this.spinner.hide();
+        this.toastr.warning('Employee created but image upload failed: ' + error.message);
+        this.router.navigate(['/employees']);
+      }
+    });
+  }
+
+  private uploadImageAfterUpdate(employeeId: number): void {
+    if (!this.selectedImageFile) {
+      this.spinner.hide();
+      this.toastr.success(this.translate.instant('EMPLOYEE_FORM.UPDATE_SUCCESS'));
+      this.router.navigate(['/employees']);
+      return;
+    }
+
+    this.imageUploadService.uploadProfilePicture(employeeId, this.selectedImageFile).subscribe({
+      next: (progress) => {
+        if (progress.status === 'completed') {
+          this.spinner.hide();
+          this.toastr.success(this.translate.instant('EMPLOYEE_FORM.UPDATE_SUCCESS'));
+          this.router.navigate(['/employees']);
+        }
+      },
+      error: (error) => {
+        this.spinner.hide();
+        this.toastr.warning('Employee updated but image upload failed: ' + error.message);
+        this.router.navigate(['/employees']);
+      }
+    });
   }
 
   /**

@@ -10,15 +10,95 @@
  * ---------------------------------------------------------------
  */
 
-export interface ErrorResponse {
+export interface GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse {
   error?: string;
 }
 
-export interface MessageResponse {
+export interface GithubComPd120424DMountainServiceApiContractsEmployeeV1MessageResponse {
   message?: string;
 }
 
-export interface ShiftAvailability {
+export interface InternalHandlerUploadProfilePictureResponse {
+  blobName?: string;
+  blobUrl?: string;
+  message?: string;
+  size?: number;
+}
+
+export interface V1ActiveEmergenciesResponse {
+  hasActiveEmergencies?: boolean;
+}
+
+export interface V1AssignShiftRequest {
+  shiftDate: string;
+  /**
+   * @min 1
+   * @max 3
+   */
+  shiftType: number;
+}
+
+export interface V1AssignShiftResponse {
+  id: number;
+  shiftDate: string;
+  shiftType: number;
+}
+
+export interface V1EmployeeCreateRequest {
+  email: string;
+  firstName: string;
+  gender: string;
+  lastName: string;
+  password: string;
+  phone: string;
+  profilePicture?: string;
+  profileType?: string;
+  username: string;
+}
+
+export interface V1EmployeeLogin {
+  password?: string;
+  username?: string;
+}
+
+export interface V1EmployeeResponse {
+  email?: string;
+  firstName?: string;
+  gender?: string;
+  id?: number;
+  lastName?: string;
+  phone?: string;
+  /** this may be represented as a byte array if we read the picture from somewhere for an example */
+  profilePicture?: string;
+  profileType?: string;
+  username?: string;
+}
+
+export interface V1EmployeeUpdateRequest {
+  email?: string;
+  firstName?: string;
+  gender?: string;
+  lastName?: string;
+  phone?: string;
+  profilePicture?: string;
+  profileType?: string;
+  username?: string;
+}
+
+export interface V1OnCallEmployeesResponse {
+  employees?: V1EmployeeResponse[];
+}
+
+export interface V1RemoveShiftRequest {
+  shiftDate: string;
+  /**
+   * @min 1
+   * @max 3
+   */
+  shiftType: number;
+}
+
+export interface V1ShiftAvailability {
   /** Whether the requesting employee is assigned to this shift */
   isAssignedToEmployee?: boolean;
   /** Whether the shift is at full capacity (2 medics + 4 technicians) */
@@ -29,98 +109,25 @@ export interface ShiftAvailability {
   technicalSlotsAvailable?: number;
 }
 
-export interface ShiftAvailabilityPerDay {
-  firstShift?: ShiftAvailability;
-  secondShift?: ShiftAvailability;
-  thirdShift?: ShiftAvailability;
+export interface V1ShiftAvailabilityPerDay {
+  firstShift?: V1ShiftAvailability;
+  secondShift?: V1ShiftAvailability;
+  thirdShift?: V1ShiftAvailability;
 }
 
-export interface ShiftAvailabilityResponse {
-  days?: Record<string, ShiftAvailabilityPerDay>;
+export interface V1ShiftAvailabilityResponse {
+  days?: Record<string, V1ShiftAvailabilityPerDay>;
 }
 
-export interface AssignShiftRequest {
-  /** @format date */
-  shiftDate: string;
-  /**
-   * @min 1
-   * @max 3
-   */
-  shiftType: number;
-}
-
-export interface AssignShiftResponse {
-  /** @format int64 */
-  id?: number;
-  /** @format date */
-  shiftDate?: string;
-  shiftType?: number;
-}
-
-export interface RemoveShiftRequest {
-  /** @format date */
-  shiftDate: string;
-  /**
-   * @min 1
-   * @max 3
-   */
-  shiftType: number;
-}
-
-export interface ShiftResponse {
-  /** @format int64 */
-  id?: number;
-  /** @format date-time */
-  shiftDate?: string;
-  shiftType?: number;
-  /** @format date-time */
+export interface V1ShiftResponse {
   createdAt?: string;
-}
-
-export interface EmployeeLogin {
-  username?: string;
-  password?: string;
-}
-
-export interface EmployeeResponse {
-  /** @format int64 */
   id?: number;
-  username?: string;
-  firstName?: string;
-  lastName?: string;
-  gender?: string;
-  phone?: string;
-  email?: string;
-  profilePicture?: string;
-  profileType?: "Medic" | "Technical" | "Administrator";
+  shiftDate?: string;
+  /** 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid */
+  shiftType?: number;
 }
 
-export interface EmployeeCreateRequest {
-  firstName: string;
-  lastName: string;
-  username: string;
-  password: string;
-  /** @format email */
-  email: string;
-  gender: string;
-  phone: string;
-  profilePicture?: string;
-  profileType?: "Medic" | "Technical" | "Administrator";
-}
-
-export interface EmployeeUpdateRequest {
-  firstName?: string;
-  lastName?: string;
-  username?: string;
-  /** @format email */
-  email?: string;
-  gender?: string;
-  phone?: string;
-  profilePicture?: string;
-  profileType?: "Medic" | "Technical" | "Administrator";
-}
-
-export interface TokenResponse {
+export interface V1TokenResponse {
   /** @example "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." */
   token?: string;
 }

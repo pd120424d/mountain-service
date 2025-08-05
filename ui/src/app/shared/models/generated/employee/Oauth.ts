@@ -10,39 +10,40 @@
  * ---------------------------------------------------------------
  */
 
-import {
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse,
-  V1ShiftAvailabilityResponse,
-} from "./data-contracts";
-import { HttpClient, RequestParams } from "./http-client";
+import { GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse } from "./data-contracts";
+import { ContentType, HttpClient, RequestParams } from "./http-client";
 
-export class Shifts<
+export class Oauth<
   SecurityDataType = unknown,
 > extends HttpClient<SecurityDataType> {
   /**
-   * @description Дохватање доступности смена за одређени дан
+   * @description OAuth2 password flow token endpoint for Swagger UI authentication
    *
-   * @tags запослени
-   * @name AvailabilityList
-   * @summary Дохватање доступности смена
-   * @request GET:/shifts/availability
+   * @tags authentication
+   * @name TokenCreate
+   * @summary OAuth2 token endpoint
+   * @request POST:/oauth/token
    * @secure
    */
-  availabilityList = (
-    query?: {
-      /** Дан за који се проверава доступност смена */
-      date?: string;
+  tokenCreate = (
+    data: {
+      /** Username */
+      username: string;
+      /** Password */
+      password: string;
     },
     params: RequestParams = {},
   ) =>
     this.request<
-      V1ShiftAvailabilityResponse,
+      Record<string, any>,
       GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse
     >({
-      path: `/shifts/availability`,
-      method: "GET",
-      query: query,
+      path: `/oauth/token`,
+      method: "POST",
+      body: data,
       secure: true,
+      type: ContentType.UrlEncoded,
+      format: "json",
       ...params,
     });
 }

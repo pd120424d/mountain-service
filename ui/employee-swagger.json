@@ -1,430 +1,1170 @@
 {
-  "swagger": "2.0",
-  "info": {
-    "title": "Employee Service API",
-    "version": "1.0.0",
-    "description": "Mountain Service Employee Management API"
-  },
-  "host": "localhost:8082",
-  "basePath": "/api/v1",
-  "schemes": ["http"],
-  "consumes": ["application/json"],
-  "produces": ["application/json"],
-  "definitions": {
-    "ErrorResponse": {
-      "type": "object",
-      "properties": {
-        "error": {
-          "type": "string"
-        }
-      }
+    "swagger": "2.0",
+    "info": {
+        "title": "API Сервис за Запослене",
+        "contact": {},
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
     },
-    "MessageResponse": {
-      "type": "object",
-      "properties": {
-        "message": {
-          "type": "string"
-        }
-      }
-    },
-    "ShiftAvailability": {
-      "type": "object",
-      "properties": {
-        "isAssignedToEmployee": {
-          "type": "boolean",
-          "description": "Whether the requesting employee is assigned to this shift"
-        },
-        "isFullyBooked": {
-          "type": "boolean",
-          "description": "Whether the shift is at full capacity (2 medics + 4 technicians)"
-        },
-        "medicSlotsAvailable": {
-          "type": "integer",
-          "description": "Available slots for medics (0-2)"
-        },
-        "technicalSlotsAvailable": {
-          "type": "integer",
-          "description": "Available slots for technical staff (0-4)"
-        }
-      }
-    },
-    "ShiftAvailabilityPerDay": {
-      "type": "object",
-      "properties": {
-        "firstShift": {
-          "$ref": "#/definitions/ShiftAvailability"
-        },
-        "secondShift": {
-          "$ref": "#/definitions/ShiftAvailability"
-        },
-        "thirdShift": {
-          "$ref": "#/definitions/ShiftAvailability"
-        }
-      }
-    },
-    "ShiftAvailabilityResponse": {
-      "type": "object",
-      "properties": {
-        "days": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ShiftAvailabilityPerDay"
-          }
-        }
-      }
-    },
-    "AssignShiftRequest": {
-      "type": "object",
-      "properties": {
-        "shiftDate": {
-          "type": "string",
-          "format": "date"
-        },
-        "shiftType": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 3
-        }
-      },
-      "required": ["shiftDate", "shiftType"]
-    },
-    "AssignShiftResponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "shiftDate": {
-          "type": "string",
-          "format": "date"
-        },
-        "shiftType": {
-          "type": "integer"
-        }
-      }
-    },
-    "RemoveShiftRequest": {
-      "type": "object",
-      "properties": {
-        "shiftDate": {
-          "type": "string",
-          "format": "date"
-        },
-        "shiftType": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 3
-        }
-      },
-      "required": ["shiftDate", "shiftType"]
-    },
-    "ShiftResponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "shiftDate": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "shiftType": {
-          "type": "integer"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "EmployeeLogin": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        }
-      }
-    },
-    "EmployeeResponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "username": {
-          "type": "string"
-        },
-        "firstName": {
-          "type": "string"
-        },
-        "lastName": {
-          "type": "string"
-        },
-        "gender": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "profilePicture": {
-          "type": "string"
-        },
-        "profileType": {
-          "type": "string",
-          "enum": ["Medic", "Technical", "Administrator"]
-        }
-      }
-    },
-    "EmployeeCreateRequest": {
-      "type": "object",
-      "required": ["firstName", "lastName", "username", "password", "email", "gender", "phone"],
-      "properties": {
-        "firstName": {
-          "type": "string"
-        },
-        "lastName": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string",
-          "format": "email"
-        },
-        "gender": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string"
-        },
-        "profilePicture": {
-          "type": "string"
-        },
-        "profileType": {
-          "type": "string",
-          "enum": ["Medic", "Technical", "Administrator"]
-        }
-      }
-    },
-    "EmployeeUpdateRequest": {
-      "type": "object",
-      "properties": {
-        "firstName": {
-          "type": "string"
-        },
-        "lastName": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string",
-          "format": "email"
-        },
-        "gender": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string"
-        },
-        "profilePicture": {
-          "type": "string"
-        },
-        "profileType": {
-          "type": "string",
-          "enum": ["Medic", "Technical", "Administrator"]
-        }
-      }
-    },
-    "TokenResponse": {
-      "type": "object",
-      "properties": {
-        "token": {
-          "type": "string",
-          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        }
-      }
-    }
-  },
-  "paths": {
-    "/shifts/availability": {
-      "get": {
-        "summary": "Get shift availability",
-        "description": "Returns shift availability for the specified number of days",
-        "parameters": [
-          {
-            "name": "days",
-            "in": "query",
-            "type": "integer",
-            "default": 7,
-            "description": "Number of days to get availability for"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Shift availability data",
-            "schema": {
-              "$ref": "#/definitions/ShiftAvailabilityResponse"
-            }
-          }
-        }
-      }
-    },
-    "/employees/{id}/shifts": {
-      "post": {
-        "summary": "Assign shift to employee",
-        "description": "Assigns a shift to an employee",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "description": "Employee ID"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/AssignShiftRequest"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Shift assigned successfully",
-            "schema": {
-              "$ref": "#/definitions/AssignShiftResponse"
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          },
-          "404": {
-            "description": "Employee not found",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          },
-          "409": {
-            "description": "Conflict - employee already assigned or capacity full",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          }
-        }
-      },
-      "get": {
-        "summary": "Get employee shifts",
-        "description": "Gets all shifts for an employee",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "description": "Employee ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Employee shifts",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ShiftResponse"
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "summary": "Remove employee from shift",
-        "description": "Removes an employee from a shift",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "description": "Employee ID"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/RemoveShiftRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Employee removed from shift successfully"
-          },
-          "400": {
-            "description": "Bad request",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/employees/{id}/shift-warnings": {
-      "get": {
-        "summary": "Get shift warnings for employee",
-        "description": "Returns warnings about shift coverage and quota for an employee",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "description": "Employee ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Shift warnings",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "warnings": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
+    "host": "localhost:8082",
+    "basePath": "/api/v1",
+    "paths": {
+        "/admin/reset": {
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Брише све запослене, смене и повезане податке из система (само за админе)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "админ"
+                ],
+                "summary": "Ресетовање свих података",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.MessageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
                 }
-              }
             }
-          },
-          "404": {
-            "description": "Employee not found",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
+        },
+        "/admin/shifts/availability": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Дохватање доступности смена за све запослене (само за админе)",
+                "tags": [
+                    "админ"
+                ],
+                "summary": "Дохватање доступности смена за админе",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Број дана за које се проверава доступност (подразумевано 7)",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ShiftAvailabilityResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
             }
-          }
+        },
+        "/employees": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Преузимање свих запослених",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Преузимање листе запослених",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/v1.EmployeeResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Креирање новог запосленог у систему (supports both JSON and multipart form data)",
+                "consumes": [
+                    "application/json",
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Креирање новог запосленог",
+                "parameters": [
+                    {
+                        "description": "Подаци о новом запосленом (JSON)",
+                        "name": "employee",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.EmployeeCreateRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "First Name (form data)",
+                        "name": "firstName",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Name (form data)",
+                        "name": "lastName",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Username (form data)",
+                        "name": "username",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password (form data)",
+                        "name": "password",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email (form data)",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Gender (form data)",
+                        "name": "gender",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone (form data)",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Profile Type (form data)",
+                        "name": "profileType",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Profile Picture (form data)",
+                        "name": "profilePicture",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/v1.EmployeeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/on-call": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Враћа листу запослених који су тренутно на дужности, са опционим бафером у случају да се близу крај тренутне смене",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Претрага запослених који су тренутно на дужности",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Бафер време пре краја смене (нпр. '1h')",
+                        "name": "shift_buffer",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.OnCallEmployeesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/{employeeId}/profile-picture": {
+            "post": {
+                "description": "Upload a profile picture for an employee",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Upload profile picture",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Employee ID",
+                        "name": "employeeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Profile picture file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.UploadProfilePictureResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a profile picture for an employee",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Delete profile picture",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Employee ID",
+                        "name": "employeeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Blob name to delete",
+                        "name": "blobName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Ажурирање запосленог по ID-ју",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Ажурирање запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Подаци за ажурирање запосленог",
+                        "name": "employee",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.EmployeeUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.EmployeeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Брисање запосленог по ID-ју",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Брисање запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/{id}/active-emergencies": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Проверава да ли запослени има активне хитне случајеве",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Провера активних хитних случајева за запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ActiveEmergenciesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/{id}/shift-warnings": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Враћа листу упозорења о сменама за запосленог (нпр. недостају смене, није испуњена норма)",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Дохватање упозорења о сменама за запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/{id}/shifts": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Дохватање смена за запосленог по ID-ју",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Дохватање смена за запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.ShiftResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Додељује смену запосленом по ID-ју",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Додељује смену запосленом",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Подаци о смени",
+                        "name": "shift",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.AssignShiftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/v1.AssignShiftResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Уклањање смене за запосленог по ID-ју и подацима о смени",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Уклањање смене за запосленог",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Подаци о смени",
+                        "name": "shift",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.RemoveShiftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/profile-picture/info": {
+            "get": {
+                "description": "Get information about a profile picture",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get profile picture info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Blob name",
+                        "name": "blobName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "description": "Пријавање запосленог са корисничким именом и лозинком",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Пријавање запосленог",
+                "parameters": [
+                    {
+                        "description": "Корисничко име и лозинка",
+                        "name": "employee",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.EmployeeLogin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.TokenResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/token": {
+            "post": {
+                "description": "OAuth2 password flow token endpoint for Swagger UI authentication",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication"
+                ],
+                "summary": "OAuth2 token endpoint",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OAuth2 token response",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/shifts/availability": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Дохватање доступности смена за одређени дан",
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Дохватање доступности смена",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Дан за који се проверава доступност смена",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ShiftAvailabilityResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
-      }
-    }
-  }
+    },
+    "definitions": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.UploadProfilePictureResponse": {
+            "type": "object",
+            "properties": {
+                "blobName": {
+                    "type": "string"
+                },
+                "blobUrl": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.ActiveEmergenciesResponse": {
+            "type": "object",
+            "properties": {
+                "hasActiveEmergencies": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "v1.AssignShiftRequest": {
+            "type": "object",
+            "required": [
+                "shiftDate",
+                "shiftType"
+            ],
+            "properties": {
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "type": "integer",
+                    "maximum": 3,
+                    "minimum": 1
+                }
+            }
+        },
+        "v1.AssignShiftResponse": {
+            "type": "object",
+            "required": [
+                "id",
+                "shiftDate",
+                "shiftType"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.EmployeeCreateRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "firstName",
+                "gender",
+                "lastName",
+                "password",
+                "phone",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profilePicture": {
+                    "type": "string"
+                },
+                "profileType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.EmployeeLogin": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.EmployeeResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profilePicture": {
+                    "description": "this may be represented as a byte array if we read the picture from somewhere for an example",
+                    "type": "string"
+                },
+                "profileType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.EmployeeUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profilePicture": {
+                    "type": "string"
+                },
+                "profileType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.OnCallEmployeesResponse": {
+            "type": "object",
+            "properties": {
+                "employees": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.EmployeeResponse"
+                    }
+                }
+            }
+        },
+        "v1.RemoveShiftRequest": {
+            "type": "object",
+            "required": [
+                "shiftDate",
+                "shiftType"
+            ],
+            "properties": {
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "type": "integer",
+                    "maximum": 3,
+                    "minimum": 1
+                }
+            }
+        },
+        "v1.ShiftAvailability": {
+            "type": "object",
+            "properties": {
+                "isAssignedToEmployee": {
+                    "description": "Whether the requesting employee is assigned to this shift",
+                    "type": "boolean"
+                },
+                "isFullyBooked": {
+                    "description": "Whether the shift is at full capacity (2 medics + 4 technicians)",
+                    "type": "boolean"
+                },
+                "medicSlotsAvailable": {
+                    "description": "Available slots for medics (0-2)",
+                    "type": "integer"
+                },
+                "technicalSlotsAvailable": {
+                    "description": "Available slots for technical staff (0-4)",
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.ShiftAvailabilityPerDay": {
+            "type": "object",
+            "properties": {
+                "firstShift": {
+                    "$ref": "#/definitions/v1.ShiftAvailability"
+                },
+                "secondShift": {
+                    "$ref": "#/definitions/v1.ShiftAvailability"
+                },
+                "thirdShift": {
+                    "$ref": "#/definitions/v1.ShiftAvailability"
+                }
+            }
+        },
+        "v1.ShiftAvailabilityResponse": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/v1.ShiftAvailabilityPerDay"
+                    }
+                }
+            }
+        },
+        "v1.ShiftResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "description": "1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, \u003c 1 or \u003e 3: invalid",
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "OAuth2Password": {
+            "type": "oauth2",
+            "flow": "password",
+            "tokenUrl": "/api/v1/oauth/token",
+            "scopes": {
+                "read": "Grants read access",
+                "write": "Grants write access"
+            }
+        }
+    },
+    "security": [
+        {
+            "OAuth2Password": []
+        }
+    ]
 }

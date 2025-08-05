@@ -10,39 +10,33 @@
  * ---------------------------------------------------------------
  */
 
-import {
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse,
-  V1ShiftAvailabilityResponse,
-} from "./data-contracts";
 import { HttpClient, RequestParams } from "./http-client";
 
-export class Shifts<
+export class Files<
   SecurityDataType = unknown,
 > extends HttpClient<SecurityDataType> {
   /**
-   * @description Дохватање доступности смена за одређени дан
+   * @description Get information about a profile picture
    *
-   * @tags запослени
-   * @name AvailabilityList
-   * @summary Дохватање доступности смена
-   * @request GET:/shifts/availability
+   * @tags files
+   * @name ProfilePictureInfoList
+   * @summary Get profile picture info
+   * @request GET:/files/profile-picture/info
    * @secure
    */
-  availabilityList = (
-    query?: {
-      /** Дан за који се проверава доступност смена */
-      date?: string;
+  profilePictureInfoList = (
+    query: {
+      /** Blob name */
+      blobName: string;
     },
     params: RequestParams = {},
   ) =>
-    this.request<
-      V1ShiftAvailabilityResponse,
-      GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse
-    >({
-      path: `/shifts/availability`,
+    this.request<Record<string, any>, Record<string, any>>({
+      path: `/files/profile-picture/info`,
       method: "GET",
       query: query,
       secure: true,
+      format: "json",
       ...params,
     });
 }

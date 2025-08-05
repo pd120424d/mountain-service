@@ -12,37 +12,34 @@
 
 import {
   GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse,
-  V1ShiftAvailabilityResponse,
+  V1EmployeeLogin,
+  V1TokenResponse,
 } from "./data-contracts";
-import { HttpClient, RequestParams } from "./http-client";
+import { ContentType, HttpClient, RequestParams } from "./http-client";
 
-export class Shifts<
+export class Login<
   SecurityDataType = unknown,
 > extends HttpClient<SecurityDataType> {
   /**
-   * @description Дохватање доступности смена за одређени дан
+   * @description Пријавање запосленог са корисничким именом и лозинком
    *
    * @tags запослени
-   * @name AvailabilityList
-   * @summary Дохватање доступности смена
-   * @request GET:/shifts/availability
+   * @name LoginCreate
+   * @summary Пријавање запосленог
+   * @request POST:/login
    * @secure
    */
-  availabilityList = (
-    query?: {
-      /** Дан за који се проверава доступност смена */
-      date?: string;
-    },
-    params: RequestParams = {},
-  ) =>
+  loginCreate = (employee: V1EmployeeLogin, params: RequestParams = {}) =>
     this.request<
-      V1ShiftAvailabilityResponse,
+      V1TokenResponse,
       GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse
     >({
-      path: `/shifts/availability`,
-      method: "GET",
-      query: query,
+      path: `/login`,
+      method: "POST",
+      body: employee,
       secure: true,
+      type: ContentType.Json,
+      format: "json",
       ...params,
     });
 }

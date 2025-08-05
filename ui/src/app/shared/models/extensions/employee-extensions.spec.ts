@@ -9,7 +9,7 @@ import {
   isMedic,
   isTechnical
 } from './employee-extensions';
-import { EmployeeResponse } from '../generated/employee';
+import { EmployeeResponse } from '../index';
 import { EmployeeResponseProfileTypeEnum } from '../index';
 
 describe('Employee Extensions', () => {

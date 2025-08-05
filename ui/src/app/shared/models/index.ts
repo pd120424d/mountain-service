@@ -17,20 +17,22 @@ export * from './extensions';
 
 // Employee Service
 export type {
-  EmployeeResponse as Employee,
-  EmployeeCreateRequest,
-  EmployeeUpdateRequest,
-  EmployeeLogin,
-  TokenResponse,
-  ErrorResponse,
-  MessageResponse,
-  ShiftAvailability,
-  ShiftAvailabilityPerDay,
-  ShiftAvailabilityResponse,
-  AssignShiftRequest,
-  AssignShiftResponse,
-  RemoveShiftRequest,
-  ShiftResponse
+  V1EmployeeResponse as Employee,
+  V1EmployeeResponse as EmployeeResponse,
+  V1EmployeeCreateRequest as EmployeeCreateRequest,
+  V1EmployeeUpdateRequest as EmployeeUpdateRequest,
+  V1EmployeeLogin as EmployeeLogin,
+  V1TokenResponse as TokenResponse,
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse as ErrorResponse,
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1MessageResponse as MessageResponse,
+  V1ShiftAvailability as ShiftAvailability,
+  V1ShiftAvailabilityPerDay as ShiftAvailabilityPerDay,
+  V1ShiftAvailabilityResponse as ShiftAvailabilityResponse,
+  V1AssignShiftRequest as AssignShiftRequest,
+  V1AssignShiftResponse as AssignShiftResponse,
+  V1RemoveShiftRequest as RemoveShiftRequest,
+  V1ShiftResponse as ShiftResponse,
+  InternalHandlerUploadProfilePictureResponse as UploadProfilePictureResponse
 } from './generated/employee';
 
 // Urgency Service
