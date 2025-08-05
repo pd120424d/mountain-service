@@ -88,10 +88,17 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 
 	// Initialize Azure Blob Storage service
 	blobConfig := storage.LoadConfigFromEnv()
+	log.Infof("Azure Storage Config - Account Name: %s, Container: %s, Key Present: %t",
+		blobConfig.AccountName,
+		blobConfig.ContainerName,
+		blobConfig.AccountKey != "")
+
 	blobService, err := storage.NewAzureBlobService(blobConfig, log)
 	if err != nil {
 		log.Warnf("Failed to initialize Azure Blob Storage: %v. File upload will be disabled.", err)
 		blobService = nil
+	} else {
+		log.Info("Azure Blob Storage initialized successfully")
 	}
 
 	// Initialize file handler
