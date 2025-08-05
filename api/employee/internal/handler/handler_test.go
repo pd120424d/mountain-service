@@ -1983,3 +1983,93 @@ func TestEmployeeHandler_GetAdminShiftsAvailability(t *testing.T) {
 		})
 	}
 }
+
+func TestEmployeeHandler_GetEmployee(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns employee when found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "1"}}
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1", nil)
+
+		expectedEmployee := &model.Employee{
+			ID:             1,
+			Username:       "testuser",
+			FirstName:      "Test",
+			LastName:       "User",
+			Gender:         "M",
+			Phone:          "+1234567890",
+			Email:          "test@example.com",
+			ProfilePicture: "",
+			ProfileType:    model.Medic,
+		}
+
+		mockEmplSvc.EXPECT().GetEmployeeByID(uint(1)).Return(expectedEmployee, nil)
+
+		handler.GetEmployee(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response employeeV1.EmployeeResponse
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, uint(1), response.ID)
+		assert.Equal(t, "testuser", response.Username)
+		assert.Equal(t, "Test", response.FirstName)
+		assert.Equal(t, "User", response.LastName)
+	})
+
+	t.Run("it returns 400 for invalid employee ID", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/invalid", nil)
+
+		handler.GetEmployee(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid employee ID")
+	})
+
+	t.Run("it returns 404 when employee not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "999"}}
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/999", nil)
+
+		mockEmplSvc.EXPECT().GetEmployeeByID(uint(999)).Return(nil, fmt.Errorf("employee not found"))
+
+		handler.GetEmployee(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "Employee not found")
+	})
+}

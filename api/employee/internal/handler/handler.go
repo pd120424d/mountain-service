@@ -21,6 +21,7 @@ type EmployeeHandler interface {
 	LoginEmployee(ctx *gin.Context)
 	OAuth2Token(ctx *gin.Context)
 	ListEmployees(ctx *gin.Context)
+	GetEmployee(ctx *gin.Context)
 	UpdateEmployee(ctx *gin.Context)
 	DeleteEmployee(ctx *gin.Context)
 
@@ -259,6 +260,55 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 
 	h.log.Infof("Successfully retrieved %d employees", len(employees))
 	ctx.JSON(http.StatusOK, employees)
+}
+
+// GetEmployee Преузимање запосленог по ID-ју
+// @Summary Преузимање запосленог по ID-ју
+// @Description Преузимање запосленог по ID-ју
+// @Tags запослени
+// @Security OAuth2Password
+// @Param id path int true "ID запосленог"
+// @Produce  json
+// @Success 200 {object} employeeV1.EmployeeResponse
+// @Failure 400 {object} employeeV1.ErrorResponse
+// @Failure 404 {object} employeeV1.ErrorResponse
+// @Router /employees/{id} [get]
+func (h *employeeHandler) GetEmployee(ctx *gin.Context) {
+	h.log.Info("Received Get Employee request")
+
+	idParam := ctx.Param("id")
+	employeeID, err := strconv.Atoi(idParam)
+	if err != nil {
+		h.log.Errorf("failed to convert employee ID: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
+		return
+	}
+
+	employee, err := h.emplService.GetEmployeeByID(uint(employeeID))
+	if err != nil {
+		h.log.Errorf("failed to retrieve employee: %v", err)
+		if strings.Contains(err.Error(), "not found") {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve employee"})
+		}
+		return
+	}
+
+	response := &employeeV1.EmployeeResponse{
+		ID:             employee.ID,
+		Username:       employee.Username,
+		FirstName:      employee.FirstName,
+		LastName:       employee.LastName,
+		Gender:         employee.Gender,
+		Phone:          employee.Phone,
+		Email:          employee.Email,
+		ProfilePicture: employee.ProfilePicture,
+		ProfileType:    employee.ProfileType.String(),
+	}
+
+	h.log.Infof("Successfully retrieved employee with ID %d", employeeID)
+	ctx.JSON(http.StatusOK, response)
 }
 
 // UpdateEmployee Ажурирање запосленог

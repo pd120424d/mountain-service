@@ -118,6 +118,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log))
 	{
 		authorized.GET("/employees", employeeHandler.ListEmployees)
+		authorized.GET("/employees/:id", employeeHandler.GetEmployee)
 		authorized.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
 		authorized.POST("/employees/:id/shifts", employeeHandler.AssignShift)
 		authorized.PUT("/employees/:id", employeeHandler.UpdateEmployee)
