@@ -20,6 +20,10 @@
         "ADMIN_PANEL": {
             "TITLE": "Admin Panel",
             "DESCRIPTION": "System administration and data management"
+        },
+        "PROFILE_MANAGEMENT": {
+            "TITLE": "Profile Management",
+            "DESCRIPTION": "Manage your personal account and settings"
         }
     },
     "EMPLOYEE_LIST": {
@@ -266,5 +270,32 @@
         "ERROR_MAP_LOAD": "Failed to load map",
         "SHOW_MAP": "Show map for location selection",
         "HIDE_MAP": "Hide map"
+    },
+    "PROFILE": {
+        "TITLE": "My Profile",
+        "PROFILE_PICTURE": "Profile Picture",
+        "PERSONAL_INFO": "Personal Information",
+        "ACCOUNT_INFO": "Account Information",
+        "FIRST_NAME": "First Name",
+        "LAST_NAME": "Last Name",
+        "USERNAME": "Username",
+        "EMAIL": "Email",
+        "PHONE": "Phone",
+        "ROLE": "Role",
+        "GENDER": "Gender",
+        "GENDER": {
+            "MALE": "Male",
+            "FEMALE": "Female"
+        },
+        "UPDATE_PROFILE": "Update Profile",
+        "UPDATING": "Updating",
+        "UPDATE_SUCCESS": "Profile updated successfully!",
+        "UPDATE_ERROR": "Failed to update profile. Please try again.",
+        "LOAD_ERROR": "Failed to load profile information.",
+        "FIRST_NAME_REQUIRED": "First name is required",
+        "LAST_NAME_REQUIRED": "Last name is required",
+        "USERNAME_REQUIRED": "Username is required",
+        "EMAIL_REQUIRED": "Valid email is required",
+        "PHONE_REQUIRED": "Phone number is required"
     }
 }

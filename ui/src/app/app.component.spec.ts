@@ -3,23 +3,45 @@ import { AppComponent } from './app.component';
 import { sharedTestingProviders } from './test-utils/shared-test-imports';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from './services/auth.service';
+import { EmployeeService } from './employee/employee.service';
+import { AppInitializationService } from './services/app-initialization.service';
+import { of, throwError } from 'rxjs';
+import { Employee } from './shared/models';
 
 describe('AppComponent', () => {
   let component: AppComponent;
   let fixture: ComponentFixture<AppComponent>;
   let translateService: jasmine.SpyObj<TranslateService>;
   let authService: jasmine.SpyObj<AuthService>;
+  let employeeService: jasmine.SpyObj<EmployeeService>;
+  let appInitService: jasmine.SpyObj<AppInitializationService>;
+
+  const mockEmployee: Employee = {
+    id: 1,
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    phone: '+1234567890',
+    username: 'johndoe',
+    profileType: 'Medic',
+    gender: 'M',
+    profilePicture: 'https://example.com/profile.jpg'
+  };
 
   beforeEach(async () => {
     const translateSpy = jasmine.createSpyObj('TranslateService', ['use', 'setDefaultLang']);
-    const authSpy = jasmine.createSpyObj('AuthService', ['getRole', 'getUserId']);
+    const authSpy = jasmine.createSpyObj('AuthService', ['getRole', 'getUserId', 'isAuthenticated']);
+    const employeeSpy = jasmine.createSpyObj('EmployeeService', ['getEmployeeById']);
+    const appInitSpy = jasmine.createSpyObj('AppInitializationService', ['initialize', 'cleanup']);
 
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
         ...sharedTestingProviders,
         { provide: TranslateService, useValue: translateSpy },
-        { provide: AuthService, useValue: authSpy }
+        { provide: AuthService, useValue: authSpy },
+        { provide: EmployeeService, useValue: employeeSpy },
+        { provide: AppInitializationService, useValue: appInitSpy }
       ],
     }).compileComponents();
 
@@ -27,6 +49,12 @@ describe('AppComponent', () => {
     component = fixture.componentInstance;
     translateService = TestBed.inject(TranslateService) as jasmine.SpyObj<TranslateService>;
     authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+    employeeService = TestBed.inject(EmployeeService) as jasmine.SpyObj<EmployeeService>;
+    appInitService = TestBed.inject(AppInitializationService) as jasmine.SpyObj<AppInitializationService>;
+
+    // Setup default return values
+    appInitService.initialize.and.returnValue(Promise.resolve());
+    appInitService.cleanup.and.returnValue();
   });
 
   it('should create the app', () => {
@@ -138,5 +166,75 @@ describe('AppComponent', () => {
 
     expect(() => component.closeDropdown(event)).not.toThrow();
     expect(component.isDropdownOpen).toBe(true);
+  });
+
+  it('should load current user when authenticated', () => {
+    authService.isAuthenticated.and.returnValue(true);
+    authService.getUserId.and.returnValue('1');
+    employeeService.getEmployeeById.and.returnValue(of(mockEmployee));
+
+    component['loadCurrentUser']();
+
+    expect(employeeService.getEmployeeById).toHaveBeenCalledWith(1);
+    expect(component.currentUser).toEqual(mockEmployee);
+  });
+
+  it('should not load user when not authenticated', () => {
+    authService.isAuthenticated.and.returnValue(false);
+
+    component['loadCurrentUser']();
+
+    expect(employeeService.getEmployeeById).not.toHaveBeenCalled();
+    expect(component.currentUser).toBeNull();
+  });
+
+  it('should handle error when loading current user', () => {
+    authService.isAuthenticated.and.returnValue(true);
+    authService.getUserId.and.returnValue('1');
+    employeeService.getEmployeeById.and.returnValue(throwError(() => new Error('Load error')));
+
+    component['loadCurrentUser']();
+
+    expect(component.currentUser).toBeNull();
+  });
+
+  it('should return user display name', () => {
+    component.currentUser = mockEmployee;
+
+    const displayName = component.getUserDisplayName();
+
+    expect(displayName).toBe('John Doe');
+  });
+
+  it('should return empty string when no current user', () => {
+    component.currentUser = null;
+
+    const displayName = component.getUserDisplayName();
+
+    expect(displayName).toBe('');
+  });
+
+  it('should return user profile picture', () => {
+    component.currentUser = mockEmployee;
+
+    const profilePicture = component.getUserProfilePicture();
+
+    expect(profilePicture).toBe('https://example.com/profile.jpg');
+  });
+
+  it('should return null when no profile picture', () => {
+    component.currentUser = { ...mockEmployee, profilePicture: undefined };
+
+    const profilePicture = component.getUserProfilePicture();
+
+    expect(profilePicture).toBeNull();
+  });
+
+  it('should return null when no current user', () => {
+    component.currentUser = null;
+
+    const profilePicture = component.getUserProfilePicture();
+
+    expect(profilePicture).toBeNull();
   });
 });

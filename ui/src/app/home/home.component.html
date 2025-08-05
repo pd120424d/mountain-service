@@ -13,7 +13,7 @@
 
   <div class="navigation-section">
     <div class="nav-links">
-      <button *ngIf="authService.isAuthenticated()" routerLink="/employees" class="nav-button">
+      <button *ngIf="authService.isAuthenticated() && authService.isAdmin()" routerLink="/employees" class="nav-button">
         <i class="fas fa-users"></i>
         <h3>{{ 'NAV.EMPLOYEE_MANAGEMENT.TITLE' | translate }}</h3>
         <p>{{ 'NAV.EMPLOYEE_MANAGEMENT.DESCRIPTION' | translate }}</p>
@@ -22,6 +22,11 @@
         <i class="fas fa-briefcase"></i>
         <h3>{{ 'NAV.SHIFT_MANAGEMENT.TITLE' | translate }}</h3>
         <p>{{ 'NAV.SHIFT_MANAGEMENT.DESCRIPTION' | translate }}</p>
+      </a>
+      <a *ngIf="authService.isAuthenticated()" routerLink="/profile" class="nav-button">
+        <i class="fas fa-user-cog"></i>
+        <h3>{{ 'NAV.PROFILE_MANAGEMENT.TITLE' | translate }}</h3>
+        <p>{{ 'NAV.PROFILE_MANAGEMENT.DESCRIPTION' | translate }}</p>
       </a>
       <a *ngIf="!authService.isAuthenticated()" routerLink="/urgencies/new" class="nav-button">
         <i class="fas fa-person-drowning"></i>

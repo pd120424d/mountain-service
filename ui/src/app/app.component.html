@@ -1,3 +1,25 @@
+<!-- Top-left section (User Profile) -->
+<div class="top-left-container" *ngIf="authService.isAuthenticated() && currentUser">
+  <div class="user-profile">
+    <div class="profile-picture-container">
+      <img
+        *ngIf="getUserProfilePicture()"
+        [src]="getUserProfilePicture()"
+        [alt]="getUserDisplayName()"
+        class="profile-picture">
+      <div
+        *ngIf="!getUserProfilePicture()"
+        class="profile-picture-placeholder">
+        <i class="fas fa-user"></i>
+      </div>
+    </div>
+    <div class="user-info">
+      <span class="user-name">{{ getUserDisplayName() }}</span>
+      <span class="user-role">{{ currentUser.profileType }}</span>
+    </div>
+  </div>
+</div>
+
 <!-- Top-right section (Language Switcher + Login Button) -->
 <div class="top-right-container">
   <!-- Language Switcher -->

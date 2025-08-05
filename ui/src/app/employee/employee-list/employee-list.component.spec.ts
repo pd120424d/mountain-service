@@ -9,6 +9,7 @@ import { EmployeeService } from '../employee.service';
 import { Employee } from '../../shared/models';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { sharedTestingProviders } from '../../test-utils/shared-test-imports';
+import { AuthService } from '../../services/auth.service';
 
 describe('EmployeeListComponent', () => {
   let component: EmployeeListComponent;
@@ -17,6 +18,7 @@ describe('EmployeeListComponent', () => {
   let mockRouter: jasmine.SpyObj<Router>;
   let mockDialog: jasmine.SpyObj<MatDialog>;
   let mockTranslateService: jasmine.SpyObj<TranslateService>;
+  let mockAuthService: jasmine.SpyObj<AuthService>;
 
   const mockEmployees: Employee[] = [
     {
@@ -48,6 +50,7 @@ describe('EmployeeListComponent', () => {
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     const dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
     const translateServiceSpy = jasmine.createSpyObj('TranslateService', ['get', 'use', 'setDefaultLang']);
+    const authServiceSpy = jasmine.createSpyObj('AuthService', ['isAdmin']);
 
     await TestBed.configureTestingModule({
       imports: [EmployeeListComponent],
@@ -56,7 +59,8 @@ describe('EmployeeListComponent', () => {
         { provide: EmployeeService, useValue: employeeServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: dialogSpy },
-        { provide: TranslateService, useValue: translateServiceSpy }
+        { provide: TranslateService, useValue: translateServiceSpy },
+        { provide: AuthService, useValue: authServiceSpy }
       ]
     }).compileComponents();
 
@@ -66,11 +70,15 @@ describe('EmployeeListComponent', () => {
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
     mockDialog = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
     mockTranslateService = TestBed.inject(TranslateService) as jasmine.SpyObj<TranslateService>;
+    mockAuthService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
 
     // Setup default translate service behavior
     mockTranslateService.get.and.returnValue(of('translated text'));
     mockTranslateService.use.and.returnValue(of({}));
     mockTranslateService.setDefaultLang.and.stub();
+
+    // Setup default auth service behavior
+    mockAuthService.isAdmin.and.returnValue(true);
   });
 
   it('should create', () => {
@@ -222,6 +230,30 @@ describe('EmployeeListComponent', () => {
     it('should set showModal property', () => {
       component.showModal = true;
       expect(component.showModal).toBe(true);
+    });
+  });
+
+  describe('Admin Access Control', () => {
+    it('should redirect non-admin users to home page', () => {
+      // Reset the spy before testing
+      mockRouter.navigate.calls.reset();
+      mockAuthService.isAdmin.and.returnValue(false);
+
+      // Create a new component instance to test constructor
+      TestBed.createComponent(EmployeeListComponent);
+
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
+    });
+
+    it('should allow admin users to access the component', () => {
+      // Reset the spy and set admin to true
+      mockRouter.navigate.calls.reset();
+      mockAuthService.isAdmin.and.returnValue(true);
+
+      // Create a new component instance to test constructor
+      TestBed.createComponent(EmployeeListComponent);
+
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
     });
   });
 });

@@ -20,6 +20,10 @@
         "ADMIN_PANEL": {
             "TITLE": "Admin Panel",
             "DESCRIPTION": "Administracija sistema i upravljanje podacima"
+        },
+        "PROFILE_MANAGEMENT": {
+            "TITLE": "Upravljanje profilom",
+            "DESCRIPTION": "Upravljajte svojim ličnim nalogom i podešavanjima"
         }
     },
     "EMPLOYEE_LIST": {
@@ -254,5 +258,32 @@
             "ACTIONS": "Akcije"
         },
         "VIEW": "Prikaži detalje"
+    },
+    "PROFILE": {
+        "TITLE": "Moj profil",
+        "PROFILE_PICTURE": "Profilna slika",
+        "PERSONAL_INFO": "Lični podaci",
+        "ACCOUNT_INFO": "Podaci o nalogu",
+        "FIRST_NAME": "Ime",
+        "LAST_NAME": "Prezime",
+        "USERNAME": "Korisničko ime",
+        "EMAIL": "E-mail",
+        "PHONE": "Telefon",
+        "ROLE": "Uloga",
+        "GENDER": "Pol",
+        "GENDER": {
+            "MALE": "Muški",
+            "FEMALE": "Ženski"
+        },
+        "UPDATE_PROFILE": "Ažuriraj profil",
+        "UPDATING": "Ažuriranje",
+        "UPDATE_SUCCESS": "Profil je uspešno ažuriran!",
+        "UPDATE_ERROR": "Neuspešno ažuriranje profila. Pokušajte ponovo.",
+        "LOAD_ERROR": "Neuspešno učitavanje podataka o profilu.",
+        "FIRST_NAME_REQUIRED": "Ime je obavezno",
+        "LAST_NAME_REQUIRED": "Prezime je obavezno",
+        "USERNAME_REQUIRED": "Korisničko ime je obavezno",
+        "EMAIL_REQUIRED": "Validan e-mail je obavezan",
+        "PHONE_REQUIRED": "Broj telefona je obavezan"
     }
 }

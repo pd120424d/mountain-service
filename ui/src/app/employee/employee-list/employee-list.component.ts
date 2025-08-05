@@ -10,6 +10,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
+import { AuthService } from '../../services/auth.service';
 
 
 @Component({
@@ -27,8 +28,14 @@ export class EmployeeListComponent extends BaseTranslatableComponent implements 
   constructor(private employeeService: EmployeeService,
     private router: Router,
     private dialog: MatDialog,
+    public authService: AuthService,
     translate: TranslateService) {
     super(translate);
+
+    // Redirect non-admin users to home page
+    if (!this.authService.isAdmin()) {
+      this.router.navigate(['/']);
+    }
   }
 
   ngOnInit(): void {

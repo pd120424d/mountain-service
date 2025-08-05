@@ -20,6 +20,10 @@
     "ADMIN_PANEL": {
       "TITLE": "Админ панел",
       "DESCRIPTION": "Администрација система и управљање подацима"
+    },
+    "PROFILE_MANAGEMENT": {
+      "TITLE": "Управљање профилом",
+      "DESCRIPTION": "Управљајте својим личним налогом и подешавањима"
     }
   },
   "EMPLOYEE_LIST": {
@@ -254,5 +258,32 @@
       "ACTIONS": "Акције"
     },
     "VIEW": "Погледај"
+  },
+  "PROFILE": {
+    "TITLE": "Мој профил",
+    "PROFILE_PICTURE": "Профилна слика",
+    "PERSONAL_INFO": "Лични подаци",
+    "ACCOUNT_INFO": "Подаци о налогу",
+    "FIRST_NAME": "Име",
+    "LAST_NAME": "Презиме",
+    "USERNAME": "Корисничко име",
+    "EMAIL": "И-мејл",
+    "PHONE": "Телефон",
+    "ROLE": "Улога",
+    "GENDER": "Пол",
+    "GENDER": {
+      "MALE": "Мушки",
+      "FEMALE": "Женски"
+    },
+    "UPDATE_PROFILE": "Ажурирај профил",
+    "UPDATING": "Ажурирање",
+    "UPDATE_SUCCESS": "Профил је успешно ажуриран!",
+    "UPDATE_ERROR": "Неуспешно ажурирање профила. Покушајте поново.",
+    "LOAD_ERROR": "Неуспешно учитавање података о профилу.",
+    "FIRST_NAME_REQUIRED": "Име је обавезно",
+    "LAST_NAME_REQUIRED": "Презиме је обавезно",
+    "USERNAME_REQUIRED": "Корисничко име је обавезно",
+    "EMAIL_REQUIRED": "Валидан и-мејл је обавезан",
+    "PHONE_REQUIRED": "Број телефона је обавезан"
   }
 }

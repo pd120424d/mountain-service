@@ -1,0 +1,120 @@
+<div class="profile-container">
+  <div class="profile-header">
+    <h1>{{ 'PROFILE.TITLE' | translate }}</h1>
+    <button class="btn btn-secondary" (click)="goBack()">
+      {{ 'GO_HOME' | translate }}
+    </button>
+  </div>
+
+  <div class="profile-content">
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="profile-form">
+      
+      <!-- Profile Picture Section -->
+      <div class="form-section">
+        <h3>{{ 'PROFILE.PROFILE_PICTURE' | translate }}</h3>
+        <app-image-upload
+          [employeeId]="currentUser?.id"
+          [cacheKey]="'profile-' + (currentUser?.id || 'current')"
+          [initialImageUrl]="currentProfilePictureUrl"
+          (imageSelected)="onImageSelected($event)"
+          (imageRemoved)="onImageRemoved()">
+        </app-image-upload>
+      </div>
+
+      <!-- Personal Information Section -->
+      <div class="form-section">
+        <h3>{{ 'PROFILE.PERSONAL_INFO' | translate }}</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">{{ 'PROFILE.FIRST_NAME' | translate }}:</label>
+            <input 
+              id="firstName" 
+              formControlName="firstName" 
+              type="text"
+              [class.error]="profileForm.get('firstName')?.invalid && profileForm.get('firstName')?.touched">
+            <div *ngIf="profileForm.get('firstName')?.invalid && profileForm.get('firstName')?.touched" class="error-message">
+              {{ 'PROFILE.FIRST_NAME_REQUIRED' | translate }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">{{ 'PROFILE.LAST_NAME' | translate }}:</label>
+            <input 
+              id="lastName" 
+              formControlName="lastName" 
+              type="text"
+              [class.error]="profileForm.get('lastName')?.invalid && profileForm.get('lastName')?.touched">
+            <div *ngIf="profileForm.get('lastName')?.invalid && profileForm.get('lastName')?.touched" class="error-message">
+              {{ 'PROFILE.LAST_NAME_REQUIRED' | translate }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="username">{{ 'PROFILE.USERNAME' | translate }}:</label>
+          <input 
+            id="username" 
+            formControlName="username" 
+            type="text"
+            [class.error]="profileForm.get('username')?.invalid && profileForm.get('username')?.touched">
+          <div *ngIf="profileForm.get('username')?.invalid && profileForm.get('username')?.touched" class="error-message">
+            {{ 'PROFILE.USERNAME_REQUIRED' | translate }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">{{ 'PROFILE.EMAIL' | translate }}:</label>
+          <input 
+            id="email" 
+            formControlName="email" 
+            type="email"
+            [class.error]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched">
+          <div *ngIf="profileForm.get('email')?.invalid && profileForm.get('email')?.touched" class="error-message">
+            {{ 'PROFILE.EMAIL_REQUIRED' | translate }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">{{ 'PROFILE.PHONE' | translate }}:</label>
+          <input 
+            id="phone" 
+            formControlName="phone" 
+            type="text"
+            [class.error]="profileForm.get('phone')?.invalid && profileForm.get('phone')?.touched">
+          <div *ngIf="profileForm.get('phone')?.invalid && profileForm.get('phone')?.touched" class="error-message">
+            {{ 'PROFILE.PHONE_REQUIRED' | translate }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Read-only Information Section -->
+      <div class="form-section" *ngIf="currentUser">
+        <h3>{{ 'PROFILE.ACCOUNT_INFO' | translate }}</h3>
+        
+        <div class="form-group readonly">
+          <label>{{ 'PROFILE.ROLE' | translate }}:</label>
+          <span class="readonly-value">{{ currentUser.profileType }}</span>
+        </div>
+
+        <div class="form-group readonly">
+          <label>{{ 'PROFILE.GENDER' | translate }}:</label>
+          <span class="readonly-value">
+            {{ currentUser.gender === 'M' ? ('PROFILE.GENDER.MALE' | translate) : ('PROFILE.GENDER.FEMALE' | translate) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="isSubmitting || profileForm.invalid">
+          <span *ngIf="isSubmitting">{{ 'PROFILE.UPDATING' | translate }}...</span>
+          <span *ngIf="!isSubmitting">{{ 'PROFILE.UPDATE_PROFILE' | translate }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

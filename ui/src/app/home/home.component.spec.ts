@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 
 import { HomeComponent } from './home.component';
 import { sharedTestingProviders } from '../test-utils/shared-test-imports';
+import { AuthService } from '../services/auth.service';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
@@ -13,17 +14,20 @@ describe('HomeComponent', () => {
   let translateService: TranslateService;
   let spinnerService: jasmine.SpyObj<NgxSpinnerService>;
   let toastrService: jasmine.SpyObj<ToastrService>;
+  let authService: jasmine.SpyObj<AuthService>;
 
   beforeEach(async () => {
     const spinnerSpy = jasmine.createSpyObj('NgxSpinnerService', ['show', 'hide']);
     const toastrSpy = jasmine.createSpyObj('ToastrService', ['success', 'error', 'info', 'warning']);
+    const authSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'isAdmin']);
 
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
         ...sharedTestingProviders,
         { provide: NgxSpinnerService, useValue: spinnerSpy },
-        { provide: ToastrService, useValue: toastrSpy }
+        { provide: ToastrService, useValue: toastrSpy },
+        { provide: AuthService, useValue: authSpy }
       ]
     })
     .compileComponents();
@@ -33,6 +37,7 @@ describe('HomeComponent', () => {
     translateService = TestBed.inject(TranslateService);
     spinnerService = TestBed.inject(NgxSpinnerService) as jasmine.SpyObj<NgxSpinnerService>;
     toastrService = TestBed.inject(ToastrService) as jasmine.SpyObj<ToastrService>;
+    authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
 
     spyOn(translateService, 'use');
     spyOn(translateService, 'setDefaultLang');
@@ -99,6 +104,22 @@ describe('HomeComponent', () => {
     it('should show toastr info message', () => {
       component.testToastr();
       expect(toastrService.info).toHaveBeenCalledWith('Toastr test!');
+    });
+  });
+
+  describe('Navigation Access Control', () => {
+    it('should expose authService for template access', () => {
+      expect(component.authService).toBeDefined();
+    });
+
+    it('should allow access to authService.isAuthenticated', () => {
+      authService.isAuthenticated.and.returnValue(true);
+      expect(component.authService.isAuthenticated()).toBe(true);
+    });
+
+    it('should allow access to authService.isAdmin', () => {
+      authService.isAdmin.and.returnValue(true);
+      expect(component.authService.isAdmin()).toBe(true);
     });
   });
 });
