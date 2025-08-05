@@ -58,15 +58,58 @@
       </div>
     </div>
 
-    <!-- Location Field -->
-    <div class="form-group">
+    <!-- Location Field with Map Integration -->
+    <div class="form-group location-group">
       <label for="location">{{ 'URGENCY_FORM.LOCATION' | translate }}:</label>
-      <input
-        id="location"
-        formControlName="location"
-        type="text"
-        [class.error]="isFieldInvalid('location')"
-        placeholder="{{ 'URGENCY_FORM.LOCATION_PLACEHOLDER' | translate }}">
+
+      <!-- Location Input with Map Toggle -->
+      <div class="location-input-container">
+        <input
+          id="location"
+          formControlName="location"
+          type="text"
+          [class.error]="isFieldInvalid('location')"
+          placeholder="{{ 'URGENCY_FORM.LOCATION_PLACEHOLDER' | translate }}">
+
+        <button
+          type="button"
+          class="btn btn-outline-primary map-toggle-btn"
+          (click)="toggleMap()"
+          title="{{ showMap ? 'LOCATION_MAP.HIDE_MAP' : 'LOCATION_MAP.SHOW_MAP' | translate }}">
+          <i class="fas" [class.fa-map]="!showMap" [class.fa-times]="showMap"></i>
+          {{ showMap ? 'Hide Map' : 'Show Map' }}
+        </button>
+      </div>
+
+      <!-- Location Coordinates Display -->
+      <div class="location-coordinates" *ngIf="hasCoordinates()">
+        <small class="text-muted">
+          <i class="fas fa-map-marker-alt"></i>
+          {{ currentLocation?.coordinates?.latitude.toFixed(6) }},
+          {{ currentLocation?.coordinates?.longitude.toFixed(6) }}
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 ms-2"
+            (click)="clearMapLocation()"
+            title="Clear coordinates">
+            <i class="fas fa-times"></i>
+          </button>
+        </small>
+      </div>
+
+      <!-- Map Component -->
+      <div class="map-container" *ngIf="showMap">
+        <app-location-map
+          [initialLocation]="currentLocation"
+          [height]="'350px'"
+          [enableLocationSearch]="true"
+          [enableCurrentLocation]="true"
+          (locationSelected)="onLocationSelected($event)"
+          (coordinatesChanged)="onCoordinatesChanged($event)">
+        </app-location-map>
+      </div>
+
+      <!-- Validation Error -->
       <div *ngIf="isFieldInvalid('location')" class="error-message">
         {{ getFieldError('location') | translate }}
       </div>

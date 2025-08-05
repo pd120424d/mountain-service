@@ -98,10 +98,20 @@ export enum EmployeeUpdateRequestProfileTypeEnum {
 export {
   type Urgency,
   type UrgencyWithDisplayName,
+  type LocationCoordinates,
+  type EnhancedLocation,
+  type UrgencyCreateRequestWithCoordinates,
+  type UrgencyResponseWithCoordinates,
   createUrgencyDisplayName,
   withDisplayName,
   getUrgencyLevelColor,
-  getUrgencyStatusColor
+  getUrgencyStatusColor,
+  parseLocationString,
+  formatLocationForApi,
+  formatCoordinatesDisplay,
+  calculateDistance,
+  isValidCoordinates,
+  isInMountainRegion
 } from './extensions/urgency-extensions';
 
 // Re-export activity utilities

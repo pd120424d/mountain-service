@@ -1,0 +1,104 @@
+<div class="location-map-container">
+  <!-- Map Controls -->
+  <div class="map-controls" *ngIf="!readonly">
+    <!-- Search Bar -->
+    <div class="search-container" *ngIf="enableLocationSearch">
+      <div class="input-group">
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="searchText"
+          (keyup.enter)="searchLocation()"
+          placeholder="{{ 'LOCATION_MAP.SEARCH_PLACEHOLDER' | translate }}"
+          [disabled]="isLoadingLocation">
+        <button 
+          class="btn btn-outline-secondary" 
+          type="button" 
+          (click)="searchLocation()"
+          [disabled]="!searchText.trim() || isLoadingLocation">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button 
+        *ngIf="enableCurrentLocation"
+        class="btn btn-outline-primary btn-sm" 
+        type="button" 
+        (click)="getCurrentLocation()"
+        [disabled]="isLoadingLocation"
+        title="{{ 'LOCATION_MAP.GET_CURRENT_LOCATION' | translate }}">
+        <i class="fas fa-location-arrow" *ngIf="!isLoadingLocation"></i>
+        <i class="fas fa-spinner fa-spin" *ngIf="isLoadingLocation"></i>
+        {{ 'LOCATION_MAP.CURRENT_LOCATION' | translate }}
+      </button>
+
+      <button 
+        class="btn btn-outline-secondary btn-sm" 
+        type="button" 
+        (click)="clearLocation()"
+        [disabled]="!currentLocation"
+        title="{{ 'LOCATION_MAP.CLEAR_LOCATION' | translate }}">
+        <i class="fas fa-times"></i>
+        {{ 'LOCATION_MAP.CLEAR' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Map Container -->
+  <div class="map-wrapper">
+    <div 
+      #mapContainer 
+      class="map-container"
+      [style.height]="height"
+      [style.width]="width">
+    </div>
+    
+    <!-- Map Error -->
+    <div class="map-error" *ngIf="mapError">
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i>
+        {{ mapError }}
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="map-loading" *ngIf="isLoadingLocation">
+      <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        {{ 'LOCATION_MAP.LOADING' | translate }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Location Info -->
+  <div class="location-info" *ngIf="currentLocation">
+    <div class="location-details">
+      <div class="location-text">
+        <strong>{{ 'LOCATION_MAP.LOCATION' | translate }}:</strong>
+        {{ currentLocation.text }}
+      </div>
+      
+      <div class="location-coordinates" *ngIf="currentLocation.coordinates">
+        <small class="text-muted">
+          <i class="fas fa-map-marker-alt"></i>
+          {{ currentLocation.coordinates.latitude.toFixed(6) }}, 
+          {{ currentLocation.coordinates.longitude.toFixed(6) }}
+          <span *ngIf="currentLocation.coordinates.accuracy" class="accuracy">
+            (±{{ currentLocation.coordinates.accuracy.toFixed(0) }}m)
+          </span>
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions -->
+  <div class="map-instructions" *ngIf="!readonly && !currentLocation">
+    <small class="text-muted">
+      <i class="fas fa-info-circle"></i>
+      {{ 'LOCATION_MAP.INSTRUCTIONS' | translate }}
+    </small>
+  </div>
+</div>

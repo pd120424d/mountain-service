@@ -6,12 +6,13 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
-import { UrgencyCreateRequest, UrgencyLevel } from '../../shared/models';
+import { UrgencyCreateRequest, UrgencyLevel, EnhancedLocation, LocationCoordinates, formatLocationForApi, parseLocationString } from '../../shared/models';
+import { LocationMapComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-urgency-form',
   standalone: true,
-  imports: [RouterModule, TranslateModule, CommonModule, ReactiveFormsModule],
+  imports: [RouterModule, TranslateModule, CommonModule, ReactiveFormsModule, LocationMapComponent],
   templateUrl: './urgency-form.component.html',
   styleUrls: ['./urgency-form.component.css']
 })
@@ -19,6 +20,9 @@ export class UrgencyFormComponent extends BaseTranslatableComponent implements O
   urgencyForm!: FormGroup;
   urgencyLevels = Object.values(UrgencyLevel);
   isSubmitting = false;
+
+  currentLocation?: EnhancedLocation;
+  showMap = false;
 
   constructor(
     private fb: FormBuilder,
@@ -49,7 +53,12 @@ export class UrgencyFormComponent extends BaseTranslatableComponent implements O
   onSubmit(): void {
     if (this.urgencyForm.valid && !this.isSubmitting) {
       this.isSubmitting = true;
-      const urgencyRequest: UrgencyCreateRequest = this.urgencyForm.value;
+
+      const formValue = this.urgencyForm.value;
+      const urgencyRequest: UrgencyCreateRequest = {
+        ...formValue,
+        location: this.currentLocation ? formatLocationForApi(this.currentLocation) : formValue.location
+      };
 
       this.urgencyService.addUrgency(urgencyRequest).subscribe({
         next: (response) => {
@@ -91,5 +100,54 @@ export class UrgencyFormComponent extends BaseTranslatableComponent implements O
       if (field.errors['minlength']) return `${fieldName.toUpperCase()}_FORM.MIN_LENGTH`;
     }
     return '';
+  }
+
+  toggleMap(): void {
+    this.showMap = !this.showMap;
+
+    if (this.showMap && !this.currentLocation) {
+      const locationText = this.urgencyForm.get('location')?.value;
+      if (locationText) {
+        this.currentLocation = parseLocationString(locationText) || {
+          text: locationText,
+          source: 'manual'
+        };
+      }
+    }
+  }
+
+  onLocationSelected(location: EnhancedLocation): void {
+    this.currentLocation = location;
+
+    this.urgencyForm.patchValue({
+      location: location.text
+    });
+
+    const locationControl = this.urgencyForm.get('location');
+    if (locationControl) {
+      locationControl.markAsTouched();
+      locationControl.updateValueAndValidity();
+    }
+  }
+
+  onCoordinatesChanged(coordinates: LocationCoordinates): void {
+    if (this.currentLocation) {
+      this.currentLocation = {
+        ...this.currentLocation,
+        coordinates,
+        source: 'map'
+      };
+    }
+  }
+
+  clearMapLocation(): void {
+    this.currentLocation = undefined;
+    this.urgencyForm.patchValue({
+      location: ''
+    });
+  }
+
+  hasCoordinates(): boolean {
+    return !!(this.currentLocation?.coordinates);
   }
 }

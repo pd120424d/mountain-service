@@ -251,5 +251,20 @@
             "ACTIONS": "Actions"
         },
         "VIEW": "View Details"
+    },
+    "LOCATION_MAP": {
+        "SEARCH_PLACEHOLDER": "Search for a location...",
+        "GET_CURRENT_LOCATION": "Get your current location",
+        "CURRENT_LOCATION": "Current Location",
+        "CLEAR_LOCATION": "Clear selected location",
+        "CLEAR": "Clear",
+        "LOADING": "Getting location...",
+        "LOCATION": "Location",
+        "INSTRUCTIONS": "Click on the map to select a location, or use the search box above",
+        "ERROR_GEOLOCATION": "Unable to get your current location",
+        "ERROR_SEARCH": "Location search failed",
+        "ERROR_MAP_LOAD": "Failed to load map",
+        "SHOW_MAP": "Show map for location selection",
+        "HIDE_MAP": "Hide map"
     }
 }

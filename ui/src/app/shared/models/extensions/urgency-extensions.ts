@@ -3,6 +3,8 @@
 
 import {
   UrgencyResponse,
+  UrgencyCreateRequest,
+  UrgencyUpdateRequest,
   UrgencyLevel,
   UrgencyStatus
 } from '../generated/urgency';
@@ -10,14 +12,93 @@ import {
 // Type aliases for cleaner imports
 export type Urgency = UrgencyResponse;
 
-// Extended urgency interface with computed properties
+export interface LocationCoordinates {
+  latitude: number;
+  longitude: number;
+  accuracy?: number; // GPS accuracy in meters
+}
+
+export interface EnhancedLocation {
+  text: string; // Original text location (for backward compatibility)
+  coordinates?: LocationCoordinates; // Optional coordinates
+  source?: 'manual' | 'gps' | 'map'; // How the location was obtained
+}
+
+export interface UrgencyCreateRequestWithCoordinates extends Omit<UrgencyCreateRequest, 'location'> {
+  location: string; // Keep original for API compatibility
+  enhancedLocation?: EnhancedLocation; // Additional location data
+}
+
+export interface UrgencyResponseWithCoordinates extends Omit<UrgencyResponse, 'location'> {
+  location?: string; // Keep original for API compatibility
+  enhancedLocation?: EnhancedLocation; // Additional location data
+}
+
 export interface UrgencyWithDisplayName extends UrgencyResponse {
   displayName: string;
 }
 
-// Utility functions
+export const parseLocationString = (locationString: string): EnhancedLocation | null => {
+  if (!locationString) return null;
 
-// Create display name from firstName and lastName
+  // Try to parse coordinates from location string (format: "lat,lng|text" or just "text")
+  const coordinatePattern = /^(-?\d+\.?\d*),(-?\d+\.?\d*)\|(.*)$/;
+  const match = locationString.match(coordinatePattern);
+
+  if (match) {
+    const [, lat, lng, text] = match;
+    return {
+      text: text.trim(),
+      coordinates: {
+        latitude: parseFloat(lat),
+        longitude: parseFloat(lng)
+      },
+      source: 'map'
+    };
+  }
+
+  // If no coordinates found, return as text-only location
+  return {
+    text: locationString,
+    source: 'manual'
+  };
+};
+
+export const formatLocationForApi = (enhancedLocation: EnhancedLocation): string => {
+  if (enhancedLocation.coordinates) {
+    // Format: "lat,lng|text"
+    return `${enhancedLocation.coordinates.latitude},${enhancedLocation.coordinates.longitude}|${enhancedLocation.text}`;
+  }
+  return enhancedLocation.text;
+};
+
+export const formatCoordinatesDisplay = (coordinates: LocationCoordinates): string => {
+  return `${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}`;
+};
+
+export const calculateDistance = (coord1: LocationCoordinates, coord2: LocationCoordinates): number => {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = (coord2.latitude - coord1.latitude) * Math.PI / 180;
+  const dLon = (coord2.longitude - coord1.longitude) * Math.PI / 180;
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(coord1.latitude * Math.PI / 180) * Math.cos(coord2.latitude * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; // Distance in kilometers
+};
+
+export const isValidCoordinates = (coordinates: LocationCoordinates): boolean => {
+  return coordinates.latitude >= -90 && coordinates.latitude <= 90 &&
+         coordinates.longitude >= -180 && coordinates.longitude <= 180;
+};
+
+export const isInMountainRegion = (coordinates: LocationCoordinates): boolean => {
+  // For now, this is a placeholder that accepts all coordinates
+  return isValidCoordinates(coordinates);
+};
+
+
 export const createUrgencyDisplayName = (urgency: UrgencyResponse): string => {
   if (!urgency.firstName && !urgency.lastName) {
     return 'Unknown';
@@ -37,7 +118,6 @@ export const createUrgencyDisplayName = (urgency: UrgencyResponse): string => {
   return 'Unknown';
 };
 
-// Create urgency with display name
 export const withDisplayName = (urgency: UrgencyResponse): UrgencyWithDisplayName => ({
   ...urgency,
   displayName: createUrgencyDisplayName(urgency)
