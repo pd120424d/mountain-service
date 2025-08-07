@@ -214,47 +214,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 func TestEmployeeService_LoginEmployee(t *testing.T) {
 	t.Parallel()
 
-	t.Run("it fails with empty username", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		log := utils.NewTestLogger()
-		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
-
-		service := NewEmployeeService(log, emplRepoMock)
-
-		req := employeeV1.EmployeeLogin{
-			Username: "",
-			Password: "Pass123!",
-		}
-
-		token, err := service.LoginEmployee(req)
-
-		assert.Error(t, err)
-		assert.Empty(t, token)
-		assert.Equal(t, "invalid credentials", err.Error())
-	})
-
-	t.Run("it fails with invalid password format", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		log := utils.NewTestLogger()
-		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
-
-		service := NewEmployeeService(log, emplRepoMock)
-
-		req := employeeV1.EmployeeLogin{
-			Username: "testuser",
-			Password: "short", // Invalid password format
-		}
-
-		token, err := service.LoginEmployee(req)
-
-		assert.Error(t, err)
-		assert.Empty(t, token)
-		assert.Equal(t, "invalid credentials", err.Error())
-	})
+	// Note: Empty username and invalid password format tests are now handled at DTO level
 
 	t.Run("it fails when employee not found", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -452,37 +412,7 @@ func TestEmployeeService_UpdateEmployee(t *testing.T) {
 		assert.Equal(t, "employee not found", err.Error())
 	})
 
-	t.Run("it fails with email validation error", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		log := utils.NewTestLogger()
-		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
-
-		service := NewEmployeeService(log, emplRepoMock)
-
-		req := employeeV1.EmployeeUpdateRequest{
-			FirstName: "Updated",
-			Email:     "invalid-email", // Invalid email format
-		}
-
-		employee := model.Employee{
-			ID:        1,
-			Username:  "testuser",
-			FirstName: "Original",
-		}
-
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
-			*emp = employee
-			return nil
-		})
-
-		response, err := service.UpdateEmployee(1, req)
-
-		assert.Error(t, err)
-		assert.Nil(t, response)
-		assert.Contains(t, err.Error(), "mail:")
-	})
+	// Note: Email validation test removed - validation is now handled at DTO level
 
 	t.Run("it fails when update repository fails", func(t *testing.T) {
 		ctrl := gomock.NewController(t)

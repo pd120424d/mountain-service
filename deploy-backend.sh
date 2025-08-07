@@ -208,12 +208,12 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
            curl -f http://localhost:8083/api/v1/health > /dev/null 2>&1 && \
            curl -f http://localhost:8084/api/v1/health > /dev/null 2>&1 && \
            curl -f http://localhost:8090/api/v1/health > /dev/null 2>&1; then
-            echo "🎉 All backend services are healthy!"
+            echo "SUCCESS: All backend services are healthy!"
             break
         fi
         
         if [ $i -eq 12 ]; then
-            echo "❌ Some backend services failed to become healthy after 6 minutes"
+            echo "FAILURE: Some backend services failed to become healthy after 6 minutes"
             echo "Container status:"
             docker-compose ps
             exit 1

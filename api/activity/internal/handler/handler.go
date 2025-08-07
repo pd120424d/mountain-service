@@ -49,6 +49,12 @@ func (h *activityHandler) CreateActivity(ctx *gin.Context) {
 		return
 	}
 
+	if err := req.Validate(); err != nil {
+		h.log.Errorf("validation failed: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	response, err := h.svc.CreateActivity(&req)
 	if err != nil {
 		h.log.Errorf("Failed to create activity: %v", err)

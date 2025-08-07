@@ -232,7 +232,7 @@
         "REQUIRED": "Nivo urgentnosti je obavezan"
     },
     "URGENCY_LEVEL": {
-        "LOW": "Nisak",
+        "LOW": "Nizak",
         "MEDIUM": "Srednji",
         "HIGH": "Visok",
         "CRITICAL": "Kritičan"

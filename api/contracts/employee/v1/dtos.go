@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/shared/utils"
+	"github.com/pd120424d/mountain-service/api/shared/validation"
 )
 
 // Common response types
@@ -23,8 +24,8 @@ type MessageResponse struct {
 // EmployeeLogin DTO for employee login
 // swagger:model
 type EmployeeLogin struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 // EmployeeResponse DTO for returning employee data
@@ -53,7 +54,59 @@ type EmployeeCreateRequest struct {
 	Gender         string `json:"gender" binding:"required"`
 	Phone          string `json:"phone" binding:"required"`
 	ProfilePicture string `json:"profilePicture"`
-	ProfileType    string `json:"profileType"`
+	ProfileType    string `json:"profileType" binding:"required"`
+}
+
+// Validate validates the EmployeeCreateRequest
+func (r *EmployeeCreateRequest) Validate() error {
+	var errors validation.ValidationErrors
+
+	if err := utils.ValidateRequiredField(r.FirstName, "first name"); err != nil {
+		errors.AddError("firstName", err)
+	}
+	if err := utils.ValidateRequiredField(r.LastName, "last name"); err != nil {
+		errors.AddError("lastName", err)
+	}
+	if err := utils.ValidateRequiredField(r.Username, "username"); err != nil {
+		errors.AddError("username", err)
+	}
+	if err := utils.ValidateRequiredField(r.Password, "password"); err != nil {
+		errors.AddError("password", err)
+	}
+	if err := utils.ValidateRequiredField(r.ProfileType, "profile type"); err != nil {
+		errors.AddError("profileType", err)
+	}
+
+	if err := utils.ValidateEmail(r.Email); err != nil {
+		errors.AddError("email", err)
+	}
+
+	if err := utils.ValidateGender(r.Gender); err != nil {
+		errors.AddError("gender", err)
+	}
+
+	if err := utils.ValidatePhone(r.Phone); err != nil {
+		errors.AddError("phone", err)
+	}
+
+	if err := r.validateProfileType(); err != nil {
+		errors.AddError("profileType", err)
+	}
+
+	if errors.HasErrors() {
+		return errors
+	}
+	return nil
+}
+
+func (r *EmployeeCreateRequest) validateProfileType() error {
+	validProfileTypes := []string{"Medic", "Technical", "Administrator"}
+	for _, validType := range validProfileTypes {
+		if r.ProfileType == validType {
+			return nil
+		}
+	}
+	return fmt.Errorf("profile type must be one of: Medic, Technical, Administrator")
 }
 
 // EmployeeUpdateRequest DTO for updating an employee
@@ -153,6 +206,50 @@ func (r *RemoveShiftRequest) String() string {
 	return fmt.Sprintf("RemoveShiftRequest { ShiftType: %d, ShiftDate: %s }", r.ShiftType, r.ShiftDate)
 }
 
+// Validate validates the EmployeeUpdateRequest
+func (r *EmployeeUpdateRequest) Validate() error {
+	var errors validation.ValidationErrors
+
+	if r.Email != "" {
+		if err := utils.ValidateEmail(r.Email); err != nil {
+			errors.AddError("email", err)
+		}
+	}
+
+	if r.Gender != "" {
+		if err := utils.ValidateGender(r.Gender); err != nil {
+			errors.AddError("gender", err)
+		}
+	}
+
+	if r.Phone != "" {
+		if err := utils.ValidatePhone(r.Phone); err != nil {
+			errors.AddError("phone", err)
+		}
+	}
+
+	if r.ProfileType != "" {
+		if err := r.validateProfileType(); err != nil {
+			errors.AddError("profileType", err)
+		}
+	}
+
+	if errors.HasErrors() {
+		return errors
+	}
+	return nil
+}
+
+func (r *EmployeeUpdateRequest) validateProfileType() error {
+	validProfileTypes := []string{"Medic", "Technical", "Administrator"}
+	for _, validType := range validProfileTypes {
+		if r.ProfileType == validType {
+			return nil
+		}
+	}
+	return fmt.Errorf("profile type must be one of: Medic, Technical, Administrator")
+}
+
 func (e *EmployeeCreateRequest) ToString() string {
 	return fmt.Sprintf(
 		"EmployeeCreateRequest { FirstName: %s, LastName: %s, Username: %s, Password: %s,"+
@@ -167,4 +264,27 @@ func (e *EmployeeCreateRequest) ToString() string {
 		e.ProfilePicture,
 		e.ProfileType,
 	)
+}
+
+// Validate validates the EmployeeLogin request
+func (r *EmployeeLogin) Validate() error {
+	var errors validation.ValidationErrors
+
+	if err := utils.ValidateRequiredField(r.Username, "username"); err != nil {
+		errors.AddError("username", err)
+	}
+
+	if err := utils.ValidateRequiredField(r.Password, "password"); err != nil {
+		errors.AddError("password", err)
+	} else {
+		// Only validate password format if it's not empty
+		if err := utils.ValidatePassword(r.Password); err != nil {
+			errors.AddError("password", err)
+		}
+	}
+
+	if errors.HasErrors() {
+		return errors
+	}
+	return nil
 }

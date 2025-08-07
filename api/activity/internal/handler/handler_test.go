@@ -44,7 +44,7 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		validPayload := `{
-			"type": "activity_employee_created",
+			"type": "employee_created",
 			"level": "info",
 			"title": "Test",
 			"description": "Test"
@@ -68,7 +68,7 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		validPayload := `{
-			"type": "activity_employee_created",
+			"type": "employee_created",
 			"level": "info",
 			"title": "Test",
 			"description": "Test"

@@ -107,17 +107,6 @@ func (s *employeeService) RegisterEmployee(req employeeV1.EmployeeCreateRequest)
 func (s *employeeService) LoginEmployee(req employeeV1.EmployeeLogin) (string, error) {
 	s.log.Info("Processing employee login")
 
-	// Validate request
-	if req.Username == "" {
-		s.log.Error("empty username provided")
-		return "", fmt.Errorf("invalid credentials")
-	}
-
-	if err := utils.ValidatePassword(req.Password); err != nil {
-		s.log.Errorf("failed to validate password: %v", err)
-		return "", fmt.Errorf("invalid credentials")
-	}
-
 	employee, err := s.emplRepo.GetEmployeeByUsername(req.Username)
 	if err != nil {
 		s.log.Errorf("failed to retrieve employee: %v", err)
@@ -178,12 +167,6 @@ func (s *employeeService) UpdateEmployee(employeeID uint, req employeeV1.Employe
 	if err := s.emplRepo.GetEmployeeByID(employeeID, &employee); err != nil {
 		s.log.Errorf("failed to get employee: %v", err)
 		return nil, fmt.Errorf("employee not found")
-	}
-
-	// Validate email if provided
-	if validationErr := utils.ValidateOptionalEmail(req.Email); validationErr != nil {
-		s.log.Errorf("failed to update employee, validation failed: %v", validationErr)
-		return nil, validationErr
 	}
 
 	model.MapUpdateRequestToEmployee(&req, &employee)

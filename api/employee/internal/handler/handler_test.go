@@ -124,7 +124,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 				Username:    "existinguser",
 				Password:    "Pass123!",
 				Email:       "test@example.com",
-				Gender:      "Male",
+				Gender:      "M",
 				Phone:       "123456789",
 				ProfileType: "Medic",
 			}
@@ -160,7 +160,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 			Username:    "testuser",
 			Password:    "Pass123!",
 			Email:       "test@example.com",
-			Gender:      "Male",
+			Gender:      "M",
 			Phone:       "123456789",
 			ProfileType: "Medic",
 		}
@@ -215,35 +215,8 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockEmplSvc := service.NewMockEmployeeService(ctrl)
-		mockShiftSvc := service.NewMockShiftService(ctrl)
-		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
-
-		gin.SetMode(gin.TestMode)
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-
-		req := employeeV1.EmployeeLogin{
-			Username: "admin",
-			Password: "wrongpass",
-		}
-		payload, _ := json.Marshal(req)
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
-		ctx.Request.Header.Set("Content-Type", "application/json")
-
-		handler.LoginEmployee(ctx)
-
-		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid credentials")
-	})
-
-	t.Run("it successfully logs in admin", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
 		// Set admin password and JWT secret before test
-		os.Setenv("ADMIN_PASSWORD", "admin123")
+		os.Setenv("ADMIN_PASSWORD", "Admin123!")
 		os.Setenv("JWT_SECRET", "test-secret-key")
 		defer func() {
 			os.Unsetenv("ADMIN_PASSWORD")
@@ -261,7 +234,42 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 
 		req := employeeV1.EmployeeLogin{
 			Username: "admin",
-			Password: "admin123",
+			Password: "Wrong123!", // Valid format but wrong password
+		}
+		payload, _ := json.Marshal(req)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler.LoginEmployee(ctx)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid credentials")
+	})
+
+	t.Run("it successfully logs in admin", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		// Set admin password and JWT secret before test
+		os.Setenv("ADMIN_PASSWORD", "Admin123!")
+		os.Setenv("JWT_SECRET", "test-secret-key")
+		defer func() {
+			os.Unsetenv("ADMIN_PASSWORD")
+			os.Unsetenv("JWT_SECRET")
+		}()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		req := employeeV1.EmployeeLogin{
+			Username: "admin",
+			Password: "Admin123!",
 		}
 		payload, _ := json.Marshal(req)
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
@@ -288,7 +296,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 
 		req := employeeV1.EmployeeLogin{
 			Username: "testuser",
-			Password: "wrongpass",
+			Password: "Wrong123!", // Valid format but wrong password
 		}
 		payload, _ := json.Marshal(req)
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
@@ -385,7 +393,8 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		handler.OAuth2Token(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "username and password are required")
+		// Now expects specific validation messages
+		assert.Contains(t, w.Body.String(), "username is required")
 	})
 
 	t.Run("it returns an error when password is not provided", func(t *testing.T) {
@@ -409,13 +418,13 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		handler.OAuth2Token(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "username and password are required")
+		assert.Contains(t, w.Body.String(), "password is required")
 	})
 
 	t.Run("it returns an error when admin password is invalid", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
-		os.Setenv("ADMIN_PASSWORD", "admin123")
+		os.Setenv("ADMIN_PASSWORD", "Admin123!")
 		defer os.Unsetenv("ADMIN_PASSWORD")
 
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
@@ -427,7 +436,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		formData := "username=admin&password=wrongpass"
+		formData := "username=admin&password=Wrong123!" // Valid format but wrong password
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/oauth2/token", strings.NewReader(formData))
 		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -440,7 +449,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 	t.Run("it successfully authenticates admin via OAuth2", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
-		os.Setenv("ADMIN_PASSWORD", "admin123")
+		os.Setenv("ADMIN_PASSWORD", "Admin123!")
 		os.Setenv("JWT_SECRET", "test-secret-key")
 		defer func() {
 			os.Unsetenv("ADMIN_PASSWORD")
@@ -457,7 +466,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		// Create form data for OAuth2 endpoint with correct admin credentials
-		formData := "username=admin&password=admin123"
+		formData := "username=admin&password=Admin123!"
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/oauth2/token", strings.NewReader(formData))
 		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 

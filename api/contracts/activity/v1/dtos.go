@@ -1,8 +1,12 @@
 package v1
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/pd120424d/mountain-service/api/shared/utils"
+	"github.com/pd120424d/mountain-service/api/shared/validation"
 )
 
 // ActivityType represents the type of activity
@@ -126,53 +130,34 @@ type ActivityStatsResponse struct {
 // Helper methods
 
 func (r *ActivityCreateRequest) Validate() error {
-	if r.Type == "" {
-		return fmt.Errorf("type is required")
-	}
-	if r.Level == "" {
-		return fmt.Errorf("level is required")
-	}
-	if r.Title == "" {
-		return fmt.Errorf("title is required")
-	}
-	if r.Description == "" {
-		return fmt.Errorf("description is required")
-	}
-
-	// Validate activity type
-	validTypes := []ActivityType{
-		ActivityEmployeeCreated, ActivityEmployeeUpdated, ActivityEmployeeDeleted, ActivityEmployeeLogin,
-		ActivityShiftAssigned, ActivityShiftRemoved,
-		ActivityUrgencyCreated, ActivityUrgencyUpdated, ActivityUrgencyDeleted,
-		ActivityEmergencyAssigned, ActivityEmergencyAccepted, ActivityEmergencyDeclined,
-		ActivityNotificationSent, ActivityNotificationFailed,
-		ActivitySystemReset,
-	}
-
-	valid := false
-	for _, validType := range validTypes {
-		if r.Type == validType {
-			valid = true
-			break
-		}
-	}
-	if !valid {
+	// Validate enum types first
+	if !r.Type.Valid() {
 		return fmt.Errorf("invalid activity type: %s", r.Type)
 	}
-
-	// Validate activity level
-	validLevels := []ActivityLevel{ActivityLevelInfo, ActivityLevelWarning, ActivityLevelError, ActivityLevelCritical}
-	valid = false
-	for _, validLevel := range validLevels {
-		if r.Level == validLevel {
-			valid = true
-			break
-		}
-	}
-	if !valid {
+	if !r.Level.Valid() {
 		return fmt.Errorf("invalid activity level: %s", r.Level)
 	}
 
+	// Validate other fields
+	var errors validation.ValidationErrors
+
+	if err := utils.ValidateRequiredField(r.Title, "title"); err != nil {
+		errors.AddError("title", err)
+	}
+	if err := utils.ValidateRequiredField(r.Description, "description"); err != nil {
+		errors.AddError("description", err)
+	}
+
+	if r.Metadata != "" {
+		var temp interface{}
+		if err := json.Unmarshal([]byte(r.Metadata), &temp); err != nil {
+			errors.Add("metadata", "metadata must be valid JSON")
+		}
+	}
+
+	if errors.HasErrors() {
+		return errors
+	}
 	return nil
 }
 
@@ -230,17 +215,8 @@ func ActivityLevelFromString(s string) ActivityLevel {
 	return ActivityLevel(s)
 }
 
-// String methods for enums
-func (at ActivityType) String() string {
-	return string(at)
-}
-
-func (al ActivityLevel) String() string {
-	return string(al)
-}
-
-// Valid methods for validation
-func (at ActivityType) Valid() bool {
+// Valid checks if the ActivityType is valid
+func (t ActivityType) Valid() bool {
 	validTypes := []ActivityType{
 		ActivityEmployeeCreated, ActivityEmployeeUpdated, ActivityEmployeeDeleted, ActivityEmployeeLogin,
 		ActivityShiftAssigned, ActivityShiftRemoved,
@@ -249,21 +225,32 @@ func (at ActivityType) Valid() bool {
 		ActivityNotificationSent, ActivityNotificationFailed,
 		ActivitySystemReset,
 	}
-
 	for _, validType := range validTypes {
-		if at == validType {
+		if t == validType {
 			return true
 		}
 	}
 	return false
 }
 
-func (al ActivityLevel) Valid() bool {
-	validLevels := []ActivityLevel{ActivityLevelInfo, ActivityLevelWarning, ActivityLevelError, ActivityLevelCritical}
+// Valid checks if the ActivityLevel is valid
+func (l ActivityLevel) Valid() bool {
+	validLevels := []ActivityLevel{
+		ActivityLevelInfo, ActivityLevelWarning, ActivityLevelError, ActivityLevelCritical,
+	}
 	for _, validLevel := range validLevels {
-		if al == validLevel {
+		if l == validLevel {
 			return true
 		}
 	}
 	return false
+}
+
+// String methods for enums
+func (at ActivityType) String() string {
+	return string(at)
+}
+
+func (al ActivityLevel) String() string {
+	return string(al)
 }

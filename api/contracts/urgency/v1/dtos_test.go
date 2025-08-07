@@ -95,7 +95,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 
 		err := req.Validate()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "contact phone is required")
+		assert.Contains(t, err.Error(), "phone number is required")
 	})
 
 	t.Run("it returns an error for a missing location", func(t *testing.T) {
@@ -110,7 +110,7 @@ func TestUrgencyCreateRequest_Validate(t *testing.T) {
 
 		err := req.Validate()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "location is required")
+		assert.Contains(t, err.Error(), "coordinates are required")
 	})
 
 	t.Run("it returns an error for a missing description", func(t *testing.T) {

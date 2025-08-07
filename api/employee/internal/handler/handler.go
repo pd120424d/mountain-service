@@ -83,6 +83,12 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 		return
 	}
 
+	if err := req.Validate(); err != nil {
+		h.log.Errorf("validation failed: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	response, err := h.emplService.RegisterEmployee(*req)
 	if err != nil {
 		h.log.Errorf("failed to register employee: %v", err)
@@ -131,6 +137,12 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
+		return
+	}
+
+	if err := req.Validate(); err != nil {
+		h.log.Errorf("validation failed: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -189,8 +201,14 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 	username := ctx.PostForm("username")
 	password := ctx.PostForm("password")
 
-	if username == "" || password == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "username and password are required"})
+	req := employeeV1.EmployeeLogin{
+		Username: username,
+		Password: password,
+	}
+
+	if err := req.Validate(); err != nil {
+		h.log.Errorf("validation failed: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -218,11 +236,6 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 			"expires_in":   86400, // 24 hours in seconds
 		})
 		return
-	}
-
-	req := employeeV1.EmployeeLogin{
-		Username: username,
-		Password: password,
 	}
 
 	token, err := h.emplService.LoginEmployee(req)
@@ -337,6 +350,13 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.log.Errorf("failed to update employee, invalid employee update payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		return
+	}
+
+	// Additional validation
+	if err := req.Validate(); err != nil {
+		h.log.Errorf("validation failed: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 

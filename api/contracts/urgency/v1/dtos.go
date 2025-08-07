@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pd120424d/mountain-service/api/shared/utils"
+	"github.com/pd120424d/mountain-service/api/shared/validation"
 )
 
 // UrgencyLevel represents the urgency level
@@ -143,39 +144,72 @@ func (s UrgencyStatus) Valid() bool {
 }
 
 func (r *UrgencyCreateRequest) Validate() error {
-	if err := utils.ValidateRequiredField(r.FirstName, "first name"); err != nil {
-		return err
-	}
-	if err := utils.ValidateRequiredField(r.LastName, "last name"); err != nil {
-		return err
-	}
-	if err := utils.ValidateOptionalEmail(r.Email); err != nil {
-		return fmt.Errorf("invalid email format")
-	}
-	if err := utils.ValidateRequiredField(r.ContactPhone, "contact phone"); err != nil {
-		return err
-	}
-	if err := utils.ValidateRequiredField(r.Location, "location"); err != nil {
-		return err
-	}
-	if err := utils.ValidateRequiredField(r.Description, "description"); err != nil {
-		return err
-	}
+	// Validate enum types first
 	if r.Level != "" && !r.Level.Valid() {
 		return fmt.Errorf("invalid urgency level")
+	}
+
+	// Validate other fields
+	var errors validation.ValidationErrors
+
+	if err := utils.ValidateRequiredField(r.FirstName, "first name"); err != nil {
+		errors.AddError("firstName", err)
+	}
+	if err := utils.ValidateRequiredField(r.LastName, "last name"); err != nil {
+		errors.AddError("lastName", err)
+	}
+	if err := utils.ValidateRequiredField(r.Description, "description"); err != nil {
+		errors.AddError("description", err)
+	}
+
+	if err := utils.ValidateOptionalEmail(r.Email); err != nil {
+		errors.Add("email", "invalid email format")
+	}
+
+	if err := utils.ValidatePhone(r.ContactPhone); err != nil {
+		errors.AddError("contactPhone", err)
+	}
+
+	if err := utils.ValidateCoordinates(r.Location); err != nil {
+		errors.AddError("location", err)
+	}
+
+	if errors.HasErrors() {
+		return errors
 	}
 	return nil
 }
 
 func (r *UrgencyUpdateRequest) Validate() error {
-	if err := utils.ValidateOptionalEmail(r.Email); err != nil {
-		return fmt.Errorf("invalid email format")
-	}
+	// Validate enum types first
 	if r.Level != "" && !r.Level.Valid() {
 		return fmt.Errorf("invalid urgency level")
 	}
 	if r.Status != "" && !r.Status.Valid() {
 		return fmt.Errorf("invalid status")
+	}
+
+	// Validate other fields
+	var errors validation.ValidationErrors
+
+	if err := utils.ValidateOptionalEmail(r.Email); err != nil {
+		errors.Add("email", "invalid email format")
+	}
+
+	if r.ContactPhone != "" {
+		if err := utils.ValidatePhone(r.ContactPhone); err != nil {
+			errors.AddError("contactPhone", err)
+		}
+	}
+
+	if r.Location != "" {
+		if err := utils.ValidateCoordinates(r.Location); err != nil {
+			errors.AddError("location", err)
+		}
+	}
+
+	if errors.HasErrors() {
+		return errors
 	}
 	return nil
 }
