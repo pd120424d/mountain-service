@@ -162,6 +162,9 @@ To support AWS deployments, these GitHub Secrets are required:
 - `AWS_CORS_ALLOWED_ORIGINS`: Allowed CORS origins
 - `AWS_DB_USER`: PostgreSQL database username
 - `AWS_DB_PASSWORD`: PostgreSQL database password
+- `AWS_AZURE_STORAGE_ACCOUNT_NAME`: Azure storage account name
+- `AWS_AZURE_STORAGE_ACCOUNT_KEY`: Azure storage account key
+- `AWS_AZURE_STORAGE_CONTAINER_NAME`: Azure storage container name
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete setup instructions.
 - `SWAGGER_API_URL`: Swagger documentation URL

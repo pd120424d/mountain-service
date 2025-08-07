@@ -5,9 +5,7 @@ package storage
 import (
 	"context"
 	"fmt"
-	"io"
 	"mime/multipart"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -22,45 +20,14 @@ const (
 	defaultContainerName = "employee-profiles"
 )
 
-// AzureBlobClient interface wraps the Azure blob client operations for testing
-type AzureBlobClient interface {
-	UploadStream(ctx context.Context, containerName, blobName string, body io.Reader, options *azblob.UploadStreamOptions) (azblob.UploadStreamResponse, error)
-	DeleteBlob(ctx context.Context, containerName, blobName string, options *azblob.DeleteBlobOptions) (azblob.DeleteBlobResponse, error)
-	CreateContainer(ctx context.Context, containerName string, options *azblob.CreateContainerOptions) (azblob.CreateContainerResponse, error)
-}
-
-// azureBlobClientWrapper wraps the real Azure client
-type azureBlobClientWrapper struct {
-	client *azblob.Client
-}
-
-func (w *azureBlobClientWrapper) UploadStream(ctx context.Context, containerName, blobName string, body io.Reader, options *azblob.UploadStreamOptions) (azblob.UploadStreamResponse, error) {
-	return w.client.UploadStream(ctx, containerName, blobName, body, options)
-}
-
-func (w *azureBlobClientWrapper) DeleteBlob(ctx context.Context, containerName, blobName string, options *azblob.DeleteBlobOptions) (azblob.DeleteBlobResponse, error) {
-	return w.client.DeleteBlob(ctx, containerName, blobName, options)
-}
-
-func (w *azureBlobClientWrapper) CreateContainer(ctx context.Context, containerName string, options *azblob.CreateContainerOptions) (azblob.CreateContainerResponse, error) {
-	return w.client.CreateContainer(ctx, containerName, options)
-}
-
 type AzureBlobService interface {
 	UploadProfilePicture(ctx context.Context, file multipart.File, header *multipart.FileHeader, employeeID uint) (*UploadResult, error)
 	DeleteProfilePicture(ctx context.Context, blobName string) error
 }
 
 type azureBlobService struct {
-	client        AzureBlobClient
-	containerName string
-	log           utils.Logger
-}
-
-type AzureBlobConfig struct {
-	AccountName   string
-	AccountKey    string
-	ContainerName string
+	client AzureBlobClientWrapper
+	log    utils.Logger
 }
 
 type UploadResult struct {
@@ -69,31 +36,11 @@ type UploadResult struct {
 	Size     int64  `json:"size"`
 }
 
-func NewAzureBlobService(config AzureBlobConfig, log utils.Logger) (AzureBlobService, error) {
-	if config.AccountName == "" || config.AccountKey == "" {
-		return nil, fmt.Errorf("azure storage account name and key are required")
-	}
-
-	if config.ContainerName == "" {
-		config.ContainerName = defaultContainerName
-	}
-
-	credential, err := azblob.NewSharedKeyCredential(config.AccountName, config.AccountKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Azure credentials: %w", err)
-	}
-
-	serviceURL := fmt.Sprintf("https://%s.blob.core.windows.net/", config.AccountName)
-
-	client, err := azblob.NewClientWithSharedKeyCredential(serviceURL, credential, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Azure blob client: %w", err)
-	}
+func NewAzureBlobService(log utils.Logger, client AzureBlobClientWrapper) (AzureBlobService, error) {
 
 	service := &azureBlobService{
-		client:        &azureBlobClientWrapper{client: client},
-		containerName: config.ContainerName,
-		log:           log.WithName("AzureBlobService"),
+		log:    log.WithName("AzureBlobService"),
+		client: client,
 	}
 
 	if err := service.ensureContainer(context.Background()); err != nil {
@@ -117,7 +64,7 @@ func (s *azureBlobService) UploadProfilePicture(ctx context.Context, file multip
 		contentType = "application/octet-stream"
 	}
 
-	_, err := s.client.UploadStream(ctx, s.containerName, blobName, file, &azblob.UploadStreamOptions{
+	_, err := s.client.UploadStream(ctx, blobName, file, &azblob.UploadStreamOptions{
 		BlockSize:   int64(1024 * 1024), // 1MB blocks
 		Concurrency: 3,
 		Metadata: map[string]*string{
@@ -132,8 +79,7 @@ func (s *azureBlobService) UploadProfilePicture(ctx context.Context, file multip
 		return nil, fmt.Errorf("failed to upload file to Azure Blob Storage: %w", err)
 	}
 
-	blobURL := fmt.Sprintf("https://%s.blob.core.windows.net/%s/%s",
-		s.getAccountName(), s.containerName, blobName)
+	blobURL := s.client.GetBlobURL(blobName)
 
 	result := &UploadResult{
 		BlobURL:  blobURL,
@@ -150,7 +96,7 @@ func (s *azureBlobService) DeleteProfilePicture(ctx context.Context, blobName st
 		return nil // Nothing to delete
 	}
 
-	_, err := s.client.DeleteBlob(ctx, s.containerName, blobName, nil)
+	_, err := s.client.DeleteBlob(ctx, blobName, nil)
 	if err != nil {
 		s.log.Errorf("Failed to delete blob %s: %v", blobName, err)
 		return fmt.Errorf("failed to delete blob: %w", err)
@@ -161,10 +107,7 @@ func (s *azureBlobService) DeleteProfilePicture(ctx context.Context, blobName st
 }
 
 func (s *azureBlobService) ensureContainer(ctx context.Context) error {
-	accessType := azblob.PublicAccessTypeBlob
-	_, err := s.client.CreateContainer(ctx, s.containerName, &azblob.CreateContainerOptions{
-		Access: &accessType,
-	})
+	_, err := s.client.CreateContainer(ctx, &azblob.CreateContainerOptions{Access: nil})
 	if err != nil {
 		if !strings.Contains(err.Error(), "ContainerAlreadyExists") {
 			return err
@@ -215,31 +158,6 @@ func (s *azureBlobService) generateBlobName(employeeID uint, originalFilename st
 	return fmt.Sprintf("employee-%d/%s-%s%s", employeeID, timestamp, uniqueID, ext)
 }
 
-func (s *azureBlobService) getAccountName() string {
-	// This is a simplified approach - in production you might want to store this
-	// For now, we'll extract it from environment or use a default
-	accountName := os.Getenv("AZURE_STORAGE_ACCOUNT_NAME")
-	if accountName == "" {
-		accountName = "mountainservice" // fallback
-	}
-	return accountName
-}
-
 func stringPtr(s string) *string {
 	return &s
-}
-
-func LoadConfigFromEnv() AzureBlobConfig {
-	return AzureBlobConfig{
-		AccountName:   os.Getenv("AZURE_STORAGE_ACCOUNT_NAME"),
-		AccountKey:    os.Getenv("AZURE_STORAGE_ACCOUNT_KEY"),
-		ContainerName: getEnvOrDefault("AZURE_STORAGE_CONTAINER_NAME", "employee-profiles"),
-	}
-}
-
-func getEnvOrDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }

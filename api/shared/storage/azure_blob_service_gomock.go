@@ -11,82 +11,11 @@ package storage
 
 import (
 	context "context"
-	io "io"
 	multipart "mime/multipart"
 	reflect "reflect"
 
-	azblob "github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	gomock "go.uber.org/mock/gomock"
 )
-
-// MockAzureBlobClient is a mock of AzureBlobClient interface.
-type MockAzureBlobClient struct {
-	ctrl     *gomock.Controller
-	recorder *MockAzureBlobClientMockRecorder
-	isgomock struct{}
-}
-
-// MockAzureBlobClientMockRecorder is the mock recorder for MockAzureBlobClient.
-type MockAzureBlobClientMockRecorder struct {
-	mock *MockAzureBlobClient
-}
-
-// NewMockAzureBlobClient creates a new mock instance.
-func NewMockAzureBlobClient(ctrl *gomock.Controller) *MockAzureBlobClient {
-	mock := &MockAzureBlobClient{ctrl: ctrl}
-	mock.recorder = &MockAzureBlobClientMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockAzureBlobClient) EXPECT() *MockAzureBlobClientMockRecorder {
-	return m.recorder
-}
-
-// CreateContainer mocks base method.
-func (m *MockAzureBlobClient) CreateContainer(ctx context.Context, containerName string, options *azblob.CreateContainerOptions) (azblob.CreateContainerResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateContainer", ctx, containerName, options)
-	ret0, _ := ret[0].(azblob.CreateContainerResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateContainer indicates an expected call of CreateContainer.
-func (mr *MockAzureBlobClientMockRecorder) CreateContainer(ctx, containerName, options any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateContainer", reflect.TypeOf((*MockAzureBlobClient)(nil).CreateContainer), ctx, containerName, options)
-}
-
-// DeleteBlob mocks base method.
-func (m *MockAzureBlobClient) DeleteBlob(ctx context.Context, containerName, blobName string, options *azblob.DeleteBlobOptions) (azblob.DeleteBlobResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteBlob", ctx, containerName, blobName, options)
-	ret0, _ := ret[0].(azblob.DeleteBlobResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DeleteBlob indicates an expected call of DeleteBlob.
-func (mr *MockAzureBlobClientMockRecorder) DeleteBlob(ctx, containerName, blobName, options any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBlob", reflect.TypeOf((*MockAzureBlobClient)(nil).DeleteBlob), ctx, containerName, blobName, options)
-}
-
-// UploadStream mocks base method.
-func (m *MockAzureBlobClient) UploadStream(ctx context.Context, containerName, blobName string, body io.Reader, options *azblob.UploadStreamOptions) (azblob.UploadStreamResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UploadStream", ctx, containerName, blobName, body, options)
-	ret0, _ := ret[0].(azblob.UploadStreamResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UploadStream indicates an expected call of UploadStream.
-func (mr *MockAzureBlobClientMockRecorder) UploadStream(ctx, containerName, blobName, body, options any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadStream", reflect.TypeOf((*MockAzureBlobClient)(nil).UploadStream), ctx, containerName, blobName, body, options)
-}
 
 // MockAzureBlobService is a mock of AzureBlobService interface.
 type MockAzureBlobService struct {

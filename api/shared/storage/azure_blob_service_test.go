@@ -18,69 +18,6 @@ import (
 func TestAzureBlobService_NewAzureBlobService(t *testing.T) {
 	t.Parallel()
 
-	t.Run("it fails when account name is missing", func(t *testing.T) {
-		log := utils.NewTestLogger()
-		service, err := NewAzureBlobService(AzureBlobConfig{}, log)
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "azure storage account name and key are required")
-		assert.Nil(t, service)
-	})
-
-	t.Run("it fails when account key is missing", func(t *testing.T) {
-		log := utils.NewTestLogger()
-		service, err := NewAzureBlobService(AzureBlobConfig{AccountName: "testaccount"}, log)
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "azure storage account name and key are required")
-		assert.Nil(t, service)
-	})
-}
-
-func TestLoadConfigFromEnv(t *testing.T) {
-	tests := []struct {
-		name     string
-		envVars  map[string]string
-		expected AzureBlobConfig
-	}{
-		{
-			name: "it succeeds when all environment variables are set",
-			envVars: map[string]string{
-				"AZURE_STORAGE_ACCOUNT_NAME":   "testaccount",
-				"AZURE_STORAGE_ACCOUNT_KEY":    "testkey",
-				"AZURE_STORAGE_CONTAINER_NAME": "testcontainer",
-			},
-			expected: AzureBlobConfig{
-				AccountName:   "testaccount",
-				AccountKey:    "testkey",
-				ContainerName: "testcontainer",
-			},
-		},
-		{
-			name: "it succeeds when using default container name",
-			envVars: map[string]string{
-				"AZURE_STORAGE_ACCOUNT_NAME": "testaccount",
-				"AZURE_STORAGE_ACCOUNT_KEY":  "testkey",
-			},
-			expected: AzureBlobConfig{
-				AccountName:   "testaccount",
-				AccountKey:    "testkey",
-				ContainerName: "employee-profiles",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Set environment variables
-			for key, value := range tt.envVars {
-				t.Setenv(key, value)
-			}
-
-			config := LoadConfigFromEnv()
-			assert.Equal(t, tt.expected, config)
-		})
-	}
 }
 
 func TestValidateImageFile(t *testing.T) {
@@ -219,46 +156,40 @@ func TestNewAzureBlobService(t *testing.T) {
 	t.Parallel()
 	log := utils.NewTestLogger()
 
-	tests := []struct {
-		name        string
-		config      AzureBlobConfig
-		expectError bool
-		errorMsg    string
-	}{
-		{
-			name: "it fails when account name is missing",
-			config: AzureBlobConfig{
-				AccountName: "",
-				AccountKey:  "testkey",
-			},
-			expectError: true,
-			errorMsg:    "azure storage account name and key are required",
-		},
-		{
-			name: "it fails when account key is missing",
-			config: AzureBlobConfig{
-				AccountName: "testaccount",
-				AccountKey:  "",
-			},
-			expectError: true,
-			errorMsg:    "azure storage account name and key are required",
-		},
-	}
+	t.Run("it succeeds when client wrapper is provided", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			service, err := NewAzureBlobService(tt.config, log)
+		mockClient := NewMockAzureBlobClientWrapper(ctrl)
 
-			if tt.expectError {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errorMsg)
-				assert.Nil(t, service)
-			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, service)
-			}
-		})
-	}
+		// Mock the CreateContainer call for ensureContainer
+		mockClient.EXPECT().
+			CreateContainer(gomock.Any(), gomock.Any()).
+			Return(azblob.CreateContainerResponse{}, nil)
+
+		service, err := NewAzureBlobService(log, mockClient)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, service)
+	})
+
+	t.Run("it fails when container creation fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockClient := NewMockAzureBlobClientWrapper(ctrl)
+
+		// Mock the CreateContainer call to return an error
+		mockClient.EXPECT().
+			CreateContainer(gomock.Any(), gomock.Any()).
+			Return(azblob.CreateContainerResponse{}, errors.New("access denied"))
+
+		service, err := NewAzureBlobService(log, mockClient)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to ensure container exists")
+		assert.Nil(t, service)
+	})
 }
 
 // createTestFile creates a test multipart file for testing
@@ -398,13 +329,12 @@ func TestAzureBlobService_UploadProfilePicture_WithMocks(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := NewMockAzureBlobClient(ctrl)
+		mockClient := NewMockAzureBlobClientWrapper(ctrl)
 		log := utils.NewTestLogger()
 
 		service := &azureBlobService{
-			client:        mockClient,
-			containerName: "test-container",
-			log:           log.WithName("AzureBlobService"),
+			client: mockClient,
+			log:    log.WithName("AzureBlobService"),
 		}
 
 		// Create a valid test file
@@ -419,8 +349,13 @@ func TestAzureBlobService_UploadProfilePicture_WithMocks(t *testing.T) {
 
 		// Mock the UploadStream call
 		mockClient.EXPECT().
-			UploadStream(gomock.Any(), "test-container", gomock.Any(), file, gomock.Any()).
+			UploadStream(gomock.Any(), gomock.Any(), file, gomock.Any()).
 			Return(azblob.UploadStreamResponse{}, nil)
+
+		// Mock the GetBlobURL call
+		mockClient.EXPECT().
+			GetBlobURL(gomock.Any()).
+			Return("https://testaccount.blob.core.windows.net/test-container/test-blob.jpg")
 
 		ctx := context.Background()
 		result, err := service.UploadProfilePicture(ctx, file, header, 123)
@@ -436,13 +371,12 @@ func TestAzureBlobService_UploadProfilePicture_WithMocks(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := NewMockAzureBlobClient(ctrl)
+		mockClient := NewMockAzureBlobClientWrapper(ctrl)
 		log := utils.NewTestLogger()
 
 		service := &azureBlobService{
-			client:        mockClient,
-			containerName: "test-container",
-			log:           log.WithName("AzureBlobService"),
+			client: mockClient,
+			log:    log.WithName("AzureBlobService"),
 		}
 
 		// Create a valid test file
@@ -457,7 +391,7 @@ func TestAzureBlobService_UploadProfilePicture_WithMocks(t *testing.T) {
 
 		// Mock the UploadStream call to return an error
 		mockClient.EXPECT().
-			UploadStream(gomock.Any(), "test-container", gomock.Any(), file, gomock.Any()).
+			UploadStream(gomock.Any(), gomock.Any(), file, gomock.Any()).
 			Return(azblob.UploadStreamResponse{}, errors.New("Azure upload failed"))
 
 		ctx := context.Background()
@@ -477,18 +411,17 @@ func TestAzureBlobService_DeleteProfilePicture_WithMocks(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := NewMockAzureBlobClient(ctrl)
+		mockClient := NewMockAzureBlobClientWrapper(ctrl)
 		log := utils.NewTestLogger()
 
 		service := &azureBlobService{
-			client:        mockClient,
-			containerName: "test-container",
-			log:           log.WithName("AzureBlobService"),
+			client: mockClient,
+			log:    log.WithName("AzureBlobService"),
 		}
 
 		// Mock the DeleteBlob call
 		mockClient.EXPECT().
-			DeleteBlob(gomock.Any(), "test-container", "test-blob.jpg", gomock.Any()).
+			DeleteBlob(gomock.Any(), "test-blob.jpg", gomock.Any()).
 			Return(azblob.DeleteBlobResponse{}, nil)
 
 		ctx := context.Background()
@@ -501,18 +434,17 @@ func TestAzureBlobService_DeleteProfilePicture_WithMocks(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := NewMockAzureBlobClient(ctrl)
+		mockClient := NewMockAzureBlobClientWrapper(ctrl)
 		log := utils.NewTestLogger()
 
 		service := &azureBlobService{
-			client:        mockClient,
-			containerName: "test-container",
-			log:           log.WithName("AzureBlobService"),
+			client: mockClient,
+			log:    log.WithName("AzureBlobService"),
 		}
 
 		// Mock the DeleteBlob call to return an error
 		mockClient.EXPECT().
-			DeleteBlob(gomock.Any(), "test-container", "test-blob.jpg", gomock.Any()).
+			DeleteBlob(gomock.Any(), "test-blob.jpg", gomock.Any()).
 			Return(azblob.DeleteBlobResponse{}, errors.New("Azure delete failed"))
 
 		ctx := context.Background()
@@ -526,13 +458,12 @@ func TestAzureBlobService_DeleteProfilePicture_WithMocks(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := NewMockAzureBlobClient(ctrl)
+		mockClient := NewMockAzureBlobClientWrapper(ctrl)
 		log := utils.NewTestLogger()
 
 		service := &azureBlobService{
-			client:        mockClient,
-			containerName: "test-container",
-			log:           log.WithName("AzureBlobService"),
+			client: mockClient,
+			log:    log.WithName("AzureBlobService"),
 		}
 
 		// No mock expectations since the method should return early
@@ -554,18 +485,17 @@ func TestAzureBlobService_NewAzureBlobService_WithMocks(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := NewMockAzureBlobClient(ctrl)
+		mockClient := NewMockAzureBlobClientWrapper(ctrl)
 		log := utils.NewTestLogger()
 
 		// Mock the CreateContainer call (this would be called by ensureContainer)
 		mockClient.EXPECT().
-			CreateContainer(gomock.Any(), "test-container", gomock.Any()).
+			CreateContainer(gomock.Any(), gomock.Any()).
 			Return(azblob.CreateContainerResponse{}, nil)
 
 		service := &azureBlobService{
-			client:        mockClient,
-			containerName: "test-container",
-			log:           log.WithName("AzureBlobService"),
+			client: mockClient,
+			log:    log.WithName("AzureBlobService"),
 		}
 
 		// Test the ensureContainer method directly
@@ -579,18 +509,17 @@ func TestAzureBlobService_NewAzureBlobService_WithMocks(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := NewMockAzureBlobClient(ctrl)
+		mockClient := NewMockAzureBlobClientWrapper(ctrl)
 		log := utils.NewTestLogger()
 
 		// Mock the CreateContainer call to return a "ContainerAlreadyExists" error
 		mockClient.EXPECT().
-			CreateContainer(gomock.Any(), "test-container", gomock.Any()).
+			CreateContainer(gomock.Any(), gomock.Any()).
 			Return(azblob.CreateContainerResponse{}, errors.New("ContainerAlreadyExists: The specified container already exists"))
 
 		service := &azureBlobService{
-			client:        mockClient,
-			containerName: "test-container",
-			log:           log.WithName("AzureBlobService"),
+			client: mockClient,
+			log:    log.WithName("AzureBlobService"),
 		}
 
 		// Test the ensureContainer method directly
@@ -605,18 +534,17 @@ func TestAzureBlobService_NewAzureBlobService_WithMocks(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := NewMockAzureBlobClient(ctrl)
+		mockClient := NewMockAzureBlobClientWrapper(ctrl)
 		log := utils.NewTestLogger()
 
 		// Mock the CreateContainer call to return a different error
 		mockClient.EXPECT().
-			CreateContainer(gomock.Any(), "test-container", gomock.Any()).
+			CreateContainer(gomock.Any(), gomock.Any()).
 			Return(azblob.CreateContainerResponse{}, errors.New("access denied"))
 
 		service := &azureBlobService{
-			client:        mockClient,
-			containerName: "test-container",
-			log:           log.WithName("AzureBlobService"),
+			client: mockClient,
+			log:    log.WithName("AzureBlobService"),
 		}
 
 		// Test the ensureContainer method directly

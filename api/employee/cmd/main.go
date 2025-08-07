@@ -89,18 +89,36 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	shiftService := service.NewShiftService(log, employeeRepo, shiftsRepo)
 
 	// Initialize Azure Blob Storage service
-	blobConfig := storage.LoadConfigFromEnv()
+	containerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
+	if containerName == "" {
+		containerName = "employee-profiles"
+	}
+	blobConfig := storage.AzureBlobConfig{
+		AccountName:   os.Getenv("AZURE_STORAGE_ACCOUNT_NAME"),
+		AccountKey:    os.Getenv("AZURE_STORAGE_ACCOUNT_KEY"),
+		ContainerName: containerName,
+	}
 	log.Infof("Azure Storage Config - Account Name: %s, Container: %s, Key Present: %t",
 		blobConfig.AccountName,
 		blobConfig.ContainerName,
 		blobConfig.AccountKey != "")
 
-	blobService, err := storage.NewAzureBlobService(blobConfig, log)
-	if err != nil {
-		log.Warnf("Failed to initialize Azure Blob Storage: %v. File upload will be disabled.", err)
-		blobService = nil
+	var blobService storage.AzureBlobService
+	if blobConfig.AccountName != "" && blobConfig.AccountKey != "" {
+		clientWrapper, err := storage.NewAzureBlobClientWrapper(log, blobConfig)
+		if err != nil {
+			log.Warnf("Failed to create Azure Blob client wrapper: %v. File upload will be disabled.", err)
+		} else {
+			blobService, err = storage.NewAzureBlobService(log, clientWrapper)
+			if err != nil {
+				log.Warnf("Failed to initialize Azure Blob Storage: %v. File upload will be disabled.", err)
+				blobService = nil
+			} else {
+				log.Info("Azure Blob Storage initialized successfully")
+			}
+		}
 	} else {
-		log.Info("Azure Blob Storage initialized successfully")
+		log.Warn("Azure Storage credentials not provided. File upload will be disabled.")
 	}
 
 	// Initialize file handler
