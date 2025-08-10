@@ -78,7 +78,19 @@ func main() {
 }
 
 func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Errorf("Panic occurred in setupRoutes: %v", r)
+			panic(r) // Re-panic to ensure the service fails properly
+		}
+	}()
+
 	log.Info("Setting up custom employee routes")
+
+	// Setup JWT secret first
+	log.Info("Setting up JWT secret...")
+	jwtSecret := server.SetupJWTSecret(log)
+	log.Infof("JWT secret set up successfully (length: %d)", len(jwtSecret))
 
 	// Initialize repositories
 	employeeRepo := repositories.NewEmployeeRepository(log, db)
@@ -146,8 +158,12 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		authorized.DELETE("/employees/:id/shifts", employeeHandler.RemoveShift)
 
 		// Service-to-service endpoints with service authentication
+		serviceAuthSecret := os.Getenv("SERVICE_AUTH_SECRET")
+		if serviceAuthSecret == "" {
+			log.Warn("SERVICE_AUTH_SECRET not set, service-to-service authentication may not work properly")
+		}
 		serviceAuth := auth.NewServiceAuth(auth.ServiceAuthConfig{
-			Secret:      os.Getenv("SERVICE_AUTH_SECRET"),
+			Secret:      serviceAuthSecret,
 			ServiceName: "employee-service",
 			TokenTTL:    time.Hour,
 		})
