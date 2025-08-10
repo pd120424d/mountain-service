@@ -38,19 +38,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.MessageResponse"
+                            "$ref": "#/definitions/internal_handler.MessageResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -80,19 +80,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ShiftAvailabilityResponse"
+                            "$ref": "#/definitions/internal_handler.ShiftAvailabilityResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -121,7 +121,7 @@ const docTemplate = `{
                             "items": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/definitions/v1.EmployeeResponse"
+                                    "$ref": "#/definitions/internal_handler.EmployeeResponse"
                                 }
                             }
                         }
@@ -148,7 +148,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.EmployeeCreateRequest"
+                            "$ref": "#/definitions/internal_handler.EmployeeCreateRequest"
                         }
                     },
                     {
@@ -210,13 +210,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/v1.EmployeeResponse"
+                            "$ref": "#/definitions/internal_handler.EmployeeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -252,127 +252,69 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.OnCallEmployeesResponse"
+                            "$ref": "#/definitions/internal_handler.OnCallEmployeesResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/employees/{employeeId}/profile-picture": {
-            "post": {
-                "description": "Upload a profile picture for an employee",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Upload profile picture",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Employee ID",
-                        "name": "employeeId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "Profile picture file",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler.UploadProfilePictureResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a profile picture for an employee",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Delete profile picture",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Employee ID",
-                        "name": "employeeId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Blob name to delete",
-                        "name": "blobName",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
             }
         },
         "/employees/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Преузимање запосленог по ID-ју",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Преузимање запосленог по ID-ју",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID запосленог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.EmployeeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -398,7 +340,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.EmployeeUpdateRequest"
+                            "$ref": "#/definitions/internal_handler.EmployeeUpdateRequest"
                         }
                     }
                 ],
@@ -406,25 +348,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.EmployeeResponse"
+                            "$ref": "#/definitions/internal_handler.EmployeeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -456,7 +398,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -493,25 +435,122 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ActiveEmergenciesResponse"
+                            "$ref": "#/definitions/internal_handler.ActiveEmergenciesResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/{id}/profile-picture": {
+            "post": {
+                "description": "Upload a profile picture for an employee",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Upload profile picture",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Employee ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Profile picture file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.UploadProfilePictureResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a profile picture for an employee",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Delete profile picture",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Employee ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Blob name to delete",
+                        "name": "blobName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -554,19 +593,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -599,7 +638,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.ShiftResponse"
+                                "$ref": "#/definitions/internal_handler.ShiftResponse"
                             }
                         }
                     }
@@ -630,7 +669,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.AssignShiftRequest"
+                            "$ref": "#/definitions/internal_handler.AssignShiftRequest"
                         }
                     }
                 ],
@@ -638,13 +677,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/v1.AssignShiftResponse"
+                            "$ref": "#/definitions/internal_handler.AssignShiftResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -674,7 +713,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.RemoveShiftRequest"
+                            "$ref": "#/definitions/internal_handler.RemoveShiftRequest"
                         }
                     }
                 ],
@@ -685,7 +724,7 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -721,15 +760,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -755,7 +792,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.EmployeeLogin"
+                            "$ref": "#/definitions/internal_handler.EmployeeLogin"
                         }
                     }
                 ],
@@ -763,13 +800,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.TokenResponse"
+                            "$ref": "#/definitions/internal_handler.TokenResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -815,13 +852,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -851,13 +888,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ShiftAvailabilityResponse"
+                            "$ref": "#/definitions/internal_handler.ShiftAvailabilityResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse"
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
                     }
                 }
@@ -865,136 +902,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.MessageResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_handler.UploadProfilePictureResponse": {
-            "type": "object",
-            "properties": {
-                "blobName": {
-                    "type": "string"
-                },
-                "blobUrl": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "size": {
-                    "type": "integer"
-                }
-            }
-        },
-        "v1.ActiveEmergenciesResponse": {
-            "type": "object",
-            "properties": {
-                "hasActiveEmergencies": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "v1.AssignShiftRequest": {
-            "type": "object",
-            "required": [
-                "shiftDate",
-                "shiftType"
-            ],
-            "properties": {
-                "shiftDate": {
-                    "type": "string"
-                },
-                "shiftType": {
-                    "type": "integer",
-                    "maximum": 3,
-                    "minimum": 1
-                }
-            }
-        },
-        "v1.AssignShiftResponse": {
-            "type": "object",
-            "required": [
-                "id",
-                "shiftDate",
-                "shiftType"
-            ],
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "shiftDate": {
-                    "type": "string"
-                },
-                "shiftType": {
-                    "type": "integer"
-                }
-            }
-        },
-        "v1.EmployeeCreateRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "firstName",
-                "gender",
-                "lastName",
-                "password",
-                "phone",
-                "username"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "firstName": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "lastName": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "profilePicture": {
-                    "type": "string"
-                },
-                "profileType": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EmployeeLogin": {
-            "type": "object",
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EmployeeResponse": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse": {
             "type": "object",
             "properties": {
                 "email": {
@@ -1027,7 +935,176 @@ const docTemplate = `{
                 }
             }
         },
-        "v1.EmployeeUpdateRequest": {
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability": {
+            "type": "object",
+            "properties": {
+                "isAssignedToEmployee": {
+                    "description": "Whether the requesting employee is assigned to this shift",
+                    "type": "boolean"
+                },
+                "isFullyBooked": {
+                    "description": "Whether the shift is at full capacity (2 medics + 4 technicians)",
+                    "type": "boolean"
+                },
+                "medicSlotsAvailable": {
+                    "description": "Available slots for medics (0-2)",
+                    "type": "integer"
+                },
+                "technicalSlotsAvailable": {
+                    "description": "Available slots for technical staff (0-4)",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay": {
+            "type": "object",
+            "properties": {
+                "firstShift": {
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
+                },
+                "secondShift": {
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
+                },
+                "thirdShift": {
+                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.ActiveEmergenciesResponse": {
+            "type": "object",
+            "properties": {
+                "hasActiveEmergencies": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.AssignShiftRequest": {
+            "type": "object",
+            "required": [
+                "shiftDate",
+                "shiftType"
+            ],
+            "properties": {
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "type": "integer",
+                    "maximum": 3,
+                    "minimum": 1
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.AssignShiftResponse": {
+            "type": "object",
+            "required": [
+                "id",
+                "shiftDate",
+                "shiftType"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeCreateRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "firstName",
+                "gender",
+                "lastName",
+                "password",
+                "phone",
+                "profileType",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profilePicture": {
+                    "type": "string"
+                },
+                "profileType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeLogin": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profilePicture": {
+                    "description": "this may be represented as a byte array if we read the picture from somewhere for an example",
+                    "type": "string"
+                },
+                "profileType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeUpdateRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -1056,18 +1133,34 @@ const docTemplate = `{
                 }
             }
         },
-        "v1.OnCallEmployeesResponse": {
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.OnCallEmployeesResponse": {
             "type": "object",
             "properties": {
                 "employees": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.EmployeeResponse"
+                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse"
                     }
                 }
             }
         },
-        "v1.RemoveShiftRequest": {
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.RemoveShiftRequest": {
             "type": "object",
             "required": [
                 "shiftDate",
@@ -1084,53 +1177,18 @@ const docTemplate = `{
                 }
             }
         },
-        "v1.ShiftAvailability": {
-            "type": "object",
-            "properties": {
-                "isAssignedToEmployee": {
-                    "description": "Whether the requesting employee is assigned to this shift",
-                    "type": "boolean"
-                },
-                "isFullyBooked": {
-                    "description": "Whether the shift is at full capacity (2 medics + 4 technicians)",
-                    "type": "boolean"
-                },
-                "medicSlotsAvailable": {
-                    "description": "Available slots for medics (0-2)",
-                    "type": "integer"
-                },
-                "technicalSlotsAvailable": {
-                    "description": "Available slots for technical staff (0-4)",
-                    "type": "integer"
-                }
-            }
-        },
-        "v1.ShiftAvailabilityPerDay": {
-            "type": "object",
-            "properties": {
-                "firstShift": {
-                    "$ref": "#/definitions/v1.ShiftAvailability"
-                },
-                "secondShift": {
-                    "$ref": "#/definitions/v1.ShiftAvailability"
-                },
-                "thirdShift": {
-                    "$ref": "#/definitions/v1.ShiftAvailability"
-                }
-            }
-        },
-        "v1.ShiftAvailabilityResponse": {
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.ShiftAvailabilityResponse": {
             "type": "object",
             "properties": {
                 "days": {
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/v1.ShiftAvailabilityPerDay"
+                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay"
                     }
                 }
             }
         },
-        "v1.ShiftResponse": {
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.ShiftResponse": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -1148,12 +1206,291 @@ const docTemplate = `{
                 }
             }
         },
-        "v1.TokenResponse": {
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.TokenResponse": {
             "type": "object",
             "properties": {
                 "token": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        },
+        "github_com_pd120424d_mountain-service_api_employee_internal_handler.UploadProfilePictureResponse": {
+            "type": "object",
+            "properties": {
+                "blobName": {
+                    "type": "string"
+                },
+                "blobUrl": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler.ActiveEmergenciesResponse": {
+            "type": "object",
+            "properties": {
+                "hasActiveEmergencies": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_handler.AssignShiftRequest": {
+            "type": "object",
+            "required": [
+                "shiftDate",
+                "shiftType"
+            ],
+            "properties": {
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "type": "integer",
+                    "maximum": 3,
+                    "minimum": 1
+                }
+            }
+        },
+        "internal_handler.AssignShiftResponse": {
+            "type": "object",
+            "required": [
+                "id",
+                "shiftDate",
+                "shiftType"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler.EmployeeCreateRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "firstName",
+                "gender",
+                "lastName",
+                "password",
+                "phone",
+                "profileType",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profilePicture": {
+                    "type": "string"
+                },
+                "profileType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.EmployeeLogin": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.EmployeeResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profilePicture": {
+                    "description": "this may be represented as a byte array if we read the picture from somewhere for an example",
+                    "type": "string"
+                },
+                "profileType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.EmployeeUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profilePicture": {
+                    "type": "string"
+                },
+                "profileType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.OnCallEmployeesResponse": {
+            "type": "object",
+            "properties": {
+                "employees": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse"
+                    }
+                }
+            }
+        },
+        "internal_handler.RemoveShiftRequest": {
+            "type": "object",
+            "required": [
+                "shiftDate",
+                "shiftType"
+            ],
+            "properties": {
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "type": "integer",
+                    "maximum": 3,
+                    "minimum": 1
+                }
+            }
+        },
+        "internal_handler.ShiftAvailabilityResponse": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay"
+                    }
+                }
+            }
+        },
+        "internal_handler.ShiftResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "shiftDate": {
+                    "type": "string"
+                },
+                "shiftType": {
+                    "description": "1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, \u003c 1 or \u003e 3: invalid",
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        },
+        "internal_handler.UploadProfilePictureResponse": {
+            "type": "object",
+            "properties": {
+                "blobName": {
+                    "type": "string"
+                },
+                "blobUrl": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
                 }
             }
         }

@@ -15,6 +15,22 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
+// Local type aliases for Swagger documentation to avoid long namespace names
+type EmployeeCreateRequest = employeeV1.EmployeeCreateRequest
+type EmployeeResponse = employeeV1.EmployeeResponse
+type EmployeeLogin = employeeV1.EmployeeLogin
+type TokenResponse = employeeV1.TokenResponse
+type EmployeeUpdateRequest = employeeV1.EmployeeUpdateRequest
+type AssignShiftRequest = employeeV1.AssignShiftRequest
+type AssignShiftResponse = employeeV1.AssignShiftResponse
+type ShiftResponse = employeeV1.ShiftResponse
+type ShiftAvailabilityResponse = employeeV1.ShiftAvailabilityResponse
+type RemoveShiftRequest = employeeV1.RemoveShiftRequest
+type OnCallEmployeesResponse = employeeV1.OnCallEmployeesResponse
+type ActiveEmergenciesResponse = employeeV1.ActiveEmergenciesResponse
+type ErrorResponse = employeeV1.ErrorResponse
+type MessageResponse = employeeV1.MessageResponse
+
 type EmployeeHandler interface {
 	// Crud operations, Register is create
 	RegisterEmployee(ctx *gin.Context)
@@ -61,7 +77,7 @@ func NewEmployeeHandler(log utils.Logger, employeeService service.EmployeeServic
 // @Tags запослени
 // @Accept  json,multipart/form-data
 // @Produce  json
-// @Param employee body employeeV1.EmployeeCreateRequest true "Подаци о новом запосленом (JSON)"
+// @Param employee body EmployeeCreateRequest true "Подаци о новом запосленом (JSON)"
 // @Param firstName formData string false "First Name (form data)"
 // @Param lastName formData string false "Last Name (form data)"
 // @Param username formData string false "Username (form data)"
@@ -71,8 +87,8 @@ func NewEmployeeHandler(log utils.Logger, employeeService service.EmployeeServic
 // @Param phone formData string false "Phone (form data)"
 // @Param profileType formData string false "Profile Type (form data)"
 // @Param profilePicture formData file false "Profile Picture (form data)"
-// @Success 201 {object} employeeV1.EmployeeResponse
-// @Failure 400 {object} employeeV1.ErrorResponse
+// @Success 201 {object} EmployeeResponse
+// @Failure 400 {object} ErrorResponse
 // @Router /employees [post]
 func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	h.log.Info("Received Register Employee request")
@@ -127,9 +143,9 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 // @Tags запослени
 // @Accept  json
 // @Produce  json
-// @Param employee body employeeV1.EmployeeLogin true "Корисничко име и лозинка"
-// @Success 200 {object} employeeV1.TokenResponse
-// @Failure 401 {object} employeeV1.ErrorResponse
+// @Param employee body EmployeeLogin true "Корисничко име и лозинка"
+// @Success 200 {object} TokenResponse
+// @Failure 401 {object} ErrorResponse
 // @Router /login [post]
 func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	var req employeeV1.EmployeeLogin
@@ -192,8 +208,8 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 // @Param username formData string true "Username"
 // @Param password formData string true "Password"
 // @Success 200 {object} map[string]interface{} "OAuth2 token response"
-// @Failure 400 {object} employeeV1.ErrorResponse
-// @Failure 401 {object} employeeV1.ErrorResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
 // @Router /oauth/token [post]
 func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 	h.log.Info("Received OAuth2 Token request")
@@ -259,7 +275,7 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 // @Tags запослени
 // @Security OAuth2Password
 // @Produce  json
-// @Success 200 {array} []employeeV1.EmployeeResponse
+// @Success 200 {array} []EmployeeResponse
 // @Router /employees [get]
 func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 	h.log.Info("Received List Employees request")
@@ -282,9 +298,9 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 // @Security OAuth2Password
 // @Param id path int true "ID запосленог"
 // @Produce  json
-// @Success 200 {object} employeeV1.EmployeeResponse
-// @Failure 400 {object} employeeV1.ErrorResponse
-// @Failure 404 {object} employeeV1.ErrorResponse
+// @Success 200 {object} EmployeeResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
 // @Router /employees/{id} [get]
 func (h *employeeHandler) GetEmployee(ctx *gin.Context) {
 	h.log.Info("Received Get Employee request")
@@ -330,11 +346,11 @@ func (h *employeeHandler) GetEmployee(ctx *gin.Context) {
 // @Tags запослени
 // @Security OAuth2Password
 // @Param id path int true "ID запосленог"
-// @Param employee body employeeV1.EmployeeUpdateRequest true "Подаци за ажурирање запосленог"
-// @Success 200 {object} employeeV1.EmployeeResponse
-// @Failure 400 {object} employeeV1.ErrorResponse
-// @Failure 404 {object} employeeV1.ErrorResponse
-// @Failure 500 {object} employeeV1.ErrorResponse
+// @Param employee body EmployeeUpdateRequest true "Подаци за ажурирање запосленог"
+// @Success 200 {object} EmployeeResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /employees/{id} [put]
 func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 	h.log.Info("Received Update Employee request")
@@ -388,7 +404,7 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 // @Security OAuth2Password
 // @Param id path int true "ID запосленог"
 // @Success 204
-// @Failure 404 {object} employeeV1.ErrorResponse
+// @Failure 404 {object} ErrorResponse
 // @Router /employees/{id} [delete]
 func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 	h.log.Info("Received Delete Employee request")
@@ -418,9 +434,9 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 // @Tags запослени
 // @Security OAuth2Password
 // @Param id path int true "ID запосленог"
-// @Param shift body employeeV1.AssignShiftRequest true "Подаци о смени"
-// @Success 201 {object} employeeV1.AssignShiftResponse
-// @Failure 400 {object} employeeV1.ErrorResponse
+// @Param shift body AssignShiftRequest true "Подаци о смени"
+// @Success 201 {object} AssignShiftResponse
+// @Failure 400 {object} ErrorResponse
 // @Router /employees/{id}/shifts [post]
 func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
@@ -467,7 +483,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 // @Tags запослени
 // @Security OAuth2Password
 // @Param id path int true "ID запосленог"
-// @Success 200 {object} []employeeV1.ShiftResponse
+// @Success 200 {object} []ShiftResponse
 // @Router /employees/{id}/shifts [get]
 func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
@@ -497,8 +513,8 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 // @Tags запослени
 // @Security OAuth2Password
 // @Param date query string false "Дан за који се проверава доступност смена"
-// @Success 200 {object} employeeV1.ShiftAvailabilityResponse
-// @Failure 400 {object} employeeV1.ErrorResponse
+// @Success 200 {object} ShiftAvailabilityResponse
+// @Failure 400 {object} ErrorResponse
 // @Router /shifts/availability [get]
 func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	h.log.Infof("Received Get Shifts Availability request for the next %s days", ctx.Query("days"))
@@ -543,9 +559,9 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 // @Tags запослени
 // @Security OAuth2Password
 // @Param id path int true "ID запосленог"
-// @Param shift body employeeV1.RemoveShiftRequest true "Подаци о смени"
+// @Param shift body RemoveShiftRequest true "Подаци о смени"
 // @Success 204
-// @Failure 400 {object} employeeV1.ErrorResponse
+// @Failure 400 {object} ErrorResponse
 // @Router /employees/{id}/shifts [delete]
 func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
@@ -587,9 +603,9 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 // @Tags админ
 // @Security OAuth2Password
 // @Produce json
-// @Success 200 {object} employeeV1.MessageResponse
-// @Failure 403 {object} employeeV1.ErrorResponse
-// @Failure 500 {object} employeeV1.ErrorResponse
+// @Success 200 {object} MessageResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /admin/reset [delete]
 func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 	h.log.Warn("Admin data reset request received")
@@ -611,9 +627,9 @@ func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 // @Tags админ
 // @Security OAuth2Password
 // @Param days query int false "Број дана за које се проверава доступност (подразумевано 7)"
-// @Success 200 {object} employeeV1.ShiftAvailabilityResponse
-// @Failure 400 {object} employeeV1.ErrorResponse
-// @Failure 500 {object} employeeV1.ErrorResponse
+// @Success 200 {object} ShiftAvailabilityResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /admin/shifts/availability [get]
 func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
 	h.log.Info("Admin shifts availability request received")
@@ -651,9 +667,9 @@ func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param shift_buffer query string false "Бафер време пре краја смене (нпр. '1h')"
-// @Success 200 {object} employeeV1.OnCallEmployeesResponse
-// @Failure 400 {object} employeeV1.ErrorResponse
-// @Failure 500 {object} employeeV1.ErrorResponse
+// @Success 200 {object} OnCallEmployeesResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /employees/on-call [get]
 func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 	h.log.Info("Getting on-call employees")
@@ -692,10 +708,10 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "ID запосленог"
-// @Success 200 {object} employeeV1.ActiveEmergenciesResponse
-// @Failure 400 {object} employeeV1.ErrorResponse
-// @Failure 404 {object} employeeV1.ErrorResponse
-// @Failure 500 {object} employeeV1.ErrorResponse
+// @Success 200 {object} ActiveEmergenciesResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /employees/{id}/active-emergencies [get]
 func (h *employeeHandler) CheckActiveEmergencies(ctx *gin.Context) {
 	employeeIDStr := ctx.Param("id")
@@ -733,9 +749,9 @@ func (h *employeeHandler) CheckActiveEmergencies(ctx *gin.Context) {
 // @Security OAuth2Password
 // @Param id path int true "ID запосленог"
 // @Success 200 {object} map[string][]string
-// @Failure 400 {object} employeeV1.ErrorResponse
-// @Failure 404 {object} employeeV1.ErrorResponse
-// @Failure 500 {object} employeeV1.ErrorResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /employees/{id}/shift-warnings [get]
 func (h *employeeHandler) GetShiftWarnings(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")

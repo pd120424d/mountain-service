@@ -10,26 +10,11 @@
  * ---------------------------------------------------------------
  */
 
-export interface GithubComPd120424DMountainServiceApiContractsEmployeeV1ErrorResponse {
-  error?: string;
-}
-
-export interface GithubComPd120424DMountainServiceApiContractsEmployeeV1MessageResponse {
-  message?: string;
-}
-
-export interface InternalHandlerUploadProfilePictureResponse {
-  blobName?: string;
-  blobUrl?: string;
-  message?: string;
-  size?: number;
-}
-
-export interface V1ActiveEmergenciesResponse {
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerActiveEmergenciesResponse {
   hasActiveEmergencies?: boolean;
 }
 
-export interface V1AssignShiftRequest {
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerAssignShiftRequest {
   shiftDate: string;
   /**
    * @min 1
@@ -38,13 +23,13 @@ export interface V1AssignShiftRequest {
   shiftType: number;
 }
 
-export interface V1AssignShiftResponse {
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerAssignShiftResponse {
   id: number;
   shiftDate: string;
   shiftType: number;
 }
 
-export interface V1EmployeeCreateRequest {
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerEmployeeCreateRequest {
   email: string;
   firstName: string;
   gender: string;
@@ -52,13 +37,187 @@ export interface V1EmployeeCreateRequest {
   password: string;
   phone: string;
   profilePicture?: string;
-  profileType?: string;
+  profileType: string;
   username: string;
 }
 
-export interface V1EmployeeLogin {
-  password?: string;
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerEmployeeLogin {
+  password: string;
+  username: string;
+}
+
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerEmployeeResponse {
+  email?: string;
+  firstName?: string;
+  gender?: string;
+  id?: number;
+  lastName?: string;
+  phone?: string;
+  /** this may be represented as a byte array if we read the picture from somewhere for an example */
+  profilePicture?: string;
+  profileType?: string;
   username?: string;
+}
+
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerEmployeeUpdateRequest {
+  email?: string;
+  firstName?: string;
+  gender?: string;
+  lastName?: string;
+  phone?: string;
+  profilePicture?: string;
+  profileType?: string;
+  username?: string;
+}
+
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerErrorResponse {
+  error?: string;
+}
+
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerMessageResponse {
+  message?: string;
+}
+
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerOnCallEmployeesResponse {
+  employees?: V1EmployeeResponse[];
+}
+
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerRemoveShiftRequest {
+  shiftDate: string;
+  /**
+   * @min 1
+   * @max 3
+   */
+  shiftType: number;
+}
+
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerShiftAvailabilityResponse {
+  days?: Record<string, V1ShiftAvailabilityPerDay>;
+}
+
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerShiftResponse {
+  createdAt?: string;
+  id?: number;
+  shiftDate?: string;
+  /** 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid */
+  shiftType?: number;
+}
+
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerTokenResponse {
+  /** @example "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." */
+  token?: string;
+}
+
+export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerUploadProfilePictureResponse {
+  blobName?: string;
+  blobUrl?: string;
+  message?: string;
+  size?: number;
+}
+
+export interface InternalHandlerActiveEmergenciesResponse {
+  hasActiveEmergencies?: boolean;
+}
+
+export interface InternalHandlerAssignShiftRequest {
+  shiftDate: string;
+  /**
+   * @min 1
+   * @max 3
+   */
+  shiftType: number;
+}
+
+export interface InternalHandlerAssignShiftResponse {
+  id: number;
+  shiftDate: string;
+  shiftType: number;
+}
+
+export interface InternalHandlerEmployeeCreateRequest {
+  email: string;
+  firstName: string;
+  gender: string;
+  lastName: string;
+  password: string;
+  phone: string;
+  profilePicture?: string;
+  profileType: string;
+  username: string;
+}
+
+export interface InternalHandlerEmployeeLogin {
+  password: string;
+  username: string;
+}
+
+export interface InternalHandlerEmployeeResponse {
+  email?: string;
+  firstName?: string;
+  gender?: string;
+  id?: number;
+  lastName?: string;
+  phone?: string;
+  /** this may be represented as a byte array if we read the picture from somewhere for an example */
+  profilePicture?: string;
+  profileType?: string;
+  username?: string;
+}
+
+export interface InternalHandlerEmployeeUpdateRequest {
+  email?: string;
+  firstName?: string;
+  gender?: string;
+  lastName?: string;
+  phone?: string;
+  profilePicture?: string;
+  profileType?: string;
+  username?: string;
+}
+
+export interface InternalHandlerErrorResponse {
+  error?: string;
+}
+
+export interface InternalHandlerMessageResponse {
+  message?: string;
+}
+
+export interface InternalHandlerOnCallEmployeesResponse {
+  employees?: V1EmployeeResponse[];
+}
+
+export interface InternalHandlerRemoveShiftRequest {
+  shiftDate: string;
+  /**
+   * @min 1
+   * @max 3
+   */
+  shiftType: number;
+}
+
+export interface InternalHandlerShiftAvailabilityResponse {
+  days?: Record<string, V1ShiftAvailabilityPerDay>;
+}
+
+export interface InternalHandlerShiftResponse {
+  createdAt?: string;
+  id?: number;
+  shiftDate?: string;
+  /** 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid */
+  shiftType?: number;
+}
+
+export interface InternalHandlerTokenResponse {
+  /** @example "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." */
+  token?: string;
+}
+
+export interface InternalHandlerUploadProfilePictureResponse {
+  blobName?: string;
+  blobUrl?: string;
+  message?: string;
+  size?: number;
 }
 
 export interface V1EmployeeResponse {
@@ -72,30 +231,6 @@ export interface V1EmployeeResponse {
   profilePicture?: string;
   profileType?: string;
   username?: string;
-}
-
-export interface V1EmployeeUpdateRequest {
-  email?: string;
-  firstName?: string;
-  gender?: string;
-  lastName?: string;
-  phone?: string;
-  profilePicture?: string;
-  profileType?: string;
-  username?: string;
-}
-
-export interface V1OnCallEmployeesResponse {
-  employees?: V1EmployeeResponse[];
-}
-
-export interface V1RemoveShiftRequest {
-  shiftDate: string;
-  /**
-   * @min 1
-   * @max 3
-   */
-  shiftType: number;
 }
 
 export interface V1ShiftAvailability {
@@ -113,21 +248,4 @@ export interface V1ShiftAvailabilityPerDay {
   firstShift?: V1ShiftAvailability;
   secondShift?: V1ShiftAvailability;
   thirdShift?: V1ShiftAvailability;
-}
-
-export interface V1ShiftAvailabilityResponse {
-  days?: Record<string, V1ShiftAvailabilityPerDay>;
-}
-
-export interface V1ShiftResponse {
-  createdAt?: string;
-  id?: number;
-  shiftDate?: string;
-  /** 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid */
-  shiftType?: number;
-}
-
-export interface V1TokenResponse {
-  /** @example "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." */
-  token?: string;
 }

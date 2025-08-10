@@ -46,27 +46,27 @@ type UploadProfilePictureResponse struct {
 // @Tags files
 // @Accept multipart/form-data
 // @Produce json
-// @Param employeeId path int true "Employee ID"
+// @Param id path int true "Employee ID"
 // @Param file formData file true "Profile picture file"
 // @Success 200 {object} UploadProfilePictureResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /employees/{employeeId}/profile-picture [post]
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /employees/{id}/profile-picture [post]
 func (h *fileHandler) UploadProfilePicture(ctx *gin.Context) {
 	h.log.Info("Received profile picture upload request")
 
-	employeeIDStr := ctx.Param("employeeId")
+	employeeIDStr := ctx.Param("id")
 	employeeID, err := strconv.ParseUint(employeeIDStr, 10, 32)
 	if err != nil {
 		h.log.Errorf("Invalid employee ID: %s", employeeIDStr)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
+		ctx.JSON(http.StatusBadRequest, employeeV1.ErrorResponse{Error: "Invalid employee ID"})
 		return
 	}
 
 	file, header, err := ctx.Request.FormFile("file")
 	if err != nil {
 		h.log.Errorf("Failed to get file from form: %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No file provided or invalid file"})
+		ctx.JSON(http.StatusBadRequest, employeeV1.ErrorResponse{Error: "No file provided or invalid file"})
 		return
 	}
 	defer file.Close()
@@ -83,7 +83,7 @@ func (h *fileHandler) UploadProfilePicture(ctx *gin.Context) {
 			errorMsg = err.Error()
 		}
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": errorMsg})
+		ctx.JSON(http.StatusInternalServerError, employeeV1.ErrorResponse{Error: errorMsg})
 		return
 	}
 
@@ -115,16 +115,16 @@ func (h *fileHandler) UploadProfilePicture(ctx *gin.Context) {
 // @Description Delete a profile picture for an employee
 // @Tags files
 // @Produce json
-// @Param employeeId path int true "Employee ID"
+// @Param id path int true "Employee ID"
 // @Param blobName query string true "Blob name to delete"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /employees/{employeeId}/profile-picture [delete]
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /employees/{id}/profile-picture [delete]
 func (h *fileHandler) DeleteProfilePicture(ctx *gin.Context) {
 	h.log.Info("Received profile picture delete request")
 
-	employeeIDStr := ctx.Param("employeeId")
+	employeeIDStr := ctx.Param("id")
 	employeeID, err := strconv.ParseUint(employeeIDStr, 10, 32)
 	if err != nil {
 		h.log.Errorf("Invalid employee ID: %s", employeeIDStr)
@@ -159,8 +159,8 @@ func (h *fileHandler) DeleteProfilePicture(ctx *gin.Context) {
 // @Produce json
 // @Param blobName query string true "Blob name"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
 // @Router /files/profile-picture/info [get]
 func (h *fileHandler) GetProfilePictureInfo(ctx *gin.Context) {
 	blobName := ctx.Query("blobName")

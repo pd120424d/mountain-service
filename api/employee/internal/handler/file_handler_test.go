@@ -34,7 +34,7 @@ func TestFileHandler_UploadProfilePicture(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest("POST", "/employees/invalid/profile-picture", nil)
-		ctx.Params = gin.Params{{Key: "employeeId", Value: "invalid"}}
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
 
 		handler.UploadProfilePicture(ctx)
 
@@ -55,7 +55,7 @@ func TestFileHandler_UploadProfilePicture(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest("POST", "/employees/123/profile-picture", nil)
-		ctx.Params = gin.Params{{Key: "employeeId", Value: "123"}}
+		ctx.Params = gin.Params{{Key: "id", Value: "123"}}
 
 		handler.UploadProfilePicture(ctx)
 
@@ -144,7 +144,7 @@ func TestFileHandler_UploadProfilePicture(t *testing.T) {
 			w := httptest.NewRecorder()
 			ctx, _ := gin.CreateTestContext(w)
 			ctx.Request = tt.setupRequest()
-			ctx.Params = gin.Params{{Key: "employeeId", Value: tt.employeeID}}
+			ctx.Params = gin.Params{{Key: "id", Value: tt.employeeID}}
 
 			handler.UploadProfilePicture(ctx)
 
@@ -170,7 +170,7 @@ func TestFileHandler_DeleteProfilePicture(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest("DELETE", "/employees/invalid/profile-picture?blobName=test.jpg", nil)
-		ctx.Params = gin.Params{{Key: "employeeId", Value: "invalid"}}
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
 
 		handler.DeleteProfilePicture(ctx)
 
@@ -191,7 +191,7 @@ func TestFileHandler_DeleteProfilePicture(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest("DELETE", "/employees/123/profile-picture", nil)
-		ctx.Params = gin.Params{{Key: "employeeId", Value: "123"}}
+		ctx.Params = gin.Params{{Key: "id", Value: "123"}}
 
 		handler.DeleteProfilePicture(ctx)
 
@@ -251,7 +251,7 @@ func TestFileHandler_DeleteProfilePicture(t *testing.T) {
 			w := httptest.NewRecorder()
 			ctx, _ := gin.CreateTestContext(w)
 			ctx.Request = httptest.NewRequest("DELETE", "/employees/"+tt.employeeID+"/profile-picture?blobName="+tt.blobName, nil)
-			ctx.Params = gin.Params{{Key: "employeeId", Value: tt.employeeID}}
+			ctx.Params = gin.Params{{Key: "id", Value: tt.employeeID}}
 
 			handler.DeleteProfilePicture(ctx)
 

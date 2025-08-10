@@ -78,19 +78,7 @@ func main() {
 }
 
 func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Errorf("Panic occurred in setupRoutes: %v", r)
-			panic(r) // Re-panic to ensure the service fails properly
-		}
-	}()
-
 	log.Info("Setting up custom employee routes")
-
-	// Setup JWT secret first
-	log.Info("Setting up JWT secret...")
-	jwtSecret := server.SetupJWTSecret(log)
-	log.Infof("JWT secret set up successfully (length: %d)", len(jwtSecret))
 
 	// Initialize repositories
 	employeeRepo := repositories.NewEmployeeRepository(log, db)
@@ -177,8 +165,8 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 
 		// File upload endpoints
 		if fileHandler != nil {
-			authorized.POST("/employees/:employeeId/profile-picture", fileHandler.UploadProfilePicture)
-			authorized.DELETE("/employees/:employeeId/profile-picture", fileHandler.DeleteProfilePicture)
+			authorized.POST("/employees/:id/profile-picture", fileHandler.UploadProfilePicture)
+			authorized.DELETE("/employees/:id/profile-picture", fileHandler.DeleteProfilePicture)
 			authorized.GET("/files/profile-picture/info", fileHandler.GetProfilePictureInfo)
 		}
 	}

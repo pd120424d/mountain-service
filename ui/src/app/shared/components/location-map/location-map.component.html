@@ -84,10 +84,10 @@
       <div class="location-coordinates" *ngIf="currentLocation.coordinates">
         <small class="text-muted">
           <i class="fas fa-map-marker-alt"></i>
-          {{ currentLocation.coordinates?.latitude?.toFixed(6) }},
-          {{ currentLocation.coordinates?.longitude?.toFixed(6) }}
-          <span *ngIf="currentLocation.coordinates?.accuracy" class="accuracy">
-            (±{{ currentLocation.coordinates?.accuracy?.toFixed(0) }}m)
+          {{ currentLocation.coordinates.latitude.toFixed(6) }},
+          {{ currentLocation.coordinates.longitude.toFixed(6) }}
+          <span *ngIf="currentLocation.coordinates.accuracy" class="accuracy">
+            (±{{ currentLocation.coordinates.accuracy.toFixed(0) }}m)
           </span>
         </small>
       </div>

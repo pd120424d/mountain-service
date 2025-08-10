@@ -1,32 +1,58 @@
 basePath: /api/v1
 definitions:
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse:
+  github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse:
     properties:
-      error:
+      email:
+        type: string
+      firstName:
+        type: string
+      gender:
+        type: string
+      id:
+        type: integer
+      lastName:
+        type: string
+      phone:
+        type: string
+      profilePicture:
+        description: this may be represented as a byte array if we read the picture
+          from somewhere for an example
+        type: string
+      profileType:
+        type: string
+      username:
         type: string
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_employee_v1.MessageResponse:
+  github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability:
     properties:
-      message:
-        type: string
-    type: object
-  internal_handler.UploadProfilePictureResponse:
-    properties:
-      blobName:
-        type: string
-      blobUrl:
-        type: string
-      message:
-        type: string
-      size:
+      isAssignedToEmployee:
+        description: Whether the requesting employee is assigned to this shift
+        type: boolean
+      isFullyBooked:
+        description: Whether the shift is at full capacity (2 medics + 4 technicians)
+        type: boolean
+      medicSlotsAvailable:
+        description: Available slots for medics (0-2)
+        type: integer
+      technicalSlotsAvailable:
+        description: Available slots for technical staff (0-4)
         type: integer
     type: object
-  v1.ActiveEmergenciesResponse:
+  github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay:
+    properties:
+      firstShift:
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability'
+      secondShift:
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability'
+      thirdShift:
+        $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability'
+    type: object
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.ActiveEmergenciesResponse:
     properties:
       hasActiveEmergencies:
         type: boolean
     type: object
-  v1.AssignShiftRequest:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.AssignShiftRequest:
     properties:
       shiftDate:
         type: string
@@ -38,7 +64,7 @@ definitions:
     - shiftDate
     - shiftType
     type: object
-  v1.AssignShiftResponse:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.AssignShiftResponse:
     properties:
       id:
         type: integer
@@ -51,7 +77,7 @@ definitions:
     - shiftDate
     - shiftType
     type: object
-  v1.EmployeeCreateRequest:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeCreateRequest:
     properties:
       email:
         type: string
@@ -78,16 +104,20 @@ definitions:
     - lastName
     - password
     - phone
+    - profileType
     - username
     type: object
-  v1.EmployeeLogin:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeLogin:
     properties:
       password:
         type: string
       username:
         type: string
+    required:
+    - password
+    - username
     type: object
-  v1.EmployeeResponse:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeResponse:
     properties:
       email:
         type: string
@@ -110,7 +140,7 @@ definitions:
       username:
         type: string
     type: object
-  v1.EmployeeUpdateRequest:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeUpdateRequest:
     properties:
       email:
         type: string
@@ -129,14 +159,24 @@ definitions:
       username:
         type: string
     type: object
-  v1.OnCallEmployeesResponse:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.OnCallEmployeesResponse:
     properties:
       employees:
         items:
-          $ref: '#/definitions/v1.EmployeeResponse'
+          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse'
         type: array
     type: object
-  v1.RemoveShiftRequest:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.RemoveShiftRequest:
     properties:
       shiftDate:
         type: string
@@ -148,38 +188,14 @@ definitions:
     - shiftDate
     - shiftType
     type: object
-  v1.ShiftAvailability:
-    properties:
-      isAssignedToEmployee:
-        description: Whether the requesting employee is assigned to this shift
-        type: boolean
-      isFullyBooked:
-        description: Whether the shift is at full capacity (2 medics + 4 technicians)
-        type: boolean
-      medicSlotsAvailable:
-        description: Available slots for medics (0-2)
-        type: integer
-      technicalSlotsAvailable:
-        description: Available slots for technical staff (0-4)
-        type: integer
-    type: object
-  v1.ShiftAvailabilityPerDay:
-    properties:
-      firstShift:
-        $ref: '#/definitions/v1.ShiftAvailability'
-      secondShift:
-        $ref: '#/definitions/v1.ShiftAvailability'
-      thirdShift:
-        $ref: '#/definitions/v1.ShiftAvailability'
-    type: object
-  v1.ShiftAvailabilityResponse:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.ShiftAvailabilityResponse:
     properties:
       days:
         additionalProperties:
-          $ref: '#/definitions/v1.ShiftAvailabilityPerDay'
+          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay'
         type: object
     type: object
-  v1.ShiftResponse:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.ShiftResponse:
     properties:
       createdAt:
         type: string
@@ -191,11 +207,199 @@ definitions:
         description: '1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid'
         type: integer
     type: object
-  v1.TokenResponse:
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.TokenResponse:
     properties:
       token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
+    type: object
+  github_com_pd120424d_mountain-service_api_employee_internal_handler.UploadProfilePictureResponse:
+    properties:
+      blobName:
+        type: string
+      blobUrl:
+        type: string
+      message:
+        type: string
+      size:
+        type: integer
+    type: object
+  internal_handler.ActiveEmergenciesResponse:
+    properties:
+      hasActiveEmergencies:
+        type: boolean
+    type: object
+  internal_handler.AssignShiftRequest:
+    properties:
+      shiftDate:
+        type: string
+      shiftType:
+        maximum: 3
+        minimum: 1
+        type: integer
+    required:
+    - shiftDate
+    - shiftType
+    type: object
+  internal_handler.AssignShiftResponse:
+    properties:
+      id:
+        type: integer
+      shiftDate:
+        type: string
+      shiftType:
+        type: integer
+    required:
+    - id
+    - shiftDate
+    - shiftType
+    type: object
+  internal_handler.EmployeeCreateRequest:
+    properties:
+      email:
+        type: string
+      firstName:
+        type: string
+      gender:
+        type: string
+      lastName:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      profilePicture:
+        type: string
+      profileType:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - firstName
+    - gender
+    - lastName
+    - password
+    - phone
+    - profileType
+    - username
+    type: object
+  internal_handler.EmployeeLogin:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  internal_handler.EmployeeResponse:
+    properties:
+      email:
+        type: string
+      firstName:
+        type: string
+      gender:
+        type: string
+      id:
+        type: integer
+      lastName:
+        type: string
+      phone:
+        type: string
+      profilePicture:
+        description: this may be represented as a byte array if we read the picture
+          from somewhere for an example
+        type: string
+      profileType:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_handler.EmployeeUpdateRequest:
+    properties:
+      email:
+        type: string
+      firstName:
+        type: string
+      gender:
+        type: string
+      lastName:
+        type: string
+      phone:
+        type: string
+      profilePicture:
+        type: string
+      profileType:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_handler.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  internal_handler.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  internal_handler.OnCallEmployeesResponse:
+    properties:
+      employees:
+        items:
+          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse'
+        type: array
+    type: object
+  internal_handler.RemoveShiftRequest:
+    properties:
+      shiftDate:
+        type: string
+      shiftType:
+        maximum: 3
+        minimum: 1
+        type: integer
+    required:
+    - shiftDate
+    - shiftType
+    type: object
+  internal_handler.ShiftAvailabilityResponse:
+    properties:
+      days:
+        additionalProperties:
+          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay'
+        type: object
+    type: object
+  internal_handler.ShiftResponse:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      shiftDate:
+        type: string
+      shiftType:
+        description: '1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid'
+        type: integer
+    type: object
+  internal_handler.TokenResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  internal_handler.UploadProfilePictureResponse:
+    properties:
+      blobName:
+        type: string
+      blobUrl:
+        type: string
+      message:
+        type: string
+      size:
+        type: integer
     type: object
 host: localhost:8082
 info:
@@ -216,15 +420,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.MessageResponse'
+            $ref: '#/definitions/internal_handler.MessageResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Ресетовање свих података
@@ -242,15 +446,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.ShiftAvailabilityResponse'
+            $ref: '#/definitions/internal_handler.ShiftAvailabilityResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Дохватање доступности смена за админе
@@ -267,7 +471,7 @@ paths:
           schema:
             items:
               items:
-                $ref: '#/definitions/v1.EmployeeResponse'
+                $ref: '#/definitions/internal_handler.EmployeeResponse'
               type: array
             type: array
       security:
@@ -287,7 +491,7 @@ paths:
         name: employee
         required: true
         schema:
-          $ref: '#/definitions/v1.EmployeeCreateRequest'
+          $ref: '#/definitions/internal_handler.EmployeeCreateRequest'
       - description: First Name (form data)
         in: formData
         name: firstName
@@ -330,84 +534,14 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/v1.EmployeeResponse'
+            $ref: '#/definitions/internal_handler.EmployeeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Креирање новог запосленог
       tags:
       - запослени
-  /employees/{employeeId}/profile-picture:
-    delete:
-      description: Delete a profile picture for an employee
-      parameters:
-      - description: Employee ID
-        in: path
-        name: employeeId
-        required: true
-        type: integer
-      - description: Blob name to delete
-        in: query
-        name: blobName
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Delete profile picture
-      tags:
-      - files
-    post:
-      consumes:
-      - multipart/form-data
-      description: Upload a profile picture for an employee
-      parameters:
-      - description: Employee ID
-        in: path
-        name: employeeId
-        required: true
-        type: integer
-      - description: Profile picture file
-        in: formData
-        name: file
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_handler.UploadProfilePictureResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Upload profile picture
-      tags:
-      - files
   /employees/{id}:
     delete:
       description: Брисање запосленог по ID-ју
@@ -423,10 +557,38 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Брисање запосленог
+      tags:
+      - запослени
+    get:
+      description: Преузимање запосленог по ID-ју
+      parameters:
+      - description: ID запосленог
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.EmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - OAuth2Password: []
+      summary: Преузимање запосленог по ID-ју
       tags:
       - запослени
     put:
@@ -442,24 +604,24 @@ paths:
         name: employee
         required: true
         schema:
-          $ref: '#/definitions/v1.EmployeeUpdateRequest'
+          $ref: '#/definitions/internal_handler.EmployeeUpdateRequest'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.EmployeeResponse'
+            $ref: '#/definitions/internal_handler.EmployeeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Ажурирање запосленог
@@ -482,24 +644,89 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.ActiveEmergenciesResponse'
+            $ref: '#/definitions/internal_handler.ActiveEmergenciesResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Провера активних хитних случајева за запосленог
       tags:
       - запослени
+  /employees/{id}/profile-picture:
+    delete:
+      description: Delete a profile picture for an employee
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Blob name to delete
+        in: query
+        name: blobName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+      summary: Delete profile picture
+      tags:
+      - files
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a profile picture for an employee
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Profile picture file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.UploadProfilePictureResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+      summary: Upload profile picture
+      tags:
+      - files
   /employees/{id}/shift-warnings:
     get:
       description: Враћа листу упозорења о сменама за запосленог (нпр. недостају смене,
@@ -522,15 +749,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Дохватање упозорења о сменама за запосленог
@@ -550,14 +777,14 @@ paths:
         name: shift
         required: true
         schema:
-          $ref: '#/definitions/v1.RemoveShiftRequest'
+          $ref: '#/definitions/internal_handler.RemoveShiftRequest'
       responses:
         "204":
           description: No Content
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Уклањање смене за запосленог
@@ -576,7 +803,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.ShiftResponse'
+              $ref: '#/definitions/internal_handler.ShiftResponse'
             type: array
       security:
       - OAuth2Password: []
@@ -596,16 +823,16 @@ paths:
         name: shift
         required: true
         schema:
-          $ref: '#/definitions/v1.AssignShiftRequest'
+          $ref: '#/definitions/internal_handler.AssignShiftRequest'
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/v1.AssignShiftResponse'
+            $ref: '#/definitions/internal_handler.AssignShiftResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Додељује смену запосленом
@@ -628,15 +855,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.OnCallEmployeesResponse'
+            $ref: '#/definitions/internal_handler.OnCallEmployeesResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Претрага запослених који су тренутно на дужности
@@ -662,13 +889,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
       summary: Get profile picture info
       tags:
       - files
@@ -683,18 +908,18 @@ paths:
         name: employee
         required: true
         schema:
-          $ref: '#/definitions/v1.EmployeeLogin'
+          $ref: '#/definitions/internal_handler.EmployeeLogin'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.TokenResponse'
+            $ref: '#/definitions/internal_handler.TokenResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Пријавање запосленог
       tags:
       - запослени
@@ -725,11 +950,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: OAuth2 token endpoint
       tags:
       - authentication
@@ -745,11 +970,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.ShiftAvailabilityResponse'
+            $ref: '#/definitions/internal_handler.ShiftAvailabilityResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Дохватање доступности смена
