@@ -57,6 +57,25 @@ export const parseLocationString = (locationString: string): EnhancedLocation | 
     };
   }
 
+  // Try to parse coordinates in backend format: 'N 43.401123 E 22.662756'
+  const backendCoordinatePattern = /^([NS])\s+(-?\d+\.?\d*)\s+([EW])\s+(-?\d+\.?\d*)$/;
+  const backendMatch = locationString.match(backendCoordinatePattern);
+
+  if (backendMatch) {
+    const [, latDirection, latValue, lngDirection, lngValue] = backendMatch;
+    const latitude = (latDirection === 'S' ? -1 : 1) * parseFloat(latValue);
+    const longitude = (lngDirection === 'W' ? -1 : 1) * parseFloat(lngValue);
+
+    return {
+      text: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+      coordinates: {
+        latitude,
+        longitude
+      },
+      source: 'map'
+    };
+  }
+
   // If no coordinates found, return as text-only location
   return {
     text: locationString,
@@ -66,8 +85,12 @@ export const parseLocationString = (locationString: string): EnhancedLocation | 
 
 export const formatLocationForApi = (enhancedLocation: EnhancedLocation): string => {
   if (enhancedLocation.coordinates) {
-    // Format: "lat,lng|text"
-    return `${enhancedLocation.coordinates.latitude},${enhancedLocation.coordinates.longitude}|${enhancedLocation.text}`;
+    // Format coordinates in the expected backend format: 'N 43.401123 E 22.662756'
+    const lat = enhancedLocation.coordinates.latitude;
+    const lng = enhancedLocation.coordinates.longitude;
+    const latDirection = lat >= 0 ? 'N' : 'S';
+    const lngDirection = lng >= 0 ? 'E' : 'W';
+    return `${latDirection} ${Math.abs(lat)} ${lngDirection} ${Math.abs(lng)}`;
   }
   return enhancedLocation.text;
 };

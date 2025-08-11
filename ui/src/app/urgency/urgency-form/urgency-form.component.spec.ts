@@ -338,7 +338,7 @@ describe('UrgencyFormComponent', () => {
 
       expect(urgencyService.addUrgency).toHaveBeenCalledWith(
         jasmine.objectContaining({
-          location: '44.0165,21.0059|Belgrade, Serbia'
+          location: 'N 44.0165 E 21.0059'
         })
       );
     });

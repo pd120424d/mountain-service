@@ -2,7 +2,11 @@ import {
   getUrgencyLevelColor,
   getUrgencyStatusColor,
   createUrgencyDisplayName,
-  withDisplayName
+  withDisplayName,
+  parseLocationString,
+  formatLocationForApi,
+  LocationCoordinates,
+  EnhancedLocation
 } from './urgency-extensions';
 import {
   UrgencyLevel,
@@ -142,6 +146,94 @@ describe('Urgency Extensions', () => {
       expect(result.id).toBe(1);
       expect(result.firstName).toBe('John');
       expect(result.lastName).toBe('Doe');
+    });
+  });
+
+  describe('parseLocationString', () => {
+    it('should parse legacy coordinate format (lat,lng|text)', () => {
+      const locationString = '44.0165,21.0059|Belgrade, Serbia';
+      const result = parseLocationString(locationString);
+
+      expect(result).toBeTruthy();
+      expect(result!.text).toBe('Belgrade, Serbia');
+      expect(result!.coordinates?.latitude).toBe(44.0165);
+      expect(result!.coordinates?.longitude).toBe(21.0059);
+      expect(result!.source).toBe('map');
+    });
+
+    it('should parse backend coordinate format (N 43.401123 E 22.662756)', () => {
+      const locationString = 'N 44.0165 E 21.0059';
+      const result = parseLocationString(locationString);
+
+      expect(result).toBeTruthy();
+      expect(result!.text).toBe('44.016500, 21.005900');
+      expect(result!.coordinates?.latitude).toBe(44.0165);
+      expect(result!.coordinates?.longitude).toBe(21.0059);
+      expect(result!.source).toBe('map');
+    });
+
+    it('should parse negative coordinates with S and W directions', () => {
+      const locationString = 'S 44.0165 W 21.0059';
+      const result = parseLocationString(locationString);
+
+      expect(result).toBeTruthy();
+      expect(result!.coordinates?.latitude).toBe(-44.0165);
+      expect(result!.coordinates?.longitude).toBe(-21.0059);
+    });
+
+    it('should return text-only location for plain text', () => {
+      const locationString = 'Belgrade, Serbia';
+      const result = parseLocationString(locationString);
+
+      expect(result).toBeTruthy();
+      expect(result!.text).toBe('Belgrade, Serbia');
+      expect(result!.coordinates).toBeUndefined();
+      expect(result!.source).toBe('manual');
+    });
+
+    it('should return null for empty string', () => {
+      const result = parseLocationString('');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('formatLocationForApi', () => {
+    it('should format coordinates in backend format (N lat E lng)', () => {
+      const location: EnhancedLocation = {
+        text: 'Belgrade, Serbia',
+        coordinates: {
+          latitude: 44.0165,
+          longitude: 21.0059
+        },
+        source: 'map'
+      };
+
+      const result = formatLocationForApi(location);
+      expect(result).toBe('N 44.0165 E 21.0059');
+    });
+
+    it('should format negative coordinates with S and W directions', () => {
+      const location: EnhancedLocation = {
+        text: 'Southern Location',
+        coordinates: {
+          latitude: -44.0165,
+          longitude: -21.0059
+        },
+        source: 'map'
+      };
+
+      const result = formatLocationForApi(location);
+      expect(result).toBe('S 44.0165 W 21.0059');
+    });
+
+    it('should return text for location without coordinates', () => {
+      const location: EnhancedLocation = {
+        text: 'Belgrade, Serbia',
+        source: 'manual'
+      };
+
+      const result = formatLocationForApi(location);
+      expect(result).toBe('Belgrade, Serbia');
     });
   });
 });
