@@ -107,7 +107,8 @@ func (s *azureBlobService) DeleteProfilePicture(ctx context.Context, blobName st
 }
 
 func (s *azureBlobService) ensureContainer(ctx context.Context) error {
-	_, err := s.client.CreateContainer(ctx, &azblob.CreateContainerOptions{Access: nil})
+	publicAccess := azblob.PublicAccessTypeBlob
+	_, err := s.client.CreateContainer(ctx, &azblob.CreateContainerOptions{Access: &publicAccess})
 	if err != nil {
 		if !strings.Contains(err.Error(), "ContainerAlreadyExists") {
 			return err
