@@ -276,12 +276,10 @@ func (r *EmployeeLogin) Validate() error {
 
 	if err := utils.ValidateRequiredField(r.Password, "password"); err != nil {
 		errors.AddError("password", err)
-	} else {
-		// Only validate password format if it's not empty
-		if err := utils.ValidatePassword(r.Password); err != nil {
-			errors.AddError("password", err)
-		}
 	}
+	// Note: Password format validation is intentionally skipped for login
+	// Admin passwords may not follow employee password rules
+	// Password validation is handled during authentication, not at DTO level
 
 	if errors.HasErrors() {
 		return errors

@@ -319,81 +319,28 @@ func TestEmployeeLogin_Validate(t *testing.T) {
 		assert.Contains(t, err.Error(), "password is required")
 	})
 
-	t.Run("it returns an error for password too short", func(t *testing.T) {
+	// Password format validation tests removed - login validation only checks for required fields
+	// Password format validation is handled during authentication, not at DTO level
+	// This allows admin passwords to have different rules than employee passwords
+
+	t.Run("it returns no error for simple password", func(t *testing.T) {
 		req := &EmployeeLogin{
 			Username: "johndoe",
-			Password: "Abc1!",
+			Password: "simple",
 		}
 
 		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "password must be between 6 and 10 characters long")
+		assert.NoError(t, err)
 	})
 
-	t.Run("it returns an error for password too long", func(t *testing.T) {
+	t.Run("it returns no error for admin-style password", func(t *testing.T) {
 		req := &EmployeeLogin{
-			Username: "johndoe",
-			Password: "Abcdefgh123!",
+			Username: "admin",
+			Password: "admin123",
 		}
 
 		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "password must be between 6 and 10 characters long")
-	})
-
-	t.Run("it returns an error for password without uppercase", func(t *testing.T) {
-		req := &EmployeeLogin{
-			Username: "johndoe",
-			Password: "abcd123!",
-		}
-
-		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "password must contain at least one uppercase letter")
-	})
-
-	t.Run("it returns an error for password without enough lowercase", func(t *testing.T) {
-		req := &EmployeeLogin{
-			Username: "johndoe",
-			Password: "AB12de!",
-		}
-
-		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "password must contain at least three lowercase letters")
-	})
-
-	t.Run("it returns an error for password without digit", func(t *testing.T) {
-		req := &EmployeeLogin{
-			Username: "johndoe",
-			Password: "Abcdef!",
-		}
-
-		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "password must contain at least one digit")
-	})
-
-	t.Run("it returns an error for password without special character", func(t *testing.T) {
-		req := &EmployeeLogin{
-			Username: "johndoe",
-			Password: "Abcdef1",
-		}
-
-		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "password must contain at least one special character")
-	})
-
-	t.Run("it returns an error for password not starting with letter", func(t *testing.T) {
-		req := &EmployeeLogin{
-			Username: "johndoe",
-			Password: "1Abcde!",
-		}
-
-		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "password must start with a letter")
+		assert.NoError(t, err)
 	})
 
 	t.Run("it returns multiple errors for invalid request", func(t *testing.T) {
