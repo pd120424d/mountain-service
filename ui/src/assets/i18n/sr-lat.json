@@ -84,6 +84,19 @@
         "NETWORK_ERROR": "Greška na mreži. Molimo proverite vašu vezu i pokušajte ponovo.",
         "SERVER_ERROR": "Greška na serveru. Molimo pokušajte ponovo kasnije."
     },
+    "IMAGE_UPLOAD": {
+        "DRAG_DROP_TEXT": "Prevucite sliku ovde",
+        "OR_CLICK_TEXT": "ili kliknite da izaberete datoteku",
+        "REQUIREMENTS": "Najviše do 5 MB • JPEG, PNG, GIF, WebP",
+        "PREVIEW_ALT": "Pregled slike",
+        "REMOVE": "Uklonite sliku",
+        "UPLOADING": "Učitavanje...",
+        "UPLOAD_SUCCESS": "Slika uspešno učitana",
+        "UPLOAD_ERROR": "Neuspešno učitavanje slike",
+        "INVALID_FILE_TYPE": "Neispravan tip datoteke. Molimo izaberite JPEG, PNG, GIF ili WebP sliku.",
+        "FILE_TOO_LARGE": "Veličina datoteke prelazi 5 MB",
+        "PROCESSING_ERROR": "Neuspešno obrađivanje slike"
+    },
     "NOT_FOUND": {
         "TITLE": "Stranica nije pronađena",
         "DESCRIPTION": "Izgleda da stranica koju tražite ne postoji"
