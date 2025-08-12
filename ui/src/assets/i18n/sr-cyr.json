@@ -297,11 +297,16 @@
     "USERNAME": "Корисничко име",
     "EMAIL": "И-мејл",
     "PHONE": "Телефон",
-    "ROLE": "Улога",
-    "GENDER": "Пол",
+    "ROLE": "Тип профила",
     "GENDER_OPTIONS": {
       "MALE": "Мушки",
       "FEMALE": "Женски"
+    },
+    "PROFILE_TYPE": "Тип профила",
+    "PROFILE_OPTIONS": {
+      "MEDIC": "Медицинар",
+      "TECHNICAL": "Техничко особље",
+      "ADMINISTRATOR": "Администратор"
     },
     "UPDATE_PROFILE": "Ажурирај профил",
     "UPDATING": "Ажурирање",

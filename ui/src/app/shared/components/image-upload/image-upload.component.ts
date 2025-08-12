@@ -284,7 +284,6 @@ export class ImageUploadComponent implements OnInit, OnDestroy {
   }
 
   triggerFileInput(): void {
-    if (this.previewUrl) return; // Don't trigger if image is already selected
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fileInput?.click();
   }

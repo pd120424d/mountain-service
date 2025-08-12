@@ -297,11 +297,16 @@
         "USERNAME": "Korisničko ime",
         "EMAIL": "E-mail",
         "PHONE": "Telefon",
-        "ROLE": "Uloga",
-        "GENDER": "Pol",
+        "ROLE": "Tip profila",
         "GENDER_OPTIONS": {
             "MALE": "Muški",
             "FEMALE": "Ženski"
+        },
+        "PROFILE_TYPE": "Tip profila",
+        "PROFILE_OPTIONS": {
+            "MEDIC": "Medicinar",
+            "TECHNICAL": "Tehničko osoblje",
+            "ADMINISTRATOR": "Administrator"
         },
         "UPDATE_PROFILE": "Ažuriraj profil",
         "UPDATING": "Ažuriranje",

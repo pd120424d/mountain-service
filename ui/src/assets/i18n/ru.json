@@ -298,10 +298,15 @@
         "EMAIL": "Электронная почта",
         "PHONE": "Телефон",
         "ROLE": "Роль",
-        "GENDER": "Пол",
         "GENDER_OPTIONS": {
             "MALE": "Мужской",
             "FEMALE": "Женский"
+        },
+        "PROFILE_TYPE": "Тип профиля",
+        "PROFILE_OPTIONS": {
+            "MEDIC": "Медик",
+            "TECHNICAL": "Технический персонал",
+            "ADMINISTRATOR": "Администратор"
         },
         "UPDATE_PROFILE": "Обновить профиль",
         "UPDATING": "Обновление",

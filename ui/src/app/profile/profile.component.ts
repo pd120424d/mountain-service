@@ -46,6 +46,8 @@ export class ProfileComponent extends BaseTranslatableComponent implements OnIni
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.required]],
       username: ['', [Validators.required, Validators.minLength(3)]],
+      gender: ['', [Validators.required]],
+      profileType: ['', [Validators.required]],
       profilePicture: [null]
     });
   }
@@ -65,13 +67,15 @@ export class ProfileComponent extends BaseTranslatableComponent implements OnIni
     this.employeeService.getEmployeeById(parseInt(userId)).subscribe({
       next: (user) => {
         this.currentUser = user;
-        this.currentProfilePictureUrl = user.profilePicture;
+        this.currentProfilePictureUrl = user.profilePicture || undefined;
         this.profileForm.patchValue({
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
           phone: user.phone,
-          username: user.username
+          username: user.username,
+          gender: user.gender,
+          profileType: user.profileType
         });
         this.spinner.hide();
       },
@@ -114,8 +118,8 @@ export class ProfileComponent extends BaseTranslatableComponent implements OnIni
       email: this.profileForm.value.email,
       phone: this.profileForm.value.phone,
       username: this.profileForm.value.username,
-      profileType: this.currentUser.profileType,
-      gender: this.currentUser.gender
+      profileType: this.profileForm.value.profileType,
+      gender: this.profileForm.value.gender
     };
 
     this.employeeService.updateEmployee(this.currentUser.id!, updateRequest).subscribe({

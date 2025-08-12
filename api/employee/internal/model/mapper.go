@@ -17,10 +17,21 @@ func MapUpdateRequestToEmployee(req *employeeV1.EmployeeUpdateRequest, existing 
 	if req.Email != "" {
 		existing.Email = req.Email
 	}
-	existing.Gender = req.Gender
-	existing.Phone = req.Phone
-	existing.ProfilePicture = req.ProfilePicture
-	existing.ProfileType = ProfileTypeFromString(req.ProfileType)
+	if req.Gender != "" {
+		existing.Gender = req.Gender
+	}
+	if req.Phone != "" {
+		existing.Phone = req.Phone
+	}
+	if req.ProfilePicture != "" {
+		existing.ProfilePicture = req.ProfilePicture
+	}
+	if req.ProfileType != "" {
+		newProfileType := ProfileTypeFromString(req.ProfileType)
+		if newProfileType != "" {
+			existing.ProfileType = newProfileType
+		}
+	}
 }
 
 func MapShiftsAvailabilityToResponse(availability *ShiftsAvailabilityRange) *employeeV1.ShiftAvailabilityResponse {

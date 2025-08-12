@@ -282,10 +282,15 @@
         "EMAIL": "Email",
         "PHONE": "Phone",
         "ROLE": "Role",
-        "GENDER": "Gender",
         "GENDER_OPTIONS": {
             "MALE": "Male",
             "FEMALE": "Female"
+        },
+        "PROFILE_TYPE": "Profile Type",
+        "PROFILE_OPTIONS": {
+            "MEDIC": "Medic",
+            "TECHNICAL": "Technical Staff",
+            "ADMINISTRATOR": "Administrator"
         },
         "UPDATE_PROFILE": "Update Profile",
         "UPDATING": "Updating",
