@@ -168,7 +168,9 @@ describe('ProfileComponent', () => {
       lastName: 'Doe',
       email: 'john@example.com',
       phone: '+1234567890',
-      username: 'johndoe'
+      username: 'johndoe',
+      gender: 'Male',
+      profileType: 'Employee'
     });
 
     employeeService.updateEmployee.and.returnValue(of(mockEmployee));
@@ -189,7 +191,9 @@ describe('ProfileComponent', () => {
       lastName: 'Doe',
       email: 'john@example.com',
       phone: '+1234567890',
-      username: 'johndoe'
+      username: 'johndoe',
+      gender: 'Male',
+      profileType: 'Employee'
     });
 
     employeeService.updateEmployee.and.returnValue(of(mockEmployee));
@@ -211,7 +215,9 @@ describe('ProfileComponent', () => {
       lastName: 'Doe',
       email: 'john@example.com',
       phone: '+1234567890',
-      username: 'johndoe'
+      username: 'johndoe',
+      gender: 'Male',
+      profileType: 'Employee'
     });
 
     employeeService.updateEmployee.and.returnValue(throwError(() => new Error('Update error')));

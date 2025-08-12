@@ -1,5 +1,10 @@
 <div class="urgency-list-container">
   <div class="header">
+    <button class="btn btn-secondary back-button" routerLink="/"
+            [title]="'GO_HOME' | translate">
+      <i class="fas fa-arrow-left"></i>
+      {{ 'GO_HOME' | translate }}
+    </button>
     <h2>{{ 'URGENCY_LIST.TITLE' | translate }}</h2>
   </div>
 

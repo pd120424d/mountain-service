@@ -12,6 +12,7 @@ import { ToastSpinnerTestComponent } from './toast-spinner-test.component';
 import { AdminComponent } from './admin/admin.component';
 import { UrgencyFormComponent } from './urgency/urgency-form/urgency-form.component';
 import { UrgencyListComponent } from './urgency/urgency-list/urgency-list.component';
+import { UrgencyDetailComponent } from './urgency/urgency-detail/urgency-detail.component';
 import { ProfileComponent } from './profile/profile.component';
 
 export const routes: Routes = [
@@ -24,6 +25,7 @@ export const routes: Routes = [
   { path: 'shifts', component: ShiftManagementComponent, canActivate: [AuthGuard] },
   { path: 'urgencies', component: UrgencyListComponent, canActivate: [AuthGuard] },
   { path: 'urgencies/new', component: UrgencyFormComponent },
+  { path: 'urgencies/:id', component: UrgencyDetailComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [NonAdminGuard] },
   { path: 'admin', component: AdminComponent, canActivate: [AdminGuard] },
 

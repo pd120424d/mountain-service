@@ -13,6 +13,10 @@
       "TITLE": "Организација Смена",
       "DESCRIPTION": "Планирање и управљање сменама"
     },
+    "URGENCY_MANAGEMENT": {
+      "TITLE": "Управљање Ургентним Ситуацијама",
+      "DESCRIPTION": "Преглед и управљање пријавама ургентних ситуација"
+    },
     "EMERGENCIES": {
       "TITLE": "Пријава Ургентне Ситуације",
       "DESCRIPTION": "Брза пријава и документовање ургентних ситуација"
@@ -271,6 +275,44 @@
       "ACTIONS": "Акције"
     },
     "VIEW": "Погледај"
+  },
+  "URGENCY_DETAIL": {
+    "TITLE": "Детаљи Ургентне Ситуације",
+    "BACK_TO_LIST": "Назад на листу ургентних ситуација",
+    "LOADING": "Учитавање детаља ургентне ситуације...",
+    "RETRY": "Покушајте поново",
+    "URGENCY_INFO": "Информације о ургентној ситуацији",
+    "ID": "ID",
+    "REPORTER_NAME": "Име пријавиоца",
+    "EMAIL": "И-мејл",
+    "CONTACT_PHONE": "Контакт телефон",
+    "LOCATION": "Локација",
+    "DESCRIPTION": "Опис",
+    "CREATED_AT": "Пријављено",
+    "UPDATED_AT": "Последње ажурирање",
+    "ACTIVITIES": "Активности",
+    "ADD_ACTIVITY": "Додај активност",
+    "ACTIVITY_TITLE": "Назив активности",
+    "ACTIVITY_TITLE_PLACEHOLDER": "Унесите назив активности",
+    "ACTIVITY_LEVEL": "Ниво активности",
+    "ACTIVITY_DESCRIPTION": "Опис активности",
+    "ACTIVITY_DESCRIPTION_PLACEHOLDER": "Опишите активност или ажурирање",
+    "SUBMITTING_ACTIVITY": "Додавање активности...",
+    "LOADING_ACTIVITIES": "Учитавање активности...",
+    "NO_ACTIVITIES": "Нема забележених активности за ову ургентну ситуацију.",
+    "BY": "од",
+    "ACTIVITY_ADDED_SUCCESS": "Активност је успешно додата!",
+    "ACTIVITY_ADDED_ERROR": "Неуспешно додавање активности. Покушајте поново."
+  },
+  "ACTIVITY_LEVEL": {
+    "INFO": "Информација",
+    "WARNING": "Упозорење",
+    "ERROR": "Грешка",
+    "CRITICAL": "Критично"
+  },
+  "TITLE_FORM": {
+    "REQUIRED": "Назив је обавезан",
+    "MIN_LENGTH": "Назив мора имати најмање 3 карактера"
   },
   "LOCATION_MAP": {
     "SEARCH_PLACEHOLDER": "Унесите локацију...",

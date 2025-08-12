@@ -13,6 +13,10 @@
             "TITLE": "Organizacija Smena",
             "DESCRIPTION": "Planiranje i upravljanje smenama"
         },
+        "URGENCY_MANAGEMENT": {
+            "TITLE": "Upravljanje Urgentnim Situacijama",
+            "DESCRIPTION": "Pregled i upravljanje prijavama urgentnih situacija"
+        },
         "EMERGENCIES": {
             "TITLE": "Prijava Urgentne Situacije",
             "DESCRIPTION": "Brza prijava i dokumentovanje urgentnih situacija"
@@ -271,6 +275,44 @@
             "ACTIONS": "Akcije"
         },
         "VIEW": "Prikaži detalje"
+    },
+    "URGENCY_DETAIL": {
+        "TITLE": "Detalji Urgentne Situacije",
+        "BACK_TO_LIST": "Nazad na listu urgentnih situacija",
+        "LOADING": "Učitavanje detalja urgentne situacije...",
+        "RETRY": "Pokušaj ponovo",
+        "URGENCY_INFO": "Informacije o urgentnoj situaciji",
+        "ID": "ID",
+        "REPORTER_NAME": "Ime prijavioca",
+        "EMAIL": "I-mejl",
+        "CONTACT_PHONE": "Kontakt telefon",
+        "LOCATION": "Lokacija",
+        "DESCRIPTION": "Opis",
+        "CREATED_AT": "Prijavljeno",
+        "UPDATED_AT": "Poslednje ažuriranje",
+        "ACTIVITIES": "Aktivnosti",
+        "ADD_ACTIVITY": "Dodaj aktivnost",
+        "ACTIVITY_TITLE": "Naziv aktivnosti",
+        "ACTIVITY_TITLE_PLACEHOLDER": "Unesite naziv aktivnosti",
+        "ACTIVITY_LEVEL": "Nivo aktivnosti",
+        "ACTIVITY_DESCRIPTION": "Opis aktivnosti",
+        "ACTIVITY_DESCRIPTION_PLACEHOLDER": "Opišite aktivnost ili ažuriranje",
+        "SUBMITTING_ACTIVITY": "Dodavanje aktivnosti...",
+        "LOADING_ACTIVITIES": "Učitavanje aktivnosti...",
+        "NO_ACTIVITIES": "Nema zabeleženih aktivnosti za ovu urgentnu situaciju.",
+        "BY": "od",
+        "ACTIVITY_ADDED_SUCCESS": "Aktivnost je uspešno dodata!",
+        "ACTIVITY_ADDED_ERROR": "Neuspešno dodavanje aktivnosti. Pokušajte ponovo."
+    },
+    "ACTIVITY_LEVEL": {
+        "INFO": "Informacija",
+        "WARNING": "Upozorenje",
+        "ERROR": "Greška",
+        "CRITICAL": "Kritično"
+    },
+    "TITLE_FORM": {
+        "REQUIRED": "Naziv je obavezan",
+        "MIN_LENGTH": "Naziv mora imati najmanje 3 karaktera"
     },
     "LOCATION_MAP": {
         "SEARCH_PLACEHOLDER": "Unesite lokaciju...",

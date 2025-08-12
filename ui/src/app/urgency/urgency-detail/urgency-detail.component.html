@@ -1,0 +1,180 @@
+<div class="urgency-detail-container">
+  <div class="header">
+    <button class="btn btn-secondary back-button" (click)="goBack()" 
+            [title]="'URGENCY_DETAIL.BACK_TO_LIST' | translate">
+      <i class="fas fa-arrow-left"></i>
+      {{ 'URGENCY_DETAIL.BACK_TO_LIST' | translate }}
+    </button>
+    <h2>{{ 'URGENCY_DETAIL.TITLE' | translate }}</h2>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ 'URGENCY_DETAIL.LOADING' | translate }}</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !isLoading" class="error-message">
+    <p>{{ error }}</p>
+    <button class="btn btn-secondary" (click)="loadUrgency()">
+      {{ 'URGENCY_DETAIL.RETRY' | translate }}
+    </button>
+  </div>
+
+  <!-- Urgency Details -->
+  <div *ngIf="!isLoading && !error && urgency" class="urgency-details">
+    <div class="urgency-info-card">
+      <div class="card-header">
+        <h3>{{ 'URGENCY_DETAIL.URGENCY_INFO' | translate }}</h3>
+        <div class="urgency-badges">
+          <span class="level-badge" [style.background-color]="getUrgencyLevelColor(urgency.level!)">
+            {{ 'URGENCY_LEVEL.' + urgency.level?.toUpperCase() | translate }}
+          </span>
+          <span class="status-badge" [style.background-color]="getUrgencyStatusColor(urgency.status!)">
+            {{ 'URGENCY_STATUS.' + (urgency.status?.toUpperCase()?.replace(' ', '_') || 'UNKNOWN') | translate }}
+          </span>
+        </div>
+      </div>
+      
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>{{ 'URGENCY_DETAIL.ID' | translate }}:</label>
+            <span>{{ urgency.id }}</span>
+          </div>
+          <div class="info-item">
+            <label>{{ 'URGENCY_DETAIL.REPORTER_NAME' | translate }}:</label>
+            <span>{{ getDisplayName(urgency) }}</span>
+          </div>
+          <div class="info-item">
+            <label>{{ 'URGENCY_DETAIL.EMAIL' | translate }}:</label>
+            <span>{{ urgency.email }}</span>
+          </div>
+          <div class="info-item">
+            <label>{{ 'URGENCY_DETAIL.CONTACT_PHONE' | translate }}:</label>
+            <span>{{ urgency.contactPhone }}</span>
+          </div>
+          <div class="info-item">
+            <label>{{ 'URGENCY_DETAIL.LOCATION' | translate }}:</label>
+            <span>{{ urgency.location }}</span>
+          </div>
+          <div class="info-item full-width">
+            <label>{{ 'URGENCY_DETAIL.DESCRIPTION' | translate }}:</label>
+            <p>{{ urgency.description }}</p>
+          </div>
+          <div class="info-item">
+            <label>{{ 'URGENCY_DETAIL.CREATED_AT' | translate }}:</label>
+            <span>{{ formatDate(urgency.createdAt!) }}</span>
+          </div>
+          <div class="info-item">
+            <label>{{ 'URGENCY_DETAIL.UPDATED_AT' | translate }}:</label>
+            <span>{{ formatDate(urgency.updatedAt!) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activities Section -->
+    <div class="activities-section">
+      <h3>{{ 'URGENCY_DETAIL.ACTIVITIES' | translate }}</h3>
+      
+      <!-- Add Activity Form -->
+      <div class="add-activity-form">
+        <h4>{{ 'URGENCY_DETAIL.ADD_ACTIVITY' | translate }}</h4>
+        <form [formGroup]="activityForm" (ngSubmit)="onSubmitActivity()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="title">{{ 'URGENCY_DETAIL.ACTIVITY_TITLE' | translate }}:</label>
+              <input
+                id="title"
+                formControlName="title"
+                type="text"
+                [class.error]="isFieldInvalid('title')"
+                placeholder="{{ 'URGENCY_DETAIL.ACTIVITY_TITLE_PLACEHOLDER' | translate }}">
+              <div *ngIf="isFieldInvalid('title')" class="error-message">
+                {{ getFieldError('title') | translate }}
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="level">{{ 'URGENCY_DETAIL.ACTIVITY_LEVEL' | translate }}:</label>
+              <select
+                id="level"
+                formControlName="level"
+                [class.error]="isFieldInvalid('level')">
+                <option [value]="ActivityLevel.Info">{{ 'ACTIVITY_LEVEL.INFO' | translate }}</option>
+                <option [value]="ActivityLevel.Warning">{{ 'ACTIVITY_LEVEL.WARNING' | translate }}</option>
+                <option [value]="ActivityLevel.Error">{{ 'ACTIVITY_LEVEL.ERROR' | translate }}</option>
+                <option [value]="ActivityLevel.Critical">{{ 'ACTIVITY_LEVEL.CRITICAL' | translate }}</option>
+              </select>
+              <div *ngIf="isFieldInvalid('level')" class="error-message">
+                {{ getFieldError('level') | translate }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="description">{{ 'URGENCY_DETAIL.ACTIVITY_DESCRIPTION' | translate }}:</label>
+            <textarea
+              id="description"
+              formControlName="description"
+              [class.error]="isFieldInvalid('description')"
+              placeholder="{{ 'URGENCY_DETAIL.ACTIVITY_DESCRIPTION_PLACEHOLDER' | translate }}"
+              rows="3"></textarea>
+            <div *ngIf="isFieldInvalid('description')" class="error-message">
+              {{ getFieldError('description') | translate }}
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              [disabled]="activityForm.invalid || isSubmittingActivity"
+              class="btn btn-primary">
+              <span *ngIf="isSubmittingActivity">{{ 'URGENCY_DETAIL.SUBMITTING_ACTIVITY' | translate }}</span>
+              <span *ngIf="!isSubmittingActivity">{{ 'URGENCY_DETAIL.ADD_ACTIVITY' | translate }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Activities List -->
+      <div class="activities-list">
+        <div *ngIf="isLoadingActivities" class="loading-activities">
+          <div class="spinner-small"></div>
+          <p>{{ 'URGENCY_DETAIL.LOADING_ACTIVITIES' | translate }}</p>
+        </div>
+
+        <div *ngIf="!isLoadingActivities && activities.length === 0" class="no-activities">
+          <p>{{ 'URGENCY_DETAIL.NO_ACTIVITIES' | translate }}</p>
+        </div>
+
+        <div *ngIf="!isLoadingActivities && activities.length > 0" class="activity-items">
+          <div *ngFor="let activity of activities" class="activity-item">
+            <div class="activity-header">
+              <div class="activity-icon" [style.color]="getActivityLevelColor(activity.level!)">
+                <i class="fas fa-{{ getActivityTypeIcon(activity.type!) }}"></i>
+              </div>
+              <div class="activity-meta">
+                <h5>{{ activity.title }}</h5>
+                <div class="activity-info">
+                  <span class="activity-level" [style.color]="getActivityLevelColor(activity.level!)">
+                    {{ 'ACTIVITY_LEVEL.' + activity.level?.toUpperCase() | translate }}
+                  </span>
+                  <span class="activity-date">{{ formatDate(activity.createdAt!) }}</span>
+                  <span *ngIf="activity.actorName" class="activity-actor">
+                    {{ 'URGENCY_DETAIL.BY' | translate }} {{ activity.actorName }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="activity-description">
+              <p>{{ activity.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

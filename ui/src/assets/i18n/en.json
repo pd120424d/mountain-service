@@ -13,6 +13,10 @@
             "TITLE": "Shift Management",
             "DESCRIPTION": "Plan and manage shifts effectively"
         },
+        "URGENCY_MANAGEMENT": {
+            "TITLE": "Emergency Management",
+            "DESCRIPTION": "View and manage emergency reports and incidents"
+        },
         "EMERGENCIES": {
             "TITLE": "Report Emergencies",
             "DESCRIPTION": "Quickly report and document emergency situations"
@@ -255,6 +259,44 @@
             "ACTIONS": "Actions"
         },
         "VIEW": "View Details"
+    },
+    "URGENCY_DETAIL": {
+        "TITLE": "Emergency Details",
+        "BACK_TO_LIST": "Back to Emergency List",
+        "LOADING": "Loading emergency details...",
+        "RETRY": "Retry",
+        "URGENCY_INFO": "Emergency Information",
+        "ID": "ID",
+        "REPORTER_NAME": "Reporter Name",
+        "EMAIL": "Email",
+        "CONTACT_PHONE": "Contact Phone",
+        "LOCATION": "Location",
+        "DESCRIPTION": "Description",
+        "CREATED_AT": "Reported At",
+        "UPDATED_AT": "Last Updated",
+        "ACTIVITIES": "Activities",
+        "ADD_ACTIVITY": "Add Activity",
+        "ACTIVITY_TITLE": "Activity Title",
+        "ACTIVITY_TITLE_PLACEHOLDER": "Enter activity title",
+        "ACTIVITY_LEVEL": "Activity Level",
+        "ACTIVITY_DESCRIPTION": "Activity Description",
+        "ACTIVITY_DESCRIPTION_PLACEHOLDER": "Describe the activity or update",
+        "SUBMITTING_ACTIVITY": "Adding Activity...",
+        "LOADING_ACTIVITIES": "Loading activities...",
+        "NO_ACTIVITIES": "No activities recorded for this emergency.",
+        "BY": "by",
+        "ACTIVITY_ADDED_SUCCESS": "Activity added successfully!",
+        "ACTIVITY_ADDED_ERROR": "Failed to add activity. Please try again."
+    },
+    "ACTIVITY_LEVEL": {
+        "INFO": "Info",
+        "WARNING": "Warning",
+        "ERROR": "Error",
+        "CRITICAL": "Critical"
+    },
+    "TITLE_FORM": {
+        "REQUIRED": "Title is required",
+        "MIN_LENGTH": "Title must be at least 3 characters long"
     },
     "LOCATION_MAP": {
         "SEARCH_PLACEHOLDER": "Search for a location...",

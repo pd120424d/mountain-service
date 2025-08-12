@@ -23,6 +23,11 @@
         <h3>{{ 'NAV.SHIFT_MANAGEMENT.TITLE' | translate }}</h3>
         <p>{{ 'NAV.SHIFT_MANAGEMENT.DESCRIPTION' | translate }}</p>
       </a>
+      <a *ngIf="authService.isAuthenticated()" routerLink="/urgencies" class="nav-button">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h3>{{ 'NAV.URGENCY_MANAGEMENT.TITLE' | translate }}</h3>
+        <p>{{ 'NAV.URGENCY_MANAGEMENT.DESCRIPTION' | translate }}</p>
+      </a>
       <a *ngIf="authService.isAuthenticated() && !authService.isAdmin()" routerLink="/profile" class="nav-button">
         <i class="fas fa-user-cog"></i>
         <h3>{{ 'NAV.PROFILE_MANAGEMENT.TITLE' | translate }}</h3>

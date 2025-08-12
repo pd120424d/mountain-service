@@ -92,11 +92,11 @@ describe('UrgencyListComponent', () => {
   });
 
   it('should handle view urgency', () => {
-    spyOn(console, 'log');
+    const routerSpy = spyOn(component['router'], 'navigate');
 
     component.viewUrgency(1);
 
-    expect(console.log).toHaveBeenCalledWith('Viewing urgency:', 1);
+    expect(routerSpy).toHaveBeenCalledWith(['/urgencies', 1]);
   });
 
   it('should return correct status class', () => {

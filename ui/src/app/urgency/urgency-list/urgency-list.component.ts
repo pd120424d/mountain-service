@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
@@ -23,6 +23,7 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
 
   constructor(
     private urgencyService: UrgencyService,
+    private router: Router,
     translate: TranslateService
   ) {
     super(translate);
@@ -49,8 +50,7 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   }
 
   viewUrgency(id: number): void {
-    // TODO: Implement view urgency
-    console.log('Viewing urgency:', id);
+    this.router.navigate(['/urgencies', id]);
   }
 
   getDisplayName(urgency: Urgency): string {
