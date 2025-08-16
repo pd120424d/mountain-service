@@ -93,23 +93,34 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
     # Login to registry
     echo "$GHCR_PAT" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-    # Stop only backend containers to preserve frontend
+    # More aggressive cleanup to handle port conflicts
     echo "Stopping existing backend containers..."
-    docker stop mountain-service-deployment_employee-service_1 2>/dev/null || true
-    docker stop mountain-service-deployment_urgency-service_1 2>/dev/null || true
-    docker stop mountain-service-deployment_activity-service_1 2>/dev/null || true
-    docker stop mountain-service-deployment_version-service_1 2>/dev/null || true
-    docker stop mountain-service-deployment_employee-db_1 2>/dev/null || true
-    docker stop mountain-service-deployment_urgency-db_1 2>/dev/null || true
-    docker stop mountain-service-deployment_activity-db_1 2>/dev/null || true
 
-    # Remove stopped backend containers
-    docker container prune -f || true
+    # Stop containers by name pattern (more reliable)
+    docker ps -a --format "table {{.Names}}" | grep -E "(employee-service|urgency-service|activity-service|version-service|employee-db|urgency-db|activity-db)" | xargs -r docker stop 2>/dev/null || true
+    docker ps -a --format "table {{.Names}}" | grep -E "(employee-service|urgency-service|activity-service|version-service|employee-db|urgency-db|activity-db)" | xargs -r docker rm -f 2>/dev/null || true
 
     # Stop existing backend services with compose (but preserve frontend)
     echo "Stopping existing backend services with compose..."
     docker-compose stop employee-service urgency-service activity-service version-service employee-db urgency-db activity-db 2>/dev/null || true
     docker-compose rm -f employee-service urgency-service activity-service version-service employee-db urgency-db activity-db 2>/dev/null || true
+
+    # Kill any processes using backend ports to ensure they're free
+    echo "Ensuring backend ports are free..."
+    sudo lsof -ti:5432 | xargs sudo kill -9 2>/dev/null || true  # employee-db
+    sudo lsof -ti:5433 | xargs sudo kill -9 2>/dev/null || true  # urgency-db
+    sudo lsof -ti:5434 | xargs sudo kill -9 2>/dev/null || true  # activity-db
+    sudo lsof -ti:8082 | xargs sudo kill -9 2>/dev/null || true  # employee-service
+    sudo lsof -ti:8083 | xargs sudo kill -9 2>/dev/null || true  # urgency-service
+    sudo lsof -ti:8084 | xargs sudo kill -9 2>/dev/null || true  # activity-service
+    sudo lsof -ti:8090 | xargs sudo kill -9 2>/dev/null || true  # version-service
+
+    # Wait a moment for ports to be released
+    echo "Waiting for ports to be released..."
+    sleep 5
+
+    # Remove stopped backend containers
+    docker container prune -f || true
     
     # Clear Docker image cache to prevent stale images
     echo "Clearing Docker image cache to ensure fresh images..."
@@ -145,6 +156,23 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
         echo "Failed to create Docker network"
         exit 1
     fi
+
+    # Verify ports are free before deployment
+    echo "Verifying backend ports are free..."
+    PORTS_IN_USE=""
+    for port in 5432 5433 5434 8082 8083 8084 8090; do
+        if lsof -i:$port > /dev/null 2>&1; then
+            PORTS_IN_USE="$PORTS_IN_USE $port"
+        fi
+    done
+
+    if [ -n "$PORTS_IN_USE" ]; then
+        echo "ERROR: The following ports are still in use:$PORTS_IN_USE"
+        echo "Please manually clean up these ports before deployment."
+        exit 1
+    fi
+
+    echo "All backend ports are free. Proceeding with deployment..."
 
     # Deploy backend services
     echo "Deploying backend services..."

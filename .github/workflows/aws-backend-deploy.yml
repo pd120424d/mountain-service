@@ -230,7 +230,7 @@ jobs:
         chmod +x ./deploy-backend.sh
 
         # Run backend deployment
-        ./deploy-backend.sh .env.aws
+        ./deploy-backend.sh .env.backend
 
     - name: Verify backend deployment
       run: |
@@ -248,26 +248,26 @@ jobs:
         # Test employee service health
         echo -n "Testing employee service health... "
         if curl -f -s http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/health > /dev/null 2>&1; then
-          echo -e "${GREEN}✅ PASSED${NC}"
+          echo -e "${GREEN} PASSED${NC}"
         else
-          echo -e "${RED}❌ FAILED${NC}"
-          echo -e "${YELLOW}⚠️  WARNING: Employee service health check failed - this may cause 502 errors${NC}"
+          echo -e "${RED} FAILED${NC}"
+          echo -e "${YELLOW} WARNING: Employee service health check failed - this may cause 502 errors${NC}"
         fi
 
         # Test version service
         echo -n "Testing version service... "
         if curl -f -s http://${{ env.CLOUD_INSTANCE_IP }}/api/v1/version > /dev/null 2>&1; then
-          echo -e "${GREEN}✅ PASSED${NC}"
+          echo -e "${GREEN} PASSED${NC}"
         else
-          echo -e "${RED}❌ FAILED${NC}"
-          echo -e "${YELLOW}⚠️  WARNING: Version service check failed${NC}"
+          echo -e "${RED} FAILED${NC}"
+          echo -e "${YELLOW} WARNING: Version service check failed${NC}"
         fi
 
         # Verify all backend containers are running
         echo "Verifying all backend containers are running..."
         ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.CLOUD_INSTANCE_USER }}@${{ env.CLOUD_INSTANCE_IP }} "docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E '(employee|urgency|activity|version)'"
 
-        echo -e "${GREEN}✅ Backend deployment verification completed!${NC}"
+        echo -e "${GREEN} Backend deployment verification completed!${NC}"
 
     - name: Cleanup
       if: always()
