@@ -339,6 +339,7 @@
         "USERNAME": "Korisničko ime",
         "EMAIL": "E-mail",
         "PHONE": "Telefon",
+        "GENDER": "Pol",
         "ROLE": "Tip profila",
         "GENDER_OPTIONS": {
             "MALE": "Muški",

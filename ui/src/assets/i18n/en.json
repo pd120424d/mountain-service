@@ -323,6 +323,7 @@
         "USERNAME": "Username",
         "EMAIL": "Email",
         "PHONE": "Phone",
+        "GENDER": "Gender",
         "ROLE": "Role",
         "GENDER_OPTIONS": {
             "MALE": "Male",

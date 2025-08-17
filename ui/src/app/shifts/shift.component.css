@@ -15,6 +15,10 @@
   gap: 1rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
+  /* Add margin to avoid overlap with top-right profile */
+  margin-top: 60px;
+  position: relative;
+  z-index: 1;
 }
 
 /* Time span selector */
@@ -23,6 +27,9 @@
   align-items: center;
   gap: 0.5rem;
   margin-left: auto;
+  /* Ensure it doesn't overlap with top-right profile/language elements */
+  margin-right: 200px; /* Space for profile + language switcher */
+  max-width: calc(100% - 200px);
 }
 
 .selector-label {
@@ -280,6 +287,47 @@
   .shift-container {
     height: auto;
     padding: 1rem;
+  }
+
+  /* Fix header layout on mobile to prevent overlap */
+  .header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-top: 80px; /* More space on mobile for profile */
+  }
+
+  .time-span-selector {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-group {
+    width: 100%;
+  }
+
+  .time-span-btn {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+/* Additional responsive breakpoint for smaller screens */
+@media (max-width: 480px) {
+  .header-section {
+    margin-top: 100px; /* Even more space on very small screens */
+  }
+
+  .selector-label {
+    font-size: 0.875rem;
+    text-align: center;
+    width: 100%;
+  }
+
+  .time-span-btn {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
   }
 }
 
