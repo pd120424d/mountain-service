@@ -164,7 +164,7 @@ describe('ShiftManagementComponent', () => {
   it('should get available medics', () => {
     component.shiftAvailability = {
       days: {
-        '2024-01-15': {
+        '2024-01-15T00:00:00Z': {
           firstShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
           secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 2 },
           thirdShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 1 }
@@ -179,7 +179,7 @@ describe('ShiftManagementComponent', () => {
   it('should get available technicals', () => {
     component.shiftAvailability = {
       days: {
-        '2024-01-15': {
+        '2024-01-15T00:00:00Z': {
           firstShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
           secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 2 },
           thirdShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 1 }
@@ -293,7 +293,7 @@ describe('ShiftManagementComponent', () => {
     // Mock shift availability data
     component.shiftAvailability = {
       days: {
-        '2024-01-15': {
+        '2024-01-15T00:00:00Z': {
           firstShift: {
             medicSlotsAvailable: 1,
             technicalSlotsAvailable: 2
@@ -341,7 +341,7 @@ describe('ShiftManagementComponent', () => {
   it('should handle invalid shift type in getAvailableMedics', () => {
     component.shiftAvailability = {
       days: {
-        '2024-01-15': {
+        '2024-01-15T00:00:00Z': {
           firstShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
           secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 2 },
           thirdShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 1 }
@@ -354,7 +354,7 @@ describe('ShiftManagementComponent', () => {
   it('should handle invalid shift type in getAvailableTechnicals', () => {
     component.shiftAvailability = {
       days: {
-        '2024-01-15': {
+        '2024-01-15T00:00:00Z': {
           firstShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
           secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 2 },
           thirdShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 1 }

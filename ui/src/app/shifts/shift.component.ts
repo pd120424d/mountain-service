@@ -116,6 +116,17 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     }
   }
 
+  // Helper method to find the correct day data from the API response.
+  // Handles the mismatch between date-only keys and full ISO timestamp keys.
+  private getDayData(date: Date) {
+    const availableKeys = Object.keys(this.shiftAvailability?.days || {});
+    const targetDateStr = date.toISOString().split('T')[0]; // e.g., "2025-08-17"
+
+    // Find the key that matches our target date (could be "2025-08-17T00:00:00Z" format)
+    const key = availableKeys.find(k => k.startsWith(targetDateStr));
+    return key ? this.shiftAvailability?.days?.[key] : null;
+  }
+
   canModifyOthers(): boolean {
     return this.userRole === AdministratorRole;
   }
@@ -213,11 +224,12 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   }
 
   getAvailableMedics(shiftType: number, date: Date): number {
-    const key = date.toISOString().split('T')[0];
-    const day = this.shiftAvailability?.days?.[key];
+    const day = this.getDayData(date);
 
     if (!day) {
-      console.warn(`No day data found for key: ${key}. Available keys:`, Object.keys(this.shiftAvailability?.days || {}));
+      const targetDateStr = date.toISOString().split('T')[0];
+      const availableKeys = Object.keys(this.shiftAvailability?.days || {});
+      console.warn(`No day data found for date: ${targetDateStr}. Available keys:`, availableKeys);
       return 0;
     }
 
@@ -233,11 +245,12 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   }
 
   getAvailableTechnicals(shiftType: number, date: Date): number {
-    const key = date.toISOString().split('T')[0];
-    const day = this.shiftAvailability?.days?.[key];
+    const day = this.getDayData(date);
 
     if (!day) {
-      console.warn(`No day data found for key: ${key}. Available keys:`, Object.keys(this.shiftAvailability?.days || {}));
+      const targetDateStr = date.toISOString().split('T')[0];
+      const availableKeys = Object.keys(this.shiftAvailability?.days || {});
+      console.warn(`No day data found for date: ${targetDateStr}. Available keys:`, availableKeys);
       return 0;
     }
 
@@ -259,8 +272,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     }
 
     // For normal users, check if the current user is assigned
-    const key = date.toISOString().split('T')[0];
-    const day = this.shiftAvailability?.days?.[key];
+    const day = this.getDayData(date);
 
     if (!day) {
       return false;
@@ -287,8 +299,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   }
 
   isShiftFullyBooked(shiftType: number, date: Date): boolean {
-    const key = date.toISOString().split('T')[0];
-    const day = this.shiftAvailability?.days?.[key];
+    const day = this.getDayData(date);
 
     if (!day) {
       return false;

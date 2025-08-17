@@ -18,12 +18,12 @@ describe('ShiftManagementService', () => {
   // Test data
   const mockShiftAvailability: ShiftAvailabilityResponse = {
     days: {
-      '2024-01-15': {
+      '2024-01-15T00:00:00Z': {
         firstShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
         secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 2 },
         thirdShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 1 }
       },
-      '2024-01-16': {
+      '2024-01-16T00:00:00Z': {
         firstShift: { medicSlotsAvailable: 3, technicalSlotsAvailable: 2 },
         secondShift: { medicSlotsAvailable: 2, technicalSlotsAvailable: 1 },
         thirdShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 0 }
