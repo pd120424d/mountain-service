@@ -682,15 +682,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.MessageResponse'
+            $ref: '#/definitions/internal_handler.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Delete profile picture
       tags:
       - files
@@ -715,15 +715,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.UploadProfilePictureResponse'
+            $ref: '#/definitions/internal_handler.UploadProfilePictureResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Upload profile picture
       tags:
       - files
@@ -889,11 +889,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Get profile picture info
       tags:
       - files
@@ -921,6 +921,29 @@ paths:
           schema:
             $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Пријавање запосленог
+      tags:
+      - запослени
+  /logout:
+    post:
+      description: Одјављивање запосленог и поништавање токена
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - OAuth2Password: []
+      summary: Одјављивање запосленог
       tags:
       - запослени
   /oauth/token:

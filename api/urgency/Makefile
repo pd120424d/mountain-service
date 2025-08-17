@@ -45,7 +45,7 @@ clean:
 # Generate Swagger documentation
 swagger:
 	@echo "Generating Swagger documentation..."
-	@swag init -g cmd/main.go -o cmd/docs --dir ./,../contracts --parseInternal --parseDependency
+	@~/go/bin/swag init -g cmd/main.go -o cmd/docs --dir ./,../contracts --parseInternal --parseDependency
 	@echo "Swagger documentation generated."
 
 # Format code
