@@ -1,7 +1,9 @@
 package service
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -9,6 +11,7 @@ import (
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
+	sharedAuth "github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
@@ -22,7 +25,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeCreateRequest{
 			Username:    "testuser",
@@ -47,7 +50,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeCreateRequest{
 			Username:    "testuser",
@@ -78,7 +81,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeCreateRequest{
 			Username:    "testuser",
@@ -112,7 +115,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeCreateRequest{
 			Username:    "testuser",
@@ -142,7 +145,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeCreateRequest{
 			Username:    "testuser",
@@ -173,7 +176,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeCreateRequest{
 			Username:    "testuser",
@@ -223,7 +226,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeLogin{
 			Username: "nonexistent",
@@ -246,7 +249,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeLogin{
 			Username: "testuser",
@@ -276,7 +279,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeLogin{
 			Username: "testuser",
@@ -299,7 +302,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeLogin{
 			Username: "testuser",
@@ -322,6 +325,70 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 	})
 }
 
+func TestEmployeeService_LogoutEmployee(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it succeeds when blacklist is available", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
+
+		// Create a mock blacklist using gomock
+		tokenID := "test-token-123"
+		expiresAt := time.Now().Add(time.Hour)
+		mockBlacklist := sharedAuth.NewMockTokenBlacklist(ctrl)
+		mockBlacklist.EXPECT().BlacklistToken(gomock.Any(), tokenID, expiresAt).Return(nil)
+		service := NewEmployeeService(log, emplRepoMock, mockBlacklist)
+
+		err := service.LogoutEmployee(tokenID, expiresAt)
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("it succeeds when blacklist is not available", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
+
+		service := NewEmployeeService(log, emplRepoMock, nil)
+		// Don't set blacklist
+
+		tokenID := "test-token-123"
+		expiresAt := time.Now().Add(time.Hour)
+
+		err := service.LogoutEmployee(tokenID, expiresAt)
+
+		assert.NoError(t, err) // Should not error even without blacklist
+	})
+
+	t.Run("it fails when blacklist returns error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
+
+		service := NewEmployeeService(log, emplRepoMock, nil)
+
+		// Create a mock blacklist that returns error using gomock
+		mockBlacklist := sharedAuth.NewMockTokenBlacklist(ctrl)
+		mockBlacklist.EXPECT().BlacklistToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("mock blacklist error"))
+		service = NewEmployeeService(log, emplRepoMock, mockBlacklist)
+
+		tokenID := "test-token-123"
+		expiresAt := time.Now().Add(time.Hour)
+
+		err := service.LogoutEmployee(tokenID, expiresAt)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to logout")
+	})
+}
+
 func TestEmployeeService_ListEmployees(t *testing.T) {
 	t.Parallel()
 
@@ -332,7 +399,7 @@ func TestEmployeeService_ListEmployees(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		emplRepoMock.EXPECT().GetAll().Return(nil, assert.AnError)
 
@@ -350,7 +417,7 @@ func TestEmployeeService_ListEmployees(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		employees := []model.Employee{
 			{
@@ -397,7 +464,7 @@ func TestEmployeeService_UpdateEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeUpdateRequest{
 			FirstName: "Updated",
@@ -421,7 +488,7 @@ func TestEmployeeService_UpdateEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeUpdateRequest{
 			FirstName: "Updated",
@@ -454,7 +521,7 @@ func TestEmployeeService_UpdateEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		req := employeeV1.EmployeeUpdateRequest{
 			FirstName: "Updated",
@@ -494,7 +561,7 @@ func TestEmployeeService_DeleteEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		emplRepoMock.EXPECT().Delete(uint(1)).Return(assert.AnError)
 
@@ -511,7 +578,7 @@ func TestEmployeeService_DeleteEmployee(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		emplRepoMock.EXPECT().Delete(uint(1)).Return(nil)
 
@@ -531,7 +598,7 @@ func TestEmployeeService_GetEmployeeByID(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(assert.AnError)
 
@@ -549,7 +616,7 @@ func TestEmployeeService_GetEmployeeByID(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		expectedEmployee := model.Employee{
 			ID:        1,
@@ -582,7 +649,7 @@ func TestEmployeeService_GetEmployeeByUsername(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		emplRepoMock.EXPECT().GetEmployeeByUsername("nonexistent").Return(nil, assert.AnError)
 
@@ -600,7 +667,7 @@ func TestEmployeeService_GetEmployeeByUsername(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		expectedEmployee := &model.Employee{
 			ID:        1,
@@ -630,7 +697,7 @@ func TestEmployeeService_ResetAllData(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		emplRepoMock.EXPECT().ResetAllData().Return(assert.AnError)
 
@@ -647,7 +714,7 @@ func TestEmployeeService_ResetAllData(t *testing.T) {
 		log := utils.NewTestLogger()
 		emplRepoMock := repositories.NewMockEmployeeRepository(ctrl)
 
-		service := NewEmployeeService(log, emplRepoMock)
+		service := NewEmployeeService(log, emplRepoMock, nil)
 
 		emplRepoMock.EXPECT().ResetAllData().Return(nil)
 

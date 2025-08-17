@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -8,37 +9,40 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// ServiceClaims represents the claims for service-to-service JWT tokens
 type ServiceClaims struct {
 	ServiceName string `json:"service"`
 	jwt.RegisteredClaims
 }
 
-// ServiceAuthConfig holds the configuration for service authentication
 type ServiceAuthConfig struct {
 	Secret      string
 	ServiceName string
 	TokenTTL    time.Duration
 }
 
-// ServiceAuth handles JWT token generation and validation for service-to-service communication
-type ServiceAuth struct {
+//go:generate mockgen -destination=service_auth_gomock.go -package=auth -source=service_auth.go ServiceAuth -typed
+type ServiceAuth interface {
+	GenerateToken() (string, error)
+	ValidateToken(tokenString string) (*ServiceClaims, error)
+	GetAuthHeader() (string, error)
+}
+
+type serviceAuth struct {
 	config ServiceAuthConfig
 }
 
-// NewServiceAuth creates a new ServiceAuth instance
-func NewServiceAuth(config ServiceAuthConfig) *ServiceAuth {
+func NewServiceAuth(config ServiceAuthConfig) ServiceAuth {
 	if config.TokenTTL == 0 {
 		config.TokenTTL = time.Hour // Default to 1 hour
 	}
-	return &ServiceAuth{config: config}
+	return &serviceAuth{config: config}
 }
 
-// GenerateToken creates a new JWT token for service-to-service communication
-func (sa *ServiceAuth) GenerateToken() (string, error) {
+func (sa *serviceAuth) GenerateToken() (string, error) {
 	now := time.Now()
 	claims := ServiceClaims{
 		ServiceName: sa.config.ServiceName,
@@ -56,7 +60,7 @@ func (sa *ServiceAuth) GenerateToken() (string, error) {
 }
 
 // ValidateToken validates a JWT token and returns the service name if valid
-func (sa *ServiceAuth) ValidateToken(tokenString string) (*ServiceClaims, error) {
+func (sa *serviceAuth) ValidateToken(tokenString string) (*ServiceClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &ServiceClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -75,8 +79,7 @@ func (sa *ServiceAuth) ValidateToken(tokenString string) (*ServiceClaims, error)
 	return nil, fmt.Errorf("invalid token")
 }
 
-// GetAuthHeader returns the Authorization header value for HTTP requests
-func (sa *ServiceAuth) GetAuthHeader() (string, error) {
+func (sa *serviceAuth) GetAuthHeader() (string, error) {
 	token, err := sa.GenerateToken()
 	if err != nil {
 		return "", err
@@ -84,20 +87,22 @@ func (sa *ServiceAuth) GetAuthHeader() (string, error) {
 	return "Bearer " + token, nil
 }
 
-// EmployeeClaims represents the claims for user JWT tokens
 type EmployeeClaims struct {
 	ID   uint   `json:"id"`
 	Role string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-// GenerateJWT creates a new JWT token for user authentication
 func GenerateJWT(employeeID uint, role string) (string, error) {
+	now := time.Now()
 	claims := EmployeeClaims{
 		ID:   employeeID,
 		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)), // Token expires in 24h
+			ID:        uuid.New().String(), // Unique token ID for blacklisting
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour * 24)), // Token expires in 24h
+			NotBefore: jwt.NewNumericDate(now),
 		},
 	}
 
@@ -107,8 +112,8 @@ func GenerateJWT(employeeID uint, role string) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
-// ValidateJWT validates a user JWT token and returns the claims
-func ValidateJWT(tokenString string) (*EmployeeClaims, error) {
+// ValidateJWT validates a user JWT token and checks blacklist
+func ValidateJWT(tokenString string, blacklist TokenBlacklist) (*EmployeeClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &EmployeeClaims{}, func(token *jwt.Token) (any, error) {
 		jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 		return jwtSecret, nil
@@ -122,16 +127,31 @@ func ValidateJWT(tokenString string) (*EmployeeClaims, error) {
 		return nil, errors.New("invalid token")
 	}
 
+	// Check blacklist if provided
+	if blacklist != nil && claims.RegisteredClaims.ID != "" {
+		ctx := context.Background()
+		isBlacklisted, err := blacklist.IsTokenBlacklisted(ctx, claims.RegisteredClaims.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check token blacklist: %w", err)
+		}
+		if isBlacklisted {
+			return nil, errors.New("token has been revoked")
+		}
+	}
+
 	return claims, nil
 }
 
-// GenerateAdminJWT creates a JWT token for admin access
 func GenerateAdminJWT() (string, error) {
+	now := time.Now()
 	claims := EmployeeClaims{
 		ID:   0,
 		Role: "Administrator",
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+			ID:        uuid.New().String(), // Unique token ID for blacklisting
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour * 24)),
+			NotBefore: jwt.NewNumericDate(now),
 		},
 	}
 

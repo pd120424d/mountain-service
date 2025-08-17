@@ -154,6 +154,9 @@ jobs:
         echo "CORS_ALLOWED_ORIGINS=${{ secrets.AWS_CORS_ALLOWED_ORIGINS }}" >> $GITHUB_ENV
         echo "DB_USER=${{ secrets.AWS_DB_USER }}" >> $GITHUB_ENV
         echo "DB_PASSWORD=${{ secrets.AWS_DB_PASSWORD }}" >> $GITHUB_ENV
+        echo "REDIS_ADDR=${{ secrets.AWS_REDIS_ADDR }}" >> $GITHUB_ENV
+        echo "REDIS_PASSWORD=${{ secrets.AWS_REDIS_PASSWORD }}" >> $GITHUB_ENV
+        echo "REDIS_DB=${{ secrets.AWS_REDIS_DB }}" >> $GITHUB_ENV
         echo "AZURE_STORAGE_ACCOUNT_NAME=${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}" >> $GITHUB_ENV
         echo "AZURE_STORAGE_ACCOUNT_KEY=${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}" >> $GITHUB_ENV
         echo "AZURE_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" >> $GITHUB_ENV
@@ -197,6 +200,11 @@ jobs:
         # Database Configuration
         DB_USER=${{ env.DB_USER }}
         DB_PASSWORD=${{ env.DB_PASSWORD }}
+
+        # Redis Configuration
+        REDIS_ADDR=${{ env.REDIS_ADDR }}
+        REDIS_PASSWORD=${{ env.REDIS_PASSWORD }}
+        REDIS_DB=${{ env.REDIS_DB }}
 
         # Azure Storage Configuration
         AZURE_STORAGE_ACCOUNT_NAME=${{ env.AZURE_STORAGE_ACCOUNT_NAME }}

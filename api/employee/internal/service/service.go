@@ -25,6 +25,7 @@ type ShiftService interface {
 type EmployeeService interface {
 	RegisterEmployee(req employeeV1.EmployeeCreateRequest) (*employeeV1.EmployeeResponse, error)
 	LoginEmployee(req employeeV1.EmployeeLogin) (string, error)
+	LogoutEmployee(tokenID string, expiresAt time.Time) error
 	ListEmployees() ([]employeeV1.EmployeeResponse, error)
 	UpdateEmployee(employeeID uint, req employeeV1.EmployeeUpdateRequest) (*employeeV1.EmployeeResponse, error)
 	DeleteEmployee(employeeID uint) error

@@ -21,7 +21,7 @@ func TestValidateJWT(t *testing.T) {
 		token, err := GenerateJWT(1, "Medic")
 		assert.NoError(t, err)
 
-		claims, err := ValidateJWT(token)
+		claims, err := ValidateJWT(token, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, uint(1), claims.ID)
 		assert.Equal(t, "Medic", claims.Role)
@@ -67,7 +67,7 @@ func TestGenerateAdminJWT(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, token)
 
-		claims, err := ValidateJWT(token)
+		claims, err := ValidateJWT(token, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, uint(0), claims.ID)
 		assert.Equal(t, "Administrator", claims.Role)

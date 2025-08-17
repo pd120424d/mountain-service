@@ -9,8 +9,8 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
-// AuthMiddleware creates a middleware that validates user JWT tokens
-func AuthMiddleware(log utils.Logger) gin.HandlerFunc {
+// AuthMiddleware creates a middleware that validates user JWT tokens with blacklist support
+func AuthMiddleware(log utils.Logger, blacklist TokenBlacklist) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -21,7 +21,7 @@ func AuthMiddleware(log utils.Logger) gin.HandlerFunc {
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		claims, err := ValidateJWT(tokenString)
+		claims, err := ValidateJWT(tokenString, blacklist)
 		if err != nil {
 			log.Errorf("failed to validate JWT: %v", err)
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
@@ -32,6 +32,8 @@ func AuthMiddleware(log utils.Logger) gin.HandlerFunc {
 		// Store claims in context
 		ctx.Set("employeeID", claims.ID)
 		ctx.Set("role", claims.Role)
+		ctx.Set("tokenID", claims.RegisteredClaims.ID) // Store token ID for logout
+		ctx.Set("expiresAt", claims.ExpiresAt.Time)    // Store expiration for logout
 
 		log.Info("JWT validation successful")
 
@@ -39,8 +41,8 @@ func AuthMiddleware(log utils.Logger) gin.HandlerFunc {
 	}
 }
 
-// AdminMiddleware creates a middleware that validates admin JWT tokens
-func AdminMiddleware(log utils.Logger) gin.HandlerFunc {
+// AdminMiddleware creates a middleware that validates admin JWT tokens with blacklist support
+func AdminMiddleware(log utils.Logger, blacklist TokenBlacklist) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -51,7 +53,7 @@ func AdminMiddleware(log utils.Logger) gin.HandlerFunc {
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		claims, err := ValidateJWT(tokenString)
+		claims, err := ValidateJWT(tokenString, blacklist)
 		if err != nil {
 			log.Errorf("failed to validate JWT: %v", err)
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
@@ -68,6 +70,7 @@ func AdminMiddleware(log utils.Logger) gin.HandlerFunc {
 
 		ctx.Set("employeeID", claims.ID)
 		ctx.Set("role", claims.Role)
+		ctx.Set("tokenID", claims.RegisteredClaims.ID) // Store token ID for logout
 
 		log.Info("Admin access granted")
 		ctx.Next()

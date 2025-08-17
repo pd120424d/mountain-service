@@ -20,3 +20,9 @@ const (
 	DB_USER     = "DB_USER"
 	DB_PASSWORD = "DB_PASSWORD"
 )
+
+const (
+	REDIS_ADDR     = "REDIS_ADDR"
+	REDIS_PASSWORD = "REDIS_PASSWORD"
+	REDIS_DB       = "REDIS_DB"
+)

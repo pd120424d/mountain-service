@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
@@ -12,14 +14,16 @@ import (
 )
 
 type employeeService struct {
-	log      utils.Logger
-	emplRepo repositories.EmployeeRepository
+	log       utils.Logger
+	emplRepo  repositories.EmployeeRepository
+	blacklist sharedAuth.TokenBlacklist
 }
 
-func NewEmployeeService(log utils.Logger, emplRepo repositories.EmployeeRepository) EmployeeService {
+func NewEmployeeService(log utils.Logger, emplRepo repositories.EmployeeRepository, blacklist sharedAuth.TokenBlacklist) EmployeeService {
 	return &employeeService{
-		log:      log.WithName("employeeService"),
-		emplRepo: emplRepo,
+		log:       log.WithName("employeeService"),
+		emplRepo:  emplRepo,
+		blacklist: blacklist,
 	}
 }
 
@@ -126,6 +130,24 @@ func (s *employeeService) LoginEmployee(req employeeV1.EmployeeLogin) (string, e
 
 	s.log.Info("Successfully validated employee and generated JWT token")
 	return token, nil
+}
+
+func (s *employeeService) LogoutEmployee(tokenID string, expiresAt time.Time) error {
+	s.log.Info("Processing employee logout")
+
+	if s.blacklist == nil {
+		s.log.Warn("Token blacklist not available, logout will not invalidate token")
+		return nil
+	}
+
+	ctx := context.Background()
+	if err := s.blacklist.BlacklistToken(ctx, tokenID, expiresAt); err != nil {
+		s.log.Errorf("failed to blacklist token: %v", err)
+		return fmt.Errorf("failed to logout: %w", err)
+	}
+
+	s.log.Info("Successfully logged out employee and blacklisted token")
+	return nil
 }
 
 func (s *employeeService) ListEmployees() ([]employeeV1.EmployeeResponse, error) {

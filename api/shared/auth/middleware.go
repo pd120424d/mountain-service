@@ -8,7 +8,7 @@ import (
 )
 
 // NewServiceAuthMiddleware creates a middleware that validates service-to-service JWT tokens
-func NewServiceAuthMiddleware(serviceAuth *ServiceAuth) gin.HandlerFunc {
+func NewServiceAuthMiddleware(serviceAuth ServiceAuth) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -41,7 +41,7 @@ func NewServiceAuthMiddleware(serviceAuth *ServiceAuth) gin.HandlerFunc {
 
 // OptionalServiceAuthMiddleware creates a middleware that optionally validates service tokens
 // This is useful for endpoints that can be called by both users and services
-func OptionalServiceAuthMiddleware(serviceAuth *ServiceAuth) gin.HandlerFunc {
+func OptionalServiceAuthMiddleware(serviceAuth ServiceAuth) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {

@@ -84,8 +84,21 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	employeeRepo := repositories.NewEmployeeRepository(log, db)
 	shiftsRepo := repositories.NewShiftRepository(log, db)
 
+	// Initialize Redis token blacklist
+	redisAddr := os.Getenv(globConf.REDIS_ADDR)
+	if redisAddr == "" {
+		redisAddr = "localhost:6379" // Default Redis address
+	}
+	redisPassword := os.Getenv(globConf.REDIS_PASSWORD)
+	blacklistConfig := auth.TokenBlacklistConfig{RedisAddr: redisAddr, RedisPassword: redisPassword, RedisDB: 0}
+	tokenBlacklist := auth.NewTokenBlacklist(blacklistConfig)
+	if err := tokenBlacklist.TestConnection(); err != nil {
+		log.Fatalf("Failed to connect to Redis token blacklist: %v. Redis is required for secure token invalidation.", err)
+	}
+	log.Info("Successfully initialized Redis token blacklist")
+
 	// Initialize services
-	employeeService := service.NewEmployeeService(log, employeeRepo)
+	employeeService := service.NewEmployeeService(log, employeeRepo, tokenBlacklist)
 	shiftService := service.NewShiftService(log, employeeRepo, shiftsRepo)
 
 	// Initialize Azure Blob Storage service
@@ -133,8 +146,9 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	r.POST("/api/v1/employees", employeeHandler.RegisterEmployee)
 	r.POST("/api/v1/login", employeeHandler.LoginEmployee)
 	r.POST("/api/v1/oauth/token", employeeHandler.OAuth2Token)
-	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log))
+	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log, tokenBlacklist))
 	{
+		authorized.POST("/logout", employeeHandler.LogoutEmployee)
 		authorized.GET("/employees", employeeHandler.ListEmployees)
 		authorized.GET("/employees/:id", employeeHandler.GetEmployee)
 		authorized.DELETE("/employees/:id", employeeHandler.DeleteEmployee)
@@ -172,7 +186,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	}
 
 	// Admin-only routes
-	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log))
+	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log, tokenBlacklist))
 	{
 		admin.DELETE("/reset", employeeHandler.ResetAllData)
 		admin.GET("/shifts/availability", employeeHandler.GetAdminShiftsAvailability)

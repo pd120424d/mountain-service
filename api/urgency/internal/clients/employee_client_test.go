@@ -11,7 +11,6 @@ import (
 	"time"
 
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
-	"github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +23,7 @@ func TestNewEmployeeClient(t *testing.T) {
 	t.Run("it creates a new employee client with default timeout", func(t *testing.T) {
 		config := EmployeeClientConfig{
 			BaseURL:     "http://localhost:8080",
-			ServiceAuth: &auth.ServiceAuth{},
+			ServiceAuth: nil,
 			Logger:      utils.NewTestLogger(),
 		}
 
@@ -36,7 +35,7 @@ func TestNewEmployeeClient(t *testing.T) {
 	t.Run("it creates a new employee client with custom timeout", func(t *testing.T) {
 		config := EmployeeClientConfig{
 			BaseURL:     "http://localhost:8080",
-			ServiceAuth: &auth.ServiceAuth{},
+			ServiceAuth: nil,
 			Logger:      utils.NewTestLogger(),
 			Timeout:     60 * time.Second,
 		}
@@ -49,7 +48,7 @@ func TestNewEmployeeClient(t *testing.T) {
 	t.Run("it creates a new employee client with zero timeout defaults to 30 seconds", func(t *testing.T) {
 		config := EmployeeClientConfig{
 			BaseURL:     "http://localhost:8080",
-			ServiceAuth: &auth.ServiceAuth{},
+			ServiceAuth: nil,
 			Logger:      utils.NewTestLogger(),
 			Timeout:     0, // Should default to 30 seconds
 		}

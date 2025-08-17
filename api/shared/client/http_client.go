@@ -17,14 +17,14 @@ import (
 type HTTPClient struct {
 	baseURL     string
 	httpClient  *http.Client
-	serviceAuth *auth.ServiceAuth
+	serviceAuth auth.ServiceAuth
 	logger      utils.Logger
 }
 
 type HTTPClientConfig struct {
 	BaseURL     string
 	Timeout     time.Duration
-	ServiceAuth *auth.ServiceAuth
+	ServiceAuth auth.ServiceAuth
 	Logger      utils.Logger
 }
 

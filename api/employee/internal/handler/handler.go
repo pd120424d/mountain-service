@@ -35,6 +35,7 @@ type EmployeeHandler interface {
 	// Crud operations, Register is create
 	RegisterEmployee(ctx *gin.Context)
 	LoginEmployee(ctx *gin.Context)
+	LogoutEmployee(ctx *gin.Context)
 	OAuth2Token(ctx *gin.Context)
 	ListEmployees(ctx *gin.Context)
 	GetEmployee(ctx *gin.Context)
@@ -197,6 +198,58 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 
 	h.log.Info("Successfully validated employee and generated JWT token")
 	ctx.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+// LogoutEmployee Одјављивање запосленог
+// @Summary Одјављивање запосленог
+// @Description Одјављивање запосленог и поништавање токена
+// @Tags запослени
+// @Security OAuth2Password
+// @Produce json
+// @Success 200 {object} MessageResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /logout [post]
+func (h *employeeHandler) LogoutEmployee(ctx *gin.Context) {
+	h.log.Info("Received Logout Employee request")
+
+	tokenID, exists := ctx.Get("tokenID")
+	if !exists {
+		h.log.Error("Token ID not found in context")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	tokenIDStr, ok := tokenID.(string)
+	if !ok {
+		h.log.Error("Token ID is not a string")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	// Prefer expiration from context set by middleware to avoid re-parsing
+	expiresAny, ok := ctx.Get("expiresAt")
+	if !ok {
+		// Fallback: parse token to get expiration (blacklist not used here)
+		authHeader := ctx.GetHeader("Authorization")
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		claims, err := sharedAuth.ValidateJWT(tokenString, nil)
+		if err != nil {
+			h.log.Errorf("failed to parse token for logout: %v", err)
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
+		expiresAny = claims.ExpiresAt.Time
+	}
+	expiresAt, _ := expiresAny.(time.Time)
+	if err := h.emplService.LogoutEmployee(tokenIDStr, expiresAt); err != nil {
+		h.log.Errorf("failed to logout employee: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to logout"})
+		return
+	}
+
+	h.log.Info("Successfully logged out employee")
+	ctx.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
 // OAuth2Token OAuth2 token endpoint for Swagger UI

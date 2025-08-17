@@ -14,7 +14,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 	t.Run("it returns an error when Authorization header is missing", func(t *testing.T) {
 		log := utils.NewTestLogger()
-		funcToTest := AuthMiddleware(log)
+		funcToTest := AuthMiddleware(log, nil)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees", nil)
@@ -27,7 +27,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 	t.Run("it returns an error when token is invalid", func(t *testing.T) {
 		log := utils.NewTestLogger()
-		funcToTest := AuthMiddleware(log)
+		funcToTest := AuthMiddleware(log, nil)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees", nil)
@@ -41,7 +41,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 	t.Run("it sets claims in context when token is valid", func(t *testing.T) {
 		log := utils.NewTestLogger()
-		funcToTest := AuthMiddleware(log)
+		funcToTest := AuthMiddleware(log, nil)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees", nil)
@@ -60,7 +60,7 @@ func TestAuthMiddleware(t *testing.T) {
 func TestAdminMiddleware(t *testing.T) {
 	t.Run("it returns an error when Authorization header is missing", func(t *testing.T) {
 		log := utils.NewTestLogger()
-		funcToTest := AdminMiddleware(log)
+		funcToTest := AdminMiddleware(log, nil)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/admin/reset", nil)
@@ -73,7 +73,7 @@ func TestAdminMiddleware(t *testing.T) {
 
 	t.Run("it returns forbidden when user is not administrator", func(t *testing.T) {
 		log := utils.NewTestLogger()
-		funcToTest := AdminMiddleware(log)
+		funcToTest := AdminMiddleware(log, nil)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/admin/reset", nil)
@@ -89,7 +89,7 @@ func TestAdminMiddleware(t *testing.T) {
 
 	t.Run("it allows access when user is administrator", func(t *testing.T) {
 		log := utils.NewTestLogger()
-		funcToTest := AdminMiddleware(log)
+		funcToTest := AdminMiddleware(log, nil)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/admin/reset", nil)

@@ -293,7 +293,7 @@ func setupIntegrationTest(t *testing.T) (*gin.Engine, *gorm.DB, func()) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 
-	authorized := router.Group("/api/v1").Use(auth.AuthMiddleware(log))
+	authorized := router.Group("/api/v1").Use(auth.AuthMiddleware(log, nil))
 	{
 		authorized.POST("/urgencies", urgencyHandler.CreateUrgency)
 		authorized.GET("/urgencies", urgencyHandler.ListUrgencies)
@@ -302,7 +302,7 @@ func setupIntegrationTest(t *testing.T) (*gin.Engine, *gorm.DB, func()) {
 		authorized.DELETE("/urgencies/:id", urgencyHandler.DeleteUrgency)
 	}
 
-	admin := router.Group("/api/v1/admin").Use(auth.AdminMiddleware(log))
+	admin := router.Group("/api/v1/admin").Use(auth.AdminMiddleware(log, nil))
 	{
 		admin.DELETE("/urgencies/reset", urgencyHandler.ResetAllData)
 	}

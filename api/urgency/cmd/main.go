@@ -101,7 +101,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	r.POST("/api/v1/urgencies", urgencyHandler.CreateUrgency)
 
 	// Protected routes (authentication required)
-	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log))
+	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log, nil))
 	{
 		authorized.GET("/urgencies", urgencyHandler.ListUrgencies)
 		authorized.GET("/urgencies/:id", urgencyHandler.GetUrgency)
@@ -110,7 +110,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	}
 
 	// Admin-only routes
-	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log))
+	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log, nil))
 	{
 		admin.DELETE("/urgencies/reset", urgencyHandler.ResetAllData)
 	}

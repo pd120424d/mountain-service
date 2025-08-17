@@ -244,6 +244,20 @@ func (mr *MockEmployeeServiceMockRecorder) LoginEmployee(req any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoginEmployee", reflect.TypeOf((*MockEmployeeService)(nil).LoginEmployee), req)
 }
 
+// LogoutEmployee mocks base method.
+func (m *MockEmployeeService) LogoutEmployee(tokenID string, expiresAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LogoutEmployee", tokenID, expiresAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// LogoutEmployee indicates an expected call of LogoutEmployee.
+func (mr *MockEmployeeServiceMockRecorder) LogoutEmployee(tokenID, expiresAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogoutEmployee", reflect.TypeOf((*MockEmployeeService)(nil).LogoutEmployee), tokenID, expiresAt)
+}
+
 // RegisterEmployee mocks base method.
 func (m *MockEmployeeService) RegisterEmployee(req v1.EmployeeCreateRequest) (*v1.EmployeeResponse, error) {
 	m.ctrl.T.Helper()
@@ -286,4 +300,172 @@ func (m *MockEmployeeService) UpdateEmployee(employeeID uint, req v1.EmployeeUpd
 func (mr *MockEmployeeServiceMockRecorder) UpdateEmployee(employeeID, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmployee", reflect.TypeOf((*MockEmployeeService)(nil).UpdateEmployee), employeeID, req)
+}
+
+// MockEmployeeServiceWithBlacklist is a mock of EmployeeServiceWithBlacklist interface.
+type MockEmployeeServiceWithBlacklist struct {
+	ctrl     *gomock.Controller
+	recorder *MockEmployeeServiceWithBlacklistMockRecorder
+	isgomock struct{}
+}
+
+// MockEmployeeServiceWithBlacklistMockRecorder is the mock recorder for MockEmployeeServiceWithBlacklist.
+type MockEmployeeServiceWithBlacklistMockRecorder struct {
+	mock *MockEmployeeServiceWithBlacklist
+}
+
+// NewMockEmployeeServiceWithBlacklist creates a new mock instance.
+func NewMockEmployeeServiceWithBlacklist(ctrl *gomock.Controller) *MockEmployeeServiceWithBlacklist {
+	mock := &MockEmployeeServiceWithBlacklist{ctrl: ctrl}
+	mock.recorder = &MockEmployeeServiceWithBlacklistMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEmployeeServiceWithBlacklist) EXPECT() *MockEmployeeServiceWithBlacklistMockRecorder {
+	return m.recorder
+}
+
+// DeleteEmployee mocks base method.
+func (m *MockEmployeeServiceWithBlacklist) DeleteEmployee(employeeID uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteEmployee", employeeID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteEmployee indicates an expected call of DeleteEmployee.
+func (mr *MockEmployeeServiceWithBlacklistMockRecorder) DeleteEmployee(employeeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteEmployee", reflect.TypeOf((*MockEmployeeServiceWithBlacklist)(nil).DeleteEmployee), employeeID)
+}
+
+// GetEmployeeByID mocks base method.
+func (m *MockEmployeeServiceWithBlacklist) GetEmployeeByID(employeeID uint) (*model.Employee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmployeeByID", employeeID)
+	ret0, _ := ret[0].(*model.Employee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmployeeByID indicates an expected call of GetEmployeeByID.
+func (mr *MockEmployeeServiceWithBlacklistMockRecorder) GetEmployeeByID(employeeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByID", reflect.TypeOf((*MockEmployeeServiceWithBlacklist)(nil).GetEmployeeByID), employeeID)
+}
+
+// GetEmployeeByUsername mocks base method.
+func (m *MockEmployeeServiceWithBlacklist) GetEmployeeByUsername(username string) (*model.Employee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmployeeByUsername", username)
+	ret0, _ := ret[0].(*model.Employee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmployeeByUsername indicates an expected call of GetEmployeeByUsername.
+func (mr *MockEmployeeServiceWithBlacklistMockRecorder) GetEmployeeByUsername(username any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByUsername", reflect.TypeOf((*MockEmployeeServiceWithBlacklist)(nil).GetEmployeeByUsername), username)
+}
+
+// ListEmployees mocks base method.
+func (m *MockEmployeeServiceWithBlacklist) ListEmployees() ([]v1.EmployeeResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListEmployees")
+	ret0, _ := ret[0].([]v1.EmployeeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListEmployees indicates an expected call of ListEmployees.
+func (mr *MockEmployeeServiceWithBlacklistMockRecorder) ListEmployees() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEmployees", reflect.TypeOf((*MockEmployeeServiceWithBlacklist)(nil).ListEmployees))
+}
+
+// LoginEmployee mocks base method.
+func (m *MockEmployeeServiceWithBlacklist) LoginEmployee(req v1.EmployeeLogin) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LoginEmployee", req)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LoginEmployee indicates an expected call of LoginEmployee.
+func (mr *MockEmployeeServiceWithBlacklistMockRecorder) LoginEmployee(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoginEmployee", reflect.TypeOf((*MockEmployeeServiceWithBlacklist)(nil).LoginEmployee), req)
+}
+
+// LogoutEmployee mocks base method.
+func (m *MockEmployeeServiceWithBlacklist) LogoutEmployee(tokenID string, expiresAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LogoutEmployee", tokenID, expiresAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// LogoutEmployee indicates an expected call of LogoutEmployee.
+func (mr *MockEmployeeServiceWithBlacklistMockRecorder) LogoutEmployee(tokenID, expiresAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogoutEmployee", reflect.TypeOf((*MockEmployeeServiceWithBlacklist)(nil).LogoutEmployee), tokenID, expiresAt)
+}
+
+// RegisterEmployee mocks base method.
+func (m *MockEmployeeServiceWithBlacklist) RegisterEmployee(req v1.EmployeeCreateRequest) (*v1.EmployeeResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterEmployee", req)
+	ret0, _ := ret[0].(*v1.EmployeeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RegisterEmployee indicates an expected call of RegisterEmployee.
+func (mr *MockEmployeeServiceWithBlacklistMockRecorder) RegisterEmployee(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterEmployee", reflect.TypeOf((*MockEmployeeServiceWithBlacklist)(nil).RegisterEmployee), req)
+}
+
+// ResetAllData mocks base method.
+func (m *MockEmployeeServiceWithBlacklist) ResetAllData() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetAllData")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResetAllData indicates an expected call of ResetAllData.
+func (mr *MockEmployeeServiceWithBlacklistMockRecorder) ResetAllData() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockEmployeeServiceWithBlacklist)(nil).ResetAllData))
+}
+
+// SetTokenBlacklist mocks base method.
+func (m *MockEmployeeServiceWithBlacklist) SetTokenBlacklist(blacklist any) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetTokenBlacklist", blacklist)
+}
+
+// SetTokenBlacklist indicates an expected call of SetTokenBlacklist.
+func (mr *MockEmployeeServiceWithBlacklistMockRecorder) SetTokenBlacklist(blacklist any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTokenBlacklist", reflect.TypeOf((*MockEmployeeServiceWithBlacklist)(nil).SetTokenBlacklist), blacklist)
+}
+
+// UpdateEmployee mocks base method.
+func (m *MockEmployeeServiceWithBlacklist) UpdateEmployee(employeeID uint, req v1.EmployeeUpdateRequest) (*v1.EmployeeResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateEmployee", employeeID, req)
+	ret0, _ := ret[0].(*v1.EmployeeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateEmployee indicates an expected call of UpdateEmployee.
+func (mr *MockEmployeeServiceWithBlacklistMockRecorder) UpdateEmployee(employeeID, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmployee", reflect.TypeOf((*MockEmployeeServiceWithBlacklist)(nil).UpdateEmployee), employeeID, req)
 }

@@ -41,7 +41,7 @@ type employeeClient struct {
 // EmployeeClientConfig holds the configuration for the employee client
 type EmployeeClientConfig struct {
 	BaseURL     string
-	ServiceAuth *auth.ServiceAuth
+	ServiceAuth auth.ServiceAuth
 	Logger      utils.Logger
 	Timeout     time.Duration
 }

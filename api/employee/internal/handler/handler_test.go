@@ -369,6 +369,148 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 	})
 }
 
+func TestEmployeeHandler_LogoutEmployee(t *testing.T) {
+	t.Parallel()
+
+	gin.SetMode(gin.TestMode)
+
+	t.Run("it succeeds when logging out with valid token", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplServiceMock := service.NewMockEmployeeService(ctrl)
+		shiftServiceMock := service.NewMockShiftService(ctrl)
+
+		h := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		expiresAt := time.Now().Add(time.Hour)
+		ctx.Set("tokenID", "token-123")
+		ctx.Set("expiresAt", expiresAt)
+
+		emplServiceMock.EXPECT().
+			LogoutEmployee("token-123", expiresAt).
+			Return(nil)
+
+		h.LogoutEmployee(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, "Successfully logged out", response["message"])
+	})
+
+	t.Run("it fails when token ID not in context", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplServiceMock := service.NewMockEmployeeService(ctrl)
+		shiftServiceMock := service.NewMockShiftService(ctrl)
+
+		handler := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/logout", nil)
+
+		handler.LogoutEmployee(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, "Internal server error", response["error"])
+	})
+
+	t.Run("it fails when token ID is not a string", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplServiceMock := service.NewMockEmployeeService(ctrl)
+		shiftServiceMock := service.NewMockShiftService(ctrl)
+
+		handler := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/logout", nil)
+
+		ctx.Set("tokenID", 123) // Not a string
+
+		handler.LogoutEmployee(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, "Internal server error", response["error"])
+	})
+
+	t.Run("it fails when authorization header is missing", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplServiceMock := service.NewMockEmployeeService(ctrl)
+		shiftServiceMock := service.NewMockShiftService(ctrl)
+
+		handler := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/logout", nil)
+
+		ctx.Set("tokenID", "test-token-id")
+
+		handler.LogoutEmployee(ctx)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, "Invalid token", response["error"])
+	})
+
+	t.Run("it fails when service returns error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		emplServiceMock := service.NewMockEmployeeService(ctrl)
+		shiftServiceMock := service.NewMockShiftService(ctrl)
+
+		handler := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
+
+		emplServiceMock.EXPECT().
+			LogoutEmployee("token-123", gomock.AssignableToTypeOf(time.Time{})).
+			Return(assert.AnError)
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		expiresAt := time.Now().Add(time.Hour)
+		ctx.Set("tokenID", "token-123")
+		ctx.Set("expiresAt", expiresAt)
+
+		handler.LogoutEmployee(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		var response map[string]interface{}
+		decodeErr := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, decodeErr)
+		assert.Equal(t, "Failed to logout", response["error"])
+	})
+}
+
 func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 	// Note: Not using t.Parallel() because this test modifies environment variables
 
