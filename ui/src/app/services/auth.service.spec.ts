@@ -4,10 +4,13 @@ import { AuthService } from './auth.service';
 import { sharedTestingProviders } from '../test-utils/shared-test-imports';
 import { of } from 'rxjs';
 import { MedicRole, TechnicalRole } from '../shared/models';
+import { HttpTestingController } from '@angular/common/http/testing';
+import { environment } from '../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
   let routerSpy: jasmine.SpyObj<Router>;
+  let httpMock: HttpTestingController;
 
   const fakeToken = (expOffset: number) => {
     const payload = {
@@ -29,6 +32,7 @@ describe('AuthService', () => {
     });
 
     service = TestBed.inject(AuthService);
+    httpMock = TestBed.inject(HttpTestingController);
     localStorage.clear();
   });
 
@@ -54,15 +58,64 @@ describe('AuthService', () => {
     expect(localStorage.getItem('token')).toBe(mockToken);
   });
 
-  it('should clean the local storage on logout', () => {
-    localStorage.setItem('token', 'test-token');
+  it('it succeeds when logout is called without token', () => {
+    // Ensure no token exists
+    localStorage.removeItem('token');
+
     service.logout();
+
+    // No HTTP call should be made
+    httpMock.expectNone(`${environment.apiUrl}/logout`);
+
+    // Navigates immediately
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
     expect(localStorage.getItem('token')).toBeNull();
   });
 
-  it('should remove token and navigate to login on logout', () => {
-    localStorage.setItem('token', fakeToken(60));
+
+  it('succeeds when logout posts to backend and clears token', () => {
+    const tokenPayload = { id: 1, role: 'Medic', exp: Math.floor(Date.now() / 1000) + 300 };
+    const token = 'h.' + btoa(JSON.stringify(tokenPayload)) + '.s';
+    localStorage.setItem('token', token);
+
     service.logout();
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/logout`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Authorization')).toBe(`Bearer ${token}`);
+
+    req.flush({ message: 'Successfully logged out' });
+
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('succeeds when logout returns error and still clears token', () => {
+    const tokenPayload = { id: 1, role: 'Medic', exp: Math.floor(Date.now() / 1000) + 300 };
+    const token = 'h.' + btoa(JSON.stringify(tokenPayload)) + '.s';
+    localStorage.setItem('token', token);
+
+    service.logout();
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/logout`);
+    expect(req.request.method).toBe('POST');
+
+    req.flush({ error: 'boom' }, { status: 500, statusText: 'Server Error' });
+
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('it succeeds when logout posts and then clears token and navigates', () => {
+    const token = fakeToken(60);
+    localStorage.setItem('token', token);
+
+    service.logout();
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/logout`);
+    expect(req.request.method).toBe('POST');
+    req.flush({ message: 'ok' });
+
     expect(localStorage.getItem('token')).toBeNull();
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
   });

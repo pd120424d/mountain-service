@@ -1,7 +1,7 @@
 
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { interval, Observable, Subscription, tap } from 'rxjs';
+import { HttpClient, HttpBackend, HttpHeaders } from '@angular/common/http';
+import { interval, Observable, Subscription, tap, finalize } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { EmployeeRole, MedicRole, AdministratorRole } from '../shared/models';
@@ -13,8 +13,10 @@ export class AuthService {
   private apiUrl = `${environment.apiUrl}`;
   private checkInterval = 300 * 1000; // Check every 5 minutes
   private intervalSub: Subscription | null = null;
+  private bareHttp!: HttpClient;
 
-  constructor(private http: HttpClient, private router: Router) {
+  constructor(private http: HttpClient, private router: Router, private httpBackend: HttpBackend) {
+    this.bareHttp = new HttpClient(this.httpBackend);
     this.startPeriodicTokenCheck();
   }
 
@@ -43,8 +45,24 @@ export class AuthService {
   }
   
   logout(): void {
-    localStorage.removeItem('token');
-    this.router.navigate(['/login']);
+    const token = localStorage.getItem('token');
+    if (token) {
+      const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+      // Use bare HttpClient to bypass interceptors and avoid 401 -> logout recursion
+      this.bareHttp.post<{ message: string }>(`${this.apiUrl}/logout`, {}, { headers }).pipe(
+        finalize(() => {
+          localStorage.removeItem('token');
+          this.stopPeriodicCheck();
+          this.router.navigate(['/login']);
+        })
+      ).subscribe({
+        next: () => {},
+        error: () => {} // Ignore errors and still clear local state
+      });
+    } else {
+      this.stopPeriodicCheck();
+      this.router.navigate(['/login']);
+    }
   }
 
   isAuthenticated(): boolean {
