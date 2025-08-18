@@ -153,9 +153,9 @@ For detailed deployment information, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 To support AWS deployments, these GitHub Secrets are required:
 
 - `GHCR_PAT`: GitHub token for publishing to the container registry
-- `AWS_SSH_PRIVATE_KEY`: SSH private key for EC2 access
-- `AWS_INSTANCE_USER`: EC2 instance username (typically `ubuntu`)
-- `AWS_INSTANCE_IP`: EC2 instance IP address
+- `GCP_SSH_PRIVATE_KEY`: SSH private key for GCP VM access
+- `GCP_INSTANCE_USER`: GCP instance username (e.g. `ubuntu`)
+- `GCP_INSTANCE_IP`: GCP instance IP address
 - `AWS_JWT_SECRET`: JWT secret for backend authentication
 - `AWS_ADMIN_PASSWORD`: Admin password for backend services
 - `AWS_SERVICE_AUTH_SECRET`: Service-to-service authentication secret
