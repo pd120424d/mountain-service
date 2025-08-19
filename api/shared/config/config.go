@@ -22,7 +22,6 @@ const (
 )
 
 const (
-	REDIS_ADDR     = "REDIS_ADDR"
-	REDIS_PASSWORD = "REDIS_PASSWORD"
-	REDIS_DB       = "REDIS_DB"
+	REDIS_ADDR = "REDIS_ADDR"
+	REDIS_DB   = "REDIS_DB"
 )

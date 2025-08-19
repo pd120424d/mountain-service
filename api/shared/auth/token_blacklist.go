@@ -26,9 +26,8 @@ type tokenBlacklist struct {
 }
 
 type TokenBlacklistConfig struct {
-	RedisAddr     string
-	RedisPassword string
-	RedisDB       int
+	RedisAddr string
+	RedisDB   int
 }
 
 type BlacklistStats struct {
@@ -38,9 +37,8 @@ type BlacklistStats struct {
 
 func NewTokenBlacklist(config TokenBlacklistConfig) TokenBlacklist {
 	client := redis.NewClient(&redis.Options{
-		Addr:     config.RedisAddr,
-		Password: config.RedisPassword,
-		DB:       config.RedisDB,
+		Addr: config.RedisAddr,
+		DB:   config.RedisDB,
 	})
 
 	return &tokenBlacklist{

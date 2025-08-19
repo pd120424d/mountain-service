@@ -87,10 +87,9 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	// Initialize Redis token blacklist
 	redisAddr := os.Getenv(globConf.REDIS_ADDR)
 	if redisAddr == "" {
-		redisAddr = "localhost:6379" // Default Redis address
+		redisAddr = "redis:6379" // Default to local docker redis service
 	}
-	redisPassword := os.Getenv(globConf.REDIS_PASSWORD)
-	blacklistConfig := auth.TokenBlacklistConfig{RedisAddr: redisAddr, RedisPassword: redisPassword, RedisDB: 0}
+	blacklistConfig := auth.TokenBlacklistConfig{RedisAddr: redisAddr, RedisDB: 0}
 	tokenBlacklist := auth.NewTokenBlacklist(blacklistConfig)
 	if err := tokenBlacklist.TestConnection(); err != nil {
 		log.Fatalf("Failed to connect to Redis token blacklist: %v. Redis is required for secure token invalidation.", err)
