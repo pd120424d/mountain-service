@@ -64,11 +64,11 @@ log_info "Starting backend deployment..."
 ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP" << 'EOF'
     mkdir -p ~/mountain-service-deployment
     cd ~/mountain-service-deployment
-    
+
     echo "Current directory: $(pwd)"
     echo "Files in directory:"
     ls -la
-    
+
     echo "Running containers before deployment:"
     docker ps
 EOF
@@ -89,7 +89,15 @@ fi
 # Deploy backend services
 ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP" << 'EOF'
     cd ~/mountain-service-deployment
-    
+
+
+    # Load env variables from .env for this session (needed for GHCR login)
+    if [ -f .env ]; then
+        set -a
+        . ./.env
+        set +a
+    fi
+
     # Login to registry
     echo "$GHCR_PAT" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
@@ -105,7 +113,7 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
 
     # Remove stopped backend containers
     docker container prune -f || true
-    
+
     # Clear Docker image cache to prevent stale images
     echo "Clearing Docker image cache to ensure fresh images..."
     docker system prune -f --volumes || true
@@ -120,7 +128,7 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
     docker rmi $(docker images -q ghcr.io/$GITHUB_ACTOR/activity-service) 2>/dev/null || true
     docker rmi $(docker images -q ghcr.io/$GITHUB_ACTOR/version-service) 2>/dev/null || true
 
-    if ! docker-compose pull employee-db urgency-db activity-db employee-service urgency-service activity-service version-service; then
+    if ! docker compose pull employee-db urgency-db activity-db employee-service urgency-service activity-service version-service; then
         echo "ERROR: Failed to pull backend Docker images from registry."
         exit 1
     fi
@@ -128,7 +136,7 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
     # Verify we have the correct images by showing their digests
     echo "Verifying pulled images:"
     docker images --digests | grep -E "(employee-service|urgency-service|activity-service|version-service)" || true
-    
+
     # Create network if it doesn't exist
     echo "Creating Docker network if it doesn't exist..."
     docker network create mountain-service-deployment_web 2>/dev/null || true
@@ -145,61 +153,61 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
 
     # Deploy backend services
     echo "Deploying backend services..."
-    docker-compose up -d --force-recreate employee-db urgency-db activity-db employee-service urgency-service activity-service version-service
-    
+    docker compose up -d --force-recreate employee-db urgency-db activity-db employee-service urgency-service activity-service version-service
+
     # Wait for services to be healthy
     echo "Waiting for backend services to be healthy..."
     sleep 30
-    
+
     # Check service health
     echo "Checking backend service health..."
     for i in {1..12}; do
         echo "Health check attempt $i/12..."
-        
+
         # Check databases
-        if docker-compose ps employee-db | grep -q "Up (healthy)"; then
+        if docker compose ps employee-db | grep -q "Up (healthy)"; then
             echo "✓ Employee DB is healthy"
         else
             echo "⚠ Employee DB not healthy yet"
         fi
-        
-        if docker-compose ps urgency-db | grep -q "Up (healthy)"; then
+
+        if docker compose ps urgency-db | grep -q "Up (healthy)"; then
             echo "✓ Urgency DB is healthy"
         else
             echo "⚠ Urgency DB not healthy yet"
         fi
-        
-        if docker-compose ps activity-db | grep -q "Up (healthy)"; then
+
+        if docker compose ps activity-db | grep -q "Up (healthy)"; then
             echo "✓ Activity DB is healthy"
         else
             echo "⚠ Activity DB not healthy yet"
         fi
-        
+
         # Check services
         if curl -f http://localhost:8082/api/v1/health > /dev/null 2>&1; then
             echo "✓ Employee Service is healthy"
         else
             echo "⚠ Employee Service not healthy yet"
         fi
-        
+
         if curl -f http://localhost:8083/api/v1/health > /dev/null 2>&1; then
             echo "✓ Urgency Service is healthy"
         else
             echo "⚠ Urgency Service not healthy yet"
         fi
-        
+
         if curl -f http://localhost:8084/api/v1/health > /dev/null 2>&1; then
             echo "✓ Activity Service is healthy"
         else
             echo "⚠ Activity Service not healthy yet"
         fi
-        
+
         if curl -f http://localhost:8090/api/v1/health > /dev/null 2>&1; then
             echo "✓ Version Service is healthy"
         else
             echo "⚠ Version Service not healthy yet"
         fi
-        
+
         # Check if all services are healthy
         if curl -f http://localhost:8082/api/v1/health > /dev/null 2>&1 && \
            curl -f http://localhost:8083/api/v1/health > /dev/null 2>&1 && \
@@ -208,24 +216,24 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
             echo "SUCCESS: All backend services are healthy!"
             break
         fi
-        
+
         if [ $i -eq 12 ]; then
             echo "FAILURE: Some backend services failed to become healthy after 6 minutes"
             echo "Container status:"
-            docker-compose ps
+            docker compose ps
             exit 1
         fi
-        
+
         echo "Waiting 30 seconds before next health check..."
         sleep 30
     done
-    
+
     echo "Container status after deployment:"
-    docker-compose ps
-    
+    docker compose ps
+
     echo "All running containers:"
     docker ps
-    
+
     echo "Backend deployment completed!"
 EOF
 
@@ -240,30 +248,30 @@ if [ $? -eq 0 ]; then
     # Health checks from inside Docker network (since ports are not exposed externally)
     log_info "Testing services from inside Docker network..."
 
-    if docker-compose exec -T employee-service curl -f -m 5 http://localhost:8082/api/v1/health > /dev/null 2>&1; then
+    if docker compose exec -T employee-service curl -f -m 5 http://localhost:8082/api/v1/health > /dev/null 2>&1; then
         log_success "Employee Service accessible"
     else
         log_error "Employee Service not accessible"
     fi
 
-    if docker-compose exec -T urgency-service curl -f -m 5 http://localhost:8083/api/v1/health > /dev/null 2>&1; then
+    if docker compose exec -T urgency-service curl -f -m 5 http://localhost:8083/api/v1/health > /dev/null 2>&1; then
         log_success "Urgency Service accessible"
     else
         log_error "Urgency Service not accessible"
     fi
 
-    if docker-compose exec -T activity-service curl -f -m 5 http://localhost:8084/api/v1/health > /dev/null 2>&1; then
+    if docker compose exec -T activity-service curl -f -m 5 http://localhost:8084/api/v1/health > /dev/null 2>&1; then
         log_success "Activity Service accessible"
     else
         log_error "Activity Service not accessible"
     fi
 
-    if docker-compose exec -T version-service curl -f -m 5 http://localhost:8090/api/v1/health > /dev/null 2>&1; then
+    if docker compose exec -T version-service curl -f -m 5 http://localhost:8090/api/v1/health > /dev/null 2>&1; then
         log_success "Version Service accessible"
     else
         log_error "Version Service not accessible"
     fi
-    
+
     echo
     log_success "Backend deployment completed successfully!"
     echo -e "${GREEN}Backend API URLs:${NC}"

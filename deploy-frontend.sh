@@ -137,19 +137,19 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
     docker rm mountain-service-deployment_frontend_1 2>/dev/null || true
 
     # Also check for frontend containers from the frontend-only compose file
-    docker-compose -f docker-compose-frontend.yml --env-file .env.frontend stop 2>/dev/null || true
-    docker-compose -f docker-compose-frontend.yml --env-file .env.frontend rm -f 2>/dev/null || true
+    docker compose -f docker-compose-frontend.yml --env-file .env.frontend stop 2>/dev/null || true
+    docker compose -f docker-compose-frontend.yml --env-file .env.frontend rm -f 2>/dev/null || true
     
     # Pull frontend image
     echo "Pulling frontend image..."
-    if ! docker-compose -f docker-compose-frontend.yml --env-file .env.frontend pull; then
+    if ! docker compose -f docker-compose-frontend.yml --env-file .env.frontend pull; then
         echo "ERROR: Failed to pull frontend Docker image from registry."
         exit 1
     fi
     
     # Deploy frontend service
     echo "Deploying frontend service..."
-    docker-compose -f docker-compose-frontend.yml --env-file .env.frontend up -d --force-recreate
+    docker compose -f docker-compose-frontend.yml --env-file .env.frontend up -d --force-recreate
     
     # Wait for frontend to start
     echo "Waiting for frontend to start..."
@@ -173,9 +173,9 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
         if [ $i -eq 6 ]; then
             echo "❌ Frontend failed to become healthy after 3 minutes"
             echo "Frontend container status:"
-            docker-compose -f docker-compose-frontend.yml ps
+            docker compose -f docker-compose-frontend.yml ps
             echo "Frontend container logs:"
-            docker-compose -f docker-compose-frontend.yml logs frontend
+            docker compose -f docker-compose-frontend.yml logs frontend
             exit 1
         fi
         
@@ -184,7 +184,7 @@ ssh -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no "$INSTANCE_USER@$INSTANCE_IP"
     done
     
     echo "Frontend container status:"
-    docker-compose -f docker-compose-frontend.yml ps
+    docker compose -f docker-compose-frontend.yml ps
     
     echo "All running containers:"
     docker ps
