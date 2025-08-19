@@ -76,6 +76,9 @@ services:
       - AZURE_STORAGE_ACCOUNT_NAME=${AZURE_STORAGE_ACCOUNT_NAME}
       - AZURE_STORAGE_ACCOUNT_KEY=${AZURE_STORAGE_ACCOUNT_KEY}
       - AZURE_STORAGE_CONTAINER_NAME=${AZURE_STORAGE_CONTAINER_NAME}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB:-0}
     depends_on:
       employee-db:
         condition: service_healthy
@@ -85,6 +88,9 @@ services:
       - /var/log:/var/log
     networks:
       - web
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8082/api/v1/health"]
