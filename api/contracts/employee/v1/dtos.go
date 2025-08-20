@@ -46,15 +46,15 @@ type EmployeeResponse struct {
 // EmployeeCreateRequest DTO for creating a new employee
 // swagger:model
 type EmployeeCreateRequest struct {
-	FirstName      string `json:"firstName" binding:"required"`
-	LastName       string `json:"lastName" binding:"required"`
-	Username       string `json:"username" binding:"required"`
-	Password       string `json:"password" binding:"required"`
-	Email          string `json:"email" binding:"required,email"`
-	Gender         string `json:"gender" binding:"required"`
-	Phone          string `json:"phone" binding:"required"`
-	ProfilePicture string `json:"profilePicture"`
-	ProfileType    string `json:"profileType" binding:"required"`
+	FirstName string `json:"firstName" binding:"required"`
+	LastName  string `json:"lastName" binding:"required"`
+	Username  string `json:"username" binding:"required"`
+	Password  string `json:"password" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Gender    string `json:"gender" binding:"required"`
+	Phone     string `json:"phone" binding:"required"`
+
+	ProfileType string `json:"profileType" binding:"required"`
 }
 
 // Validate validates the EmployeeCreateRequest
@@ -253,7 +253,7 @@ func (r *EmployeeUpdateRequest) validateProfileType() error {
 func (e *EmployeeCreateRequest) ToString() string {
 	return fmt.Sprintf(
 		"EmployeeCreateRequest { FirstName: %s, LastName: %s, Username: %s, Password: %s,"+
-			" Email: %s, Gender: %s, Phone: %s, ProfilePicture: %s, ProfileType: %s }",
+			" Email: %s, Gender: %s, Phone: %s, ProfileType: %s }",
 		e.FirstName,
 		e.LastName,
 		e.Username,
@@ -261,7 +261,6 @@ func (e *EmployeeCreateRequest) ToString() string {
 		e.Email,
 		e.Gender,
 		e.Phone,
-		e.ProfilePicture,
 		e.ProfileType,
 	)
 }

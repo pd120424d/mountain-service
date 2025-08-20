@@ -29,14 +29,16 @@
   <label for="email">{{ 'EMPLOYEE_FORM.EMAIL' | translate }}:</label>
   <input id="email" formControlName="email" type="email">
 
-  <label for="profilePicture">{{ 'EMPLOYEE_FORM.PROFILE_PICTURE' | translate }}:</label>
-  <app-image-upload
-    [employeeId]="employeeId"
-    [cacheKey]="'employee-form-' + (employeeId || 'new')"
-    [initialImageUrl]="currentProfilePictureUrl"
-    (imageSelected)="onImageSelected($event)"
-    (imageRemoved)="onImageRemoved()">
-  </app-image-upload>
+  <ng-container *ngIf="isEditMode">
+    <label for="profilePicture">{{ 'EMPLOYEE_FORM.PROFILE_PICTURE' | translate }}:</label>
+    <app-image-upload
+      [employeeId]="employeeId"
+      [cacheKey]="'employee-form-' + (employeeId || 'new')"
+      [initialImageUrl]="currentProfilePictureUrl"
+      (imageSelected)="onImageSelected($event)"
+      (imageRemoved)="onImageRemoved()">
+    </app-image-upload>
+  </ng-container>
 
   <label for="profileType">{{ 'EMPLOYEE_FORM.PROFILE_TYPE' | translate }}:</label>
   <select id="profileType" formControlName="profileType">

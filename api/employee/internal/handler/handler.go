@@ -74,20 +74,12 @@ func NewEmployeeHandler(log utils.Logger, employeeService service.EmployeeServic
 
 // RegisterEmployee Креирање новог запосленог
 // @Summary Креирање новог запосленог
-// @Description Креирање новог запосленог у систему (supports both JSON and multipart form data)
+// @Description Креирање новог запосленог у систему
 // @Tags запослени
-// @Accept  json,multipart/form-data
+// @Accept  json
 // @Produce  json
 // @Param employee body EmployeeCreateRequest true "Подаци о новом запосленом (JSON)"
-// @Param firstName formData string false "First Name (form data)"
-// @Param lastName formData string false "Last Name (form data)"
-// @Param username formData string false "Username (form data)"
-// @Param password formData string false "Password (form data)"
-// @Param email formData string false "Email (form data)"
-// @Param gender formData string false "Gender (form data)"
-// @Param phone formData string false "Phone (form data)"
-// @Param profileType formData string false "Profile Type (form data)"
-// @Param profilePicture formData file false "Profile Picture (form data)"
+
 // @Success 201 {object} EmployeeResponse
 // @Failure 400 {object} ErrorResponse
 // @Router /employees [post]

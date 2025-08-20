@@ -36,7 +36,6 @@ export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerEmpl
   lastName: string;
   password: string;
   phone: string;
-  profilePicture?: string;
   profileType: string;
   username: string;
 }
@@ -141,7 +140,6 @@ export interface InternalHandlerEmployeeCreateRequest {
   lastName: string;
   password: string;
   phone: string;
-  profilePicture?: string;
   profileType: string;
   username: string;
 }

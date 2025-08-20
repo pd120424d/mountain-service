@@ -50,8 +50,7 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
       gender: ['', Validators.required],
       phoneNumber: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      profileType: ['', Validators.required],
-      profilePicture: [null],
+      profileType: ['', Validators.required]
     });
 
     const navigation = this.router.getCurrentNavigation();
@@ -109,10 +108,10 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
   }
 
   onImageSelected(event: ImageUploadEvent): void {
+    // In edit mode only; do nothing during registration
+    if (!this.isEditMode) return;
     if (event.isValid && event.file) {
       this.selectedImageFile = event.file;
-      // Update form control with preview URL for display purposes
-      this.employeeForm.patchValue({ profilePicture: event.preview });
     } else {
       this.selectedImageFile = null;
       this.toastr.error(event.error || 'Invalid image file');
@@ -120,9 +119,9 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
   }
 
   onImageRemoved(): void {
+    if (!this.isEditMode) return;
     this.selectedImageFile = null;
     this.currentProfilePictureUrl = undefined;
-    this.employeeForm.patchValue({ profilePicture: null });
   }
 
   /**
@@ -166,7 +165,7 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
   }
 
   private createEmployee(formValue: any): void {
-    // Always create employee with JSON first, then upload image separately if needed
+    // Registration has no profile picture handling; just create the employee
     this.createEmployeeJSON(formValue);
   }
 
@@ -229,29 +228,7 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
     });
   }
 
-  private uploadImageAfterCreation(employeeId: number): void {
-    if (!this.selectedImageFile) {
-      this.spinner.hide();
-      this.toastr.success(this.translate.instant('EMPLOYEE_FORM.CREATE_SUCCESS'));
-      this.router.navigate(['/employees']);
-      return;
-    }
-
-    this.imageUploadService.uploadProfilePicture(employeeId, this.selectedImageFile).subscribe({
-      next: (progress) => {
-        if (progress.status === 'completed') {
-          this.spinner.hide();
-          this.toastr.success(this.translate.instant('EMPLOYEE_FORM.CREATE_SUCCESS'));
-          this.router.navigate(['/employees']);
-        }
-      },
-      error: (error) => {
-        this.spinner.hide();
-        this.toastr.warning('Employee created but image upload failed: ' + error.message);
-        this.router.navigate(['/employees']);
-      }
-    });
-  }
+  // Removed: uploadImageAfterCreation - registration no longer handles images
 
   private uploadImageAfterUpdate(employeeId: number): void {
     if (!this.selectedImageFile) {

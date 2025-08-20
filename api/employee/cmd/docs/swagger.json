@@ -122,83 +122,6 @@
                 }
             },
             "post": {
-                "description": "Креирање новог запосленог у систему (supports both JSON and multipart form data)",
-                "consumes": [
-                    "application/json",
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "запослени"
-                ],
-                "summary": "Креирање новог запосленог",
-                "parameters": [
-                    {
-                        "description": "Подаци о новом запосленом (JSON)",
-                        "name": "employee",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler.EmployeeCreateRequest"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "First Name (form data)",
-                        "name": "firstName",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Last Name (form data)",
-                        "name": "lastName",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Username (form data)",
-                        "name": "username",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Password (form data)",
-                        "name": "password",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Email (form data)",
-                        "name": "email",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Gender (form data)",
-                        "name": "gender",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Phone (form data)",
-                        "name": "phone",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Profile Type (form data)",
-                        "name": "profileType",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Profile Picture (form data)",
-                        "name": "profilePicture",
-                        "in": "formData"
-                    }
-                ],
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -1044,48 +967,6 @@
                 }
             }
         },
-        "github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeCreateRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "firstName",
-                "gender",
-                "lastName",
-                "password",
-                "phone",
-                "profileType",
-                "username"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "firstName": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "lastName": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "profilePicture": {
-                    "type": "string"
-                },
-                "profileType": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
         "github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeLogin": {
             "type": "object",
             "required": [
@@ -1303,48 +1184,6 @@
                 },
                 "shiftType": {
                     "type": "integer"
-                }
-            }
-        },
-        "internal_handler.EmployeeCreateRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "firstName",
-                "gender",
-                "lastName",
-                "password",
-                "phone",
-                "profileType",
-                "username"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "firstName": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "lastName": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "profilePicture": {
-                    "type": "string"
-                },
-                "profileType": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         },

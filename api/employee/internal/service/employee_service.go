@@ -37,15 +37,15 @@ func (s *employeeService) RegisterEmployee(req employeeV1.EmployeeCreateRequest)
 	}
 
 	employee := model.Employee{
-		Username:       req.Username,
-		FirstName:      req.FirstName,
-		LastName:       req.LastName,
-		Password:       req.Password,
-		Gender:         req.Gender,
-		Phone:          req.Phone,
-		Email:          req.Email,
-		ProfilePicture: req.ProfilePicture,
-		ProfileType:    profileType,
+		Username:  req.Username,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Password:  req.Password,
+		Gender:    req.Gender,
+		Phone:     req.Phone,
+		Email:     req.Email,
+
+		ProfileType: profileType,
 	}
 
 	// Check for existing username

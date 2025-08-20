@@ -109,7 +109,7 @@ describe('EmployeeFormComponent', () => {
       phoneNumber: '+1234567890',
       email: 'john.doe@example.com',
       profileType: MedicRole,
-      profilePicture: null
+
     });
   });
 
@@ -137,7 +137,7 @@ describe('EmployeeFormComponent', () => {
       phoneNumber: '+1234567890',
       email: 'john.doe@example.com',
       profileType: MedicRole as any,
-      profilePicture: null
+
     });
 
     component.onSubmit();
@@ -178,7 +178,7 @@ describe('EmployeeFormComponent', () => {
         phoneNumber: '',
         email: '',
         profileType: '',
-        profilePicture: null
+
       });
 
       expect(component.employeeForm.valid).toBe(false);
@@ -221,8 +221,8 @@ describe('EmployeeFormComponent', () => {
 
       component.onImageSelected(mockImageEvent);
 
+      component.isEditMode = true;
       expect(component.selectedImageFile).toBe(mockImageEvent.file);
-      expect(component.employeeForm.get('profilePicture')?.value).toBe(mockImageEvent.preview);
     });
 
     it('should handle invalid image upload event', () => {
@@ -233,6 +233,7 @@ describe('EmployeeFormComponent', () => {
         error: 'Invalid file type'
       };
 
+      component.isEditMode = true;
       component.onImageSelected(mockImageEvent);
 
       expect(component.selectedImageFile).toBeNull();
@@ -243,11 +244,11 @@ describe('EmployeeFormComponent', () => {
       component.selectedImageFile = new File([''], 'test.jpg', { type: 'image/jpeg' });
       component.currentProfilePictureUrl = 'https://example.com/image.jpg';
 
+      component.isEditMode = true;
       component.onImageRemoved();
 
       expect(component.selectedImageFile).toBeNull();
       expect(component.currentProfilePictureUrl).toBeUndefined();
-      expect(component.employeeForm.get('profilePicture')?.value).toBeNull();
     });
   });
 
@@ -281,7 +282,7 @@ describe('EmployeeFormComponent', () => {
         phoneNumber: '+1234567890',
         email: 'john.updated@example.com',
         profileType: MedicRole as any,
-        profilePicture: null
+
       });
 
       component.onSubmit();
@@ -320,7 +321,7 @@ describe('EmployeeFormComponent', () => {
         phoneNumber: '+1234567890',
         email: 'john.doe@example.com',
         profileType: MedicRole as any,
-        profilePicture: null
+
       });
 
       component.onSubmit();
@@ -348,7 +349,7 @@ describe('EmployeeFormComponent', () => {
         phoneNumber: '+1234567890',
         email: 'john.doe@example.com',
         profileType: MedicRole as any,
-        profilePicture: null
+
       });
 
       component.onSubmit();
@@ -385,7 +386,7 @@ describe('EmployeeFormComponent', () => {
         phoneNumber: '+1234567890',
         email: 'john.doe@example.com',
         profileType: MedicRole as any,
-        profilePicture: null
+
       });
 
       // Initially should be false
