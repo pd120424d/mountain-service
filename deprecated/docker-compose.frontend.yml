@@ -1,0 +1,28 @@
+# Frontend-only Docker Compose Configuration (Deprecated)
+# Original file kept for reference while migrating to Kubernetes
+
+services:
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    ports:
+      - "${FRONTEND_HTTP_PORT:-80}:80"
+      - "${FRONTEND_HTTPS_PORT:-443}:443"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    volumes:
+      - /var/log:/var/log
+    networks:
+      - web
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  web:
+    external: true
+    name: mountain-service-deployment_web
+

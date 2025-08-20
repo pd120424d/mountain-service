@@ -1,0 +1,2 @@
+Legacy GitHub workflow (aws-frontend-deploy.yml) moved to deprecated. See repository history for full content.
+
