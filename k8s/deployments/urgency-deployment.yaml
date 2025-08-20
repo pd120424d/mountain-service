@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: urgency-service
+  namespace: mountain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: urgency-service
+  template:
+    metadata:
+      labels:
+        app: urgency-service
+    annotations:
+      sidecar.istio.io/inject: "false"
+    spec:
+      containers:
+        - name: urgency
+          image: ghcr.io/pd120424d/urgency-service:latest
+          ports:
+            - containerPort: 8083
+          env:
+            - name: DB_HOST
+              value: "127.0.0.1"
+            - name: DB_PORT
+              valueFrom: { secretKeyRef: { name: db-common, key: DB_PORT } }
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: db-common, key: DB_USER } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: urgency-db, key: DB_PASSWORD } }
+            - name: DB_NAME
+              valueFrom: { secretKeyRef: { name: urgency-db, key: DB_NAME } }
+            - name: DB_SSLMODE
+              value: "disable"
+            - name: JWT_SECRET
+              valueFrom: { secretKeyRef: { name: app-shared, key: JWT_SECRET } }
+            - name: ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: app-shared, key: ADMIN_PASSWORD } }
+            - name: SERVICE_AUTH_SECRET
+              valueFrom: { secretKeyRef: { name: app-shared, key: SERVICE_AUTH_SECRET } }
+            - name: CORS_ALLOWED_ORIGINS
+              valueFrom: { secretKeyRef: { name: app-shared, key: CORS_ALLOWED_ORIGINS } }
+            - name: EMPLOYEE_SERVICE_URL
+              value: http://employee-service:8082
+            - name: ACTIVITY_SERVICE_URL
+              value: http://activity-service:8084
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "300m"
+              memory: "512Mi"
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.3
+          args:
+            - "--port=5432"
+            - "--address=127.0.0.1"
+            - "--credentials-file=/var/secrets/key.json"
+            - "$(INSTANCE_CONNECTION_NAME)"
+          env:
+            - name: INSTANCE_CONNECTION_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql-urgency
+                  key: INSTANCE_CONNECTION_NAME
+          volumeMounts:
+            - name: gcp-sa
+              mountPath: /var/secrets
+              readOnly: true
+          resources:
+            requests:
+              cpu: "20m"
+              memory: "32Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+      volumes:
+        - name: gcp-sa
+          secret:
+            secretName: gcp-sa
+            items:
+              - key: key.json
+                path: key.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: urgency-service
+  namespace: mountain
+spec:
+  selector:
+    app: urgency-service
+  ports:
+    - name: http
+      port: 8083
+      targetPort: 8083
+  type: ClusterIP
+

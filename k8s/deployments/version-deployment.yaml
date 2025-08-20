@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: version-service
+  namespace: mountain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: version-service
+  template:
+    metadata:
+      labels:
+        app: version-service
+    spec:
+      containers:
+        - name: version
+          image: ghcr.io/pd120424d/version-service:latest
+          ports:
+            - containerPort: 8090
+          resources:
+            requests:
+              cpu: "20m"
+              memory: "32Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: version-service
+  namespace: mountain
+spec:
+  selector:
+    app: version-service
+  ports:
+    - name: http
+      port: 8090
+      targetPort: 8090
+  type: ClusterIP
+

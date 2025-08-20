@@ -1,0 +1,5 @@
+# Example snippet to deploy with kubectl from GitHub Actions
+# Uses repo secrets as inputs and creates Kubernetes Secrets on the fly
+
+# See .github/workflows/k8s-deploy.yml for a fully working example
+
