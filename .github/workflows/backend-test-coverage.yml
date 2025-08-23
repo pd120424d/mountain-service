@@ -1,26 +1,10 @@
 name: backend-test-coverage
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
-    paths:
-      - 'api/**'
-      - 'backend-test-cover.sh'
-      - 'deploy-simple.sh'
-      - 'docker-compose.yml'
-      - '.env.aws'
-      - '.github/workflows/backend-test-coverage.yml'
-      - '.github/workflows/aws-backend-deploy.yml'
   pull_request:
     paths:
       - 'api/**'
       - 'backend-test-cover.sh'
-      - 'deploy-simple.sh'
-      - 'docker-compose.yml'
-      - '.env.aws'
       - '.github/workflows/backend-test-coverage.yml'
 
 jobs:

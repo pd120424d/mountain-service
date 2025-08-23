@@ -1,0 +1,359 @@
+name: Build, Test & Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'api/**'
+      - 'ui/**'
+      - 'k8s/**'
+      - '.github/workflows/build-test-deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm test
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('./coverage/ui/coverage-summary.json')).total.statements.pct)")
+          echo "Frontend coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 75" | bc -l) )); then
+            echo "FAILURE: Frontend coverage ${COVERAGE}% is below 75% threshold"
+            exit 1
+          fi
+          echo "SUCCESS: Frontend coverage ${COVERAGE}% meets threshold"
+
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Install go-acc
+        run: go install github.com/ory/go-acc@latest
+
+      - name: Run backend coverage tests
+        run: ./backend-test-cover.sh
+
+  build-and-push-images:
+    runs-on: ubuntu-latest
+    needs: [test-frontend, test-backend]
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      ui-changed: ${{ steps.changes.outputs.ui }}
+      employee-changed: ${{ steps.changes.outputs.employee }}
+      urgency-changed: ${{ steps.changes.outputs.urgency }}
+      activity-changed: ${{ steps.changes.outputs.activity }}
+      version-changed: ${{ steps.changes.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changes
+        id: changes
+        run: |
+          echo "ui=$(git diff --name-only HEAD~1 HEAD | grep -q '^ui/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "employee=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/employee/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "urgency=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/urgency/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "activity=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "version=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/version-service/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build and push UI image
+        if: steps.changes.outputs.ui == 'true'
+        run: |
+          cd ui
+          docker build -t ghcr.io/pd120424d/mountain-ui:latest \
+                       -t ghcr.io/pd120424d/mountain-ui:${{ github.sha }} \
+                       --build-arg BUILD_TIMESTAMP=$(date +%s) \
+                       --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --no-cache .
+          docker push ghcr.io/pd120424d/mountain-ui:latest
+          docker push ghcr.io/pd120424d/mountain-ui:${{ github.sha }}
+
+      - name: Build and push Employee service
+        if: steps.changes.outputs.employee == 'true'
+        run: |
+          cd api/employee
+          docker build -t ghcr.io/pd120424d/employee-service:latest \
+                       -t ghcr.io/pd120424d/employee-service:${{ github.sha }} \
+                       --build-arg BUILD_TIMESTAMP=$(date +%s) \
+                       --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --no-cache .
+          docker push ghcr.io/pd120424d/employee-service:latest
+          docker push ghcr.io/pd120424d/employee-service:${{ github.sha }}
+
+      - name: Build and push Urgency service
+        if: steps.changes.outputs.urgency == 'true'
+        run: |
+          cd api/urgency
+          docker build -t ghcr.io/pd120424d/urgency-service:latest \
+                       -t ghcr.io/pd120424d/urgency-service:${{ github.sha }} \
+                       --build-arg BUILD_TIMESTAMP=$(date +%s) \
+                       --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --no-cache .
+          docker push ghcr.io/pd120424d/urgency-service:latest
+          docker push ghcr.io/pd120424d/urgency-service:${{ github.sha }}
+
+      - name: Build and push Activity service
+        if: steps.changes.outputs.activity == 'true'
+        run: |
+          cd api/activity
+          docker build -t ghcr.io/pd120424d/activity-service:latest \
+                       -t ghcr.io/pd120424d/activity-service:${{ github.sha }} \
+                       --build-arg BUILD_TIMESTAMP=$(date +%s) \
+                       --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --no-cache .
+          docker push ghcr.io/pd120424d/activity-service:latest
+          docker push ghcr.io/pd120424d/activity-service:${{ github.sha }}
+
+      - name: Build and push Version service
+        if: steps.changes.outputs.version == 'true'
+        run: |
+          cd api/version-service
+          docker build -t ghcr.io/pd120424d/version-service:latest \
+                       -t ghcr.io/pd120424d/version-service:${{ github.sha }} \
+                       --build-arg BUILD_TIMESTAMP=$(date +%s) \
+                       --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --no-cache .
+          docker push ghcr.io/pd120424d/version-service:latest
+          docker push ghcr.io/pd120424d/version-service:${{ github.sha }}
+
+  deploy-k8s:
+    runs-on: self-hosted
+    needs: [build-and-push-images]
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Prepare local kubeconfig (self-hosted runner)
+        run: |
+          mkdir -p ~/.kube
+          if [ -f /etc/rancher/k3s/k3s.yaml ]; then
+            sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+            sudo chown "$USER:$USER" ~/.kube/config
+            # Force local API server for self-hosted runner to avoid public IP hairpin/firewall issues
+            sed -E -i 's#^([[:space:]]*)server:.*#\1server: https://127.0.0.1:6443#' ~/.kube/config || true
+            echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+          else
+            echo "k3s kubeconfig not found at /etc/rancher/k3s/k3s.yaml" >&2
+            exit 1
+          fi
+
+
+      - name: Ensure namespace exists
+        run: |
+          kubectl apply -f k8s/namespaces.yaml
+
+      - name: Create/Update GHCR image pull secret
+        env:
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          kubectl -n mountain create secret docker-registry ghcr-auth \
+            --docker-server=ghcr.io \
+            --docker-username="$GITHUB_ACTOR" \
+            --docker-password="$GHCR_PAT" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+
+      - name: Create/Update Secrets - DB Common (User/Port)
+        run: |
+          kubectl -n mountain create secret generic db-common \
+            --from-literal=DB_USER='${{ secrets.DB_USER }}' \
+            --from-literal=DB_PORT='${{ secrets.DB_PORT }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create/Update Secrets - Employee DB
+        run: |
+          kubectl -n mountain create secret generic employee-db \
+            --from-literal=DB_HOST='${{ secrets.EMPLOYEE_DB_HOST }}' \
+            --from-literal=DB_PASSWORD='${{ secrets.EMPLOYEE_DB_PASSWORD }}' \
+            --from-literal=DB_NAME='${{ secrets.EMPLOYEE_DB_NAME }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create/Update Secrets - Urgency DB
+        run: |
+          kubectl -n mountain create secret generic urgency-db \
+            --from-literal=DB_HOST='${{ secrets.URGENCY_DB_HOST }}' \
+            --from-literal=DB_PASSWORD='${{ secrets.URGENCY_DB_PASSWORD }}' \
+            --from-literal=DB_NAME='${{ secrets.URGENCY_DB_NAME }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create/Update Secrets - Activity DB
+        run: |
+          kubectl -n mountain create secret generic activity-db \
+            --from-literal=DB_HOST='${{ secrets.ACTIVITY_DB_HOST }}' \
+            --from-literal=DB_PASSWORD='${{ secrets.ACTIVITY_DB_PASSWORD }}' \
+            --from-literal=DB_NAME='${{ secrets.ACTIVITY_DB_NAME }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create/Update Secrets - App Shared
+        run: |
+          kubectl -n mountain create secret generic app-shared \
+            --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}' \
+            --from-literal=ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' \
+            --from-literal=SERVICE_AUTH_SECRET='${{ secrets.SERVICE_AUTH_SECRET }}' \
+            --from-literal=CORS_ALLOWED_ORIGINS='${{ secrets.CORS_ALLOWED_ORIGINS }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create/Update Secrets - Azure Storage
+        run: |
+          kubectl -n mountain create secret generic azure-storage \
+            --from-literal=AZURE_STORAGE_ACCOUNT_NAME='${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}' \
+            --from-literal=AZURE_STORAGE_ACCOUNT_KEY='${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}' \
+            --from-literal=AZURE_STORAGE_CONTAINER_NAME='${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+
+      - name: (Optional) Create/Update Secrets - GCP Service Account
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        if: ${{ env.GCP_SA_KEY != '' }}
+        run: |
+          echo "$GCP_SA_KEY" > sa.json
+          kubectl -n mountain create secret generic gcp-sa \
+            --from-file=key.json=sa.json \
+            --from-literal=GCP_PROJECT_ID="$GCP_PROJECT_ID" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: (Optional) Create/Update Secrets - Cloud SQL Instance Names
+        env:
+          CLOUDSQL_INSTANCE_EMPLOYEE: ${{ secrets.CLOUDSQL_INSTANCE_EMPLOYEE }}
+          CLOUDSQL_INSTANCE_URGENCY: ${{ secrets.CLOUDSQL_INSTANCE_URGENCY }}
+          CLOUDSQL_INSTANCE_ACTIVITY: ${{ secrets.CLOUDSQL_INSTANCE_ACTIVITY }}
+        if: ${{ env.CLOUDSQL_INSTANCE_EMPLOYEE != '' || env.CLOUDSQL_INSTANCE_URGENCY != '' || env.CLOUDSQL_INSTANCE_ACTIVITY != '' }}
+        run: |
+          if [ -n "$CLOUDSQL_INSTANCE_EMPLOYEE" ]; then
+            kubectl -n mountain create secret generic cloudsql-employee \
+              --from-literal=INSTANCE_CONNECTION_NAME="$CLOUDSQL_INSTANCE_EMPLOYEE" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          fi
+          if [ -n "$CLOUDSQL_INSTANCE_URGENCY" ]; then
+            kubectl -n mountain create secret generic cloudsql-urgency \
+              --from-literal=INSTANCE_CONNECTION_NAME="$CLOUDSQL_INSTANCE_URGENCY" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          fi
+          if [ -n "$CLOUDSQL_INSTANCE_ACTIVITY" ]; then
+            kubectl -n mountain create secret generic cloudsql-activity \
+              --from-literal=INSTANCE_CONNECTION_NAME="$CLOUDSQL_INSTANCE_ACTIVITY" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          fi
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f k8s/namespaces.yaml
+          kubectl -n mountain apply -f k8s/deployments/
+          kubectl -n mountain apply -f k8s/services/
+          kubectl -n mountain apply -f k8s/frontend/
+
+      - name: Wait for pods to be ready
+        run: |
+          echo "Waiting for pods to be ready (timeout: 300s)..."
+          kubectl -n mountain wait --for=condition=ready pod --all --timeout=300s || {
+            echo "FAILURE: Some pods failed to become ready within 5 minutes"
+            kubectl -n mountain get pods -o wide
+            kubectl -n mountain describe pods
+            exit 1
+          }
+          echo "SUCCESS: All pods are ready"
+
+      - name: "Post-apply: show pods and imagePullSecrets"
+        run: |
+          echo "Pods (wide):"
+          kubectl -n mountain get pods -o wide || true
+          echo "\nRecent events (last 200 lines):"
+          kubectl -n mountain get events --sort-by=.lastTimestamp | tail -n 200 || true
+          echo "\nDescribe deployments (images + imagePullSecrets):"
+          for d in employee-service urgency-service activity-service version-service; do
+            echo "\n--- DESCRIBE DEPLOYMENT: $d ---"
+            kubectl -n mountain describe deploy "$d" | sed -n '/Image:/,/Environment:/p' || true
+            echo "\nImagePullSecrets:"
+            kubectl -n mountain get deploy "$d" -o jsonpath='{.spec.template.spec.imagePullSecrets}' || true
+            echo "\nImages:"
+            kubectl -n mountain get deploy "$d" -o jsonpath='{range .spec.template.spec.containers[*]}{.name}:{.image}{"\n"}{end}' || true
+            echo "\n---\n"
+          done
+          echo "\nIf any pods are in ImagePullBackOff, try:\n  kubectl -n mountain describe pod <pod-name>\n"
+
+      - name: Health check endpoints
+        run: |
+          echo "Checking service health endpoints..."
+          sleep 10  # Give services a moment to start
+
+          # Get service IPs
+          EMPLOYEE_IP=$(kubectl -n mountain get svc employee-service -o jsonpath='{.spec.clusterIP}')
+          URGENCY_IP=$(kubectl -n mountain get svc urgency-service -o jsonpath='{.spec.clusterIP}')
+          ACTIVITY_IP=$(kubectl -n mountain get svc activity-service -o jsonpath='{.spec.clusterIP}')
+          VERSION_IP=$(kubectl -n mountain get svc version-service -o jsonpath='{.spec.clusterIP}')
+
+          echo "Service IPs: Employee=$EMPLOYEE_IP, Urgency=$URGENCY_IP, Activity=$ACTIVITY_IP, Version=$VERSION_IP"
+
+          # Health checks with retries
+          for service in "employee:$EMPLOYEE_IP:8082" "urgency:$URGENCY_IP:8083" "activity:$ACTIVITY_IP:8084" "version:$VERSION_IP:8090"; do
+            name=$(echo $service | cut -d: -f1)
+            ip=$(echo $service | cut -d: -f2)
+            port=$(echo $service | cut -d: -f3)
+
+            echo "Checking $name service health..."
+            for i in {1..5}; do
+              if curl -f -s "http://$ip:$port/health" > /dev/null; then
+                echo "SUCCESS: $name service is healthy"
+                break
+              elif [ $i -eq 5 ]; then
+                echo "FAILURE: $name service health check failed after 5 attempts"
+                curl -v "http://$ip:$port/health" || true
+              else
+                echo "$name service not ready, retrying in 10s... (attempt $i/5)"
+                sleep 10
+              fi
+            done
+          done
+
+
