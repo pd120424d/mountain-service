@@ -25,6 +25,10 @@ A web application built with Angular for managing mountain service operations, i
 npm install
 ```
 
+## Deployment
+
+The frontend is deployed using Docker and Kubernetes with nginx configuration for production.
+
 ## Build Commands
 
 ### Development (staging features visible)
