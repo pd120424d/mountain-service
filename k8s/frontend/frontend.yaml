@@ -13,6 +13,8 @@ spec:
       labels:
         app: frontend
     spec:
+      imagePullSecrets:
+        - name: ghcr-auth
       containers:
         - name: frontend
           image: ghcr.io/pd120424d/frontend:latest

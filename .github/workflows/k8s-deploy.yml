@@ -66,7 +66,6 @@ jobs:
             --from-literal=DB_HOST='${{ secrets.EMPLOYEE_DB_HOST }}' \
             --from-literal=DB_PASSWORD='${{ secrets.EMPLOYEE_DB_PASSWORD }}' \
             --from-literal=DB_NAME='${{ secrets.EMPLOYEE_DB_NAME }}' \
-            --from-literal=DB_SSLMODE='${{ secrets.EMPLOYEE_DB_SSLMODE }}' \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Create/Update Secrets - Urgency DB
@@ -75,7 +74,6 @@ jobs:
             --from-literal=DB_HOST='${{ secrets.URGENCY_DB_HOST }}' \
             --from-literal=DB_PASSWORD='${{ secrets.URGENCY_DB_PASSWORD }}' \
             --from-literal=DB_NAME='${{ secrets.URGENCY_DB_NAME }}' \
-            --from-literal=DB_SSLMODE='${{ secrets.URGENCY_DB_SSLMODE }}' \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Create/Update Secrets - Activity DB
@@ -84,7 +82,6 @@ jobs:
             --from-literal=DB_HOST='${{ secrets.ACTIVITY_DB_HOST }}' \
             --from-literal=DB_PASSWORD='${{ secrets.ACTIVITY_DB_PASSWORD }}' \
             --from-literal=DB_NAME='${{ secrets.ACTIVITY_DB_NAME }}' \
-            --from-literal=DB_SSLMODE="${{ secrets.ACTIVITY_DB_SSLMODE }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Create/Update Secrets - App Shared
