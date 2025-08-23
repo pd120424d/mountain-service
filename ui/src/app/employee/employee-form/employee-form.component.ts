@@ -213,14 +213,9 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
 
     this.employeeService.addEmployee(employeeCreateRequest).subscribe({
       next: (response) => {
-        // If there's a selected image, upload it after employee creation
-        if (this.selectedImageFile && response.id) {
-          this.uploadImageAfterCreation(response.id);
-        } else {
-          this.spinner.hide();
-          this.toastr.success(this.translate.instant('EMPLOYEE_FORM.CREATE_SUCCESS'));
-          this.router.navigate(['/employees']);
-        }
+        this.spinner.hide();
+        this.toastr.success(this.translate.instant('EMPLOYEE_FORM.CREATE_SUCCESS'));
+        this.router.navigate(['/employees']);
       },
       error: (error) => {
         this.handleError(error, 'CREATE_ERROR');
@@ -228,7 +223,6 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
     });
   }
 
-  // Removed: uploadImageAfterCreation - registration no longer handles images
 
   private uploadImageAfterUpdate(employeeId: number): void {
     if (!this.selectedImageFile) {

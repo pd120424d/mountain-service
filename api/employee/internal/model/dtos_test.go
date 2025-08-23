@@ -21,7 +21,7 @@ func TestEmployeeCreateRequest_ToString(t *testing.T) {
 	}
 
 	expected := "EmployeeCreateRequest { FirstName: Bruce, LastName: Lee, Username: test-user, Password: ********," +
-		" Email: test-user@example.com, Gender: M, Phone: 123456789, ProfilePicture: https://example.com/profile.jpg, ProfileType: Medic }"
+		" Email: test-user@example.com, Gender: M, Phone: 123456789, ProfileType: Medic }"
 	assert.Equal(t, expected, req.ToString())
 }
 

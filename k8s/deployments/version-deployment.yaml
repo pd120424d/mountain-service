@@ -13,6 +13,8 @@ spec:
       labels:
         app: version-service
     spec:
+      imagePullSecrets:
+        - name: ghcr-auth
       containers:
         - name: version
           image: ghcr.io/pd120424d/version-service:latest

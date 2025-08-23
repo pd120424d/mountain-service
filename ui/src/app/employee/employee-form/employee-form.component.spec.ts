@@ -219,9 +219,9 @@ describe('EmployeeFormComponent', () => {
         isValid: true
       };
 
+      component.isEditMode = true;
       component.onImageSelected(mockImageEvent);
 
-      component.isEditMode = true;
       expect(component.selectedImageFile).toBe(mockImageEvent.file);
     });
 
