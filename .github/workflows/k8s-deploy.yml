@@ -11,7 +11,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
 
@@ -22,10 +22,17 @@ jobs:
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
 
-      - name: Configure kubeconfig
+      - name: Prepare local kubeconfig (self-hosted runner)
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
+          if [ -f /etc/rancher/k3s/k3s.yaml ]; then
+            sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+            sudo chown "$USER:$USER" ~/.kube/config
+            echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+          else
+            echo "k3s kubeconfig not found at /etc/rancher/k3s/k3s.yaml" >&2
+            exit 1
+          fi
 
 
       - name: Ensure namespace exists
@@ -75,6 +82,15 @@ jobs:
             --from-literal=SERVICE_AUTH_SECRET='${{ secrets.SERVICE_AUTH_SECRET }}' \
             --from-literal=CORS_ALLOWED_ORIGINS='${{ secrets.CORS_ALLOWED_ORIGINS }}' \
             --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create/Update Secrets - Azure Storage
+        run: |
+          kubectl -n mountain create secret generic azure-storage \
+            --from-literal=AZURE_STORAGE_ACCOUNT_NAME='${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}' \
+            --from-literal=AZURE_STORAGE_ACCOUNT_KEY='${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}' \
+            --from-literal=AZURE_STORAGE_CONTAINER_NAME='${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
 
       - name: (Optional) Create/Update Secrets - GCP Service Account
         if: ${{ secrets.GCP_SA_KEY != '' }}

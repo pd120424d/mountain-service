@@ -10,15 +10,14 @@ import (
 
 func TestEmployeeCreateRequest_ToString(t *testing.T) {
 	req := &employeeV1.EmployeeCreateRequest{
-		FirstName:      "Bruce",
-		LastName:       "Lee",
-		Username:       "test-user",
-		Password:       "Pass123!",
-		Email:          "test-user@example.com",
-		Gender:         "M",
-		Phone:          "123456789",
-		ProfilePicture: "https://example.com/profile.jpg",
-		ProfileType:    "Medic",
+		FirstName:   "Bruce",
+		LastName:    "Lee",
+		Username:    "test-user",
+		Password:    "Pass123!",
+		Email:       "test-user@example.com",
+		Gender:      "M",
+		Phone:       "123456789",
+		ProfileType: "Medic",
 	}
 
 	expected := "EmployeeCreateRequest { FirstName: Bruce, LastName: Lee, Username: test-user, Password: ********," +

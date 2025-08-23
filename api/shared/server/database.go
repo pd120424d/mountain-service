@@ -56,9 +56,15 @@ func InitDb(log utils.Logger, serviceName string, dbConfig DatabaseConfig) *gorm
 		}
 	}
 
-	log.Infof("Connecting to database at %s:%s as user %s", dbConfig.Host, dbConfig.Port, dbUser)
-	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbConfig.Host, dbConfig.Port, dbUser, dbPassword, dbConfig.Name)
+	// Allow SSL mode to be configured via env, defaults to disable (when using Cloud SQL Auth Proxy)
+	sslMode := os.Getenv("DB_SSLMODE")
+	if sslMode == "" {
+		sslMode = "disable"
+	}
+
+	log.Infof("Connecting to database at %s:%s as user %s (sslmode=%s)", dbConfig.Host, dbConfig.Port, dbUser, sslMode)
+	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		dbConfig.Host, dbConfig.Port, dbUser, dbPassword, dbConfig.Name, sslMode)
 
 	// Create the database connection
 	db := getDbConnection(log, connectionString)

@@ -14,9 +14,8 @@ func TestTokenBlacklist_Integration(t *testing.T) {
 	t.Parallel()
 
 	config := TokenBlacklistConfig{
-		RedisAddr:     "localhost:6379",
-		RedisPassword: "",
-		RedisDB:       1, // Use DB 1 for tests
+		RedisAddr: "localhost:6379",
+		RedisDB:   1, // Use DB 1 for tests
 	}
 
 	blacklist := NewTokenBlacklist(config)
@@ -107,9 +106,8 @@ func TestTokenBlacklist_Integration(t *testing.T) {
 func TestTokenBlacklist_ConnectionFailure(t *testing.T) {
 	t.Run("it fails when Redis is not available", func(t *testing.T) {
 		config := TokenBlacklistConfig{
-			RedisAddr:     "localhost:9999", // Non-existent Redis
-			RedisPassword: "",
-			RedisDB:       0,
+			RedisAddr: "localhost:9999", // Non-existent Redis
+			RedisDB:   0,
 		}
 
 		bl := NewTokenBlacklist(config)

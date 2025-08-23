@@ -11,15 +11,14 @@ func TestEmployeeCreateRequest_Validate(t *testing.T) {
 
 	t.Run("it returns no error for a valid request", func(t *testing.T) {
 		req := &EmployeeCreateRequest{
-			FirstName:      "John",
-			LastName:       "Doe",
-			Username:       "johndoe",
-			Password:       "Pass123!",
-			Email:          "john.doe@example.com",
-			Gender:         "M",
-			Phone:          "+1234567890",
-			ProfilePicture: "https://example.com/profile.jpg",
-			ProfileType:    "Medic",
+			FirstName:   "John",
+			LastName:    "Doe",
+			Username:    "johndoe",
+			Password:    "Pass123!",
+			Email:       "john.doe@example.com",
+			Gender:      "M",
+			Phone:       "+1234567890",
+			ProfileType: "Medic",
 		}
 
 		err := req.Validate()
