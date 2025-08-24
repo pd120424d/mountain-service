@@ -196,7 +196,7 @@ jobs:
           GHCR_PAT: ${{ secrets.GHCR_PAT }}
           GITHUB_ACTOR: ${{ github.actor }}
         run: |
-          kubectl -n mountain-service-service create secret docker-registry ghcr-auth \
+          kubectl -n mountain-service create secret docker-registry ghcr-auth \
             --docker-server=ghcr.io \
             --docker-username="$GITHUB_ACTOR" \
             --docker-password="$GHCR_PAT" \
@@ -205,14 +205,14 @@ jobs:
 
       - name: Create/Update Secrets - DB Common (User/Port)
         run: |
-          kubectl -n mountain-service-service create secret generic db-common \
+          kubectl -n mountain-service create secret generic db-common \
             --from-literal=DB_USER='${{ secrets.DB_USER }}' \
             --from-literal=DB_PORT='${{ secrets.DB_PORT }}' \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Create/Update Secrets - Employee DB
         run: |
-          kubectl -n mountain-service-service create secret generic employee-db \
+          kubectl -n mountain-service create secret generic employee-db \
             --from-literal=DB_HOST='${{ secrets.EMPLOYEE_DB_HOST }}' \
             --from-literal=DB_PASSWORD='${{ secrets.EMPLOYEE_DB_PASSWORD }}' \
             --from-literal=DB_NAME='${{ secrets.EMPLOYEE_DB_NAME }}' \
@@ -220,7 +220,7 @@ jobs:
 
       - name: Create/Update Secrets - Urgency DB
         run: |
-          kubectl -n mountain-service-service create secret generic urgency-db \
+          kubectl -n mountain-service create secret generic urgency-db \
             --from-literal=DB_HOST='${{ secrets.URGENCY_DB_HOST }}' \
             --from-literal=DB_PASSWORD='${{ secrets.URGENCY_DB_PASSWORD }}' \
             --from-literal=DB_NAME='${{ secrets.URGENCY_DB_NAME }}' \
@@ -228,7 +228,7 @@ jobs:
 
       - name: Create/Update Secrets - Activity DB
         run: |
-          kubectl -n mountain-service-service create secret generic activity-db \
+          kubectl -n mountain-service create secret generic activity-db \
             --from-literal=DB_HOST='${{ secrets.ACTIVITY_DB_HOST }}' \
             --from-literal=DB_PASSWORD='${{ secrets.ACTIVITY_DB_PASSWORD }}' \
             --from-literal=DB_NAME='${{ secrets.ACTIVITY_DB_NAME }}' \
@@ -236,7 +236,7 @@ jobs:
 
       - name: Create/Update Secrets - App Shared
         run: |
-          kubectl -n mountain-service-service create secret generic app-shared \
+          kubectl -n mountain-service create secret generic app-shared \
             --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}' \
             --from-literal=ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' \
             --from-literal=SERVICE_AUTH_SECRET='${{ secrets.SERVICE_AUTH_SECRET }}' \
@@ -245,7 +245,7 @@ jobs:
 
       - name: Create/Update Secrets - Azure Storage
         run: |
-          kubectl -n mountain-service-service create secret generic azure-storage \
+          kubectl -n mountain-service create secret generic azure-storage \
             --from-literal=AZURE_STORAGE_ACCOUNT_NAME='${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}' \
             --from-literal=AZURE_STORAGE_ACCOUNT_KEY='${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}' \
             --from-literal=AZURE_STORAGE_CONTAINER_NAME='${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}' \
@@ -299,8 +299,8 @@ jobs:
           echo "Waiting for pods to be ready (timeout: 300s)..."
           # Wait for critical services first (ui, redis)
           echo "Waiting for critical services to be ready..."
-          kubectl -n mountain-service-service wait --for=condition=ready pod -l app=ui --timeout=120s || echo "UI not ready yet"
-          kubectl -n mountain-service-service wait --for=condition=ready pod -l app=redis --timeout=120s || echo "Redis not ready yet"
+          kubectl -n mountain-service wait --for=condition=ready pod -l app=ui --timeout=120s || echo "UI not ready yet"
+          kubectl -n mountain-service wait --for=condition=ready pod -l app=redis --timeout=120s || echo "Redis not ready yet"
 
           # Wait for backend services with more lenient timeout
           echo "Waiting for backend services to be ready..."
