@@ -5,6 +5,10 @@
 
 set -e
 
+# Change to k8s directory if not already there
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 echo "Setting up Kubernetes Ingress for Mountain Service"
 
 # Colors for output
@@ -56,9 +60,13 @@ else
     kubectl create namespace ingress-nginx
 fi
 
-# Install NGINX Ingress Controller using the official manifest
-print_status "Applying NGINX Ingress Controller manifest..."
+# Install NGINX Ingress Controller using the official manifest first
+print_status "Applying NGINX Ingress Controller base manifest..."
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
+
+# Then apply custom hostNetwork configuration to bind to ports 80/443
+print_status "Applying hostNetwork configuration for direct port 80/443 access..."
+kubectl apply -f ingress-controller-hostnetwork.yaml
 
 # Wait for the ingress controller to be ready
 print_status "Waiting for NGINX Ingress Controller to be ready..."
@@ -69,19 +77,18 @@ kubectl wait --namespace ingress-nginx \
 
 print_success "NGINX Ingress Controller is ready!"
 
-# Get NodePort details for ingress controller
-print_status "Getting NodePort details for ingress controller..."
-NODE_PORT=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+# Get Node IP for hostNetwork ingress controller (binds directly to port 80/443)
+print_status "Getting Node IP for hostNetwork ingress controller..."
 NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
 
 if [ -z "$NODE_IP" ]; then
     NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-    print_warning "Using Internal IP (firewall/port forwarding should be configured for this): $NODE_IP"
+    print_warning "Using Internal IP: $NODE_IP"
 else
     print_success "External Node IP: $NODE_IP"
 fi
 
-print_success "NodePort: $NODE_PORT"
+print_success "Ingress controller will bind directly to ports 80 and 443 on this node"
 EXTERNAL_IP="$NODE_IP"
 
 # Apply the mountain-service namespace if it doesn't exist
