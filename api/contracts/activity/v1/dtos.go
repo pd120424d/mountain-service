@@ -12,6 +12,7 @@ import (
 // ActivityType represents the type of activity
 type ActivityType string
 
+// TODO: cleanup this since it is not used
 const (
 	// Employee activities
 	ActivityEmployeeCreated ActivityType = "employee_created"
@@ -130,7 +131,6 @@ type ActivityStatsResponse struct {
 // Helper methods
 
 func (r *ActivityCreateRequest) Validate() error {
-	// Validate enum types first
 	if !r.Type.Valid() {
 		return fmt.Errorf("invalid activity type: %s", r.Type)
 	}
@@ -138,7 +138,6 @@ func (r *ActivityCreateRequest) Validate() error {
 		return fmt.Errorf("invalid activity level: %s", r.Level)
 	}
 
-	// Validate other fields
 	var errors validation.ValidationErrors
 
 	if err := utils.ValidateRequiredField(r.Title, "title"); err != nil {
@@ -205,17 +204,14 @@ func (r *ActivityCreateRequest) ToString() string {
 	)
 }
 
-// ActivityTypeFromString converts a string to ActivityType
 func ActivityTypeFromString(s string) ActivityType {
 	return ActivityType(s)
 }
 
-// ActivityLevelFromString converts a string to ActivityLevel
 func ActivityLevelFromString(s string) ActivityLevel {
 	return ActivityLevel(s)
 }
 
-// Valid checks if the ActivityType is valid
 func (t ActivityType) Valid() bool {
 	validTypes := []ActivityType{
 		ActivityEmployeeCreated, ActivityEmployeeUpdated, ActivityEmployeeDeleted, ActivityEmployeeLogin,
@@ -233,7 +229,6 @@ func (t ActivityType) Valid() bool {
 	return false
 }
 
-// Valid checks if the ActivityLevel is valid
 func (l ActivityLevel) Valid() bool {
 	validLevels := []ActivityLevel{
 		ActivityLevelInfo, ActivityLevelWarning, ActivityLevelError, ActivityLevelCritical,
@@ -246,11 +241,93 @@ func (l ActivityLevel) Valid() bool {
 	return false
 }
 
-// String methods for enums
 func (at ActivityType) String() string {
 	return string(at)
 }
 
 func (al ActivityLevel) String() string {
 	return string(al)
+}
+
+// CQRS-related contracts
+
+// OutboxEvent represents an event to be published to Pub/Sub for CQRS
+type OutboxEvent struct {
+	ID          uint       `json:"id" gorm:"primaryKey"`
+	EventType   string     `json:"event_type" gorm:"not null"`
+	AggregateID string     `json:"aggregate_id" gorm:"not null"`
+	EventData   string     `json:"event_data" gorm:"type:text"`
+	Published   bool       `json:"published" gorm:"default:false"`
+	CreatedAt   time.Time  `json:"created_at"`
+	PublishedAt *time.Time `json:"published_at,omitempty"`
+}
+
+// ActivityEvent represents the event data for activity operations (CQRS)
+type ActivityEvent struct {
+	Type        string    `json:"type"` // CREATE, UPDATE, DELETE
+	ActivityID  uint      `json:"activity_id"`
+	UrgencyID   uint      `json:"urgency_id"`
+	EmployeeID  uint      `json:"employee_id"`
+	Description string    `json:"description,omitempty"`
+	CreatedAt   time.Time `json:"created_at,omitempty"`
+	// Denormalized data for read model
+	EmployeeName string `json:"employee_name,omitempty"`
+	UrgencyTitle string `json:"urgency_title,omitempty"`
+	UrgencyLevel string `json:"urgency_level,omitempty"`
+}
+
+// ActivityEventType represents the type of CQRS event
+type ActivityEventType string
+
+const (
+	ActivityEventCreated ActivityEventType = "activity.created"
+	ActivityEventUpdated ActivityEventType = "activity.updated"
+	ActivityEventDeleted ActivityEventType = "activity.deleted"
+)
+
+func (aet ActivityEventType) String() string {
+	return string(aet)
+}
+
+func CreateOutboxEvent(eventType ActivityEventType, activityID uint, eventData ActivityEvent) *OutboxEvent {
+	data, _ := json.Marshal(eventData)
+
+	return &OutboxEvent{
+		EventType:   eventType.String(),
+		AggregateID: fmt.Sprintf("activity-%d", activityID),
+		EventData:   string(data),
+		Published:   false,
+		CreatedAt:   time.Now(),
+	}
+}
+
+// GetEventData unmarshals the event data from an outbox event
+func (e *OutboxEvent) GetEventData() (*ActivityEvent, error) {
+	var eventData ActivityEvent
+	err := json.Unmarshal([]byte(e.EventData), &eventData)
+	return &eventData, err
+}
+
+// Simplified Activity model for CQRS
+type SimpleActivity struct {
+	ID          uint      `json:"id"`
+	UrgencyID   uint      `json:"urgency_id"`
+	EmployeeID  uint      `json:"employee_id"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type SimpleActivityCreateRequest struct {
+	UrgencyID   uint   `json:"urgency_id" validate:"required"`
+	EmployeeID  uint   `json:"employee_id" validate:"required"`
+	Description string `json:"description" validate:"required,min=10"`
+}
+
+func (r *SimpleActivityCreateRequest) ToSimpleActivity() *SimpleActivity {
+	return &SimpleActivity{
+		UrgencyID:   r.UrgencyID,
+		EmployeeID:  r.EmployeeID,
+		Description: r.Description,
+		CreatedAt:   time.Now(),
+	}
 }
