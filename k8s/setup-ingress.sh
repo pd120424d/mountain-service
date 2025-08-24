@@ -69,16 +69,20 @@ kubectl wait --namespace ingress-nginx \
 
 print_success "NGINX Ingress Controller is ready!"
 
-# Get the external IP of the ingress controller
-print_status "Getting external IP of the ingress controller..."
-EXTERNAL_IP=""
-while [ -z $EXTERNAL_IP ]; do
-    print_status "Waiting for external IP..."
-    EXTERNAL_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
-    [ -z "$EXTERNAL_IP" ] && sleep 10
-done
+# Get NodePort details for ingress controller
+print_status "Getting NodePort details for ingress controller..."
+NODE_PORT=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
 
-print_success "External IP: $EXTERNAL_IP"
+if [ -z "$NODE_IP" ]; then
+    NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+    print_warning "Using Internal IP (firewall/port forwarding should be configured for this): $NODE_IP"
+else
+    print_success "External Node IP: $NODE_IP"
+fi
+
+print_success "NodePort: $NODE_PORT"
+EXTERNAL_IP="$NODE_IP"
 
 # Apply the mountain-service namespace if it doesn't exist
 print_status "Ensuring mountain-service namespace exists..."
@@ -92,4 +96,4 @@ kubectl apply -f frontend/frontend.yaml
 print_status "Applying ingress configuration..."
 kubectl apply -f ingress.yaml
 
-print_success "Ingress setup completed
+print_success "Ingress setup completed!"
