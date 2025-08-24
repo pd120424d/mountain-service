@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/pd120424d/mountain-service/api/activity/internal"
+	"github.com/pd120424d/mountain-service/api/activity/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
@@ -23,10 +23,10 @@ type ActivityHandler interface {
 
 type activityHandler struct {
 	log utils.Logger
-	svc internal.ActivityService
+	svc service.ActivityService
 }
 
-func NewActivityHandler(log utils.Logger, svc internal.ActivityService) ActivityHandler {
+func NewActivityHandler(log utils.Logger, svc service.ActivityService) ActivityHandler {
 	return &activityHandler{log: log.WithName("activityHandler"), svc: svc}
 }
 

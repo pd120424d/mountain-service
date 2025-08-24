@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pd120424d/mountain-service/api/activity/internal"
+	"github.com/pd120424d/mountain-service/api/activity/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
@@ -52,7 +52,7 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/activities", strings.NewReader(validPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().CreateActivity(gomock.Any()).Return(nil, fmt.Errorf("database error"))
 
 		handler := NewActivityHandler(log, svcMock)
@@ -76,7 +76,7 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/activities", strings.NewReader(validPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().CreateActivity(gomock.Any()).Return(&activityV1.ActivityResponse{ID: 1}, nil)
 
 		handler := NewActivityHandler(log, svcMock)
@@ -111,7 +111,7 @@ func TestActivityHandler_GetActivity(t *testing.T) {
 
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().GetActivityByID(uint(1)).Return(nil, fmt.Errorf("not found"))
 
 		handler := NewActivityHandler(log, svcMock)
@@ -128,7 +128,7 @@ func TestActivityHandler_GetActivity(t *testing.T) {
 
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().GetActivityByID(uint(1)).Return(&activityV1.ActivityResponse{ID: 1}, nil)
 
 		handler := NewActivityHandler(log, svcMock)
@@ -149,7 +149,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any()).Return(nil, fmt.Errorf("database error"))
 
 		handler := NewActivityHandler(log, svcMock)
@@ -164,7 +164,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any()).Return(&activityV1.ActivityListResponse{
 			Activities: []activityV1.ActivityResponse{{ID: 1}},
 			Total:      1,
@@ -178,6 +178,198 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "{\"activities\":[{\"id\":1")
 	})
+
+	t.Run("it handles service error correctly", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		svcMock := service.NewMockActivityService(ctrl)
+		svcMock.EXPECT().ListActivities(gomock.Any()).Return(nil, fmt.Errorf("service error"))
+
+		handler := NewActivityHandler(log, svcMock)
+		handler.ListActivities(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "service error")
+	})
+
+	t.Run("it handles query parameters correctly", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		// Set query parameters
+		ctx.Request = httptest.NewRequest("GET", "/activities?page=2&pageSize=25&type=employee_created&level=info", nil)
+
+		svcMock := service.NewMockActivityService(ctrl)
+		svcMock.EXPECT().ListActivities(gomock.Any()).DoAndReturn(func(req *activityV1.ActivityListRequest) (*activityV1.ActivityListResponse, error) {
+			assert.Equal(t, 2, req.Page)
+			assert.Equal(t, 25, req.PageSize)
+			assert.Equal(t, activityV1.ActivityEmployeeCreated, req.Type)
+			assert.Equal(t, activityV1.ActivityLevelInfo, req.Level)
+			return &activityV1.ActivityListResponse{
+				Activities: []activityV1.ActivityResponse{},
+				Total:      0,
+				Page:       2,
+				PageSize:   25,
+				TotalPages: 0,
+			}, nil
+		})
+
+		handler := NewActivityHandler(log, svcMock)
+		handler.ListActivities(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+func TestActivityHandler_GetActivity_EdgeCases(t *testing.T) {
+	t.Parallel()
+
+	log := utils.NewTestLogger()
+
+	t.Run("it returns error for invalid ID parameter", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
+
+		svcMock := service.NewMockActivityService(ctrl)
+		handler := NewActivityHandler(log, svcMock)
+		handler.GetActivity(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid activity ID")
+	})
+
+	t.Run("it returns error for zero ID", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "0"}}
+
+		svcMock := service.NewMockActivityService(ctrl)
+		// The handler will call the service with ID 0, so we need to expect it
+		svcMock.EXPECT().GetActivityByID(uint(0)).Return(nil, fmt.Errorf("activity not found"))
+
+		handler := NewActivityHandler(log, svcMock)
+		handler.GetActivity(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "Activity not found")
+	})
+
+	t.Run("it handles service error correctly", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "999"}}
+
+		svcMock := service.NewMockActivityService(ctrl)
+		svcMock.EXPECT().GetActivityByID(uint(999)).Return(nil, fmt.Errorf("activity not found"))
+
+		handler := NewActivityHandler(log, svcMock)
+		handler.GetActivity(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "Activity not found")
+	})
+}
+
+func TestActivityHandler_DeleteActivity_EdgeCases(t *testing.T) {
+	t.Parallel()
+
+	log := utils.NewTestLogger()
+
+	t.Run("it returns error for invalid ID parameter", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
+
+		svcMock := service.NewMockActivityService(ctrl)
+		handler := NewActivityHandler(log, svcMock)
+		handler.DeleteActivity(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid activity ID")
+	})
+
+	t.Run("it returns error for zero ID", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "0"}}
+
+		svcMock := service.NewMockActivityService(ctrl)
+		// The handler will call the service with ID 0, so we need to expect it
+		svcMock.EXPECT().DeleteActivity(uint(0)).Return(fmt.Errorf("activity not found"))
+
+		handler := NewActivityHandler(log, svcMock)
+		handler.DeleteActivity(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "Activity not found")
+	})
+
+	t.Run("it handles service error correctly", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = gin.Params{{Key: "id", Value: "999"}}
+
+		svcMock := service.NewMockActivityService(ctrl)
+		svcMock.EXPECT().DeleteActivity(uint(999)).Return(fmt.Errorf("activity not found"))
+
+		handler := NewActivityHandler(log, svcMock)
+		handler.DeleteActivity(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "Activity not found")
+	})
+}
+
+func TestActivityHandler_GetActivityStats_EdgeCases(t *testing.T) {
+	t.Parallel()
+
+	log := utils.NewTestLogger()
+
+	t.Run("it handles service error correctly", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		svcMock := service.NewMockActivityService(ctrl)
+		svcMock.EXPECT().GetActivityStats().Return(nil, fmt.Errorf("database error"))
+
+		handler := NewActivityHandler(log, svcMock)
+		handler.GetActivityStats(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "database error")
+	})
+}
+
+func TestActivityHandler_ResetAllData_EdgeCases(t *testing.T) {
+	t.Parallel()
+
+	log := utils.NewTestLogger()
+
+	t.Run("it handles service error correctly", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		svcMock := service.NewMockActivityService(ctrl)
+		svcMock.EXPECT().ResetAllData().Return(fmt.Errorf("database error"))
+
+		handler := NewActivityHandler(log, svcMock)
+		handler.ResetAllData(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "database error")
+	})
 }
 
 func TestActivityHandler_GetActivityStats(t *testing.T) {
@@ -190,7 +382,7 @@ func TestActivityHandler_GetActivityStats(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().GetActivityStats().Return(nil, fmt.Errorf("database error"))
 
 		handler := NewActivityHandler(log, svcMock)
@@ -205,7 +397,7 @@ func TestActivityHandler_GetActivityStats(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().GetActivityStats().Return(&activityV1.ActivityStatsResponse{
 			TotalActivities: 1,
 			ActivitiesByType: map[activityV1.ActivityType]int64{
@@ -261,7 +453,7 @@ func TestActivityHandler_DeleteActivity(t *testing.T) {
 
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().DeleteActivity(uint(1)).Return(fmt.Errorf("not found"))
 
 		handler := NewActivityHandler(log, svcMock)
@@ -278,7 +470,7 @@ func TestActivityHandler_DeleteActivity(t *testing.T) {
 
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().DeleteActivity(uint(1)).Return(nil)
 
 		handler := NewActivityHandler(log, svcMock)
@@ -299,7 +491,7 @@ func TestActivityHandler_ResetAllData(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ResetAllData().Return(fmt.Errorf("database error"))
 
 		handler := NewActivityHandler(log, svcMock)
@@ -314,7 +506,7 @@ func TestActivityHandler_ResetAllData(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		svcMock := internal.NewMockActivityService(ctrl)
+		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ResetAllData().Return(nil)
 
 		handler := NewActivityHandler(log, svcMock)

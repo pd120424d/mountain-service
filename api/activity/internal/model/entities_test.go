@@ -355,3 +355,133 @@ func TestNewNotificationActivity(t *testing.T) {
 	assert.Equal(t, uint(123), *activity.ActorID)
 	assert.Equal(t, "system", activity.ActorName)
 }
+
+func TestActivityFilter_EdgeCases(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it handles negative values correctly", func(t *testing.T) {
+		filter := &ActivityFilter{
+			Page:     -10,
+			PageSize: -5,
+		}
+
+		err := filter.Validate()
+		assert.NoError(t, err)
+		assert.Equal(t, 1, filter.Page)
+		assert.Equal(t, 50, filter.PageSize)
+	})
+
+	t.Run("it handles zero values correctly", func(t *testing.T) {
+		filter := &ActivityFilter{
+			Page:     0,
+			PageSize: 0,
+		}
+
+		err := filter.Validate()
+		assert.NoError(t, err)
+		assert.Equal(t, 1, filter.Page)
+		assert.Equal(t, 50, filter.PageSize)
+	})
+
+	t.Run("it handles extremely large page size", func(t *testing.T) {
+		filter := &ActivityFilter{
+			Page:     1,
+			PageSize: 10000,
+		}
+
+		err := filter.Validate()
+		assert.NoError(t, err)
+		assert.Equal(t, 1, filter.Page)
+		assert.Equal(t, 1000, filter.PageSize) // Should be capped at maximum (MaxPageSize = 1000)
+	})
+
+	t.Run("it calculates offset correctly for large pages", func(t *testing.T) {
+		filter := &ActivityFilter{
+			Page:     1000,
+			PageSize: 50,
+		}
+
+		filter.Validate()
+		offset := filter.GetOffset()
+		assert.Equal(t, 49950, offset) // (1000-1) * 50
+	})
+
+	t.Run("it calculates limit correctly", func(t *testing.T) {
+		filter := &ActivityFilter{
+			Page:     1,
+			PageSize: 25,
+		}
+
+		filter.Validate()
+		limit := filter.GetLimit()
+		assert.Equal(t, 25, limit)
+	})
+}
+
+func TestActivityStats_EdgeCases(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it converts stats with zero values", func(t *testing.T) {
+		stats := &ActivityStats{
+			TotalActivities:      0,
+			ActivitiesByType:     make(map[activityV1.ActivityType]int64),
+			ActivitiesByLevel:    make(map[activityV1.ActivityLevel]int64),
+			RecentActivities:     []Activity{},
+			ActivitiesLast24h:    0,
+			ActivitiesLast7Days:  0,
+			ActivitiesLast30Days: 0,
+		}
+
+		response := stats.ToResponse()
+		assert.Equal(t, int64(0), response.TotalActivities)
+		assert.Equal(t, int64(0), response.ActivitiesLast24h)
+		assert.Equal(t, int64(0), response.ActivitiesLast7Days)
+		assert.Equal(t, int64(0), response.ActivitiesLast30Days)
+		assert.Empty(t, response.RecentActivities)
+	})
+
+	t.Run("it converts stats with large values", func(t *testing.T) {
+		stats := &ActivityStats{
+			TotalActivities: 999999,
+			ActivitiesByType: map[activityV1.ActivityType]int64{
+				activityV1.ActivityEmployeeCreated: 100000,
+				activityV1.ActivityUrgencyCreated:  200000,
+			},
+			ActivitiesByLevel: map[activityV1.ActivityLevel]int64{
+				activityV1.ActivityLevelInfo:    300000,
+				activityV1.ActivityLevelWarning: 400000,
+			},
+			RecentActivities:     []Activity{},
+			ActivitiesLast24h:    50000,
+			ActivitiesLast7Days:  200000,
+			ActivitiesLast30Days: 500000,
+		}
+
+		response := stats.ToResponse()
+		assert.Equal(t, int64(999999), response.TotalActivities)
+		assert.Equal(t, int64(50000), response.ActivitiesLast24h)
+		assert.Equal(t, int64(200000), response.ActivitiesLast7Days)
+		assert.Equal(t, int64(500000), response.ActivitiesLast30Days)
+		assert.NotNil(t, response.ActivitiesByType)
+		assert.NotNil(t, response.ActivitiesByLevel)
+	})
+
+	t.Run("it handles nil maps correctly", func(t *testing.T) {
+		stats := &ActivityStats{
+			TotalActivities:      100,
+			ActivitiesByType:     nil,
+			ActivitiesByLevel:    nil,
+			RecentActivities:     nil,
+			ActivitiesLast24h:    10,
+			ActivitiesLast7Days:  50,
+			ActivitiesLast30Days: 100,
+		}
+
+		response := stats.ToResponse()
+		assert.Equal(t, int64(100), response.TotalActivities)
+		// The ToResponse method directly assigns nil maps, so they will be nil in response
+		assert.Nil(t, response.ActivitiesByType)
+		assert.Nil(t, response.ActivitiesByLevel)
+		assert.NotNil(t, response.RecentActivities) // This is created as empty slice
+	})
+}

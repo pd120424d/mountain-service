@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	_ "github.com/pd120424d/mountain-service/api/activity/cmd/docs"
-	"github.com/pd120424d/mountain-service/api/activity/internal"
 	"github.com/pd120424d/mountain-service/api/activity/internal/handler"
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
+	"github.com/pd120424d/mountain-service/api/activity/internal/service"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	globConf "github.com/pd120424d/mountain-service/api/shared/config"
 	"github.com/pd120424d/mountain-service/api/shared/server"
@@ -78,7 +78,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 
 	// Initialize repositories and services
 	activityRepo := repositories.NewActivityRepository(log, db)
-	activitySvc := internal.NewActivityService(log, activityRepo)
+	activitySvc := service.NewActivityService(log, activityRepo)
 	activityHandler := handler.NewActivityHandler(log, activitySvc)
 
 	// Setup JWT secret

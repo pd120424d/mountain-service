@@ -485,3 +485,89 @@ func TestActivityRepository_GetStats(t *testing.T) {
 		assert.Equal(t, int64(0), stats.ActivitiesLast30Days)
 	})
 }
+
+func TestActivityRepository_DatabaseConnection(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it handles database connection properly", func(t *testing.T) {
+		// Test that the repository works with a proper database connection
+		db := setupActivityTestDB(t)
+		log := utils.NewTestLogger()
+		repo := NewActivityRepository(log, db)
+
+		activity := &model.Activity{
+			Type:        activityV1.ActivityEmployeeCreated,
+			Level:       activityV1.ActivityLevelInfo,
+			Title:       "Test",
+			Description: "Test",
+		}
+
+		err := repo.Create(activity)
+		assert.NoError(t, err)
+		assert.NotZero(t, activity.ID)
+	})
+}
+
+func TestActivityRepository_QueryBuilding(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it builds complex queries correctly", func(t *testing.T) {
+		db := setupActivityTestDB(t)
+		log := utils.NewTestLogger()
+		repo := NewActivityRepository(log, db)
+
+		// Create test data
+		actorID1 := uint(1)
+		actorID2 := uint(2)
+		targetID1 := uint(10)
+		targetID2 := uint(20)
+
+		activity1 := &model.Activity{
+			Type:        activityV1.ActivityEmployeeCreated,
+			Level:       activityV1.ActivityLevelInfo,
+			Title:       "Employee Created",
+			Description: "Test employee creation",
+			ActorID:     &actorID1,
+			ActorName:   "Admin",
+			TargetID:    &targetID1,
+			TargetType:  "employee",
+		}
+		activity2 := &model.Activity{
+			Type:        activityV1.ActivityUrgencyCreated,
+			Level:       activityV1.ActivityLevelWarning,
+			Title:       "Urgency Created",
+			Description: "Test urgency creation",
+			ActorID:     &actorID2,
+			ActorName:   "System",
+			TargetID:    &targetID2,
+			TargetType:  "urgency",
+		}
+
+		err := repo.Create(activity1)
+		assert.NoError(t, err)
+		err = repo.Create(activity2)
+		assert.NoError(t, err)
+
+		// Test complex filter with multiple criteria
+		activityType := activityV1.ActivityEmployeeCreated
+		activityLevel := activityV1.ActivityLevelInfo
+		targetType := "employee"
+		filter := &model.ActivityFilter{
+			Type:       &activityType,
+			Level:      &activityLevel,
+			ActorID:    &actorID1,
+			TargetID:   &targetID1,
+			TargetType: &targetType,
+			Page:       1,
+			PageSize:   10,
+		}
+
+		activities, total, err := repo.List(filter)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), total)
+		assert.Len(t, activities, 1)
+		assert.Equal(t, activityV1.ActivityEmployeeCreated, activities[0].Type)
+		assert.Equal(t, actorID1, *activities[0].ActorID)
+		assert.Equal(t, targetID1, *activities[0].TargetID)
+	})
+}

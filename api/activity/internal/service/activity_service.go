@@ -1,6 +1,6 @@
-package internal
+package service
 
-//go:generate mockgen -source=service.go -destination=service_gomock.go -package=internal mountain_service/activity/internal -imports=gomock=go.uber.org/mock/gomock -typed
+//go:generate mockgen -source=activity_service.go -destination=activity_service_gomock.go -package=service mountain_service/activity/internal/service -imports=gomock=go.uber.org/mock/gomock -typed
 
 import (
 	"fmt"
@@ -198,11 +198,18 @@ func (s *activityService) ListActivities(req *activityV1.ActivityListRequest) (*
 		}
 	}
 
+	// Calculate total pages
+	totalPages := 0
+	if req.PageSize > 0 {
+		totalPages = int((total + int64(req.PageSize) - 1) / int64(req.PageSize)) // Ceiling division
+	}
+
 	response := &activityV1.ActivityListResponse{
 		Activities: activityResponses,
 		Total:      total,
 		Page:       req.Page,
 		PageSize:   req.PageSize,
+		TotalPages: totalPages,
 	}
 
 	s.log.Infof("Listed %d activities out of %d total", len(activities), total)

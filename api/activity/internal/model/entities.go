@@ -10,17 +10,17 @@ import (
 // Activity represents an activity/event in the system
 type Activity struct {
 	gorm.Model
-	ID          uint                      `gorm:"primaryKey"`
-	Type        activityV1.ActivityType   `gorm:"type:text;not null;index"`
-	Level       activityV1.ActivityLevel  `gorm:"type:text;not null;index"`
-	Title       string                    `gorm:"not null"`
-	Description string                    `gorm:"type:text;not null"`
-	ActorID     *uint                     `gorm:"index"`                    // ID of the user who performed the action
-	ActorName   string                    `gorm:"index"`                    // Name of the user who performed the action
-	TargetID    *uint                     `gorm:"index"`                    // ID of the target entity
-	TargetType  string                    `gorm:"index"`                    // Type of the target entity (employee, urgency, etc.)
-	Metadata    string                    `gorm:"type:text"`                // JSON string with additional data
-	CreatedAt   time.Time                 `gorm:"index"`
+	ID          uint                     `gorm:"primaryKey"`
+	Type        activityV1.ActivityType  `gorm:"type:text;not null;index"`
+	Level       activityV1.ActivityLevel `gorm:"type:text;not null;index"`
+	Title       string                   `gorm:"not null"`
+	Description string                   `gorm:"type:text;not null"`
+	ActorID     *uint                    `gorm:"index"`     // ID of the user who performed the action
+	ActorName   string                   `gorm:"index"`     // Name of the user who performed the action
+	TargetID    *uint                    `gorm:"index"`     // ID of the target entity
+	TargetType  string                   `gorm:"index"`     // Type of the target entity (employee, urgency, etc.)
+	Metadata    string                   `gorm:"type:text"` // JSON string with additional data
+	CreatedAt   time.Time                `gorm:"index"`
 	UpdatedAt   time.Time
 }
 
@@ -44,12 +44,10 @@ func (a *Activity) ToResponse() activityV1.ActivityResponse {
 		UpdatedAt:   a.UpdatedAt.Format(time.RFC3339),
 	}
 
-	// Only include ActorID if it's not nil
 	if a.ActorID != nil {
 		response.ActorID = a.ActorID
 	}
 
-	// Only include TargetID if it's not nil
 	if a.TargetID != nil {
 		response.TargetID = a.TargetID
 	}
@@ -69,12 +67,10 @@ func FromCreateRequest(req *activityV1.ActivityCreateRequest) *Activity {
 		Metadata:    req.Metadata,
 	}
 
-	// Only set ActorID if provided
 	if req.ActorID != nil {
 		activity.ActorID = req.ActorID
 	}
 
-	// Only set TargetID if provided
 	if req.TargetID != nil {
 		activity.TargetID = req.TargetID
 	}
@@ -164,7 +160,6 @@ func (s *ActivityStats) ToResponse() activityV1.ActivityStatsResponse {
 
 // Helper functions for creating common activities
 
-// NewEmployeeActivity creates a new employee-related activity
 func NewEmployeeActivity(activityType activityV1.ActivityType, employeeID uint, employeeName, title, description string) *Activity {
 	return &Activity{
 		Type:        activityType,
@@ -177,7 +172,6 @@ func NewEmployeeActivity(activityType activityV1.ActivityType, employeeID uint, 
 	}
 }
 
-// NewUrgencyActivity creates a new urgency-related activity
 func NewUrgencyActivity(activityType activityV1.ActivityType, urgencyID uint, actorName, title, description string) *Activity {
 	return &Activity{
 		Type:        activityType,
@@ -190,7 +184,6 @@ func NewUrgencyActivity(activityType activityV1.ActivityType, urgencyID uint, ac
 	}
 }
 
-// NewSystemActivity creates a new system-related activity
 func NewSystemActivity(activityType activityV1.ActivityType, level activityV1.ActivityLevel, title, description string) *Activity {
 	return &Activity{
 		Type:        activityType,
@@ -202,7 +195,6 @@ func NewSystemActivity(activityType activityV1.ActivityType, level activityV1.Ac
 	}
 }
 
-// NewNotificationActivity creates a new notification-related activity
 func NewNotificationActivity(activityType activityV1.ActivityType, level activityV1.ActivityLevel, employeeID, urgencyID uint, title, description string) *Activity {
 	return &Activity{
 		Type:        activityType,
