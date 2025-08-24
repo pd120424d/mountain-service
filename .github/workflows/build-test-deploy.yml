@@ -75,6 +75,7 @@ jobs:
       employee-changed: ${{ steps.changes.outputs.employee }}
       urgency-changed: ${{ steps.changes.outputs.urgency }}
       activity-changed: ${{ steps.changes.outputs.activity }}
+      activity-updater-changed: ${{ steps.changes.outputs.activity-updater }}
       version-changed: ${{ steps.changes.outputs.version }}
     steps:
       - name: Checkout
@@ -89,6 +90,7 @@ jobs:
           echo "employee=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/employee/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "urgency=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/urgency/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "activity=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "activity-updater=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity-readmodel-updater/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "version=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/version-service/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
 
       - name: Login to GHCR
@@ -135,7 +137,7 @@ jobs:
           docker push ghcr.io/pd120424d/urgency-service:latest
           docker push ghcr.io/pd120424d/urgency-service:${{ github.sha }}
 
-      - name: Build and push Activity service
+      - name: Build and push Activity service (with CQRS support)
         if: steps.changes.outputs.activity == 'true'
         run: |
           cd api/activity
@@ -146,6 +148,18 @@ jobs:
                        --no-cache .
           docker push ghcr.io/pd120424d/activity-service:latest
           docker push ghcr.io/pd120424d/activity-service:${{ github.sha }}
+
+      - name: Build and push Activity Read Model Updater service
+        if: steps.changes.outputs.activity-updater == 'true'
+        run: |
+          cd api/activity-readmodel-updater
+          docker build -t ghcr.io/pd120424d/activity-readmodel-updater:latest \
+                       -t ghcr.io/pd120424d/activity-readmodel-updater:${{ github.sha }} \
+                       --build-arg BUILD_TIMESTAMP=$(date +%s) \
+                       --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --no-cache .
+          docker push ghcr.io/pd120424d/activity-readmodel-updater:latest
+          docker push ghcr.io/pd120424d/activity-readmodel-updater:${{ github.sha }}
 
       - name: Build and push Version service
         if: steps.changes.outputs.version == 'true'
@@ -234,6 +248,23 @@ jobs:
             --from-literal=DB_NAME='${{ secrets.ACTIVITY_DB_NAME }}' \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Create/Update Secrets - GCP CQRS Keys
+        run: |
+          # Create GCP service account secrets for CQRS
+          echo '${{ secrets.GCP_ACTIVITY_API_KEY }}' | base64 -d > /tmp/activity-api-key.json
+          echo '${{ secrets.GCP_ACTIVITY_UPDATER_KEY }}' | base64 -d > /tmp/activity-updater-key.json
+
+          kubectl -n mountain-service create secret generic gcp-activity-api-key \
+            --from-file=key.json=/tmp/activity-api-key.json \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          kubectl -n mountain-service create secret generic gcp-activity-updater-key \
+            --from-file=key.json=/tmp/activity-updater-key.json \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # Clean up temp files
+          rm -f /tmp/activity-api-key.json /tmp/activity-updater-key.json
+
       - name: Create/Update Secrets - App Shared
         run: |
           kubectl -n mountain-service create secret generic app-shared \
@@ -307,6 +338,7 @@ jobs:
           kubectl -n mountain-service wait --for=condition=ready pod -l app=employee-service --timeout=180s || echo "Employee service not ready yet"
           kubectl -n mountain-service wait --for=condition=ready pod -l app=urgency-service --timeout=180s || echo "Urgency service not ready yet"
           kubectl -n mountain-service wait --for=condition=ready pod -l app=activity-service --timeout=180s || echo "Activity service not ready yet"
+          kubectl -n mountain-service wait --for=condition=ready pod -l app=activity-readmodel-updater --timeout=180s || echo "Activity read model updater not ready yet"
           kubectl -n mountain-service wait --for=condition=ready pod -l app=version-service --timeout=180s || echo "Version service not ready yet"
 
           # Show final status
@@ -321,7 +353,7 @@ jobs:
           echo "\nRecent events (last 200 lines):"
           kubectl -n mountain-service get events --sort-by=.lastTimestamp | tail -n 200 || true
           echo "\nDescribe deployments (images + imagePullSecrets):"
-          for d in employee-service urgency-service activity-service version-service; do
+          for d in employee-service urgency-service activity-service activity-readmodel-updater version-service; do
             echo "\n--- DESCRIBE DEPLOYMENT: $d ---"
             kubectl -n mountain-service describe deploy "$d" | sed -n '/Image:/,/Environment:/p' || true
             echo "\nImagePullSecrets:"
@@ -341,12 +373,13 @@ jobs:
           EMPLOYEE_IP=$(kubectl -n mountain-service get svc employee-service -o jsonpath='{.spec.clusterIP}')
           URGENCY_IP=$(kubectl -n mountain-service get svc urgency-service -o jsonpath='{.spec.clusterIP}')
           ACTIVITY_IP=$(kubectl -n mountain-service get svc activity-service -o jsonpath='{.spec.clusterIP}')
+          ACTIVITY_UPDATER_IP=$(kubectl -n mountain-service get svc activity-readmodel-updater -o jsonpath='{.spec.clusterIP}')
           VERSION_IP=$(kubectl -n mountain-service get svc version-service -o jsonpath='{.spec.clusterIP}')
 
-          echo "Service IPs: Employee=$EMPLOYEE_IP, Urgency=$URGENCY_IP, Activity=$ACTIVITY_IP, Version=$VERSION_IP"
+          echo "Service IPs: Employee=$EMPLOYEE_IP, Urgency=$URGENCY_IP, Activity=$ACTIVITY_IP, ActivityUpdater=$ACTIVITY_UPDATER_IP, Version=$VERSION_IP"
 
           # Health checks with retries
-          for service in "employee:$EMPLOYEE_IP:8082" "urgency:$URGENCY_IP:8083" "activity:$ACTIVITY_IP:8084" "version:$VERSION_IP:8090"; do
+          for service in "employee:$EMPLOYEE_IP:8082" "urgency:$URGENCY_IP:8083" "activity:$ACTIVITY_IP:8084" "activity-updater:$ACTIVITY_UPDATER_IP:8090" "version:$VERSION_IP:8090"; do
             name=$(echo $service | cut -d: -f1)
             ip=$(echo $service | cut -d: -f2)
             port=$(echo $service | cut -d: -f3)

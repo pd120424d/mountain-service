@@ -1,29 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: activity-service
+  name: activity-readmodel-updater
   namespace: mountain-service
 spec:
-  replicas: 1
+  replicas: 1  # Only one instance to avoid duplicate processing
   selector:
     matchLabels:
-      app: activity-service
+      app: activity-readmodel-updater
   template:
     metadata:
       labels:
-        app: activity-service
+        app: activity-readmodel-updater
       annotations:
         sidecar.istio.io/inject: "false"
     spec:
       imagePullSecrets:
         - name: ghcr-auth
       containers:
-        - name: activity
-          image: ghcr.io/pd120424d/activity-service:latest
+        - name: activity-readmodel-updater
+          image: ghcr.io/pd120424d/activity-readmodel-updater:latest
           ports:
-            - containerPort: 8084
+            - containerPort: 8090
           env:
-            # Database Configuration
+            # Database Configuration (for outbox polling)
             - name: DB_HOST
               value: "127.0.0.1"
             - name: DB_PORT
@@ -36,29 +36,27 @@ spec:
               valueFrom: { secretKeyRef: { name: activity-db, key: DB_NAME } }
             - name: DB_SSLMODE
               value: "disable"
-            # Authentication
-            - name: JWT_SECRET
-              valueFrom: { secretKeyRef: { name: app-shared, key: JWT_SECRET } }
-            - name: ADMIN_PASSWORD
-              valueFrom: { secretKeyRef: { name: app-shared, key: ADMIN_PASSWORD } }
-            - name: SERVICE_AUTH_SECRET
-              valueFrom: { secretKeyRef: { name: app-shared, key: SERVICE_AUTH_SECRET } }
             # CQRS Configuration
             - name: GOOGLE_CLOUD_PROJECT
               value: "reflecting-card-469410-q1"
             - name: FIREBASE_PROJECT_ID
               value: "reflecting-card-469410-q1"
-            - name: USE_FIREBASE_READ
-              value: "true"
             - name: PUBSUB_TOPIC
               value: "activity-events"
+            - name: PUBSUB_SUBSCRIPTION
+              value: "activity-events-sub"
+            - name: OUTBOX_POLL_INTERVAL_SECONDS
+              value: "10"
+            - name: HEALTH_PORT
+              value: "8090"
+            - name: LOG_LEVEL
+              value: "info"
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: "/var/secrets/gcp/key.json"
-            # External Services
-            - name: EMPLOYEE_SERVICE_URL
-              value: "http://employee-service.mountain-service.svc.cluster.local:8082/api/v1"
-            - name: URGENCY_SERVICE_URL
-              value: "http://urgency-service.mountain-service.svc.cluster.local:8083/api/v1"
+          volumeMounts:
+            - name: gcp-activity-updater-key
+              mountPath: /var/secrets/gcp
+              readOnly: true
           resources:
             requests:
               cpu: "50m"
@@ -66,6 +64,18 @@ spec:
             limits:
               cpu: "200m"
               memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8090
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8090
+            initialDelaySeconds: 5
+            periodSeconds: 5
         - name: cloud-sql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.3
           args:
@@ -83,9 +93,6 @@ spec:
             - name: gcp-sa
               mountPath: /var/secrets
               readOnly: true
-            - name: gcp-activity-api-key
-              mountPath: /var/secrets/gcp
-              readOnly: true
           resources:
             requests:
               cpu: "20m"
@@ -100,9 +107,9 @@ spec:
             items:
               - key: key.json
                 path: key.json
-        - name: gcp-activity-api-key
+        - name: gcp-activity-updater-key
           secret:
-            secretName: gcp-activity-api-key
+            secretName: gcp-activity-updater-key
             items:
               - key: key.json
                 path: key.json
@@ -111,14 +118,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: activity-service
+  name: activity-readmodel-updater
   namespace: mountain-service
 spec:
   selector:
-    app: activity-service
+    app: activity-readmodel-updater
   ports:
     - name: http
-      port: 8084
-      targetPort: 8084
+      port: 8090
+      targetPort: 8090
   type: ClusterIP
-
