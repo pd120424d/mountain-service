@@ -106,6 +106,7 @@ jobs:
                        -t ghcr.io/pd120424d/mountain-ui:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --build-arg NGINX_CONFIG=production \
                        --no-cache .
           docker push ghcr.io/pd120424d/mountain-ui:latest
           docker push ghcr.io/pd120424d/mountain-ui:${{ github.sha }}
