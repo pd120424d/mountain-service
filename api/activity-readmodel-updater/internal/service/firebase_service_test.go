@@ -277,4 +277,20 @@ func TestFirebaseService_SyncActivity_ComprehensiveEventData(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "Firestore client is nil")
 	})
+
+	t.Run("it returns error for unknown event type", func(t *testing.T) {
+		logger := utils.NewTestLogger()
+		service := NewFirebaseService(nil, logger)
+		assert.NotNil(t, service)
+
+		activityEvent := activityV1.ActivityEvent{
+			Type:       "UNKNOWN_TYPE",
+			ActivityID: 1,
+			CreatedAt:  time.Now(),
+		}
+
+		err := service.SyncActivity(context.Background(), activityEvent)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Firestore client is nil")
+	})
 }

@@ -66,3 +66,4 @@ api/coverage.txt
 # Ignore files used for debugging
 *debug*
 *DEBUG*
+k8s/*.sh
