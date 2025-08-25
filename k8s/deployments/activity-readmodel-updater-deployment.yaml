@@ -113,18 +113,3 @@ spec:
             items:
               - key: key.json
                 path: key.json
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: activity-readmodel-updater
-  namespace: mountain-service
-spec:
-  selector:
-    app: activity-readmodel-updater
-  ports:
-    - name: http
-      port: 8090
-      targetPort: 8090
-  type: ClusterIP
