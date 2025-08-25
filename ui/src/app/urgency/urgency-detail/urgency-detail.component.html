@@ -83,37 +83,6 @@
       <div class="add-activity-form">
         <h4>{{ 'URGENCY_DETAIL.ADD_ACTIVITY' | translate }}</h4>
         <form [formGroup]="activityForm" (ngSubmit)="onSubmitActivity()">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="title">{{ 'URGENCY_DETAIL.ACTIVITY_TITLE' | translate }}:</label>
-              <input
-                id="title"
-                formControlName="title"
-                type="text"
-                [class.error]="isFieldInvalid('title')"
-                placeholder="{{ 'URGENCY_DETAIL.ACTIVITY_TITLE_PLACEHOLDER' | translate }}">
-              <div *ngIf="isFieldInvalid('title')" class="error-message">
-                {{ getFieldError('title') | translate }}
-              </div>
-            </div>
-            
-            <div class="form-group">
-              <label for="level">{{ 'URGENCY_DETAIL.ACTIVITY_LEVEL' | translate }}:</label>
-              <select
-                id="level"
-                formControlName="level"
-                [class.error]="isFieldInvalid('level')">
-                <option [value]="ActivityLevel.Info">{{ 'ACTIVITY_LEVEL.INFO' | translate }}</option>
-                <option [value]="ActivityLevel.Warning">{{ 'ACTIVITY_LEVEL.WARNING' | translate }}</option>
-                <option [value]="ActivityLevel.Error">{{ 'ACTIVITY_LEVEL.ERROR' | translate }}</option>
-                <option [value]="ActivityLevel.Critical">{{ 'ACTIVITY_LEVEL.CRITICAL' | translate }}</option>
-              </select>
-              <div *ngIf="isFieldInvalid('level')" class="error-message">
-                {{ getFieldError('level') | translate }}
-              </div>
-            </div>
-          </div>
-
           <div class="form-group">
             <label for="description">{{ 'URGENCY_DETAIL.ACTIVITY_DESCRIPTION' | translate }}:</label>
             <textarea
@@ -153,18 +122,14 @@
         <div *ngIf="!isLoadingActivities && activities.length > 0" class="activity-items">
           <div *ngFor="let activity of activities" class="activity-item">
             <div class="activity-header">
-              <div class="activity-icon" [style.color]="getActivityLevelColor(activity.level!)">
-                <i class="fas fa-{{ getActivityTypeIcon(activity.type!) }}"></i>
+              <div class="activity-icon">
+                <i class="fas fa-{{ getActivityIcon(activity) }}"></i>
               </div>
               <div class="activity-meta">
-                <h5>{{ activity.title }}</h5>
                 <div class="activity-info">
-                  <span class="activity-level" [style.color]="getActivityLevelColor(activity.level!)">
-                    {{ 'ACTIVITY_LEVEL.' + activity.level?.toUpperCase() | translate }}
-                  </span>
-                  <span class="activity-date">{{ formatDate(activity.createdAt!) }}</span>
-                  <span *ngIf="activity.actorName" class="activity-actor">
-                    {{ 'URGENCY_DETAIL.BY' | translate }} {{ activity.actorName }}
+                  <span class="activity-date">{{ getActivityDisplayTime(activity) }}</span>
+                  <span *ngIf="activity.employee_id" class="activity-actor">
+                    {{ 'URGENCY_DETAIL.BY_EMPLOYEE' | translate }} {{ activity.employee_id }}
                   </span>
                 </div>
               </div>

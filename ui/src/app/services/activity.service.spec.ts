@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { ActivityService } from './activity.service';
-import { Activity, ActivityCreateRequest, ActivityListResponse, ActivityType, ActivityLevel } from '../shared/models';
+import { Activity, ActivityCreateRequest, ActivityListResponse } from '../shared/models';
 import { environment } from '../../environments/environment';
 
 describe('ActivityService', () => {
@@ -39,26 +39,19 @@ describe('ActivityService', () => {
       const mockActivities: Activity[] = [
         {
           id: 1,
-          type: ActivityType.UrgencyCreated,
-          level: ActivityLevel.Info,
-          title: 'Emergency Created',
           description: 'Emergency report was created',
-          actorName: 'System',
-          targetId: 1,
-          targetType: 'urgency',
-          createdAt: '2024-01-15T10:00:00Z'
+          employee_id: 1,
+          urgency_id: 1,
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
         },
         {
           id: 2,
-          type: ActivityType.UrgencyUpdated,
-          level: ActivityLevel.Warning,
-          title: 'Emergency Updated',
           description: 'Emergency report was updated',
-          actorId: 1,
-          actorName: 'John Doe',
-          targetId: 1,
-          targetType: 'urgency',
-          createdAt: '2024-01-15T11:00:00Z'
+          employee_id: 1,
+          urgency_id: 1,
+          created_at: '2024-01-15T11:00:00Z',
+          updated_at: '2024-01-15T11:00:00Z'
         }
       ];
 
@@ -91,22 +84,20 @@ describe('ActivityService', () => {
       const mockActivities: Activity[] = [
         {
           id: 1,
-          type: ActivityType.UrgencyCreated,
-          level: ActivityLevel.Info,
-          title: 'Emergency Created',
           description: 'Emergency report was created',
-          targetId: urgencyId,
-          targetType: 'urgency',
-          createdAt: '2024-01-15T10:00:00Z'
+          employee_id: 1,
+          urgency_id: urgencyId,
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
         }
       ];
 
       service.getActivitiesByUrgency(urgencyId).subscribe(activities => {
         expect(activities).toEqual(mockActivities);
-        expect(activities[0].targetId).toBe(urgencyId);
+        expect(activities[0].urgency_id).toBe(urgencyId);
       });
 
-      const expectedUrl = `${expectedActivityUrl}?targetId=${urgencyId}&targetType=urgency`;
+      const expectedUrl = `${expectedActivityUrl}?urgency_id=${urgencyId}`;
       const req = httpMock.expectOne(expectedUrl);
       expect(req.request.method).toBe('GET');
       req.flush(mockActivities);
@@ -116,23 +107,21 @@ describe('ActivityService', () => {
   describe('getActivitiesWithPagination', () => {
     it('should fetch activities with pagination parameters', () => {
       const params = {
-        targetId: 123,
-        targetType: 'urgency',
+        urgency_id: 123,
+        employee_id: 1,
         page: 1,
-        pageSize: 10
+        page_size: 10
       };
 
       const mockResponse: ActivityListResponse = {
         activities: [
           {
             id: 1,
-            type: ActivityType.UrgencyCreated,
-            level: ActivityLevel.Info,
-            title: 'Emergency Created',
             description: 'Emergency report was created',
-            targetId: 123,
-            targetType: 'urgency',
-            createdAt: '2024-01-15T10:00:00Z'
+            employee_id: 1,
+            urgency_id: 123,
+            created_at: '2024-01-15T10:00:00Z',
+            updated_at: '2024-01-15T10:00:00Z'
           }
         ],
         total: 1,
@@ -148,7 +137,7 @@ describe('ActivityService', () => {
         expect(response.page).toBe(1);
       });
 
-      const expectedUrl = `${expectedActivityUrl}?targetId=123&targetType=urgency&page=1&pageSize=10`;
+      const expectedUrl = `${expectedActivityUrl}?urgency_id=123&employee_id=1&page=1&page_size=10`;
       const req = httpMock.expectOne(expectedUrl);
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
@@ -176,27 +165,24 @@ describe('ActivityService', () => {
   describe('createActivity', () => {
     it('should create a new activity', () => {
       const activityRequest: ActivityCreateRequest = {
-        type: ActivityType.UrgencyUpdated,
-        level: ActivityLevel.Info,
-        title: 'Test Activity',
         description: 'Test activity description',
-        actorId: 1,
-        targetId: 123,
-        targetType: 'urgency'
+        employee_id: 1,
+        urgency_id: 123
       };
 
       const mockResponse: Activity = {
         id: 1,
-        ...activityRequest,
-        actorName: 'John Doe',
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z'
+        description: 'Test activity description',
+        employee_id: 1,
+        urgency_id: 123,
+        created_at: '2024-01-15T10:00:00Z',
+        updated_at: '2024-01-15T10:00:00Z'
       };
 
       service.createActivity(activityRequest).subscribe(activity => {
         expect(activity).toEqual(mockResponse);
         expect(activity.id).toBe(1);
-        expect(activity.title).toBe(activityRequest.title);
+        expect(activity.description).toBe(activityRequest.description);
       });
 
       const req = httpMock.expectOne(expectedActivityUrl);
@@ -207,10 +193,9 @@ describe('ActivityService', () => {
 
     it('should handle error when creating activity', () => {
       const activityRequest: ActivityCreateRequest = {
-        type: ActivityType.UrgencyUpdated,
-        level: ActivityLevel.Info,
-        title: 'Test Activity',
-        description: 'Test activity description'
+        description: 'Test activity description',
+        employee_id: 1,
+        urgency_id: 123
       };
 
       service.createActivity(activityRequest).subscribe({
@@ -228,10 +213,9 @@ describe('ActivityService', () => {
   describe('error handling', () => {
     it('should handle 409 conflict error', () => {
       const activityRequest: ActivityCreateRequest = {
-        type: ActivityType.UrgencyUpdated,
-        level: ActivityLevel.Info,
-        title: 'Test Activity',
-        description: 'Test activity description'
+        description: 'Test activity description',
+        employee_id: 1,
+        urgency_id: 123
       };
 
       service.createActivity(activityRequest).subscribe({

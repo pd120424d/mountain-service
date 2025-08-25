@@ -11,7 +11,7 @@ import { UrgencyDetailComponent } from './urgency-detail.component';
 import { UrgencyService } from '../urgency.service';
 import { ActivityService } from '../../services/activity.service';
 import { AuthService } from '../../services/auth.service';
-import { Urgency, Activity, UrgencyLevel, UrgencyStatus, ActivityLevel, ActivityType } from '../../shared/models';
+import { Urgency, Activity, UrgencyLevel, UrgencyStatus } from '../../shared/models';
 
 describe('UrgencyDetailComponent', () => {
   let component: UrgencyDetailComponent;
@@ -39,14 +39,11 @@ describe('UrgencyDetailComponent', () => {
   const mockActivities: Activity[] = [
     {
       id: 1,
-      type: ActivityType.UrgencyCreated,
-      level: ActivityLevel.Info,
-      title: 'Emergency Created',
       description: 'Emergency report was created',
-      actorName: 'System',
-      targetId: 1,
-      targetType: 'urgency',
-      createdAt: '2024-01-15T10:00:00Z'
+      employee_id: 1,
+      urgency_id: 1,
+      created_at: '2024-01-15T10:00:00Z',
+      updated_at: '2024-01-15T10:00:00Z'
     }
   ];
 
@@ -112,14 +109,11 @@ describe('UrgencyDetailComponent', () => {
   it('should create activity successfully', () => {
     const newActivity: Activity = {
       id: 2,
-      type: ActivityType.UrgencyUpdated,
-      level: ActivityLevel.Info,
-      title: 'Test Activity',
       description: 'Test Description',
-      actorId: 1,
-      targetId: 1,
-      targetType: 'urgency',
-      createdAt: '2024-01-15T11:00:00Z'
+      employee_id: 1,
+      urgency_id: 1,
+      created_at: '2024-01-15T11:00:00Z',
+      updated_at: '2024-01-15T11:00:00Z'
     };
 
     // Set up the mocks before calling ngOnInit
@@ -130,9 +124,7 @@ describe('UrgencyDetailComponent', () => {
     component.ngOnInit(); // Initialize the form and load data
 
     component.activityForm.patchValue({
-      title: 'Test Activity',
-      description: 'Test Description',
-      level: ActivityLevel.Info
+      description: 'Test Description'
     });
 
     authService.getUserId.and.returnValue('1');

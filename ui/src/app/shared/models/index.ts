@@ -58,12 +58,6 @@ export type {
 } from './generated/activity';
 
 export {
-  ActivityType,
-  ActivityLevel
-} from './generated/activity';
-
-// Re-export role constants and utilities for backward compatibility
-export {
   MedicRole,
   TechnicalRole,
   AdministratorRole,
@@ -75,7 +69,6 @@ export {
   isTechnical
 } from './extensions/employee-extensions';
 
-// Legacy enum exports for backward compatibility
 export enum EmployeeResponseProfileTypeEnum {
   Medic = "Medic",
   Technical = "Technical",
@@ -94,7 +87,6 @@ export enum EmployeeUpdateRequestProfileTypeEnum {
   Administrator = "Administrator",
 }
 
-// Re-export urgency utilities
 export {
   type Urgency,
   type UrgencyWithDisplayName,
@@ -114,15 +106,9 @@ export {
   isInMountainRegion
 } from './extensions/urgency-extensions';
 
-// Re-export activity utilities
 export {
   type Activity,
-  getActivityLevelColor,
-  getActivityTypeIcon,
-  getActivityTypeDisplayName,
-  isSystemActivity,
-  isEmployeeActivity,
-  isUrgencyActivity,
-  isShiftActivity,
-  isNotificationActivity
+  getActivityIcon,
+  getActivityDisplayTime,
+  formatActivityDescription
 } from './extensions/activity-extensions';

@@ -285,6 +285,7 @@
         "LOADING_ACTIVITIES": "Loading activities...",
         "NO_ACTIVITIES": "No activities recorded for this emergency.",
         "BY": "by",
+        "BY_EMPLOYEE": "by Employee",
         "ACTIVITY_ADDED_SUCCESS": "Activity added successfully!",
         "ACTIVITY_ADDED_ERROR": "Failed to add activity. Please try again."
     },

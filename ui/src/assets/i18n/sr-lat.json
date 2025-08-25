@@ -301,6 +301,7 @@
         "LOADING_ACTIVITIES": "Učitavanje aktivnosti...",
         "NO_ACTIVITIES": "Nema zabeleženih aktivnosti za ovu urgentnu situaciju.",
         "BY": "od",
+        "BY_EMPLOYEE": "od zaposlenog",
         "ACTIVITY_ADDED_SUCCESS": "Aktivnost je uspešno dodata!",
         "ACTIVITY_ADDED_ERROR": "Neuspešno dodavanje aktivnosti. Pokušajte ponovo."
     },

@@ -8,18 +8,16 @@ import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
 import { ActivityService } from '../../services/activity.service';
 import { AuthService } from '../../services/auth.service';
-import { 
-  Urgency, 
-  Activity, 
-  ActivityCreateRequest, 
-  ActivityType, 
-  ActivityLevel,
+import {
+  Urgency,
+  Activity,
+  ActivityCreateRequest,
   UrgencyStatus,
   createUrgencyDisplayName,
   getUrgencyLevelColor,
   getUrgencyStatusColor,
-  getActivityLevelColor,
-  getActivityTypeIcon
+  getActivityIcon,
+  getActivityDisplayTime
 } from '../../shared/models';
 
 @Component({
@@ -39,9 +37,6 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   error: string | null = null;
   urgencyId: number | null = null;
 
-  // Expose enums to template
-  ActivityType = ActivityType;
-  ActivityLevel = ActivityLevel;
   UrgencyStatus = UrgencyStatus;
 
   constructor(
@@ -70,9 +65,7 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
 
   initializeActivityForm(): void {
     this.activityForm = this.fb.group({
-      title: ['', [Validators.required, Validators.minLength(3)]],
-      description: ['', [Validators.required, Validators.minLength(10)]],
-      level: [ActivityLevel.Info, Validators.required]
+      description: ['', [Validators.required, Validators.minLength(10)]]
     });
   }
 
@@ -101,8 +94,8 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
 
     this.activityService.getActivitiesByUrgency(this.urgencyId).subscribe({
       next: (activities) => {
-        this.activities = activities.sort((a, b) => 
-          new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
+        this.activities = activities.sort((a, b) =>
+          new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
         );
         this.isLoadingActivities = false;
       },
@@ -119,21 +112,15 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
 
       const formValue = this.activityForm.value;
       const activityRequest: ActivityCreateRequest = {
-        type: ActivityType.UrgencyUpdated,
-        level: formValue.level,
-        title: formValue.title,
-        description: formValue.description,
-        actorId: parseInt(this.authService.getUserId()),
-        targetId: this.urgencyId,
-        targetType: 'urgency'
+        urgency_id: this.urgencyId,
+        employee_id: parseInt(this.authService.getUserId()),
+        description: formValue.description
       };
 
       this.activityService.createActivity(activityRequest).subscribe({
         next: (activity) => {
           this.toastr.success(this.translate.instant('URGENCY_DETAIL.ACTIVITY_ADDED_SUCCESS'));
-          this.activityForm.reset({
-            level: ActivityLevel.Info
-          });
+          this.activityForm.reset();
           this.loadActivities(); // Reload activities
           this.isSubmittingActivity = false;
         },
@@ -164,12 +151,12 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
     return getUrgencyStatusColor(status as any);
   }
 
-  getActivityLevelColor(level: ActivityLevel): string {
-    return getActivityLevelColor(level);
+  getActivityIcon(activity: Activity): string {
+    return getActivityIcon(activity);
   }
 
-  getActivityTypeIcon(type: ActivityType): string {
-    return getActivityTypeIcon(type);
+  getActivityDisplayTime(activity: Activity): string {
+    return getActivityDisplayTime(activity);
   }
 
   formatDate(dateString: string): string {

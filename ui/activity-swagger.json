@@ -34,10 +34,6 @@
           "type": "integer",
           "format": "int64"
         },
-        "level": {
-          "type": "string",
-          "enum": ["info", "warning", "error", "critical"]
-        },
         "description": {
           "type": "string"
         },
@@ -61,12 +57,8 @@
     },
     "ActivityCreateRequest": {
       "type": "object",
-      "required": ["level", "description", "employee_id", "urgency_id"],
+      "required": ["description", "employee_id", "urgency_id"],
       "properties": {
-        "level": {
-          "type": "string",
-          "enum": ["info", "warning", "error", "critical"]
-        },
         "description": {
           "type": "string"
         },
@@ -83,10 +75,6 @@
     "ActivityListRequest": {
       "type": "object",
       "properties": {
-        "level": {
-          "type": "string",
-          "enum": ["info", "warning", "error", "critical"]
-        },
         "employee_id": {
           "type": "integer",
           "format": "int64"
@@ -141,13 +129,6 @@
         "total_activities": {
           "type": "integer",
           "format": "int64"
-        },
-        "activities_by_level": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "integer",
-            "format": "int64"
-          }
         },
         "recent_activities": {
           "type": "array",

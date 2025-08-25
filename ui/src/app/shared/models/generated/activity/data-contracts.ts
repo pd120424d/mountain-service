@@ -10,31 +10,6 @@
  * ---------------------------------------------------------------
  */
 
-export enum ActivityType {
-  EmployeeCreated = "employee_created",
-  EmployeeUpdated = "employee_updated",
-  EmployeeDeleted = "employee_deleted",
-  EmployeeLogin = "employee_login",
-  ShiftAssigned = "shift_assigned",
-  ShiftRemoved = "shift_removed",
-  UrgencyCreated = "urgency_created",
-  UrgencyUpdated = "urgency_updated",
-  UrgencyDeleted = "urgency_deleted",
-  EmergencyAssigned = "emergency_assigned",
-  EmergencyAccepted = "emergency_accepted",
-  EmergencyDeclined = "emergency_declined",
-  NotificationSent = "notification_sent",
-  NotificationFailed = "notification_failed",
-  SystemReset = "system_reset",
-}
-
-export enum ActivityLevel {
-  Info = "info",
-  Warning = "warning",
-  Error = "error",
-  Critical = "critical",
-}
-
 export interface ErrorResponse {
   error?: string;
 }
@@ -46,51 +21,36 @@ export interface MessageResponse {
 export interface ActivityResponse {
   /** @format int64 */
   id?: number;
-  type?: ActivityType;
-  level?: ActivityLevel;
-  title?: string;
   description?: string;
   /** @format int64 */
-  actorId?: number;
-  actorName?: string;
+  employee_id?: number;
   /** @format int64 */
-  targetId?: number;
-  targetType?: string;
-  metadata?: string;
+  urgency_id?: number;
   /** @format date-time */
-  createdAt?: string;
+  created_at?: string;
   /** @format date-time */
-  updatedAt?: string;
+  updated_at?: string;
 }
 
 export interface ActivityCreateRequest {
-  type: ActivityType;
-  level: ActivityLevel;
-  title: string;
   description: string;
   /** @format int64 */
-  actorId?: number;
-  actorName?: string;
+  employee_id: number;
   /** @format int64 */
-  targetId?: number;
-  targetType?: string;
-  metadata?: string;
+  urgency_id: number;
 }
 
 export interface ActivityListRequest {
-  type?: ActivityType;
-  level?: ActivityLevel;
   /** @format int64 */
-  actorId?: number;
+  employee_id?: number;
   /** @format int64 */
-  targetId?: number;
-  targetType?: string;
+  urgency_id?: number;
   /** @format date-time */
-  startDate?: string;
+  start_date?: string;
   /** @format date-time */
-  endDate?: string;
+  end_date?: string;
   page?: number;
-  pageSize?: number;
+  page_size?: number;
 }
 
 export interface ActivityListResponse {
@@ -104,14 +64,12 @@ export interface ActivityListResponse {
 
 export interface ActivityStatsResponse {
   /** @format int64 */
-  totalActivities?: number;
-  activitiesByType?: Record<string, number>;
-  activitiesByLevel?: Record<string, number>;
-  recentActivities?: ActivityResponse[];
+  total_activities?: number;
+  recent_activities?: ActivityResponse[];
   /** @format int64 */
-  activitiesLast24h?: number;
+  activities_last_24h?: number;
   /** @format int64 */
-  activitiesLast7Days?: number;
+  activities_last_7_days?: number;
   /** @format int64 */
-  activitiesLast30Days?: number;
+  activities_last_30_days?: number;
 }

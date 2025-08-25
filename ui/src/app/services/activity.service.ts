@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Activity, ActivityCreateRequest, ActivityListResponse } from '../shared/models';
+import { ActivityResponse, ActivityCreateRequest, ActivityListResponse } from '../shared/models';
 
 @Injectable({
   providedIn: 'root',
@@ -16,40 +16,40 @@ export class ActivityService {
 
   constructor(private http: HttpClient) { }
 
-  getActivities(): Observable<Activity[]> {
-    return this.http.get<Activity[]>(this.activityApiUrl).pipe(
+  getActivities(): Observable<ActivityResponse[]> {
+    return this.http.get<ActivityResponse[]>(this.activityApiUrl).pipe(
       catchError(this.handleError)
     );
   }
 
-  getActivitiesByUrgency(urgencyId: number): Observable<Activity[]> {
-    return this.http.get<Activity[]>(`${this.activityApiUrl}?targetId=${urgencyId}&targetType=urgency`).pipe(
+  getActivitiesByUrgency(urgencyId: number): Observable<ActivityResponse[]> {
+    return this.http.get<ActivityResponse[]>(`${this.activityApiUrl}?urgency_id=${urgencyId}`).pipe(
       catchError(this.handleError)
     );
   }
 
   getActivitiesWithPagination(params: {
-    targetId?: number;
-    targetType?: string;
+    urgency_id?: number;
+    employee_id?: number;
     page?: number;
-    pageSize?: number;
+    page_size?: number;
   }): Observable<ActivityListResponse> {
     const queryParams = new URLSearchParams();
-    
-    if (params.targetId) queryParams.append('targetId', params.targetId.toString());
-    if (params.targetType) queryParams.append('targetType', params.targetType);
+
+    if (params.urgency_id) queryParams.append('urgency_id', params.urgency_id.toString());
+    if (params.employee_id) queryParams.append('employee_id', params.employee_id.toString());
     if (params.page) queryParams.append('page', params.page.toString());
-    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+    if (params.page_size) queryParams.append('page_size', params.page_size.toString());
 
     const url = queryParams.toString() ? `${this.activityApiUrl}?${queryParams.toString()}` : this.activityApiUrl;
-    
+
     return this.http.get<ActivityListResponse>(url).pipe(
       catchError(this.handleError)
     );
   }
 
-  createActivity(activityRequest: ActivityCreateRequest): Observable<Activity> {
-    return this.http.post<Activity>(this.activityApiUrl, activityRequest).pipe(
+  createActivity(activityRequest: ActivityCreateRequest): Observable<ActivityResponse> {
+    return this.http.post<ActivityResponse>(this.activityApiUrl, activityRequest).pipe(
       catchError(this.handleError)
     );
   }
