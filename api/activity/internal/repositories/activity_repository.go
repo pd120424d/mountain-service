@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
-	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"gorm.io/gorm"
 )
@@ -31,7 +30,7 @@ func NewActivityRepository(log utils.Logger, db *gorm.DB) ActivityRepository {
 }
 
 func (r *activityRepository) Create(activity *model.Activity) error {
-	r.log.Infof("Creating activity: type=%s, level=%s, title=%s", activity.Type, activity.Level, activity.Title)
+	r.log.Infof("Creating activity: employee_id=%d, urgency_id=%d", activity.EmployeeID, activity.UrgencyID)
 
 	if err := r.db.Create(activity).Error; err != nil {
 		r.log.Errorf("Failed to create activity: %v", err)
@@ -70,20 +69,11 @@ func (r *activityRepository) List(filter *model.ActivityFilter) ([]model.Activit
 	query := r.db.Model(&model.Activity{})
 
 	// Apply filters
-	if filter.Type != nil {
-		query = query.Where("type = ?", *filter.Type)
+	if filter.EmployeeID != nil {
+		query = query.Where("employee_id = ?", *filter.EmployeeID)
 	}
-	if filter.Level != nil {
-		query = query.Where("level = ?", *filter.Level)
-	}
-	if filter.ActorID != nil {
-		query = query.Where("actor_id = ?", *filter.ActorID)
-	}
-	if filter.TargetID != nil {
-		query = query.Where("target_id = ?", *filter.TargetID)
-	}
-	if filter.TargetType != nil {
-		query = query.Where("target_type = ?", *filter.TargetType)
+	if filter.UrgencyID != nil {
+		query = query.Where("urgency_id = ?", *filter.UrgencyID)
 	}
 	if filter.StartDate != nil {
 		query = query.Where("created_at >= ?", *filter.StartDate)
@@ -117,10 +107,7 @@ func (r *activityRepository) List(filter *model.ActivityFilter) ([]model.Activit
 func (r *activityRepository) GetStats() (*model.ActivityStats, error) {
 	r.log.Info("Getting activity statistics")
 
-	stats := &model.ActivityStats{
-		ActivitiesByType:  make(map[activityV1.ActivityType]int64),
-		ActivitiesByLevel: make(map[activityV1.ActivityLevel]int64),
-	}
+	stats := &model.ActivityStats{}
 
 	// Get total count
 	if err := r.db.Model(&model.Activity{}).Count(&stats.TotalActivities).Error; err != nil {
@@ -128,37 +115,7 @@ func (r *activityRepository) GetStats() (*model.ActivityStats, error) {
 		return nil, fmt.Errorf("failed to get total activities count: %w", err)
 	}
 
-	// Get activities by type
-	var typeStats []struct {
-		Type  activityV1.ActivityType `json:"type"`
-		Count int64                   `json:"count"`
-	}
-	if err := r.db.Model(&model.Activity{}).
-		Select("type, COUNT(*) as count").
-		Group("type").
-		Find(&typeStats).Error; err != nil {
-		r.log.Errorf("Failed to get activities by type: %v", err)
-		return nil, fmt.Errorf("failed to get activities by type: %w", err)
-	}
-	for _, stat := range typeStats {
-		stats.ActivitiesByType[stat.Type] = stat.Count
-	}
-
-	// Get activities by level
-	var levelStats []struct {
-		Level activityV1.ActivityLevel `json:"level"`
-		Count int64                    `json:"count"`
-	}
-	if err := r.db.Model(&model.Activity{}).
-		Select("level, COUNT(*) as count").
-		Group("level").
-		Find(&levelStats).Error; err != nil {
-		r.log.Errorf("Failed to get activities by level: %v", err)
-		return nil, fmt.Errorf("failed to get activities by level: %w", err)
-	}
-	for _, stat := range levelStats {
-		stats.ActivitiesByLevel[stat.Level] = stat.Count
-	}
+	// Level statistics removed - activities don't have levels
 
 	// Get recent activities (last 10)
 	if err := r.db.Order("created_at DESC").Limit(10).Find(&stats.RecentActivities).Error; err != nil {

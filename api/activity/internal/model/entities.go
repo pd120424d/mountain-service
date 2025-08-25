@@ -10,81 +10,43 @@ import (
 // Activity represents an activity/event in the system
 type Activity struct {
 	gorm.Model
-	ID          uint                     `gorm:"primaryKey"`
-	Type        activityV1.ActivityType  `gorm:"type:text;not null;index"`
-	Level       activityV1.ActivityLevel `gorm:"type:text;not null;index"`
-	Title       string                   `gorm:"not null"`
-	Description string                   `gorm:"type:text;not null"`
-	ActorID     *uint                    `gorm:"index"`     // ID of the user who performed the action
-	ActorName   string                   `gorm:"index"`     // Name of the user who performed the action
-	TargetID    *uint                    `gorm:"index"`     // ID of the target entity
-	TargetType  string                   `gorm:"index"`     // Type of the target entity (employee, urgency, etc.)
-	Metadata    string                   `gorm:"type:text"` // JSON string with additional data
-	CreatedAt   time.Time                `gorm:"index"`
+	ID          uint      `gorm:"primaryKey"`
+	Description string    `gorm:"type:text;not null"`
+	EmployeeID  uint      `gorm:"not null;index"`
+	UrgencyID   uint      `gorm:"not null;index"`
+	CreatedAt   time.Time `gorm:"index"`
 	UpdatedAt   time.Time
 }
 
-// TableName returns the table name for the Activity model
 func (Activity) TableName() string {
 	return "activities"
 }
 
 // ToResponse converts the Activity model to ActivityResponse DTO
 func (a *Activity) ToResponse() activityV1.ActivityResponse {
-	response := activityV1.ActivityResponse{
+	return activityV1.ActivityResponse{
 		ID:          a.ID,
-		Type:        a.Type,
-		Level:       a.Level,
-		Title:       a.Title,
 		Description: a.Description,
-		ActorName:   a.ActorName,
-		TargetType:  a.TargetType,
-		Metadata:    a.Metadata,
+		EmployeeID:  a.EmployeeID,
+		UrgencyID:   a.UrgencyID,
 		CreatedAt:   a.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   a.UpdatedAt.Format(time.RFC3339),
 	}
-
-	if a.ActorID != nil {
-		response.ActorID = a.ActorID
-	}
-
-	if a.TargetID != nil {
-		response.TargetID = a.TargetID
-	}
-
-	return response
 }
 
 // FromCreateRequest creates an Activity model from ActivityCreateRequest DTO
 func FromCreateRequest(req *activityV1.ActivityCreateRequest) *Activity {
-	activity := &Activity{
-		Type:        req.Type,
-		Level:       req.Level,
-		Title:       req.Title,
+	return &Activity{
 		Description: req.Description,
-		ActorName:   req.ActorName,
-		TargetType:  req.TargetType,
-		Metadata:    req.Metadata,
+		EmployeeID:  req.EmployeeID,
+		UrgencyID:   req.UrgencyID,
 	}
-
-	if req.ActorID != nil {
-		activity.ActorID = req.ActorID
-	}
-
-	if req.TargetID != nil {
-		activity.TargetID = req.TargetID
-	}
-
-	return activity
 }
 
 // ActivityFilter represents filters for querying activities
 type ActivityFilter struct {
-	Type       *activityV1.ActivityType
-	Level      *activityV1.ActivityLevel
-	ActorID    *uint
-	TargetID   *uint
-	TargetType *string
+	EmployeeID *uint
+	UrgencyID  *uint
 	StartDate  *time.Time
 	EndDate    *time.Time
 	Page       int
@@ -132,8 +94,6 @@ func (f *ActivityFilter) GetLimit() int {
 // ActivityStats represents statistics about activities
 type ActivityStats struct {
 	TotalActivities      int64
-	ActivitiesByType     map[activityV1.ActivityType]int64
-	ActivitiesByLevel    map[activityV1.ActivityLevel]int64
 	RecentActivities     []Activity
 	ActivitiesLast24h    int64
 	ActivitiesLast7Days  int64
@@ -149,8 +109,6 @@ func (s *ActivityStats) ToResponse() activityV1.ActivityStatsResponse {
 
 	return activityV1.ActivityStatsResponse{
 		TotalActivities:      s.TotalActivities,
-		ActivitiesByType:     s.ActivitiesByType,
-		ActivitiesByLevel:    s.ActivitiesByLevel,
 		RecentActivities:     recentActivities,
 		ActivitiesLast24h:    s.ActivitiesLast24h,
 		ActivitiesLast7Days:  s.ActivitiesLast7Days,
@@ -158,52 +116,10 @@ func (s *ActivityStats) ToResponse() activityV1.ActivityStatsResponse {
 	}
 }
 
-// Helper functions for creating common activities
-
-func NewEmployeeActivity(activityType activityV1.ActivityType, employeeID uint, employeeName, title, description string) *Activity {
+func NewActivity(description string, employeeID, urgencyID uint) *Activity {
 	return &Activity{
-		Type:        activityType,
-		Level:       activityV1.ActivityLevelInfo,
-		Title:       title,
 		Description: description,
-		TargetID:    &employeeID,
-		TargetType:  "employee",
-		ActorName:   employeeName,
-	}
-}
-
-func NewUrgencyActivity(activityType activityV1.ActivityType, urgencyID uint, actorName, title, description string) *Activity {
-	return &Activity{
-		Type:        activityType,
-		Level:       activityV1.ActivityLevelWarning,
-		Title:       title,
-		Description: description,
-		TargetID:    &urgencyID,
-		TargetType:  "urgency",
-		ActorName:   actorName,
-	}
-}
-
-func NewSystemActivity(activityType activityV1.ActivityType, level activityV1.ActivityLevel, title, description string) *Activity {
-	return &Activity{
-		Type:        activityType,
-		Level:       level,
-		Title:       title,
-		Description: description,
-		TargetType:  "system",
-		ActorName:   "system",
-	}
-}
-
-func NewNotificationActivity(activityType activityV1.ActivityType, level activityV1.ActivityLevel, employeeID, urgencyID uint, title, description string) *Activity {
-	return &Activity{
-		Type:        activityType,
-		Level:       level,
-		Title:       title,
-		Description: description,
-		TargetID:    &urgencyID,
-		TargetType:  "notification",
-		ActorID:     &employeeID,
-		ActorName:   "system",
+		EmployeeID:  employeeID,
+		UrgencyID:   urgencyID,
 	}
 }

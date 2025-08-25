@@ -44,10 +44,9 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		validPayload := `{
-			"type": "employee_created",
-			"level": "info",
-			"title": "Test",
-			"description": "Test"
+			"description": "Test",
+			"employee_id": 1,
+			"urgency_id": 2
 		}`
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/activities", strings.NewReader(validPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
@@ -68,10 +67,9 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		validPayload := `{
-			"type": "employee_created",
-			"level": "info",
-			"title": "Test",
-			"description": "Test"
+			"description": "Test",
+			"employee_id": 1,
+			"urgency_id": 2
 		}`
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/activities", strings.NewReader(validPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
@@ -206,8 +204,6 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		svcMock.EXPECT().ListActivities(gomock.Any()).DoAndReturn(func(req *activityV1.ActivityListRequest) (*activityV1.ActivityListResponse, error) {
 			assert.Equal(t, 2, req.Page)
 			assert.Equal(t, 25, req.PageSize)
-			assert.Equal(t, activityV1.ActivityEmployeeCreated, req.Type)
-			assert.Equal(t, activityV1.ActivityLevelInfo, req.Level)
 			return &activityV1.ActivityListResponse{
 				Activities: []activityV1.ActivityResponse{},
 				Total:      0,
@@ -399,13 +395,7 @@ func TestActivityHandler_GetActivityStats(t *testing.T) {
 
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().GetActivityStats().Return(&activityV1.ActivityStatsResponse{
-			TotalActivities: 1,
-			ActivitiesByType: map[activityV1.ActivityType]int64{
-				activityV1.ActivityEmployeeCreated: 6,
-			},
-			ActivitiesByLevel: map[activityV1.ActivityLevel]int64{
-				activityV1.ActivityLevelInfo: 4,
-			},
+			TotalActivities:      1,
 			RecentActivities:     []activityV1.ActivityResponse{{ID: 5}},
 			ActivitiesLast24h:    1,
 			ActivitiesLast7Days:  2,
@@ -419,13 +409,11 @@ func TestActivityHandler_GetActivityStats(t *testing.T) {
 
 		// Check that the response contains the expected data (without strict JSON format matching)
 		responseBody := w.Body.String()
-		assert.Contains(t, responseBody, "\"totalActivities\":1")
-		assert.Contains(t, responseBody, "\"employee_created\":6")
-		assert.Contains(t, responseBody, "\"info\":4")
+		assert.Contains(t, responseBody, "\"total_activities\":1")
 		assert.Contains(t, responseBody, "\"id\":5")
-		assert.Contains(t, responseBody, "\"activitiesLast24h\":1")
-		assert.Contains(t, responseBody, "\"activitiesLast7Days\":2")
-		assert.Contains(t, responseBody, "\"activitiesLast30Days\":3")
+		assert.Contains(t, responseBody, "\"activities_last_24h\":1")
+		assert.Contains(t, responseBody, "\"activities_last_7_days\":2")
+		assert.Contains(t, responseBody, "\"activities_last_30_days\":3")
 	})
 }
 

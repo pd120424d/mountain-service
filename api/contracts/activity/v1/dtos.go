@@ -9,45 +9,6 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/validation"
 )
 
-// ActivityType represents the type of activity
-type ActivityType string
-
-// TODO: cleanup this since it is not used
-const (
-	// Employee activities
-	ActivityEmployeeCreated ActivityType = "employee_created"
-	ActivityEmployeeUpdated ActivityType = "employee_updated"
-	ActivityEmployeeDeleted ActivityType = "employee_deleted"
-	ActivityEmployeeLogin   ActivityType = "employee_login"
-
-	// Shift activities
-	ActivityShiftAssigned ActivityType = "shift_assigned"
-	ActivityShiftRemoved  ActivityType = "shift_removed"
-
-	// Emergency activities
-	ActivityUrgencyCreated     ActivityType = "urgency_created"
-	ActivityUrgencyUpdated     ActivityType = "urgency_updated"
-	ActivityUrgencyDeleted     ActivityType = "urgency_deleted"
-	ActivityEmergencyAssigned  ActivityType = "emergency_assigned"
-	ActivityEmergencyAccepted  ActivityType = "emergency_accepted"
-	ActivityEmergencyDeclined  ActivityType = "emergency_declined"
-	ActivityNotificationSent   ActivityType = "notification_sent"
-	ActivityNotificationFailed ActivityType = "notification_failed"
-
-	// System activities
-	ActivitySystemReset ActivityType = "system_reset"
-)
-
-// ActivityLevel represents the importance level of an activity
-type ActivityLevel string
-
-const (
-	ActivityLevelInfo     ActivityLevel = "info"
-	ActivityLevelWarning  ActivityLevel = "warning"
-	ActivityLevelError    ActivityLevel = "error"
-	ActivityLevelCritical ActivityLevel = "critical"
-)
-
 // Common response types
 // ErrorResponse represents an error response
 // swagger:model
@@ -64,46 +25,31 @@ type MessageResponse struct {
 // ActivityResponse DTO for returning activity data
 // swagger:model
 type ActivityResponse struct {
-	ID          uint          `json:"id"`
-	Type        ActivityType  `json:"type"`
-	Level       ActivityLevel `json:"level"`
-	Title       string        `json:"title"`
-	Description string        `json:"description"`
-	ActorID     *uint         `json:"actorId,omitempty"`    // ID of the user who performed the action
-	ActorName   string        `json:"actorName,omitempty"`  // Name of the user who performed the action
-	TargetID    *uint         `json:"targetId,omitempty"`   // ID of the target entity
-	TargetType  string        `json:"targetType,omitempty"` // Type of the target entity (employee, urgency, etc.)
-	Metadata    string        `json:"metadata,omitempty"`   // JSON string with additional data
-	CreatedAt   string        `json:"createdAt"`
-	UpdatedAt   string        `json:"updatedAt"`
+	ID          uint   `json:"id"`
+	Description string `json:"description"`
+	EmployeeID  uint   `json:"employee_id"` // ID of the employee who created the activity
+	UrgencyID   uint   `json:"urgency_id"`  // ID of the urgency this activity relates to
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
 }
 
 // ActivityCreateRequest DTO for creating a new activity
 // swagger:model
 type ActivityCreateRequest struct {
-	Type        ActivityType  `json:"type" binding:"required"`
-	Level       ActivityLevel `json:"level" binding:"required"`
-	Title       string        `json:"title" binding:"required"`
-	Description string        `json:"description" binding:"required"`
-	ActorID     *uint         `json:"actorId,omitempty"`
-	ActorName   string        `json:"actorName,omitempty"`
-	TargetID    *uint         `json:"targetId,omitempty"`
-	TargetType  string        `json:"targetType,omitempty"`
-	Metadata    string        `json:"metadata,omitempty"`
+	Description string `json:"description" binding:"required"`
+	EmployeeID  uint   `json:"employee_id" binding:"required"`
+	UrgencyID   uint   `json:"urgency_id" binding:"required"`
 }
 
 // ActivityListRequest DTO for listing activities with filters
 // swagger:model
 type ActivityListRequest struct {
-	Type       ActivityType  `json:"type,omitempty" form:"type"`
-	Level      ActivityLevel `json:"level,omitempty" form:"level"`
-	ActorID    *uint         `json:"actorId,omitempty" form:"actorId"`
-	TargetID   *uint         `json:"targetId,omitempty" form:"targetId"`
-	TargetType string        `json:"targetType,omitempty" form:"targetType"`
-	StartDate  string        `json:"startDate,omitempty" form:"startDate"` // RFC3339 format
-	EndDate    string        `json:"endDate,omitempty" form:"endDate"`     // RFC3339 format
-	Page       int           `json:"page,omitempty" form:"page"`
-	PageSize   int           `json:"pageSize,omitempty" form:"pageSize"`
+	EmployeeID *uint  `json:"employee_id,omitempty" form:"employee_id"`
+	UrgencyID  *uint  `json:"urgency_id,omitempty" form:"urgency_id"`
+	StartDate  string `json:"start_date,omitempty" form:"start_date"` // RFC3339 format
+	EndDate    string `json:"end_date,omitempty" form:"end_date"`     // RFC3339 format
+	Page       int    `json:"page,omitempty" form:"page"`
+	PageSize   int    `json:"page_size,omitempty" form:"page_size"`
 }
 
 // ActivityListResponse DTO for returning paginated activities
@@ -119,39 +65,28 @@ type ActivityListResponse struct {
 // ActivityStatsResponse DTO for returning activity statistics
 // swagger:model
 type ActivityStatsResponse struct {
-	TotalActivities      int64                   `json:"totalActivities"`
-	ActivitiesByType     map[ActivityType]int64  `json:"activitiesByType"`
-	ActivitiesByLevel    map[ActivityLevel]int64 `json:"activitiesByLevel"`
-	RecentActivities     []ActivityResponse      `json:"recentActivities"`
-	ActivitiesLast24h    int64                   `json:"activitiesLast24h"`
-	ActivitiesLast7Days  int64                   `json:"activitiesLast7Days"`
-	ActivitiesLast30Days int64                   `json:"activitiesLast30Days"`
+	TotalActivities      int64              `json:"total_activities"`
+	RecentActivities     []ActivityResponse `json:"recent_activities"`
+	ActivitiesLast24h    int64              `json:"activities_last_24h"`
+	ActivitiesLast7Days  int64              `json:"activities_last_7_days"`
+	ActivitiesLast30Days int64              `json:"activities_last_30_days"`
 }
 
 // Helper methods
 
 func (r *ActivityCreateRequest) Validate() error {
-	if !r.Type.Valid() {
-		return fmt.Errorf("invalid activity type: %s", r.Type)
-	}
-	if !r.Level.Valid() {
-		return fmt.Errorf("invalid activity level: %s", r.Level)
-	}
-
 	var errors validation.ValidationErrors
 
-	if err := utils.ValidateRequiredField(r.Title, "title"); err != nil {
-		errors.AddError("title", err)
-	}
 	if err := utils.ValidateRequiredField(r.Description, "description"); err != nil {
 		errors.AddError("description", err)
 	}
 
-	if r.Metadata != "" {
-		var temp interface{}
-		if err := json.Unmarshal([]byte(r.Metadata), &temp); err != nil {
-			errors.Add("metadata", "metadata must be valid JSON")
-		}
+	if r.EmployeeID == 0 {
+		errors.Add("employee_id", "employee_id is required and must be greater than 0")
+	}
+
+	if r.UrgencyID == 0 {
+		errors.Add("urgency_id", "urgency_id is required and must be greater than 0")
 	}
 
 	if errors.HasErrors() {
@@ -192,61 +127,11 @@ func (r *ActivityCreateRequest) ToString() string {
 		description = description[:50] + "..."
 	}
 	return fmt.Sprintf(
-		"ActivityCreateRequest { Type: %s, Level: %s, Title: %s, Description: %s, ActorID: %v, ActorName: %s, TargetID: %v, TargetType: %s }",
-		r.Type,
-		r.Level,
-		r.Title,
+		"ActivityCreateRequest { Description: %s, EmployeeID: %d, UrgencyID: %d }",
 		description,
-		r.ActorID,
-		r.ActorName,
-		r.TargetID,
-		r.TargetType,
+		r.EmployeeID,
+		r.UrgencyID,
 	)
-}
-
-func ActivityTypeFromString(s string) ActivityType {
-	return ActivityType(s)
-}
-
-func ActivityLevelFromString(s string) ActivityLevel {
-	return ActivityLevel(s)
-}
-
-func (t ActivityType) Valid() bool {
-	validTypes := []ActivityType{
-		ActivityEmployeeCreated, ActivityEmployeeUpdated, ActivityEmployeeDeleted, ActivityEmployeeLogin,
-		ActivityShiftAssigned, ActivityShiftRemoved,
-		ActivityUrgencyCreated, ActivityUrgencyUpdated, ActivityUrgencyDeleted,
-		ActivityEmergencyAssigned, ActivityEmergencyAccepted, ActivityEmergencyDeclined,
-		ActivityNotificationSent, ActivityNotificationFailed,
-		ActivitySystemReset,
-	}
-	for _, validType := range validTypes {
-		if t == validType {
-			return true
-		}
-	}
-	return false
-}
-
-func (l ActivityLevel) Valid() bool {
-	validLevels := []ActivityLevel{
-		ActivityLevelInfo, ActivityLevelWarning, ActivityLevelError, ActivityLevelCritical,
-	}
-	for _, validLevel := range validLevels {
-		if l == validLevel {
-			return true
-		}
-	}
-	return false
-}
-
-func (at ActivityType) String() string {
-	return string(at)
-}
-
-func (al ActivityLevel) String() string {
-	return string(al)
 }
 
 // CQRS-related contracts
@@ -285,15 +170,11 @@ const (
 	ActivityEventDeleted ActivityEventType = "activity.deleted"
 )
 
-func (aet ActivityEventType) String() string {
-	return string(aet)
-}
-
 func CreateOutboxEvent(eventType ActivityEventType, activityID uint, eventData ActivityEvent) *OutboxEvent {
 	data, _ := json.Marshal(eventData)
 
 	return &OutboxEvent{
-		EventType:   eventType.String(),
+		EventType:   string(eventType),
 		AggregateID: fmt.Sprintf("activity-%d", activityID),
 		EventData:   string(data),
 		Published:   false,
@@ -306,28 +187,4 @@ func (e *OutboxEvent) GetEventData() (*ActivityEvent, error) {
 	var eventData ActivityEvent
 	err := json.Unmarshal([]byte(e.EventData), &eventData)
 	return &eventData, err
-}
-
-// Simplified Activity model for CQRS
-type SimpleActivity struct {
-	ID          uint      `json:"id"`
-	UrgencyID   uint      `json:"urgency_id"`
-	EmployeeID  uint      `json:"employee_id"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
-}
-
-type SimpleActivityCreateRequest struct {
-	UrgencyID   uint   `json:"urgency_id" validate:"required"`
-	EmployeeID  uint   `json:"employee_id" validate:"required"`
-	Description string `json:"description" validate:"required,min=10"`
-}
-
-func (r *SimpleActivityCreateRequest) ToSimpleActivity() *SimpleActivity {
-	return &SimpleActivity{
-		UrgencyID:   r.UrgencyID,
-		EmployeeID:  r.EmployeeID,
-		Description: r.Description,
-		CreatedAt:   time.Now(),
-	}
 }

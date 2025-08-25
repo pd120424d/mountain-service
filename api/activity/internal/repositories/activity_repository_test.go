@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
-	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,18 +34,10 @@ func TestActivityRepository_Create(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		actorID := uint(1)
-		targetID := uint(2)
 		activity := &model.Activity{
-			Type:        activityV1.ActivityEmployeeCreated,
-			Level:       activityV1.ActivityLevelInfo,
-			Title:       "Test Title",
 			Description: "Test Description",
-			ActorID:     &actorID,
-			ActorName:   "Test Actor",
-			TargetID:    &targetID,
-			TargetType:  "Test Target",
-			Metadata:    "Test Metadata",
+			EmployeeID:  1,
+			UrgencyID:   2,
 		}
 
 		err := repo.Create(activity)
@@ -56,32 +47,20 @@ func TestActivityRepository_Create(t *testing.T) {
 		var dbActivity model.Activity
 		err = db.First(&dbActivity, activity.ID).Error
 		assert.NoError(t, err)
-		assert.Equal(t, activityV1.ActivityEmployeeCreated, dbActivity.Type)
-		assert.Equal(t, activityV1.ActivityLevelInfo, dbActivity.Level)
-		assert.Equal(t, "Test Title", dbActivity.Title)
 		assert.Equal(t, "Test Description", dbActivity.Description)
-		assert.Equal(t, actorID, *dbActivity.ActorID)
-		assert.Equal(t, "Test Actor", dbActivity.ActorName)
-		assert.Equal(t, targetID, *dbActivity.TargetID)
-		assert.Equal(t, "Test Target", dbActivity.TargetType)
-		assert.Equal(t, "Test Metadata", dbActivity.Metadata)
+		assert.Equal(t, uint(1), dbActivity.EmployeeID)
+		assert.Equal(t, uint(2), dbActivity.UrgencyID)
 	})
 
-	t.Run("successfully creates activity with nil ActorID and TargetID", func(t *testing.T) {
+	t.Run("successfully creates activity with different level", func(t *testing.T) {
 		db := setupActivityTestDB(t)
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
 		activity := &model.Activity{
-			Type:        activityV1.ActivitySystemReset,
-			Level:       activityV1.ActivityLevelInfo,
-			Title:       "System Reset",
 			Description: "System has been reset",
-			ActorID:     nil,
-			ActorName:   "system",
-			TargetID:    nil,
-			TargetType:  "system",
-			Metadata:    "{}",
+			EmployeeID:  3,
+			UrgencyID:   4,
 		}
 
 		err := repo.Create(activity)
@@ -91,9 +70,6 @@ func TestActivityRepository_Create(t *testing.T) {
 		var dbActivity model.Activity
 		err = db.First(&dbActivity, activity.ID).Error
 		assert.NoError(t, err)
-		assert.Equal(t, activityV1.ActivitySystemReset, dbActivity.Type)
-		assert.Nil(t, dbActivity.ActorID)
-		assert.Nil(t, dbActivity.TargetID)
 	})
 }
 
@@ -105,18 +81,10 @@ func TestActivityRepository_GetByID(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		actorID := uint(1)
-		targetID := uint(2)
 		activity := &model.Activity{
-			Type:        activityV1.ActivityEmployeeCreated,
-			Level:       activityV1.ActivityLevelInfo,
-			Title:       "Test Title",
 			Description: "Test Description",
-			ActorID:     &actorID,
-			ActorName:   "Test Actor",
-			TargetID:    &targetID,
-			TargetType:  "employee",
-			Metadata:    "{}",
+			EmployeeID:  1,
+			UrgencyID:   2,
 		}
 		err := db.Create(activity).Error
 		require.NoError(t, err)
@@ -125,14 +93,9 @@ func TestActivityRepository_GetByID(t *testing.T) {
 		assert.NoError(t, err)
 		require.NotNil(t, retrievedActivity)
 		assert.Equal(t, activity.ID, retrievedActivity.ID)
-		assert.Equal(t, activity.Type, retrievedActivity.Type)
-		assert.Equal(t, activity.Level, retrievedActivity.Level)
-		assert.Equal(t, activity.Title, retrievedActivity.Title)
 		assert.Equal(t, activity.Description, retrievedActivity.Description)
-		assert.Equal(t, *activity.ActorID, *retrievedActivity.ActorID)
-		assert.Equal(t, activity.ActorName, retrievedActivity.ActorName)
-		assert.Equal(t, *activity.TargetID, *retrievedActivity.TargetID)
-		assert.Equal(t, activity.TargetType, retrievedActivity.TargetType)
+		assert.Equal(t, activity.EmployeeID, retrievedActivity.EmployeeID)
+		assert.Equal(t, activity.UrgencyID, retrievedActivity.UrgencyID)
 	})
 
 	t.Run("returns error when activity not found", func(t *testing.T) {
@@ -155,30 +118,16 @@ func TestActivityRepository_List(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		actorID := uint(1)
-		targetID := uint(2)
 		activities := []*model.Activity{
 			{
-				Type:        activityV1.ActivityEmployeeCreated,
-				Level:       activityV1.ActivityLevelInfo,
-				Title:       "Employee Created",
-				Description: "Employee was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "employee",
-				Metadata:    "{}",
+				Description: "Employee was assigned to urgency",
+				EmployeeID:  1,
+				UrgencyID:   2,
 			},
 			{
-				Type:        activityV1.ActivityUrgencyCreated,
-				Level:       activityV1.ActivityLevelWarning,
-				Title:       "Urgency Created",
-				Description: "Urgency was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "urgency",
-				Metadata:    "{}",
+				Description: "Employee resolved urgency",
+				EmployeeID:  1,
+				UrgencyID:   2,
 			},
 		}
 
@@ -192,100 +141,6 @@ func TestActivityRepository_List(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
 		assert.Equal(t, int64(2), total)
-	})
-
-	t.Run("successfully lists activities with type filter", func(t *testing.T) {
-		db := setupActivityTestDB(t)
-		log := utils.NewTestLogger()
-		repo := NewActivityRepository(log, db)
-
-		actorID := uint(1)
-		targetID := uint(2)
-		activities := []*model.Activity{
-			{
-				Type:        activityV1.ActivityEmployeeCreated,
-				Level:       activityV1.ActivityLevelInfo,
-				Title:       "Employee Created",
-				Description: "Employee was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "employee",
-				Metadata:    "{}",
-			},
-			{
-				Type:        activityV1.ActivityUrgencyCreated,
-				Level:       activityV1.ActivityLevelWarning,
-				Title:       "Urgency Created",
-				Description: "Urgency was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "urgency",
-				Metadata:    "{}",
-			},
-		}
-
-		for _, activity := range activities {
-			err := db.Create(activity).Error
-			require.NoError(t, err)
-		}
-
-		filter := model.NewActivityFilter()
-		employeeType := activityV1.ActivityEmployeeCreated
-		filter.Type = &employeeType
-		result, total, err := repo.List(filter)
-		assert.NoError(t, err)
-		assert.Len(t, result, 1)
-		assert.Equal(t, int64(1), total)
-		assert.Equal(t, activityV1.ActivityEmployeeCreated, result[0].Type)
-	})
-
-	t.Run("successfully lists activities with level filter", func(t *testing.T) {
-		db := setupActivityTestDB(t)
-		log := utils.NewTestLogger()
-		repo := NewActivityRepository(log, db)
-
-		actorID := uint(1)
-		targetID := uint(2)
-		activities := []*model.Activity{
-			{
-				Type:        activityV1.ActivityEmployeeCreated,
-				Level:       activityV1.ActivityLevelInfo,
-				Title:       "Employee Created",
-				Description: "Employee was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "employee",
-				Metadata:    "{}",
-			},
-			{
-				Type:        activityV1.ActivityUrgencyCreated,
-				Level:       activityV1.ActivityLevelWarning,
-				Title:       "Urgency Created",
-				Description: "Urgency was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "urgency",
-				Metadata:    "{}",
-			},
-		}
-
-		for _, activity := range activities {
-			err := db.Create(activity).Error
-			require.NoError(t, err)
-		}
-
-		filter := model.NewActivityFilter()
-		warningLevel := activityV1.ActivityLevelWarning
-		filter.Level = &warningLevel
-		result, total, err := repo.List(filter)
-		assert.NoError(t, err)
-		assert.Len(t, result, 1)
-		assert.Equal(t, int64(1), total)
-		assert.Equal(t, activityV1.ActivityLevelWarning, result[0].Level)
 	})
 
 	t.Run("validates filter parameters", func(t *testing.T) {
@@ -314,18 +169,8 @@ func TestActivityRepository_Delete(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		actorID := uint(1)
-		targetID := uint(2)
 		activity := &model.Activity{
-			Type:        activityV1.ActivityEmployeeCreated,
-			Level:       activityV1.ActivityLevelInfo,
-			Title:       "Test Title",
 			Description: "Test Description",
-			ActorID:     &actorID,
-			ActorName:   "Test Actor",
-			TargetID:    &targetID,
-			TargetType:  "employee",
-			Metadata:    "{}",
 		}
 		err := db.Create(activity).Error
 		require.NoError(t, err)
@@ -358,30 +203,16 @@ func TestActivityRepository_ResetAllData(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		actorID := uint(1)
-		targetID := uint(2)
 		activities := []*model.Activity{
 			{
-				Type:        activityV1.ActivityEmployeeCreated,
-				Level:       activityV1.ActivityLevelInfo,
-				Title:       "Employee Created",
 				Description: "Employee was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "employee",
-				Metadata:    "{}",
+				EmployeeID:  1,
+				UrgencyID:   2,
 			},
 			{
-				Type:        activityV1.ActivityUrgencyCreated,
-				Level:       activityV1.ActivityLevelWarning,
-				Title:       "Urgency Created",
 				Description: "Urgency was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "urgency",
-				Metadata:    "{}",
+				EmployeeID:  1,
+				UrgencyID:   2,
 			},
 		}
 
@@ -412,41 +243,15 @@ func TestActivityRepository_GetStats(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		actorID := uint(1)
-		targetID := uint(2)
 		activities := []*model.Activity{
 			{
-				Type:        activityV1.ActivityEmployeeCreated,
-				Level:       activityV1.ActivityLevelInfo,
-				Title:       "Employee Created 1",
 				Description: "Employee was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "employee",
-				Metadata:    "{}",
 			},
 			{
-				Type:        activityV1.ActivityEmployeeCreated,
-				Level:       activityV1.ActivityLevelInfo,
-				Title:       "Employee Created 2",
 				Description: "Another employee was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "employee",
-				Metadata:    "{}",
 			},
 			{
-				Type:        activityV1.ActivityUrgencyCreated,
-				Level:       activityV1.ActivityLevelWarning,
-				Title:       "Urgency Created",
 				Description: "Urgency was created",
-				ActorID:     &actorID,
-				ActorName:   "Admin",
-				TargetID:    &targetID,
-				TargetType:  "urgency",
-				Metadata:    "{}",
 			},
 		}
 
@@ -460,10 +265,6 @@ func TestActivityRepository_GetStats(t *testing.T) {
 		require.NotNil(t, stats)
 
 		assert.Equal(t, int64(3), stats.TotalActivities)
-		assert.Equal(t, int64(2), stats.ActivitiesByType[activityV1.ActivityEmployeeCreated])
-		assert.Equal(t, int64(1), stats.ActivitiesByType[activityV1.ActivityUrgencyCreated])
-		assert.Equal(t, int64(2), stats.ActivitiesByLevel[activityV1.ActivityLevelInfo])
-		assert.Equal(t, int64(1), stats.ActivitiesByLevel[activityV1.ActivityLevelWarning])
 		assert.Len(t, stats.RecentActivities, 3) // Should return all 3 since limit is 10
 	})
 
@@ -477,10 +278,6 @@ func TestActivityRepository_GetStats(t *testing.T) {
 		require.NotNil(t, stats)
 
 		assert.Equal(t, int64(0), stats.TotalActivities)
-		assert.Empty(t, stats.ActivitiesByType)
-		assert.Empty(t, stats.ActivitiesByLevel)
-		assert.Empty(t, stats.RecentActivities)
-		assert.Equal(t, int64(0), stats.ActivitiesLast24h)
 		assert.Equal(t, int64(0), stats.ActivitiesLast7Days)
 		assert.Equal(t, int64(0), stats.ActivitiesLast30Days)
 	})
@@ -496,9 +293,6 @@ func TestActivityRepository_DatabaseConnection(t *testing.T) {
 		repo := NewActivityRepository(log, db)
 
 		activity := &model.Activity{
-			Type:        activityV1.ActivityEmployeeCreated,
-			Level:       activityV1.ActivityLevelInfo,
-			Title:       "Test",
 			Description: "Test",
 		}
 
@@ -517,30 +311,17 @@ func TestActivityRepository_QueryBuilding(t *testing.T) {
 		repo := NewActivityRepository(log, db)
 
 		// Create test data
-		actorID1 := uint(1)
-		actorID2 := uint(2)
-		targetID1 := uint(10)
-		targetID2 := uint(20)
+		employeeID := uint(1)
+		urgencyID := uint(2)
 
 		activity1 := &model.Activity{
-			Type:        activityV1.ActivityEmployeeCreated,
-			Level:       activityV1.ActivityLevelInfo,
-			Title:       "Employee Created",
 			Description: "Test employee creation",
-			ActorID:     &actorID1,
-			ActorName:   "Admin",
-			TargetID:    &targetID1,
-			TargetType:  "employee",
+			EmployeeID:  employeeID,
 		}
 		activity2 := &model.Activity{
-			Type:        activityV1.ActivityUrgencyCreated,
-			Level:       activityV1.ActivityLevelWarning,
-			Title:       "Urgency Created",
 			Description: "Test urgency creation",
-			ActorID:     &actorID2,
-			ActorName:   "System",
-			TargetID:    &targetID2,
-			TargetType:  "urgency",
+			EmployeeID:  employeeID,
+			UrgencyID:   urgencyID,
 		}
 
 		err := repo.Create(activity1)
@@ -549,15 +330,9 @@ func TestActivityRepository_QueryBuilding(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Test complex filter with multiple criteria
-		activityType := activityV1.ActivityEmployeeCreated
-		activityLevel := activityV1.ActivityLevelInfo
-		targetType := "employee"
 		filter := &model.ActivityFilter{
-			Type:       &activityType,
-			Level:      &activityLevel,
-			ActorID:    &actorID1,
-			TargetID:   &targetID1,
-			TargetType: &targetType,
+			EmployeeID: &employeeID,
+			UrgencyID:  &urgencyID,
 			Page:       1,
 			PageSize:   10,
 		}
@@ -566,8 +341,5 @@ func TestActivityRepository_QueryBuilding(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), total)
 		assert.Len(t, activities, 1)
-		assert.Equal(t, activityV1.ActivityEmployeeCreated, activities[0].Type)
-		assert.Equal(t, actorID1, *activities[0].ActorID)
-		assert.Equal(t, targetID1, *activities[0].TargetID)
 	})
 }

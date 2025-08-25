@@ -1,151 +1,29 @@
 package v1
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestActivityType_Valid(t *testing.T) {
-	t.Parallel()
-
-	validTypes := []ActivityType{
-		ActivityEmployeeCreated, ActivityEmployeeUpdated, ActivityEmployeeDeleted, ActivityEmployeeLogin,
-		ActivityShiftAssigned, ActivityShiftRemoved,
-		ActivityUrgencyCreated, ActivityUrgencyUpdated, ActivityUrgencyDeleted,
-		ActivityEmergencyAssigned, ActivityEmergencyAccepted, ActivityEmergencyDeclined,
-		ActivityNotificationSent, ActivityNotificationFailed,
-		ActivitySystemReset,
-	}
-
-	for _, validType := range validTypes {
-		t.Run(string(validType), func(t *testing.T) {
-			assert.True(t, validType.Valid())
-		})
-	}
-
-	t.Run("invalid type", func(t *testing.T) {
-		invalidType := ActivityType("invalid_type")
-		assert.False(t, invalidType.Valid())
-	})
-
-	t.Run("empty type", func(t *testing.T) {
-		emptyType := ActivityType("")
-		assert.False(t, emptyType.Valid())
-	})
-}
-
-func TestActivityLevel_Valid(t *testing.T) {
-	t.Parallel()
-
-	validLevels := []ActivityLevel{
-		ActivityLevelInfo, ActivityLevelWarning, ActivityLevelError, ActivityLevelCritical,
-	}
-
-	for _, validLevel := range validLevels {
-		t.Run(string(validLevel), func(t *testing.T) {
-			assert.True(t, validLevel.Valid())
-		})
-	}
-
-	t.Run("invalid level", func(t *testing.T) {
-		invalidLevel := ActivityLevel("invalid_level")
-		assert.False(t, invalidLevel.Valid())
-	})
-
-	t.Run("empty level", func(t *testing.T) {
-		emptyLevel := ActivityLevel("")
-		assert.False(t, emptyLevel.Valid())
-	})
-}
 
 func TestActivityCreateRequest_Validate(t *testing.T) {
 	t.Parallel()
 
 	t.Run("it returns no error for a valid request", func(t *testing.T) {
 		req := &ActivityCreateRequest{
-			Type:        ActivityEmployeeCreated,
-			Level:       ActivityLevelInfo,
-			Title:       "Employee Created",
-			Description: "A new employee was created",
-			ActorName:   "admin",
-			TargetType:  "employee",
-			Metadata:    `{"employeeId": 123}`,
+			Description: "Employee was assigned to urgency",
+			EmployeeID:  1,
+			UrgencyID:   2,
 		}
 
 		err := req.Validate()
 		assert.NoError(t, err)
-	})
-
-	t.Run("it returns no error for minimal valid request", func(t *testing.T) {
-		req := &ActivityCreateRequest{
-			Type:        ActivitySystemReset,
-			Level:       ActivityLevelWarning,
-			Title:       "System Reset",
-			Description: "System was reset",
-		}
-
-		err := req.Validate()
-		assert.NoError(t, err)
-	})
-
-	t.Run("it returns an error for invalid activity type", func(t *testing.T) {
-		req := &ActivityCreateRequest{
-			Type:        ActivityType("invalid_type"),
-			Level:       ActivityLevelInfo,
-			Title:       "Test Title",
-			Description: "Test Description",
-		}
-
-		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid activity type")
-	})
-
-	t.Run("it returns an error for invalid activity level", func(t *testing.T) {
-		req := &ActivityCreateRequest{
-			Type:        ActivityEmployeeCreated,
-			Level:       ActivityLevel("invalid_level"),
-			Title:       "Test Title",
-			Description: "Test Description",
-		}
-
-		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid activity level")
-	})
-
-	t.Run("it returns an error for missing title", func(t *testing.T) {
-		req := &ActivityCreateRequest{
-			Type:        ActivityEmployeeCreated,
-			Level:       ActivityLevelInfo,
-			Description: "Test Description",
-		}
-
-		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "title is required")
-	})
-
-	t.Run("it returns an error for empty title", func(t *testing.T) {
-		req := &ActivityCreateRequest{
-			Type:        ActivityEmployeeCreated,
-			Level:       ActivityLevelInfo,
-			Title:       "   ",
-			Description: "Test Description",
-		}
-
-		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "title is required")
 	})
 
 	t.Run("it returns an error for missing description", func(t *testing.T) {
-		req := &ActivityCreateRequest{
-			Type:  ActivityEmployeeCreated,
-			Level: ActivityLevelInfo,
-			Title: "Test Title",
-		}
+		req := &ActivityCreateRequest{}
 
 		err := req.Validate()
 		assert.Error(t, err)
@@ -154,9 +32,6 @@ func TestActivityCreateRequest_Validate(t *testing.T) {
 
 	t.Run("it returns an error for empty description", func(t *testing.T) {
 		req := &ActivityCreateRequest{
-			Type:        ActivityEmployeeCreated,
-			Level:       ActivityLevelInfo,
-			Title:       "Test Title",
 			Description: "   ",
 		}
 
@@ -164,59 +39,22 @@ func TestActivityCreateRequest_Validate(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "description is required")
 	})
-
-	t.Run("it returns an error for invalid JSON metadata", func(t *testing.T) {
-		req := &ActivityCreateRequest{
-			Type:        ActivityEmployeeCreated,
-			Level:       ActivityLevelInfo,
-			Title:       "Test Title",
-			Description: "Test Description",
-			Metadata:    `{"invalid": json}`,
-		}
-
-		err := req.Validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "metadata must be valid JSON")
-	})
-
-	t.Run("it returns no error for valid JSON metadata", func(t *testing.T) {
-		req := &ActivityCreateRequest{
-			Type:        ActivityEmployeeCreated,
-			Level:       ActivityLevelInfo,
-			Title:       "Test Title",
-			Description: "Test Description",
-			Metadata:    `{"employeeId": 123, "action": "create"}`,
-		}
-
-		err := req.Validate()
-		assert.NoError(t, err)
-	})
-
-	t.Run("it returns no error for empty metadata", func(t *testing.T) {
-		req := &ActivityCreateRequest{
-			Type:        ActivityEmployeeCreated,
-			Level:       ActivityLevelInfo,
-			Title:       "Test Title",
-			Description: "Test Description",
-			Metadata:    "",
-		}
-
-		err := req.Validate()
-		assert.NoError(t, err)
-	})
 }
 
 func TestActivityListRequest_Validate(t *testing.T) {
 	t.Parallel()
 
+	employeeID := uint(1)
+	urgencyID := uint(2)
+
 	t.Run("it returns no error for valid request", func(t *testing.T) {
 		req := &ActivityListRequest{
-			Type:      ActivityEmployeeCreated,
-			Level:     ActivityLevelInfo,
-			StartDate: "2023-01-01T00:00:00Z",
-			EndDate:   "2023-12-31T23:59:59Z",
-			Page:      1,
-			PageSize:  50,
+			EmployeeID: &employeeID,
+			UrgencyID:  &urgencyID,
+			StartDate:  "2023-01-01T00:00:00Z",
+			EndDate:    "2023-12-31T23:59:59Z",
+			Page:       1,
+			PageSize:   50,
 		}
 
 		err := req.Validate()
@@ -278,5 +116,77 @@ func TestActivityListRequest_Validate(t *testing.T) {
 		err := req.Validate()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid endDate format")
+	})
+}
+
+func TestActivityCreateRequest_ToString(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns a string representation of the request", func(t *testing.T) {
+		req := &ActivityCreateRequest{
+			Description: "Employee was assigned to urgency",
+			EmployeeID:  1,
+			UrgencyID:   2,
+		}
+
+		expected := "ActivityCreateRequest { Description: Employee was assigned to urgency, EmployeeID: 1, UrgencyID: 2 }"
+		assert.Equal(t, expected, req.ToString())
+	})
+
+	t.Run("it truncates the description if it exceeds 50 characters", func(t *testing.T) {
+		req := &ActivityCreateRequest{
+			Description: "This is a very long description that exceeds the maximum length of 50 characters",
+			EmployeeID:  1,
+			UrgencyID:   2,
+		}
+
+		expected := "ActivityCreateRequest { Description: This is a very long description that exceeds the m..., EmployeeID: 1, UrgencyID: 2 }"
+		assert.Equal(t, expected, req.ToString())
+	})
+}
+
+func TestCreateOutboxEvent(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it creates an outbox event with correct data", func(t *testing.T) {
+		activityID := uint(1)
+		activityEvent := ActivityEvent{
+			Type:        "test_type",
+			ActivityID:  activityID,
+			UrgencyID:   2,
+			EmployeeID:  3,
+			Description: "test description",
+			CreatedAt:   time.Now(),
+		}
+
+		outboxEvent := CreateOutboxEvent(ActivityEventCreated, activityID, activityEvent)
+
+		assert.Equal(t, string(ActivityEventCreated), outboxEvent.EventType)
+		assert.Equal(t, fmt.Sprintf("activity-%d", activityID), outboxEvent.AggregateID)
+		assert.Equal(t, false, outboxEvent.Published)
+		assert.NotZero(t, outboxEvent.CreatedAt)
+		assert.Empty(t, outboxEvent.PublishedAt)
+	})
+}
+
+func TestOutboxEvent_GetEventData(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it unmarshals the event data correctly", func(t *testing.T) {
+		activityID := uint(1)
+		activityEvent := ActivityEvent{
+			Type:        "test_type",
+			ActivityID:  activityID,
+			UrgencyID:   2,
+			EmployeeID:  3,
+			Description: "test description",
+			CreatedAt:   time.Now(),
+		}
+
+		outboxEvent := CreateOutboxEvent(ActivityEventCreated, activityID, activityEvent)
+
+		eventData, err := outboxEvent.GetEventData()
+		assert.NoError(t, err)
+		assert.Equal(t, &activityEvent, eventData)
 	})
 }

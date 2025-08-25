@@ -11,30 +11,6 @@
   "consumes": ["application/json"],
   "produces": ["application/json"],
   "definitions": {
-    "ActivityType": {
-      "type": "string",
-      "enum": [
-        "employee_created",
-        "employee_updated", 
-        "employee_deleted",
-        "employee_login",
-        "shift_assigned",
-        "shift_removed",
-        "urgency_created",
-        "urgency_updated",
-        "urgency_deleted",
-        "emergency_assigned",
-        "emergency_accepted",
-        "emergency_declined",
-        "notification_sent",
-        "notification_failed",
-        "system_reset"
-      ]
-    },
-    "ActivityLevel": {
-      "type": "string",
-      "enum": ["info", "warning", "error", "critical"]
-    },
     "ErrorResponse": {
       "type": "object",
       "properties": {
@@ -58,40 +34,26 @@
           "type": "integer",
           "format": "int64"
         },
-        "type": {
-          "$ref": "#/definitions/ActivityType"
-        },
         "level": {
-          "$ref": "#/definitions/ActivityLevel"
-        },
-        "title": {
-          "type": "string"
+          "type": "string",
+          "enum": ["info", "warning", "error", "critical"]
         },
         "description": {
           "type": "string"
         },
-        "actorId": {
+        "employee_id": {
           "type": "integer",
           "format": "int64"
         },
-        "actorName": {
-          "type": "string"
-        },
-        "targetId": {
+        "urgency_id": {
           "type": "integer",
           "format": "int64"
         },
-        "targetType": {
-          "type": "string"
-        },
-        "metadata": {
-          "type": "string"
-        },
-        "createdAt": {
+        "created_at": {
           "type": "string",
           "format": "date-time"
         },
-        "updatedAt": {
+        "updated_at": {
           "type": "string",
           "format": "date-time"
         }
@@ -99,71 +61,52 @@
     },
     "ActivityCreateRequest": {
       "type": "object",
-      "required": ["type", "level", "title", "description"],
+      "required": ["level", "description", "employee_id", "urgency_id"],
       "properties": {
-        "type": {
-          "$ref": "#/definitions/ActivityType"
-        },
         "level": {
-          "$ref": "#/definitions/ActivityLevel"
-        },
-        "title": {
-          "type": "string"
+          "type": "string",
+          "enum": ["info", "warning", "error", "critical"]
         },
         "description": {
           "type": "string"
         },
-        "actorId": {
+        "employee_id": {
           "type": "integer",
           "format": "int64"
         },
-        "actorName": {
-          "type": "string"
-        },
-        "targetId": {
+        "urgency_id": {
           "type": "integer",
           "format": "int64"
-        },
-        "targetType": {
-          "type": "string"
-        },
-        "metadata": {
-          "type": "string"
         }
       }
     },
     "ActivityListRequest": {
       "type": "object",
       "properties": {
-        "type": {
-          "$ref": "#/definitions/ActivityType"
-        },
         "level": {
-          "$ref": "#/definitions/ActivityLevel"
+          "type": "string",
+          "enum": ["info", "warning", "error", "critical"]
         },
-        "actorId": {
+        "employee_id": {
           "type": "integer",
           "format": "int64"
         },
-        "targetId": {
+        "urgency_id": {
           "type": "integer",
           "format": "int64"
         },
-        "targetType": {
-          "type": "string"
-        },
-        "startDate": {
+        "start_date": {
           "type": "string",
           "format": "date-time"
         },
-        "endDate": {
+        "end_date": {
           "type": "string",
           "format": "date-time"
         },
         "page": {
           "type": "integer"
         },
-        "pageSize": {
+        "page_size": {
           "type": "integer"
         }
       }
@@ -195,39 +138,32 @@
     "ActivityStatsResponse": {
       "type": "object",
       "properties": {
-        "totalActivities": {
+        "total_activities": {
           "type": "integer",
           "format": "int64"
         },
-        "activitiesByType": {
+        "activities_by_level": {
           "type": "object",
           "additionalProperties": {
             "type": "integer",
             "format": "int64"
           }
         },
-        "activitiesByLevel": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "integer",
-            "format": "int64"
-          }
-        },
-        "recentActivities": {
+        "recent_activities": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/ActivityResponse"
           }
         },
-        "activitiesLast24h": {
+        "activities_last_24h": {
           "type": "integer",
           "format": "int64"
         },
-        "activitiesLast7Days": {
+        "activities_last_7_days": {
           "type": "integer",
           "format": "int64"
         },
-        "activitiesLast30Days": {
+        "activities_last_30_days": {
           "type": "integer",
           "format": "int64"
         }

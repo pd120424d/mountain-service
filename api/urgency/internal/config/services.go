@@ -12,7 +12,7 @@ import (
 // ServiceClients holds all external service clients
 type ServiceClients struct {
 	EmployeeClient clients.EmployeeClient
-	// TODO: Add activity client here as well
+	ActivityClient clients.ActivityClient
 }
 
 // ServiceConfig holds configuration for external services
@@ -35,14 +35,12 @@ func LoadServiceConfig() ServiceConfig {
 
 // InitializeServiceClients creates and configures all external service clients
 func InitializeServiceClients(config ServiceConfig, logger utils.Logger) (*ServiceClients, error) {
-	// Create service authentication
 	serviceAuth := auth.NewServiceAuth(auth.ServiceAuthConfig{
 		Secret:      config.ServiceAuthSecret,
 		ServiceName: config.ServiceName,
 		TokenTTL:    time.Hour,
 	})
 
-	// Initialize employee client
 	employeeClient := clients.NewEmployeeClient(clients.EmployeeClientConfig{
 		BaseURL:     config.EmployeeServiceURL,
 		ServiceAuth: serviceAuth,
@@ -50,8 +48,16 @@ func InitializeServiceClients(config ServiceConfig, logger utils.Logger) (*Servi
 		Timeout:     30 * time.Second,
 	})
 
+	activityClient := clients.NewActivityClient(clients.ActivityClientConfig{
+		BaseURL:     config.ActivityServiceURL,
+		ServiceAuth: serviceAuth,
+		Logger:      logger,
+		Timeout:     30 * time.Second,
+	})
+
 	return &ServiceClients{
 		EmployeeClient: employeeClient,
+		ActivityClient: activityClient,
 	}, nil
 }
 

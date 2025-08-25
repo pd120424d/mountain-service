@@ -124,15 +124,20 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 		}
 	}
 
-	if typeStr := ctx.Query("type"); typeStr != "" {
-		req.Type = activityV1.ActivityType(typeStr)
+	if employeeIDStr := ctx.Query("employee_id"); employeeIDStr != "" {
+		if employeeID, err := strconv.ParseUint(employeeIDStr, 10, 32); err == nil {
+			employeeIDUint := uint(employeeID)
+			req.EmployeeID = &employeeIDUint
+		}
 	}
-	if levelStr := ctx.Query("level"); levelStr != "" {
-		req.Level = activityV1.ActivityLevel(levelStr)
+	if urgencyIDStr := ctx.Query("urgency_id"); urgencyIDStr != "" {
+		if urgencyID, err := strconv.ParseUint(urgencyIDStr, 10, 32); err == nil {
+			urgencyIDUint := uint(urgencyID)
+			req.UrgencyID = &urgencyIDUint
+		}
 	}
-	req.TargetType = ctx.Query("targetType")
-	req.StartDate = ctx.Query("startDate")
-	req.EndDate = ctx.Query("endDate")
+	req.StartDate = ctx.Query("start_date")
+	req.EndDate = ctx.Query("end_date")
 
 	response, err := h.svc.ListActivities(&req)
 	if err != nil {

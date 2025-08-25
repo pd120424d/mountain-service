@@ -19,22 +19,14 @@ func TestActivity_ToResponse(t *testing.T) {
 	t.Parallel()
 
 	t.Run("converts activity with all fields", func(t *testing.T) {
-		actorID := uint(1)
-		targetID := uint(2)
 		createdAt := time.Now()
 		updatedAt := time.Now()
 
 		activity := &Activity{
 			ID:          123,
-			Type:        activityV1.ActivityEmployeeCreated,
-			Level:       activityV1.ActivityLevelInfo,
-			Title:       "Test Title",
 			Description: "Test Description",
-			ActorID:     &actorID,
-			ActorName:   "Test Actor",
-			TargetID:    &targetID,
-			TargetType:  "employee",
-			Metadata:    "{}",
+			EmployeeID:  1,
+			UrgencyID:   2,
 			CreatedAt:   createdAt,
 			UpdatedAt:   updatedAt,
 		}
@@ -42,42 +34,29 @@ func TestActivity_ToResponse(t *testing.T) {
 		response := activity.ToResponse()
 
 		assert.Equal(t, uint(123), response.ID)
-		assert.Equal(t, activityV1.ActivityEmployeeCreated, response.Type)
-		assert.Equal(t, activityV1.ActivityLevelInfo, response.Level)
-		assert.Equal(t, "Test Title", response.Title)
 		assert.Equal(t, "Test Description", response.Description)
-		assert.Equal(t, &actorID, response.ActorID)
-		assert.Equal(t, "Test Actor", response.ActorName)
-		assert.Equal(t, &targetID, response.TargetID)
-		assert.Equal(t, "employee", response.TargetType)
-		assert.Equal(t, "{}", response.Metadata)
+		assert.Equal(t, uint(1), response.EmployeeID)
+		assert.Equal(t, uint(2), response.UrgencyID)
 		assert.Equal(t, createdAt.Format(time.RFC3339), response.CreatedAt)
 		assert.Equal(t, updatedAt.Format(time.RFC3339), response.UpdatedAt)
 	})
 
-	t.Run("converts activity with nil ActorID and TargetID", func(t *testing.T) {
+	t.Run("converts activity with different level", func(t *testing.T) {
 		activity := &Activity{
-			ID:          123,
-			Type:        activityV1.ActivitySystemReset,
-			Level:       activityV1.ActivityLevelCritical,
-			Title:       "System Reset",
+			ID:          456,
 			Description: "System was reset",
-			ActorID:     nil,
-			ActorName:   "system",
-			TargetID:    nil,
-			TargetType:  "system",
-			Metadata:    "{}",
+			EmployeeID:  3,
+			UrgencyID:   4,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		}
 
 		response := activity.ToResponse()
 
-		assert.Equal(t, uint(123), response.ID)
-		assert.Nil(t, response.ActorID)
-		assert.Nil(t, response.TargetID)
-		assert.Equal(t, "system", response.ActorName)
-		assert.Equal(t, "system", response.TargetType)
+		assert.Equal(t, uint(456), response.ID)
+		assert.Equal(t, "System was reset", response.Description)
+		assert.Equal(t, uint(3), response.EmployeeID)
+		assert.Equal(t, uint(4), response.UrgencyID)
 	})
 }
 
@@ -85,54 +64,31 @@ func TestFromCreateRequest(t *testing.T) {
 	t.Parallel()
 
 	t.Run("creates activity from request with all fields", func(t *testing.T) {
-		actorID := uint(1)
-		targetID := uint(2)
-
 		req := &activityV1.ActivityCreateRequest{
-			Type:        activityV1.ActivityEmployeeCreated,
-			Level:       activityV1.ActivityLevelInfo,
-			Title:       "Test Title",
 			Description: "Test Description",
-			ActorID:     &actorID,
-			ActorName:   "Test Actor",
-			TargetID:    &targetID,
-			TargetType:  "employee",
-			Metadata:    "{}",
+			EmployeeID:  1,
+			UrgencyID:   2,
 		}
 
 		activity := FromCreateRequest(req)
 
-		assert.Equal(t, activityV1.ActivityEmployeeCreated, activity.Type)
-		assert.Equal(t, activityV1.ActivityLevelInfo, activity.Level)
-		assert.Equal(t, "Test Title", activity.Title)
 		assert.Equal(t, "Test Description", activity.Description)
-		assert.Equal(t, &actorID, activity.ActorID)
-		assert.Equal(t, "Test Actor", activity.ActorName)
-		assert.Equal(t, &targetID, activity.TargetID)
-		assert.Equal(t, "employee", activity.TargetType)
-		assert.Equal(t, "{}", activity.Metadata)
+		assert.Equal(t, uint(1), activity.EmployeeID)
+		assert.Equal(t, uint(2), activity.UrgencyID)
 	})
 
-	t.Run("creates activity from request with nil ActorID and TargetID", func(t *testing.T) {
+	t.Run("creates activity from request with different level", func(t *testing.T) {
 		req := &activityV1.ActivityCreateRequest{
-			Type:        activityV1.ActivitySystemReset,
-			Level:       activityV1.ActivityLevelCritical,
-			Title:       "System Reset",
 			Description: "System was reset",
-			ActorID:     nil,
-			ActorName:   "system",
-			TargetID:    nil,
-			TargetType:  "system",
-			Metadata:    "{}",
+			EmployeeID:  3,
+			UrgencyID:   4,
 		}
 
 		activity := FromCreateRequest(req)
 
-		assert.Equal(t, activityV1.ActivitySystemReset, activity.Type)
-		assert.Nil(t, activity.ActorID)
-		assert.Nil(t, activity.TargetID)
-		assert.Equal(t, "system", activity.ActorName)
-		assert.Equal(t, "system", activity.TargetType)
+		assert.Equal(t, "System was reset", activity.Description)
+		assert.Equal(t, uint(3), activity.EmployeeID)
+		assert.Equal(t, uint(4), activity.UrgencyID)
 	})
 }
 
@@ -143,11 +99,8 @@ func TestNewActivityFilter(t *testing.T) {
 
 	assert.Equal(t, 1, filter.Page)
 	assert.Equal(t, DefaultPageSize, filter.PageSize)
-	assert.Nil(t, filter.Type)
-	assert.Nil(t, filter.Level)
-	assert.Nil(t, filter.ActorID)
-	assert.Nil(t, filter.TargetID)
-	assert.Nil(t, filter.TargetType)
+	assert.Nil(t, filter.EmployeeID)
+	assert.Nil(t, filter.UrgencyID)
 	assert.Nil(t, filter.StartDate)
 	assert.Nil(t, filter.EndDate)
 }
@@ -237,21 +190,13 @@ func TestActivityStats_ToResponse(t *testing.T) {
 
 	stats := &ActivityStats{
 		TotalActivities: 100,
-		ActivitiesByType: map[activityV1.ActivityType]int64{
-			activityV1.ActivityEmployeeCreated: 50,
-			activityV1.ActivityUrgencyCreated:  30,
-		},
-		ActivitiesByLevel: map[activityV1.ActivityLevel]int64{
-			activityV1.ActivityLevelInfo:    70,
-			activityV1.ActivityLevelWarning: 30,
-		},
+
 		RecentActivities: []Activity{
 			{
 				ID:          1,
-				Type:        activityV1.ActivityEmployeeCreated,
-				Level:       activityV1.ActivityLevelInfo,
-				Title:       "Recent Activity",
 				Description: "Recent activity description",
+				EmployeeID:  1,
+				UrgencyID:   2,
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			},
@@ -264,96 +209,11 @@ func TestActivityStats_ToResponse(t *testing.T) {
 	response := stats.ToResponse()
 
 	assert.Equal(t, int64(100), response.TotalActivities)
-	assert.Equal(t, int64(50), response.ActivitiesByType[activityV1.ActivityEmployeeCreated])
-	assert.Equal(t, int64(30), response.ActivitiesByType[activityV1.ActivityUrgencyCreated])
-	assert.Equal(t, int64(70), response.ActivitiesByLevel[activityV1.ActivityLevelInfo])
-	assert.Equal(t, int64(30), response.ActivitiesByLevel[activityV1.ActivityLevelWarning])
 	assert.Len(t, response.RecentActivities, 1)
 	assert.Equal(t, uint(1), response.RecentActivities[0].ID)
 	assert.Equal(t, int64(10), response.ActivitiesLast24h)
 	assert.Equal(t, int64(50), response.ActivitiesLast7Days)
 	assert.Equal(t, int64(100), response.ActivitiesLast30Days)
-}
-
-func TestNewEmployeeActivity(t *testing.T) {
-	t.Parallel()
-
-	activity := NewEmployeeActivity(
-		activityV1.ActivityEmployeeCreated,
-		123,
-		"John Doe",
-		"Employee Created",
-		"New employee was created",
-	)
-
-	assert.Equal(t, activityV1.ActivityEmployeeCreated, activity.Type)
-	assert.Equal(t, activityV1.ActivityLevelInfo, activity.Level)
-	assert.Equal(t, "Employee Created", activity.Title)
-	assert.Equal(t, "New employee was created", activity.Description)
-	assert.Equal(t, uint(123), *activity.TargetID)
-	assert.Equal(t, "employee", activity.TargetType)
-	assert.Equal(t, "John Doe", activity.ActorName)
-}
-
-func TestNewUrgencyActivity(t *testing.T) {
-	t.Parallel()
-
-	activity := NewUrgencyActivity(
-		activityV1.ActivityUrgencyCreated,
-		456,
-		"Admin User",
-		"Urgency Created",
-		"New urgency was created",
-	)
-
-	assert.Equal(t, activityV1.ActivityUrgencyCreated, activity.Type)
-	assert.Equal(t, activityV1.ActivityLevelWarning, activity.Level)
-	assert.Equal(t, "Urgency Created", activity.Title)
-	assert.Equal(t, "New urgency was created", activity.Description)
-	assert.Equal(t, uint(456), *activity.TargetID)
-	assert.Equal(t, "urgency", activity.TargetType)
-	assert.Equal(t, "Admin User", activity.ActorName)
-}
-
-func TestNewSystemActivity(t *testing.T) {
-	t.Parallel()
-
-	activity := NewSystemActivity(
-		activityV1.ActivitySystemReset,
-		activityV1.ActivityLevelCritical,
-		"System Reset",
-		"System was reset",
-	)
-
-	assert.Equal(t, activityV1.ActivitySystemReset, activity.Type)
-	assert.Equal(t, activityV1.ActivityLevelCritical, activity.Level)
-	assert.Equal(t, "System Reset", activity.Title)
-	assert.Equal(t, "System was reset", activity.Description)
-	assert.Nil(t, activity.TargetID)
-	assert.Equal(t, "system", activity.TargetType)
-	assert.Equal(t, "system", activity.ActorName)
-}
-
-func TestNewNotificationActivity(t *testing.T) {
-	t.Parallel()
-
-	activity := NewNotificationActivity(
-		activityV1.ActivityNotificationSent,
-		activityV1.ActivityLevelInfo,
-		123,
-		456,
-		"Notification Sent",
-		"Notification was sent to employee",
-	)
-
-	assert.Equal(t, activityV1.ActivityNotificationSent, activity.Type)
-	assert.Equal(t, activityV1.ActivityLevelInfo, activity.Level)
-	assert.Equal(t, "Notification Sent", activity.Title)
-	assert.Equal(t, "Notification was sent to employee", activity.Description)
-	assert.Equal(t, uint(456), *activity.TargetID)
-	assert.Equal(t, "notification", activity.TargetType)
-	assert.Equal(t, uint(123), *activity.ActorID)
-	assert.Equal(t, "system", activity.ActorName)
 }
 
 func TestActivityFilter_EdgeCases(t *testing.T) {
@@ -424,8 +284,6 @@ func TestActivityStats_EdgeCases(t *testing.T) {
 	t.Run("it converts stats with zero values", func(t *testing.T) {
 		stats := &ActivityStats{
 			TotalActivities:      0,
-			ActivitiesByType:     make(map[activityV1.ActivityType]int64),
-			ActivitiesByLevel:    make(map[activityV1.ActivityLevel]int64),
 			RecentActivities:     []Activity{},
 			ActivitiesLast24h:    0,
 			ActivitiesLast7Days:  0,
@@ -442,15 +300,7 @@ func TestActivityStats_EdgeCases(t *testing.T) {
 
 	t.Run("it converts stats with large values", func(t *testing.T) {
 		stats := &ActivityStats{
-			TotalActivities: 999999,
-			ActivitiesByType: map[activityV1.ActivityType]int64{
-				activityV1.ActivityEmployeeCreated: 100000,
-				activityV1.ActivityUrgencyCreated:  200000,
-			},
-			ActivitiesByLevel: map[activityV1.ActivityLevel]int64{
-				activityV1.ActivityLevelInfo:    300000,
-				activityV1.ActivityLevelWarning: 400000,
-			},
+			TotalActivities:      999999,
 			RecentActivities:     []Activity{},
 			ActivitiesLast24h:    50000,
 			ActivitiesLast7Days:  200000,
@@ -462,15 +312,11 @@ func TestActivityStats_EdgeCases(t *testing.T) {
 		assert.Equal(t, int64(50000), response.ActivitiesLast24h)
 		assert.Equal(t, int64(200000), response.ActivitiesLast7Days)
 		assert.Equal(t, int64(500000), response.ActivitiesLast30Days)
-		assert.NotNil(t, response.ActivitiesByType)
-		assert.NotNil(t, response.ActivitiesByLevel)
 	})
 
 	t.Run("it handles nil maps correctly", func(t *testing.T) {
 		stats := &ActivityStats{
 			TotalActivities:      100,
-			ActivitiesByType:     nil,
-			ActivitiesByLevel:    nil,
 			RecentActivities:     nil,
 			ActivitiesLast24h:    10,
 			ActivitiesLast7Days:  50,
@@ -479,9 +325,16 @@ func TestActivityStats_EdgeCases(t *testing.T) {
 
 		response := stats.ToResponse()
 		assert.Equal(t, int64(100), response.TotalActivities)
-		// The ToResponse method directly assigns nil maps, so they will be nil in response
-		assert.Nil(t, response.ActivitiesByType)
-		assert.Nil(t, response.ActivitiesByLevel)
 		assert.NotNil(t, response.RecentActivities) // This is created as empty slice
+	})
+}
+
+func TestNewActivity(t *testing.T) {
+	t.Run("it creates a new activity with correct values", func(t *testing.T) {
+		activity := NewActivity("Test Description", 1, 2)
+
+		assert.Equal(t, "Test Description", activity.Description)
+		assert.Equal(t, uint(1), activity.EmployeeID)
+		assert.Equal(t, uint(2), activity.UrgencyID)
 	})
 }
