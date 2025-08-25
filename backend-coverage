@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Backend Coverage Script for Mountain Service
+# This is a wrapper that calls the main coverage script
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COVERAGE_SCRIPT="$SCRIPT_DIR/api/scripts/coverage.sh"
+
+# Check if the coverage script exists
+if [[ ! -f "$COVERAGE_SCRIPT" ]]; then
+    echo "FATAL: Coverage script not found: $COVERAGE_SCRIPT"
+    exit 1
+fi
+
+# Make sure the script is executable
+chmod +x "$COVERAGE_SCRIPT"
+
+# Pass all arguments to the coverage script
+exec "$COVERAGE_SCRIPT" "$@"

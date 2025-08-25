@@ -62,7 +62,7 @@ jobs:
         run: go install github.com/ory/go-acc@latest
 
       - name: Run backend coverage tests
-        run: ./backend-test-cover.sh
+        run: ./backend-test-cover.sh all --threshold=75
 
   build-and-push-images:
     runs-on: ubuntu-latest
