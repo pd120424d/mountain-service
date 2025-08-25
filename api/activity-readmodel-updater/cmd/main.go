@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -92,6 +93,21 @@ func main() {
 	// Initialize services
 	firebaseService := service.NewFirebaseService(firestoreClient, logger)
 	outboxRepo := repositories.NewOutboxRepository(logger, db)
+
+	// Start health check server
+	go func() {
+		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status":"healthy","service":"activity-readmodel-updater"}`))
+		})
+
+		healthAddr := fmt.Sprintf(":%d", cfg.HealthPort)
+		logger.Infof("Starting health check server on %s", healthAddr)
+		if err := http.ListenAndServe(healthAddr, nil); err != nil {
+			logger.Errorf("Health check server error: %v", err)
+		}
+	}()
 
 	// Start outbox publisher (polls outbox table and publishes to Pub/Sub)
 	ctx, cancel := context.WithCancel(context.Background())
