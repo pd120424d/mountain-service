@@ -20,6 +20,7 @@ spec:
       containers:
         - name: urgency
           image: ghcr.io/pd120424d/urgency-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8083
           env:

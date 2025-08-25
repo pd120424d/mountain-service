@@ -20,6 +20,7 @@ spec:
       containers:
         - name: activity
           image: ghcr.io/pd120424d/activity-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8084
           env:
@@ -59,6 +60,10 @@ spec:
               value: "http://employee-service.mountain-service.svc.cluster.local:8082/api/v1"
             - name: URGENCY_SERVICE_URL
               value: "http://urgency-service.mountain-service.svc.cluster.local:8083/api/v1"
+          volumeMounts:
+            - name: gcp-activity-api-key
+              mountPath: /var/secrets/gcp
+              readOnly: true
           resources:
             requests:
               cpu: "50m"

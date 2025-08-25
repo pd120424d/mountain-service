@@ -20,6 +20,7 @@ spec:
       containers:
         - name: activity-readmodel-updater
           image: ghcr.io/pd120424d/activity-readmodel-updater:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8090
           env:

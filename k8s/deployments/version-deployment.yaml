@@ -18,6 +18,7 @@ spec:
       containers:
         - name: version
           image: ghcr.io/pd120424d/version-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8090
           resources:
