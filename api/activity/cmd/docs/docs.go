@@ -286,54 +286,20 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "description",
-                "level",
-                "title",
-                "type"
+                "employee_id",
+                "urgency_id"
             ],
             "properties": {
-                "actorId": {
-                    "type": "integer"
-                },
-                "actorName": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
-                "level": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityLevel"
-                },
-                "metadata": {
-                    "type": "string"
-                },
-                "targetId": {
+                "employee_id": {
                     "type": "integer"
                 },
-                "targetType": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityType"
+                "urgency_id": {
+                    "type": "integer"
                 }
             }
-        },
-        "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityLevel": {
-            "type": "string",
-            "enum": [
-                "info",
-                "warning",
-                "error",
-                "critical"
-            ],
-            "x-enum-varnames": [
-                "ActivityLevelInfo",
-                "ActivityLevelWarning",
-                "ActivityLevelError",
-                "ActivityLevelCritical"
-            ]
         },
         "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityListResponse": {
             "type": "object",
@@ -361,122 +327,50 @@ const docTemplate = `{
         "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse": {
             "type": "object",
             "properties": {
-                "actorId": {
-                    "description": "ID of the user who performed the action",
-                    "type": "integer"
-                },
-                "actorName": {
-                    "description": "Name of the user who performed the action",
-                    "type": "string"
-                },
-                "createdAt": {
+                "created_at": {
                     "type": "string"
                 },
                 "description": {
                     "type": "string"
                 },
+                "employee_id": {
+                    "description": "ID of the employee who created the activity",
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
-                "level": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityLevel"
-                },
-                "metadata": {
-                    "description": "JSON string with additional data",
+                "updated_at": {
                     "type": "string"
                 },
-                "targetId": {
-                    "description": "ID of the target entity",
+                "urgency_id": {
+                    "description": "ID of the urgency this activity relates to",
                     "type": "integer"
-                },
-                "targetType": {
-                    "description": "Type of the target entity (employee, urgency, etc.)",
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityType"
-                },
-                "updatedAt": {
-                    "type": "string"
                 }
             }
         },
         "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityStatsResponse": {
             "type": "object",
             "properties": {
-                "activitiesByLevel": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "integer",
-                        "format": "int64"
-                    }
-                },
-                "activitiesByType": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "integer",
-                        "format": "int64"
-                    }
-                },
-                "activitiesLast24h": {
+                "activities_last_24h": {
                     "type": "integer"
                 },
-                "activitiesLast30Days": {
+                "activities_last_30_days": {
                     "type": "integer"
                 },
-                "activitiesLast7Days": {
+                "activities_last_7_days": {
                     "type": "integer"
                 },
-                "recentActivities": {
+                "recent_activities": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse"
                     }
                 },
-                "totalActivities": {
+                "total_activities": {
                     "type": "integer"
                 }
             }
-        },
-        "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityType": {
-            "type": "string",
-            "enum": [
-                "employee_created",
-                "employee_updated",
-                "employee_deleted",
-                "employee_login",
-                "shift_assigned",
-                "shift_removed",
-                "urgency_created",
-                "urgency_updated",
-                "urgency_deleted",
-                "emergency_assigned",
-                "emergency_accepted",
-                "emergency_declined",
-                "notification_sent",
-                "notification_failed",
-                "system_reset"
-            ],
-            "x-enum-varnames": [
-                "ActivityEmployeeCreated",
-                "ActivityEmployeeUpdated",
-                "ActivityEmployeeDeleted",
-                "ActivityEmployeeLogin",
-                "ActivityShiftAssigned",
-                "ActivityShiftRemoved",
-                "ActivityUrgencyCreated",
-                "ActivityUrgencyUpdated",
-                "ActivityUrgencyDeleted",
-                "ActivityEmergencyAssigned",
-                "ActivityEmergencyAccepted",
-                "ActivityEmergencyDeclined",
-                "ActivityNotificationSent",
-                "ActivityNotificationFailed",
-                "ActivitySystemReset"
-            ]
         }
     },
     "securityDefinitions": {
