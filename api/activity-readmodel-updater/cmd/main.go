@@ -169,7 +169,6 @@ func initDatabase(databaseURL string, logger utils.Logger) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Test connection
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get database instance: %w", err)
@@ -192,7 +191,6 @@ func initFirestore(credentialsPath, projectID string) (*firestore.Client, error)
 	if credentialsPath != "" {
 		client, err = firestore.NewClient(ctx, projectID, option.WithCredentialsFile(credentialsPath))
 	} else {
-		// Use default credentials (for GCP environments)
 		client, err = firestore.NewClient(ctx, projectID)
 	}
 
@@ -212,7 +210,6 @@ func initPubSub(credentialsPath, projectID string) (*pubsub.Client, error) {
 	if credentialsPath != "" {
 		client, err = pubsub.NewClient(ctx, projectID, option.WithCredentialsFile(credentialsPath))
 	} else {
-		// Use default credentials (for GCP environments)
 		client, err = pubsub.NewClient(ctx, projectID)
 	}
 
@@ -269,7 +266,6 @@ func processOutboxEvents(ctx context.Context, outboxRepo repositories.OutboxRepo
 			continue
 		}
 
-		// Mark as published
 		if err := outboxRepo.MarkAsPublished(event.ID); err != nil {
 			logger.Errorf("Failed to mark event as published: event_id=%d, error=%v", event.ID, err)
 			continue
@@ -282,18 +278,15 @@ func processOutboxEvents(ctx context.Context, outboxRepo repositories.OutboxRepo
 	return nil
 }
 
-// publishEvent publishes a single event to Pub/Sub
 func publishEvent(ctx context.Context, topic *pubsub.Topic, event *models.OutboxEvent, logger utils.Logger) error {
 	logger.Infof("Publishing event to Pub/Sub: event_id=%d, type=%s", event.ID, event.EventType)
 
-	// Marshal the event data
 	messageBytes, err := json.Marshal(event)
 	if err != nil {
 		logger.Errorf("Failed to marshal event: event_id=%d, error=%v", event.ID, err)
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
 
-	// Publish to Pub/Sub
 	pubsubMessage := &pubsub.Message{
 		Data: messageBytes,
 		Attributes: map[string]string{
@@ -317,7 +310,6 @@ func publishEvent(ctx context.Context, topic *pubsub.Topic, event *models.Outbox
 func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseService service.FirebaseService, logger utils.Logger) error {
 	logger.Infof("Received activity event: message_id=%s, publish_time=%v", msg.ID, msg.PublishTime)
 
-	// Parse the message
 	var event activityV1.OutboxEvent
 	if err := json.Unmarshal(msg.Data, &event); err != nil {
 		logger.Errorf("Failed to unmarshal event message: error=%v, message_id=%s", err, msg.ID)
