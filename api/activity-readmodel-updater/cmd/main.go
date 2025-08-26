@@ -45,8 +45,13 @@ type Config struct {
 }
 
 func loadConfig() *Config {
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = buildDatabaseURLFromEnv()
+	}
+
 	return &Config{
-		DatabaseURL:               getEnvOrDefault("DATABASE_URL", "postgres://user:password@localhost:5432/activities?sslmode=disable"),
+		DatabaseURL:               dbURL,
 		FirebaseProjectID:         getEnvOrDefault("FIREBASE_PROJECT_ID", "your-project-id"),
 		FirebaseCredentialsPath:   getEnvOrDefault("FIREBASE_CREDENTIALS_PATH", ""),
 		PubSubTopic:               getEnvOrDefault("PUBSUB_TOPIC", "activity-events"),
@@ -328,8 +333,21 @@ func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseServi
 	if err := firebaseService.SyncActivity(ctx, *activityEvent); err != nil {
 		logger.Errorf("Failed to sync activity to Firebase: activity_id=%d, error=%v", activityEvent.ActivityID, err)
 		return fmt.Errorf("failed to sync activity to Firebase: %w", err)
+
 	}
 
 	logger.Infof("Activity synced to Firebase successfully: activity_id=%d", activityEvent.ActivityID)
 	return nil
+}
+
+// buildDatabaseURLFromEnv constructs a Postgres DSN from DB_* environment variables.
+// Example: postgres://user:pass@127.0.0.1:5432/activity_service_db?sslmode=disable
+func buildDatabaseURLFromEnv() string {
+	user := getEnvOrDefault("DB_USER", "user")
+	password := getEnvOrDefault("DB_PASSWORD", "password")
+	host := getEnvOrDefault("DB_HOST", "127.0.0.1")
+	port := getEnvOrDefault("DB_PORT", "5432")
+	name := getEnvOrDefault("DB_NAME", "activities")
+	sslmode := getEnvOrDefault("DB_SSLMODE", "disable")
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", user, password, host, port, name, sslmode)
 }
