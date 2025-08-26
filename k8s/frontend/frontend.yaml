@@ -17,7 +17,7 @@ spec:
         - name: ghcr-auth
       containers:
         - name: frontend
-          image: ghcr.io/pd120424d/mountain-ui:ci
+          image: ghcr.io/pd120424d/mountain-ui:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80

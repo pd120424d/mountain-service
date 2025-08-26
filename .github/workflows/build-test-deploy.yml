@@ -9,6 +9,12 @@ on:
       - 'k8s/**'
       - '.github/workflows/build-test-deploy.yml'
   workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: "Force rebuild and redeploy all services (ignore change detection)"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -328,42 +334,42 @@ jobs:
 
 
       - name: Roll out Frontend image
-        if: needs.build-and-push-images.outputs.ui-changed == 'true'
+        if: ${{ needs.build-and-push-images.outputs.ui-changed == 'true' || inputs.force_deploy }}
         run: |
           kubectl -n mountain-service set image deploy/frontend \
             frontend=ghcr.io/pd120424d/mountain-ui:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/frontend --timeout=180s
 
       - name: Roll out Employee image
-        if: needs.build-and-push-images.outputs.employee-changed == 'true'
+        if: ${{ needs.build-and-push-images.outputs.employee-changed == 'true' || inputs.force_deploy }}
         run: |
           kubectl -n mountain-service set image deploy/employee-service \
             employee=ghcr.io/pd120424d/employee-service:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/employee-service --timeout=180s
 
       - name: Roll out Urgency image
-        if: needs.build-and-push-images.outputs.urgency-changed == 'true'
+        if: ${{ needs.build-and-push-images.outputs.urgency-changed == 'true' || inputs.force_deploy }}
         run: |
           kubectl -n mountain-service set image deploy/urgency-service \
             urgency=ghcr.io/pd120424d/urgency-service:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/urgency-service --timeout=180s
 
       - name: Roll out Activity image
-        if: needs.build-and-push-images.outputs.activity-changed == 'true'
+        if: ${{ needs.build-and-push-images.outputs.activity-changed == 'true' || inputs.force_deploy }}
         run: |
           kubectl -n mountain-service set image deploy/activity-service \
             activity=ghcr.io/pd120424d/activity-service:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/activity-service --timeout=180s
 
       - name: Roll out Activity Readmodel Updater image
-        if: needs.build-and-push-images.outputs.activity-updater-changed == 'true'
+        if: ${{ needs.build-and-push-images.outputs.activity-updater-changed == 'true' || inputs.force_deploy }}
         run: |
           kubectl -n mountain-service set image deploy/activity-readmodel-updater \
             activity-readmodel-updater=ghcr.io/pd120424d/activity-readmodel-updater:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/activity-readmodel-updater --timeout=180s
 
       - name: Roll out Version image
-        if: needs.build-and-push-images.outputs.version-changed == 'true'
+        if: ${{ needs.build-and-push-images.outputs.version-changed == 'true' || inputs.force_deploy }}
         run: |
           kubectl -n mountain-service set image deploy/version-service \
             version=ghcr.io/pd120424d/version-service:${{ github.sha }}
