@@ -1,0 +1,50 @@
+name: Deploy activity services
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    env:
+      REGISTRY: ghcr.io/pd120424d
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No :latest in k8s
+        run: |
+          if grep -R --include='*.yaml' -nE 'image: .*:latest' k8s/; then
+            echo "Error: :latest not allowed"; exit 1
+          fi
+
+      - name: Docker login
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u pd120424d --password-stdin
+
+      - name: Build & push images
+        run: |
+          TAG=${GITHUB_SHA}
+          docker build -t $REGISTRY/activity-service:$TAG -f api/activity/Dockerfile .
+          docker push $REGISTRY/activity-service:$TAG
+          docker build -t $REGISTRY/activity-readmodel-updater:$TAG -f api/activity-readmodel-updater/Dockerfile .
+          docker push $REGISTRY/activity-readmodel-updater:$TAG
+
+      - name: Setup kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          printf "%s" "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Set images and rollout
+        run: |
+          set -e
+          TAG=${GITHUB_SHA}
+          sudo kubectl -n mountain-service set image deploy/activity-service activity=$REGISTRY/activity-service:$TAG
+          sudo kubectl -n mountain-service set image deploy/activity-readmodel-updater activity-readmodel-updater=$REGISTRY/activity-readmodel-updater:$TAG
+
+          sudo kubectl -n mountain-service rollout status deploy/activity-service
+          sudo kubectl -n mountain-service rollout status deploy/activity-readmodel-updater
+
+      - name: Tail logs
+        if: always()
+        run: |
+          sudo kubectl -n mountain-service logs deploy/activity-service -c activity --tail=100 || true
+          sudo kubectl -n mountain-service logs deploy/activity-readmodel-updater -c activity-readmodel-updater --tail=100 || true
