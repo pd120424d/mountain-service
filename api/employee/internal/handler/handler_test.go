@@ -2224,3 +2224,30 @@ func TestEmployeeHandler_GetEmployee(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "Employee not found")
 	})
 }
+
+func TestEmployeeHandler_GetErrorCatalog(t *testing.T) {
+
+	t.Run("it returns the error catalog", func(t *testing.T) {
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+
+		gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/errors/catalog", nil)
+
+		expectedResult := `{"errors":[{"code":"SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT","service":"employee-service","httpStatus":409,"defaultMessage":"Exceeded consecutive days limit","detailsSchema":{"limit":"number"}},{"code":"SHIFT_ERRORS.ALREADY_ASSIGNED","service":"employee-service","httpStatus":409,"defaultMessage":"Employee is already assigned to this shift"},{"code":"SHIFT_ERRORS.CAPACITY_FULL","service":"employee-service","httpStatus":409,"defaultMessage":"Shift capacity is full for role"},{"code":"VALIDATION.INVALID_SHIFT_DATE","service":"employee-service","httpStatus":400,"defaultMessage":"Invalid shift date format"},{"code":"VALIDATION.SHIFT_IN_PAST","service":"employee-service","httpStatus":400,"defaultMessage":"Shift date must be in the future"},{"code":"VALIDATION.SHIFT_TOO_FAR","service":"employee-service","httpStatus":400,"defaultMessage":"Shift date cannot be more than 3 months in the future"},{"code":"EMPLOYEE_ERRORS.NOT_FOUND","service":"employee-service","httpStatus":404,"defaultMessage":"Employee not found"}],"service":"employee-service","warnings":[{"code":"SHIFT_WARNINGS.INSUFFICIENT_SHIFTS","service":"employee-service","httpStatus":200,"defaultMessage":"Insufficient shifts in the next period","detailsSchema":{"count":"number","perWeek":"number","periodDays":"number"}}]}`
+
+		handler.GetErrorCatalog(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, expectedResult, w.Body.String())
+
+	})
+}

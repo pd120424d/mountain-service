@@ -57,6 +57,9 @@ type EmployeeHandler interface {
 	// Admin operations
 	ResetAllData(ctx *gin.Context)
 	GetAdminShiftsAvailability(ctx *gin.Context)
+
+	// Catalog and metadata
+	GetErrorCatalog(ctx *gin.Context)
 }
 
 type employeeHandler struct {
@@ -835,10 +838,31 @@ func (h *employeeHandler) GetShiftWarnings(ctx *gin.Context) {
 		return
 	}
 
-	response := gin.H{
-		"warnings": warnings,
-	}
-
 	h.log.Infof("Successfully retrieved %d warnings for employee ID %d", len(warnings), employeeID)
-	ctx.JSON(http.StatusOK, response)
+	ctx.JSON(http.StatusOK, gin.H{"warnings": warnings})
+}
+
+// GetErrorCatalog returns a catalog of error codes/messages used by employee-service
+func (h *employeeHandler) GetErrorCatalog(ctx *gin.Context) {
+	type catalogEntry struct {
+		Code          string            `json:"code"`
+		Service       string            `json:"service"`
+		HttpStatus    int               `json:"httpStatus"`
+		DefaultMsg    string            `json:"defaultMessage"`
+		DetailsSchema map[string]string `json:"detailsSchema,omitempty"`
+	}
+	errors := []catalogEntry{
+		{Code: model.ErrorConsecutiveShiftsLimit, Service: "employee-service", HttpStatus: http.StatusConflict, DefaultMsg: "Exceeded consecutive days limit", DetailsSchema: map[string]string{"limit": "number"}},
+		{Code: "SHIFT_ERRORS.ALREADY_ASSIGNED", Service: "employee-service", HttpStatus: http.StatusConflict, DefaultMsg: "Employee is already assigned to this shift"},
+		{Code: "SHIFT_ERRORS.CAPACITY_FULL", Service: "employee-service", HttpStatus: http.StatusConflict, DefaultMsg: "Shift capacity is full for role"},
+		{Code: "VALIDATION.INVALID_SHIFT_DATE", Service: "employee-service", HttpStatus: http.StatusBadRequest, DefaultMsg: "Invalid shift date format"},
+		{Code: "VALIDATION.SHIFT_IN_PAST", Service: "employee-service", HttpStatus: http.StatusBadRequest, DefaultMsg: "Shift date must be in the future"},
+		{Code: "VALIDATION.SHIFT_TOO_FAR", Service: "employee-service", HttpStatus: http.StatusBadRequest, DefaultMsg: "Shift date cannot be more than 3 months in the future"},
+		{Code: "EMPLOYEE_ERRORS.NOT_FOUND", Service: "employee-service", HttpStatus: http.StatusNotFound, DefaultMsg: "Employee not found"},
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"service":  "employee-service",
+		"errors":   errors,
+		"warnings": []catalogEntry{{Code: model.WarningInsufficientShifts, Service: "employee-service", HttpStatus: http.StatusOK, DefaultMsg: "Insufficient shifts in the next period", DetailsSchema: map[string]string{"count": "number", "periodDays": "number", "perWeek": "number"}}},
+	})
 }

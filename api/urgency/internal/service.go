@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/clients"
@@ -53,7 +54,7 @@ func (s *urgencyService) CreateUrgency(urgency *model.Urgency) error {
 
 	if err != nil {
 		s.log.Errorf("Failed to create urgency: %v", err)
-		return err
+		return commonv1.NewAppError("URGENCY_ERRORS.CREATE_FAILED", "failed to create urgency", map[string]interface{}{"cause": err.Error()})
 	}
 
 	ctx := context.Background()
@@ -61,7 +62,7 @@ func (s *urgencyService) CreateUrgency(urgency *model.Urgency) error {
 	onCallEmployees, err := s.employeeClient.GetOnCallEmployees(ctx, shiftBuffer)
 	if err != nil {
 		s.log.Errorf("Failed to fetch on-call employees: %v", err)
-		return fmt.Errorf("failed to fetch on-call employees: %w", err)
+		return commonv1.NewAppError("URGENCY_ERRORS.ON_CALL_FETCH_FAILED", "failed to fetch on-call employees", map[string]interface{}{"cause": err.Error()})
 	}
 
 	s.log.Infof("Found %d on-call employees for urgency %d", len(onCallEmployees), urgency.ID)
@@ -77,27 +78,45 @@ func (s *urgencyService) CreateUrgency(urgency *model.Urgency) error {
 }
 
 func (s *urgencyService) GetAllUrgencies() ([]model.Urgency, error) {
-	return s.repo.GetAll()
+	urgencies, err := s.repo.GetAll()
+	if err != nil {
+		s.log.Errorf("Failed to get urgencies: %v", err)
+		return nil, commonv1.NewAppError("URGENCY_ERRORS.LIST_FAILED", "failed to list urgencies", map[string]interface{}{"cause": err.Error()})
+	}
+	return urgencies, nil
 }
 
 func (s *urgencyService) GetUrgencyByID(id uint) (*model.Urgency, error) {
 	var urgency model.Urgency
 	if err := s.repo.GetByID(id, &urgency); err != nil {
-		return nil, err
+		s.log.Errorf("Failed to get urgency: %v", err)
+		return nil, commonv1.NewAppError("URGENCY_ERRORS.NOT_FOUND", "urgency not found", nil)
 	}
 	return &urgency, nil
 }
 
 func (s *urgencyService) UpdateUrgency(urgency *model.Urgency) error {
-	return s.repo.Update(urgency)
+	if err := s.repo.Update(urgency); err != nil {
+		s.log.Errorf("Failed to update urgency: %v", err)
+		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to update urgency", map[string]interface{}{"cause": err.Error()})
+	}
+	return nil
 }
 
 func (s *urgencyService) DeleteUrgency(id uint) error {
-	return s.repo.Delete(id)
+	if err := s.repo.Delete(id); err != nil {
+		s.log.Errorf("Failed to delete urgency: %v", err)
+		return commonv1.NewAppError("URGENCY_ERRORS.DELETE_FAILED", "failed to delete urgency", map[string]interface{}{"cause": err.Error()})
+	}
+	return nil
 }
 
 func (s *urgencyService) ResetAllData() error {
-	return s.repo.ResetAllData()
+	if err := s.repo.ResetAllData(); err != nil {
+		s.log.Errorf("Failed to reset all data: %v", err)
+		return commonv1.NewAppError("URGENCY_ERRORS.RESET_FAILED", "failed to reset all data", map[string]interface{}{"cause": err.Error()})
+	}
+	return nil
 }
 
 func (s *urgencyService) createAssignmentAndNotification(urgency *model.Urgency, employee employeeV1.EmployeeResponse) error {
@@ -109,7 +128,7 @@ func (s *urgencyService) createAssignmentAndNotification(urgency *model.Urgency,
 	}
 
 	if err := s.assignmentRepo.Create(assignment); err != nil {
-		return fmt.Errorf("failed to create assignment: %w", err)
+		return commonv1.NewAppError("URGENCY_ERRORS.ASSIGNMENT_CREATE_FAILED", "failed to create assignment", map[string]interface{}{"cause": err.Error()})
 	}
 
 	s.log.Infof("Created assignment %d for employee %d and urgency %d", assignment.ID, employee.ID, urgency.ID)
@@ -126,6 +145,7 @@ func (s *urgencyService) createAssignmentAndNotification(urgency *model.Urgency,
 
 		if err := s.notificationRepo.Create(smsNotification); err != nil {
 			s.log.Errorf("Failed to create SMS notification: %v", err)
+			// don't fail the whole flow; we log and continue
 		} else {
 			s.log.Infof("Created SMS notification %d for employee %d", smsNotification.ID, employee.ID)
 		}
@@ -143,6 +163,7 @@ func (s *urgencyService) createAssignmentAndNotification(urgency *model.Urgency,
 
 		if err := s.notificationRepo.Create(emailNotification); err != nil {
 			s.log.Errorf("Failed to create email notification: %v", err)
+			// don't fail the whole flow; we log and continue
 		} else {
 			s.log.Infof("Created email notification %d for employee %d", emailNotification.ID, employee.ID)
 		}

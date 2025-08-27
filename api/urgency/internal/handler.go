@@ -68,7 +68,7 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 
 	if err := h.svc.CreateUrgency(&urgency); err != nil {
 		h.log.Errorf("failed to create urgency: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.CREATE_FAILED", "details": err.Error()})
 		return
 	}
 
@@ -91,7 +91,7 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 	urgencies, err := h.svc.GetAllUrgencies()
 	if err != nil {
 		h.log.Errorf("failed to retrieve urgencies: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.LIST_FAILED", "details": err.Error()})
 		return
 	}
 
@@ -206,7 +206,7 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 
 	if err := h.svc.UpdateUrgency(urgency); err != nil {
 		h.log.Errorf("failed to update urgency: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.UPDATE_FAILED", "details": err.Error()})
 		return
 	}
 
@@ -236,7 +236,7 @@ func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
 
 	if err := h.svc.DeleteUrgency(uint(urgencyID)); err != nil {
 		h.log.Errorf("failed to delete urgency with ID %d: %v", urgencyID, err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.DELETE_FAILED", "details": err.Error()})
 		return
 	}
 
@@ -256,7 +256,7 @@ func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
 
 	if err := h.svc.ResetAllData(); err != nil {
 		h.log.Errorf("failed to reset all data: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.RESET_FAILED", "details": err.Error()})
 		return
 	}
 

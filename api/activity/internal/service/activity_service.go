@@ -9,6 +9,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
+	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
@@ -36,14 +37,14 @@ func NewActivityService(log utils.Logger, repo repositories.ActivityRepository) 
 func (s *activityService) CreateActivity(req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error) {
 	if req == nil {
 		s.log.Error("Activity create request is nil")
-		return nil, fmt.Errorf("request cannot be nil")
+		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "request cannot be nil", nil)
 	}
 
 	s.log.Infof("Creating activity: %s", req.ToString())
 
 	if err := req.Validate(); err != nil {
 		s.log.Errorf("Activity validation failed: %v", err)
-		return nil, fmt.Errorf("validation failed: %w", err)
+		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", fmt.Sprintf("validation failed: %v", err), nil)
 	}
 
 	activity := model.FromCreateRequest(req)
@@ -64,7 +65,7 @@ func (s *activityService) CreateActivity(req *activityV1.ActivityCreateRequest) 
 
 	if err := s.repo.CreateWithOutbox(activity, (*models.OutboxEvent)(event)); err != nil {
 		s.log.Errorf("Failed to create activity with outbox: %v", err)
-		return nil, fmt.Errorf("failed to create activity: %w", err)
+		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.CREATE_FAILED", "failed to create activity", map[string]interface{}{"cause": err.Error()})
 	}
 
 	response := activity.ToResponse()
@@ -76,7 +77,7 @@ func (s *activityService) CreateActivity(req *activityV1.ActivityCreateRequest) 
 func (s *activityService) GetActivityByID(id uint) (*activityV1.ActivityResponse, error) {
 	if id == 0 {
 		s.log.Error("Invalid activity ID: 0")
-		return nil, fmt.Errorf("invalid activity ID: cannot be zero")
+		return nil, commonv1.NewAppError("VALIDATION.INVALID_ID", "invalid activity ID: cannot be zero", nil)
 	}
 
 	s.log.Infof("Getting activity by ID: %d", id)
@@ -84,7 +85,7 @@ func (s *activityService) GetActivityByID(id uint) (*activityV1.ActivityResponse
 	activity, err := s.repo.GetByID(id)
 	if err != nil {
 		s.log.Errorf("Failed to get activity: %v", err)
-		return nil, fmt.Errorf("failed to get activity: %w", err)
+		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.NOT_FOUND", "failed to get activity", map[string]interface{}{"cause": err.Error()})
 	}
 
 	response := activity.ToResponse()
@@ -94,14 +95,14 @@ func (s *activityService) GetActivityByID(id uint) (*activityV1.ActivityResponse
 func (s *activityService) DeleteActivity(id uint) error {
 	if id == 0 {
 		s.log.Error("Invalid activity ID: 0")
-		return fmt.Errorf("invalid activity ID: cannot be zero")
+		return commonv1.NewAppError("VALIDATION.INVALID_ID", "invalid activity ID: cannot be zero", nil)
 	}
 
 	s.log.Infof("Deleting activity with ID: %d", id)
 
 	if err := s.repo.Delete(id); err != nil {
 		s.log.Errorf("Failed to delete activity: %v", err)
-		return fmt.Errorf("failed to delete activity: %w", err)
+		return commonv1.NewAppError("ACTIVITY_ERRORS.DELETE_FAILED", "failed to delete activity", map[string]interface{}{"cause": err.Error()})
 	}
 
 	s.log.Infof("Activity deleted successfully with ID: %d", id)
@@ -114,7 +115,7 @@ func (s *activityService) ListActivities(req *activityV1.ActivityListRequest) (*
 	// Validate request
 	if err := req.Validate(); err != nil {
 		s.log.Errorf("Activity list validation failed: %v", err)
-		return nil, fmt.Errorf("validation failed: %w", err)
+		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", fmt.Sprintf("validation failed: %v", err), nil)
 	}
 
 	// Convert DTO to filter
@@ -142,7 +143,7 @@ func (s *activityService) ListActivities(req *activityV1.ActivityListRequest) (*
 	activities, total, err := s.repo.List(filter)
 	if err != nil {
 		s.log.Errorf("Failed to list activities: %v", err)
-		return nil, fmt.Errorf("failed to list activities: %w", err)
+		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.LIST_FAILED", "failed to list activities", map[string]interface{}{"cause": err.Error()})
 	}
 
 	// Convert entities to response DTOs
@@ -175,7 +176,7 @@ func (s *activityService) GetActivityStats() (*activityV1.ActivityStatsResponse,
 	stats, err := s.repo.GetStats()
 	if err != nil {
 		s.log.Errorf("Failed to get activity stats: %v", err)
-		return nil, fmt.Errorf("failed to get activity stats: %w", err)
+		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.STATS_FAILED", "failed to get activity stats", map[string]interface{}{"cause": err.Error()})
 	}
 
 	response := stats.ToResponse()
@@ -187,7 +188,7 @@ func (s *activityService) ResetAllData() error {
 
 	if err := s.repo.ResetAllData(); err != nil {
 		s.log.Errorf("Failed to reset activity data: %v", err)
-		return fmt.Errorf("failed to reset activity data: %w", err)
+		return commonv1.NewAppError("ACTIVITY_ERRORS.RESET_FAILED", "failed to reset activity data", map[string]interface{}{"cause": err.Error()})
 	}
 
 	s.log.Info("All activity data reset successfully")

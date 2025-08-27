@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -45,7 +45,7 @@ func (h *activityHandler) CreateActivity(ctx *gin.Context) {
 	var req activityV1.ActivityCreateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.log.Errorf("Failed to bind request: %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
 		return
 	}
 
@@ -190,7 +190,11 @@ func (h *activityHandler) DeleteActivity(ctx *gin.Context) {
 	err = h.svc.DeleteActivity(uint(id))
 	if err != nil {
 		h.log.Errorf("Failed to delete activity: %v", err)
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Activity not found"})
+		if strings.Contains(strings.ToLower(err.Error()), "not found") {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Activity not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete activity", "details": err.Error()})
 		return
 	}
 

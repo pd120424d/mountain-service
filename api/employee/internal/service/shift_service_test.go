@@ -289,10 +289,8 @@ func TestShiftService_AssignShift(t *testing.T) {
 		})
 
 		existingShifts := []model.Shift{
-			{ShiftDate: futureDate.AddDate(0, 0, -3)},
+			// Keep within rule: not exceeding 2 consecutive days including requested date
 			{ShiftDate: futureDate.AddDate(0, 0, -2)},
-			{ShiftDate: futureDate.AddDate(0, 0, -1)},
-			{ShiftDate: futureDate.AddDate(0, 0, 1)},
 			{ShiftDate: futureDate.AddDate(0, 0, 2)},
 		}
 
@@ -841,13 +839,13 @@ func TestShiftService_GetShiftWarnings(t *testing.T) {
 			return nil
 		})
 
-		// Mock GetShiftAvailability to return fully covered shifts
+		// Mock GetShiftAvailability to return shifts with at least one Medic assigned (no zero-coverage for Medic)
 		shiftRepoMock.EXPECT().GetShiftAvailability(gomock.Any(), gomock.Any()).Return(&model.ShiftsAvailabilityRange{
 			Days: map[time.Time][]map[model.ProfileType]int{
-				time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC): {
-					{model.Medic: 2, model.Technical: 4}, // Shift 1 - fully covered
-					{model.Medic: 2, model.Technical: 4}, // Shift 2 - fully covered
-					{model.Medic: 2, model.Technical: 4}, // Shift 3 - fully covered
+				time.Now().Truncate(24 * time.Hour): {
+					{model.Medic: 1, model.Technical: 4}, // at least one medic assigned
+					{model.Medic: 1, model.Technical: 4},
+					{model.Medic: 1, model.Technical: 4},
 				},
 			},
 		}, nil)
@@ -878,22 +876,24 @@ func TestShiftService_GetShiftWarnings(t *testing.T) {
 			return nil
 		})
 
-		// Mock GetShiftAvailability to return some uncovered shifts
+		// Mock GetShiftAvailability to include at least one shift with zero Medics assigned (2 slots available)
 		shiftRepoMock.EXPECT().GetShiftAvailability(gomock.Any(), gomock.Any()).Return(&model.ShiftsAvailabilityRange{
 			Days: map[time.Time][]map[model.ProfileType]int{
-				time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC): {
-					{model.Medic: 0, model.Technical: 4}, // Shift 1 - needs medic coverage
-					{model.Medic: 2, model.Technical: 4}, // Shift 2 - fully covered
-					{model.Medic: 2, model.Technical: 4}, // Shift 3 - fully covered
+				time.Now().Truncate(24 * time.Hour): {
+					{model.Medic: 2, model.Technical: 4}, // zero medics assigned triggers warning flow
+					{model.Medic: 1, model.Technical: 4},
+					{model.Medic: 1, model.Technical: 4},
 				},
 			},
 		}, nil)
 
-		// Mock employee shifts - less than 5 shifts in next 2 weeks
+		// Mock employee shifts - less than 5 per week in next 2 weeks, dates within the 14-day window
 		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+			t1 := time.Now().Truncate(24*time.Hour).AddDate(0, 0, 1)
+			t2 := time.Now().Truncate(24*time.Hour).AddDate(0, 0, 2)
 			*result = []model.Shift{
-				{ID: 1, ShiftDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
-				{ID: 2, ShiftDate: time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC)},
+				{ID: 1, ShiftDate: t1},
+				{ID: 2, ShiftDate: t2},
 			}
 			return nil
 		})

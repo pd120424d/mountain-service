@@ -182,6 +182,9 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 			authorized.DELETE("/employees/:id/profile-picture", fileHandler.DeleteProfilePicture)
 			authorized.GET("/files/profile-picture/info", fileHandler.GetProfilePictureInfo)
 		}
+
+		// Error catalog endpoint, no need for authorization
+		r.GET("/api/v1/errors/catalog", employeeHandler.GetErrorCatalog)
 	}
 
 	// Admin-only routes

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/repositories"
@@ -32,27 +33,27 @@ func (s *shiftService) AssignShift(employeeID uint, req employeeV1.AssignShiftRe
 	err := s.emplRepo.GetEmployeeByID(employeeID, employee)
 	if err != nil {
 		s.log.Errorf("failed to get employee: %v", err)
-		return nil, fmt.Errorf("employee not found")
+		return nil, commonv1.NewAppError("EMPLOYEE_ERRORS.NOT_FOUND", "employee not found", nil)
 	}
 
 	// Step 2: Parse and validate shift date
 	shiftDate, err := time.Parse("2006-01-02", req.ShiftDate)
 	if err != nil {
 		s.log.Errorf("failed to parse shift date: %v", err)
-		return nil, fmt.Errorf("invalid shift date format")
+		return nil, commonv1.NewAppError("VALIDATION.INVALID_SHIFT_DATE", "invalid shift date format", nil)
 	}
 
 	// Step 3: Validate shift date is in the future
 	if shiftDate.Before(time.Now().Truncate(24 * time.Hour)) {
 		s.log.Errorf("shift date %s is in the past", req.ShiftDate)
-		return nil, fmt.Errorf("shift date must be in the future")
+		return nil, commonv1.NewAppError("VALIDATION.SHIFT_IN_PAST", "shift date must be in the future", nil)
 	}
 
 	// Step 4: Validate shift date is within 3 months
 	threeMonthsFromNow := time.Now().AddDate(0, 3, 0)
 	if shiftDate.After(threeMonthsFromNow) {
 		s.log.Errorf("shift date %s is more than 3 months in the future", req.ShiftDate)
-		return nil, fmt.Errorf("shift date cannot be more than 3 months in the future")
+		return nil, commonv1.NewAppError("VALIDATION.SHIFT_TOO_FAR", "shift date cannot be more than 3 months in the future", nil)
 	}
 
 	// Step 5: Check consecutive shifts rule (max 6 consecutive shifts)
@@ -76,7 +77,7 @@ func (s *shiftService) AssignShift(employeeID uint, req employeeV1.AssignShiftRe
 	}
 	if assigned {
 		s.log.Errorf("employee with ID %d is already assigned to shift ID %d", employeeID, shift.ID)
-		return nil, fmt.Errorf("employee is already assigned to this shift")
+		return nil, commonv1.NewAppError("SHIFT_ERRORS.ALREADY_ASSIGNED", "employee is already assigned to this shift", nil)
 	}
 
 	// Step 8: Check shift capacity
@@ -89,7 +90,7 @@ func (s *shiftService) AssignShift(employeeID uint, req employeeV1.AssignShiftRe
 	maxCapacity := s.getMaxCapacityForProfile(employee.ProfileType)
 	if currentCount >= int64(maxCapacity) {
 		s.log.Errorf("shift capacity full for profile type %s", employee.ProfileType.String())
-		return nil, fmt.Errorf("shift capacity is full for %s staff", employee.ProfileType.String())
+		return nil, commonv1.NewAppError("SHIFT_ERRORS.CAPACITY_FULL", fmt.Sprintf("shift capacity is full for %s staff", employee.ProfileType.String()), map[string]interface{}{"role": employee.ProfileType.String(), "max": maxCapacity})
 	}
 
 	// Step 9: Create assignment
@@ -211,7 +212,7 @@ func (s *shiftService) RemoveShift(employeeID uint, req employeeV1.RemoveShiftRe
 	shiftDate, err := time.Parse("2006-01-02", req.ShiftDate)
 	if err != nil {
 		s.log.Errorf("failed to parse shift date: %v", err)
-		return fmt.Errorf("invalid shift date format")
+		return commonv1.NewAppError("VALIDATION.INVALID_SHIFT_DATE", "invalid shift date format", nil)
 	}
 
 	err = s.shiftsRepo.RemoveEmployeeFromShiftByDetails(employeeID, shiftDate, req.ShiftType)
@@ -250,7 +251,7 @@ func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
 	err := s.emplRepo.GetEmployeeByID(employeeID, employee)
 	if err != nil {
 		s.log.Errorf("failed to get employee: %v", err)
-		return nil, fmt.Errorf("employee not found")
+		return nil, commonv1.NewAppError("EMPLOYEE_ERRORS.NOT_FOUND", "employee not found", nil)
 	}
 
 	var warnings []string
@@ -259,41 +260,74 @@ func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
 	now := time.Now()
 	twoWeeksFromNow := now.AddDate(0, 0, 14)
 
-	// Check general coverage for next two weeks
+	// Check coverage for the employee's role in the next two weeks
 	availability, err := s.shiftsRepo.GetShiftAvailability(now, twoWeeksFromNow)
 	if err != nil {
 		s.log.Errorf("failed to get shift availability: %v", err)
 		return nil, fmt.Errorf("failed to check shift coverage")
 	}
 
-	// Check if there's insufficient coverage
-	hasInsufficientCoverage := false
+	// Only show warnings if there's at least one shift with zero staff for the employee's role
+	zeroRoleShiftExists := false
 	for _, shifts := range availability.Days {
 		for _, shift := range shifts {
-			if shift[model.Medic] < 2 || shift[model.Technical] < 4 {
-				hasInsufficientCoverage = true
+			switch employee.ProfileType {
+			case model.Medic:
+				if shift[model.Medic] == 2 { // 2 available => 0 assigned
+					zeroRoleShiftExists = true
+				}
+			case model.Technical:
+				if shift[model.Technical] == 4 { // 4 available => 0 assigned
+					zeroRoleShiftExists = true
+				}
+			}
+			if zeroRoleShiftExists {
 				break
 			}
 		}
-		if hasInsufficientCoverage {
+		if zeroRoleShiftExists {
 			break
 		}
 	}
 
-	// Only check individual quota if there's insufficient coverage
-	if hasInsufficientCoverage {
-		// Get employee's shifts in the next two weeks
-		var employeeShifts []model.Shift
-		err = s.shiftsRepo.GetShiftsByEmployeeIDInDateRange(employeeID, now, twoWeeksFromNow, &employeeShifts)
-		if err != nil {
-			s.log.Errorf("failed to get employee shifts: %v", err)
-			return nil, fmt.Errorf("failed to check employee shifts")
-		}
+	if !zeroRoleShiftExists {
+		// Adequate baseline coverage for this role; no warnings
+		s.log.Infof("No zero-coverage shifts for role %s in next two weeks; no warnings", employee.ProfileType.String())
+		return warnings, nil
+	}
 
-		// Check if employee has less than 5 days in next two weeks
-		if len(employeeShifts) < 5 {
-			warnings = append(warnings, fmt.Sprintf("%s|%d|14|5", model.WarningInsufficientShifts, len(employeeShifts)))
+	// Compute per-week distinct days scheduled by the employee in the next two weeks
+	var employeeShifts []model.Shift
+	err = s.shiftsRepo.GetShiftsByEmployeeIDInDateRange(employeeID, now, twoWeeksFromNow, &employeeShifts)
+	if err != nil {
+		s.log.Errorf("failed to get employee shifts: %v", err)
+		return nil, fmt.Errorf("failed to check employee shifts")
+	}
+
+	// Distinct days within each week block
+	week1Start := now.Truncate(24 * time.Hour)
+	week1End := week1Start.AddDate(0, 0, 7)
+	week2Start := week1End
+	week2End := twoWeeksFromNow
+
+	week1Days := map[string]struct{}{}
+	week2Days := map[string]struct{}{}
+
+	for _, sft := range employeeShifts {
+		day := sft.ShiftDate.Truncate(24 * time.Hour)
+		key := day.Format("2006-01-02")
+		if (day.Equal(week1Start) || day.After(week1Start)) && day.Before(week1End) {
+			week1Days[key] = struct{}{}
+		} else if (day.Equal(week2Start) || day.After(week2Start)) && day.Before(week2End) {
+			week2Days[key] = struct{}{}
 		}
+	}
+
+	totalDistinctDays := len(week1Days) + len(week2Days)
+
+	// If the employee hasn't met 5 days per week in either week, show warning
+	if len(week1Days) < 5 || len(week2Days) < 5 {
+		warnings = append(warnings, fmt.Sprintf("%s|%d|14|5", model.WarningInsufficientShifts, totalDistinctDays))
 	}
 
 	s.log.Infof("Successfully retrieved %d warnings for employee ID %d", len(warnings), employeeID)
@@ -352,8 +386,13 @@ func (s *shiftService) validateConsecutiveShifts(employeeID uint, shiftDate time
 		}
 	}
 
-	if maxConsecutive > 6 {
-		return fmt.Errorf("%s|%d", model.ErrorConsecutiveShiftsLimit, maxConsecutive)
+	// Enforce business rule: max 2 consecutive working days, then at least 1 day off
+	if maxConsecutive > 2 {
+		return commonv1.NewAppError(
+			model.ErrorConsecutiveShiftsLimit,
+			fmt.Sprintf("%s|%d", model.ErrorConsecutiveShiftsLimit, maxConsecutive),
+			map[string]interface{}{"limit": maxConsecutive},
+		)
 	}
 
 	return nil
