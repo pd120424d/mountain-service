@@ -139,12 +139,12 @@ func (r *ActivityCreateRequest) ToString() string {
 // OutboxEvent represents an event to be published to Pub/Sub for CQRS
 type OutboxEvent struct {
 	ID          uint       `json:"id" gorm:"primaryKey"`
-	EventType   string     `json:"event_type" gorm:"not null"`
-	AggregateID string     `json:"aggregate_id" gorm:"not null"`
-	EventData   string     `json:"event_data" gorm:"type:text"`
+	EventType   string     `json:"eventType" gorm:"not null"`
+	AggregateID string     `json:"aggregateId" gorm:"not null"`
+	EventData   string     `json:"eventData" gorm:"type:text"`
 	Published   bool       `json:"published" gorm:"default:false"`
-	CreatedAt   time.Time  `json:"created_at"`
-	PublishedAt *time.Time `json:"published_at,omitempty"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	PublishedAt *time.Time `json:"publishedAt,omitempty"`
 }
 
 // ActivityEvent represents the event data for activity operations (CQRS)

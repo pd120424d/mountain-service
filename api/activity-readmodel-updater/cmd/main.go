@@ -272,8 +272,8 @@ func publishEvent(ctx context.Context, topic *pubsub.Topic, event *models.Outbox
 	pubsubMessage := &pubsub.Message{
 		Data: messageBytes,
 		Attributes: map[string]string{
-			"event_type":   event.EventType,
-			"aggregate_id": event.AggregateID,
+			"eventType":   event.EventType,
+			"aggregateId": event.AggregateID,
 		},
 	}
 

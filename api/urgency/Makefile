@@ -63,3 +63,18 @@ lint:
 # Run all checks (format, lint, test)
 check: fmt lint test
 	@echo "All checks completed."
+
+
+# Build Docker image (from api/urgency, context is parent api directory)
+docker-build:
+	@echo "Building Docker image for $(SERVICE_NAME)..."
+	@docker build -f Dockerfile -t $(SERVICE_NAME):latest ..
+	@echo "Docker image $(SERVICE_NAME):latest built successfully."
+
+# Build Docker image with args (timestamp and commit SHA)
+docker-build-ci:
+	@echo "Building Docker image for $(SERVICE_NAME) with build args..."
+	@docker build -f Dockerfile -t $(SERVICE_NAME):latest \
+		--build-arg BUILD_TIMESTAMP=$$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+		--build-arg GIT_COMMIT_SHA=$$(git rev-parse --short HEAD) ..
+	@echo "Docker image $(SERVICE_NAME):latest built successfully."

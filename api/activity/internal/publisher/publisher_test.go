@@ -51,7 +51,7 @@ func TestPublisher_processOnce(t *testing.T) {
 			}
 			defer topic.Stop()
 			for _, e := range events {
-				res := topic.Publish(ctx, &pubsub.Message{Data: []byte(e.EventData), Attributes: map[string]string{"event_type": e.EventType, "aggregate_id": e.AggregateID}})
+				res := topic.Publish(ctx, &pubsub.Message{Data: []byte(e.EventData), Attributes: map[string]string{"eventType": e.EventType, "aggregateId": e.AggregateID}})
 				if _, err := res.Get(ctx); err != nil {
 					continue
 				}

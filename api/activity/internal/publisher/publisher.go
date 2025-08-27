@@ -87,7 +87,7 @@ func (p *Publisher) processOnce(ctx context.Context) error {
 	for _, e := range events {
 		res := topic.Publish(ctx, &pubsub.Message{
 			Data:       []byte(e.EventData),
-			Attributes: map[string]string{"event_type": e.EventType, "aggregate_id": e.AggregateID},
+			Attributes: map[string]string{"eventType": e.EventType, "aggregateId": e.AggregateID},
 		})
 		if _, err := res.Get(ctx); err != nil {
 			p.log.Errorf("failed to publish event id=%d: %v", e.ID, err)
