@@ -9,10 +9,10 @@ import (
 type Activity struct {
 	ID          uint      `json:"id"`
 	Description string    `json:"description"`
-	EmployeeID  uint      `json:"employee_id"`
-	UrgencyID   uint      `json:"urgency_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	EmployeeID  uint      `json:"employeeId"`
+	UrgencyID   uint      `json:"urgencyId"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 func (a *Activity) ToResponse() *activityV1.ActivityResponse {

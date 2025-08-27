@@ -38,8 +38,8 @@ func NewActivityHandler(log utils.Logger, svc service.ActivityService) ActivityH
 // @Produce json
 // @Param activity body activityV1.ActivityCreateRequest true "Activity data"
 // @Success 201 {object} activityV1.ActivityResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
+// @Failure 400 {object} activityV1.ErrorResponse
+// @Failure 500 {object} activityV1.ErrorResponse
 // @Router /activities [post]
 func (h *activityHandler) CreateActivity(ctx *gin.Context) {
 	var req activityV1.ActivityCreateRequest
@@ -124,20 +124,20 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 		}
 	}
 
-	if employeeIDStr := ctx.Query("employee_id"); employeeIDStr != "" {
+	if employeeIDStr := ctx.Query("employeeId"); employeeIDStr != "" {
 		if employeeID, err := strconv.ParseUint(employeeIDStr, 10, 32); err == nil {
 			employeeIDUint := uint(employeeID)
 			req.EmployeeID = &employeeIDUint
 		}
 	}
-	if urgencyIDStr := ctx.Query("urgency_id"); urgencyIDStr != "" {
+	if urgencyIDStr := ctx.Query("urgencyId"); urgencyIDStr != "" {
 		if urgencyID, err := strconv.ParseUint(urgencyIDStr, 10, 32); err == nil {
 			urgencyIDUint := uint(urgencyID)
 			req.UrgencyID = &urgencyIDUint
 		}
 	}
-	req.StartDate = ctx.Query("start_date")
-	req.EndDate = ctx.Query("end_date")
+	req.StartDate = ctx.Query("startDate")
+	req.EndDate = ctx.Query("endDate")
 
 	response, err := h.svc.ListActivities(&req)
 	if err != nil {

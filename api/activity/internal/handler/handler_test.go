@@ -38,6 +38,25 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "{\"error\":\"Invalid request payload: invalid character '\\\\n' in string literal\"}")
 	})
 
+	t.Run("it returns an error when validation fails", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+
+		invalidPayload := `{
+			"description": "   ",
+			"employeeId": 1,
+			"urgencyId": 2
+		}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/activities", strings.NewReader(invalidPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		handler := NewActivityHandler(log, nil)
+		handler.CreateActivity(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "description is required")
+	})
+
 	t.Run("it returns an error when service fails", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
@@ -45,8 +64,8 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 
 		validPayload := `{
 			"description": "Test",
-			"employee_id": 1,
-			"urgency_id": 2
+			"employeeId": 1,
+			"urgencyId": 2
 		}`
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/activities", strings.NewReader(validPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
@@ -68,8 +87,8 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 
 		validPayload := `{
 			"description": "Test",
-			"employee_id": 1,
-			"urgency_id": 2
+			"employeeId": 1,
+			"urgencyId": 2
 		}`
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/activities", strings.NewReader(validPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
@@ -409,11 +428,11 @@ func TestActivityHandler_GetActivityStats(t *testing.T) {
 
 		// Check that the response contains the expected data (without strict JSON format matching)
 		responseBody := w.Body.String()
-		assert.Contains(t, responseBody, "\"total_activities\":1")
+		assert.Contains(t, responseBody, "\"totalActivities\":1")
 		assert.Contains(t, responseBody, "\"id\":5")
-		assert.Contains(t, responseBody, "\"activities_last_24h\":1")
-		assert.Contains(t, responseBody, "\"activities_last_7_days\":2")
-		assert.Contains(t, responseBody, "\"activities_last_30_days\":3")
+		assert.Contains(t, responseBody, "\"activitiesLast24h\":1")
+		assert.Contains(t, responseBody, "\"activitiesLast7Days\":2")
+		assert.Contains(t, responseBody, "\"activitiesLast30Days\":3")
 	})
 }
 

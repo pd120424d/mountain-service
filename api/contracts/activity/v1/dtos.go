@@ -27,29 +27,29 @@ type MessageResponse struct {
 type ActivityResponse struct {
 	ID          uint   `json:"id"`
 	Description string `json:"description"`
-	EmployeeID  uint   `json:"employee_id"` // ID of the employee who created the activity
-	UrgencyID   uint   `json:"urgency_id"`  // ID of the urgency this activity relates to
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
+	EmployeeID  uint   `json:"employeeId"` // ID of the employee who created the activity
+	UrgencyID   uint   `json:"urgencyId"`  // ID of the urgency this activity relates to
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
 }
 
 // ActivityCreateRequest DTO for creating a new activity
 // swagger:model
 type ActivityCreateRequest struct {
 	Description string `json:"description" binding:"required"`
-	EmployeeID  uint   `json:"employee_id" binding:"required"`
-	UrgencyID   uint   `json:"urgency_id" binding:"required"`
+	EmployeeID  uint   `json:"employeeId" binding:"required"`
+	UrgencyID   uint   `json:"urgencyId" binding:"required"`
 }
 
 // ActivityListRequest DTO for listing activities with filters
 // swagger:model
 type ActivityListRequest struct {
-	EmployeeID *uint  `json:"employee_id,omitempty" form:"employee_id"`
-	UrgencyID  *uint  `json:"urgency_id,omitempty" form:"urgency_id"`
-	StartDate  string `json:"start_date,omitempty" form:"start_date"` // RFC3339 format
-	EndDate    string `json:"end_date,omitempty" form:"end_date"`     // RFC3339 format
+	EmployeeID *uint  `json:"employeeId,omitempty" form:"employeeId"`
+	UrgencyID  *uint  `json:"urgencyId,omitempty" form:"urgencyId"`
+	StartDate  string `json:"startDate,omitempty" form:"startDate"` // RFC3339 format
+	EndDate    string `json:"endDate,omitempty" form:"endDate"`     // RFC3339 format
 	Page       int    `json:"page,omitempty" form:"page"`
-	PageSize   int    `json:"page_size,omitempty" form:"page_size"`
+	PageSize   int    `json:"pageSize,omitempty" form:"pageSize"`
 }
 
 // ActivityListResponse DTO for returning paginated activities
@@ -65,11 +65,11 @@ type ActivityListResponse struct {
 // ActivityStatsResponse DTO for returning activity statistics
 // swagger:model
 type ActivityStatsResponse struct {
-	TotalActivities      int64              `json:"total_activities"`
-	RecentActivities     []ActivityResponse `json:"recent_activities"`
-	ActivitiesLast24h    int64              `json:"activities_last_24h"`
-	ActivitiesLast7Days  int64              `json:"activities_last_7_days"`
-	ActivitiesLast30Days int64              `json:"activities_last_30_days"`
+	TotalActivities      int64              `json:"totalActivities"`
+	RecentActivities     []ActivityResponse `json:"recentActivities"`
+	ActivitiesLast24h    int64              `json:"activitiesLast24h"`
+	ActivitiesLast7Days  int64              `json:"activitiesLast7Days"`
+	ActivitiesLast30Days int64              `json:"activitiesLast30Days"`
 }
 
 // Helper methods
@@ -82,11 +82,11 @@ func (r *ActivityCreateRequest) Validate() error {
 	}
 
 	if r.EmployeeID == 0 {
-		errors.Add("employee_id", "employee_id is required and must be greater than 0")
+		errors.Add("employeeId", "employeeId is required and must be greater than 0")
 	}
 
 	if r.UrgencyID == 0 {
-		errors.Add("urgency_id", "urgency_id is required and must be greater than 0")
+		errors.Add("urgencyId", "urgencyId is required and must be greater than 0")
 	}
 
 	if errors.HasErrors() {
@@ -150,15 +150,15 @@ type OutboxEvent struct {
 // ActivityEvent represents the event data for activity operations (CQRS)
 type ActivityEvent struct {
 	Type        string    `json:"type"` // CREATE, UPDATE, DELETE
-	ActivityID  uint      `json:"activity_id"`
-	UrgencyID   uint      `json:"urgency_id"`
-	EmployeeID  uint      `json:"employee_id"`
+	ActivityID  uint      `json:"activityId"`
+	UrgencyID   uint      `json:"urgencyId"`
+	EmployeeID  uint      `json:"employeeId"`
 	Description string    `json:"description,omitempty"`
-	CreatedAt   time.Time `json:"created_at,omitempty"`
+	CreatedAt   time.Time `json:"createdAt,omitempty"`
 	// Denormalized data for read model
-	EmployeeName string `json:"employee_name,omitempty"`
-	UrgencyTitle string `json:"urgency_title,omitempty"`
-	UrgencyLevel string `json:"urgency_level,omitempty"`
+	EmployeeName string `json:"employeeName,omitempty"`
+	UrgencyTitle string `json:"urgencyTitle,omitempty"`
+	UrgencyLevel string `json:"urgencyLevel,omitempty"`
 }
 
 // ActivityEventType represents the type of CQRS event

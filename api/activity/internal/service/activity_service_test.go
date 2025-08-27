@@ -14,7 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestActivityService_CreateActivity_Comprehensive(t *testing.T) {
+func TestActivityService_CreateActivity(t *testing.T) {
 	t.Parallel()
 
 	t.Run("successfully creates activity with all fields", func(t *testing.T) {
@@ -31,7 +31,7 @@ func TestActivityService_CreateActivity_Comprehensive(t *testing.T) {
 			UrgencyID:   456,
 		}
 
-		mockRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(activity *model.Activity) error {
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).DoAndReturn(func(activity *model.Activity, _ any) error {
 			assert.Equal(t, "User completed onboarding process", activity.Description)
 			assert.Equal(t, uint(123), activity.EmployeeID)
 			assert.Equal(t, uint(456), activity.UrgencyID)
@@ -127,7 +127,7 @@ func TestActivityService_CreateActivity_Comprehensive(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		mockRepo.EXPECT().Create(gomock.Any()).Return(fmt.Errorf("database connection failed"))
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).Return(fmt.Errorf("database connection failed"))
 
 		response, err := service.CreateActivity(req)
 		assert.Error(t, err)
@@ -148,9 +148,81 @@ func TestActivityService_CreateActivity_Comprehensive(t *testing.T) {
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "request cannot be nil")
 	})
+
+	t.Run("successfully creates activity", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		service := NewActivityService(log, mockRepo)
+
+		req := &activityV1.ActivityCreateRequest{
+			Description: "New employee was created",
+			EmployeeID:  1,
+			UrgencyID:   2,
+		}
+
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).DoAndReturn(func(activity *model.Activity, _ any) error {
+			activity.ID = 1
+			activity.CreatedAt = time.Now()
+			activity.UpdatedAt = time.Now()
+			return nil
+		})
+
+		response, err := service.CreateActivity(req)
+		assert.NoError(t, err)
+		require.NotNil(t, response)
+		assert.Equal(t, uint(1), response.ID)
+		assert.Equal(t, "New employee was created", response.Description)
+		assert.Equal(t, uint(1), response.EmployeeID)
+		assert.Equal(t, uint(2), response.UrgencyID)
+	})
+
+	t.Run("returns error when validation fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		service := NewActivityService(log, mockRepo)
+
+		req := &activityV1.ActivityCreateRequest{
+			Description: "", // Invalid - empty description
+			EmployeeID:  1,
+			UrgencyID:   2,
+		}
+
+		response, err := service.CreateActivity(req)
+		assert.Error(t, err)
+		assert.Nil(t, response)
+		assert.Contains(t, err.Error(), "validation failed")
+	})
+
+	t.Run("returns error when repository fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		service := NewActivityService(log, mockRepo)
+
+		req := &activityV1.ActivityCreateRequest{
+			Description: "Test",
+			EmployeeID:  1,
+			UrgencyID:   2,
+		}
+
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).Return(fmt.Errorf("database error"))
+
+		response, err := service.CreateActivity(req)
+		assert.Error(t, err)
+		assert.Nil(t, response)
+		assert.Contains(t, err.Error(), "failed to create activity")
+	})
 }
 
-func TestActivityService_GetActivityByID_Comprehensive(t *testing.T) {
+func TestActivityService_GetActivityByID(t *testing.T) {
 	t.Parallel()
 
 	t.Run("successfully retrieves activity by ID", func(t *testing.T) {
@@ -212,9 +284,53 @@ func TestActivityService_GetActivityByID_Comprehensive(t *testing.T) {
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "invalid activity ID")
 	})
+
+	t.Run("successfully retrieves activity by ID", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		service := NewActivityService(log, mockRepo)
+
+		activity := &model.Activity{
+			ID:          1,
+			Description: "New employee was created",
+			EmployeeID:  1,
+			UrgencyID:   2,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}
+
+		mockRepo.EXPECT().GetByID(uint(1)).Return(activity, nil)
+
+		response, err := service.GetActivityByID(1)
+		assert.NoError(t, err)
+		require.NotNil(t, response)
+		assert.Equal(t, uint(1), response.ID)
+		assert.Equal(t, "New employee was created", response.Description)
+		assert.Equal(t, uint(1), response.EmployeeID)
+		assert.Equal(t, uint(2), response.UrgencyID)
+	})
+
+	t.Run("returns error when activity not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		service := NewActivityService(log, mockRepo)
+
+		mockRepo.EXPECT().GetByID(uint(999)).Return(nil, fmt.Errorf("activity not found"))
+
+		response, err := service.GetActivityByID(999)
+		assert.Error(t, err)
+		assert.Nil(t, response)
+		assert.Contains(t, err.Error(), "failed to get activity")
+	})
 }
 
-func TestActivityService_ListActivities_Comprehensive(t *testing.T) {
+func TestActivityService_ListActivities(t *testing.T) {
 	t.Parallel()
 
 	t.Run("successfully lists activities with filters", func(t *testing.T) {
@@ -369,10 +485,10 @@ func TestActivityService_ListActivities_Comprehensive(t *testing.T) {
 	})
 }
 
-func TestActivityService_LogActivity_Comprehensive(t *testing.T) {
+func TestActivityService_GetActivityStats(t *testing.T) {
 	t.Parallel()
 
-	t.Run("successfully logs activity", func(t *testing.T) {
+	t.Run("successfully retrieves activity statistics", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -380,172 +496,60 @@ func TestActivityService_LogActivity_Comprehensive(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(activity *model.Activity) error {
-			assert.Equal(t, "User logged in successfully", activity.Description)
-			assert.Equal(t, uint(50), activity.EmployeeID)
-			assert.Equal(t, uint(75), activity.UrgencyID)
-			return nil
-		})
-
-		err := service.LogActivity("User logged in successfully", 50, 75)
-		assert.NoError(t, err)
-	})
-
-	t.Run("returns error for empty description", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		log := utils.NewTestLogger()
-		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
-
-		err := service.LogActivity("", 1, 2)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "validation failed")
-	})
-
-	t.Run("handles repository error", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		log := utils.NewTestLogger()
-		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
-
-		mockRepo.EXPECT().Create(gomock.Any()).Return(fmt.Errorf("disk full"))
-
-		err := service.LogActivity("Test activity", 1, 2)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to create activity")
-	})
-}
-
-func TestActivityService_CreateActivity(t *testing.T) {
-	t.Parallel()
-
-	t.Run("successfully creates activity", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		log := utils.NewTestLogger()
-		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
-
-		req := &activityV1.ActivityCreateRequest{
-			Description: "New employee was created",
-			EmployeeID:  1,
-			UrgencyID:   2,
+		expectedStats := &model.ActivityStats{
+			TotalActivities: 100,
+			RecentActivities: []model.Activity{
+				{
+					ID:          1,
+					Description: "First activity",
+					EmployeeID:  10,
+					UrgencyID:   20,
+					CreatedAt:   time.Now().Add(-2 * time.Hour),
+					UpdatedAt:   time.Now().Add(-2 * time.Hour),
+				},
+				{
+					ID:          2,
+					Description: "Second activity",
+					EmployeeID:  10,
+					UrgencyID:   20,
+					CreatedAt:   time.Now().Add(-1 * time.Hour),
+					UpdatedAt:   time.Now().Add(-1 * time.Hour),
+				},
+			},
+			ActivitiesLast24h:    10,
+			ActivitiesLast7Days:  50,
+			ActivitiesLast30Days: 100,
 		}
 
-		mockRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(activity *model.Activity) error {
-			activity.ID = 1
-			activity.CreatedAt = time.Now()
-			activity.UpdatedAt = time.Now()
-			return nil
-		})
+		mockRepo.EXPECT().GetStats().Return(expectedStats, nil)
 
-		response, err := service.CreateActivity(req)
+		response, err := service.GetActivityStats()
 		assert.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, uint(1), response.ID)
-		assert.Equal(t, "New employee was created", response.Description)
-		assert.Equal(t, uint(1), response.EmployeeID)
-		assert.Equal(t, uint(2), response.UrgencyID)
+		assert.Equal(t, int64(100), response.TotalActivities)
+		assert.Len(t, response.RecentActivities, 2)
+		assert.Equal(t, int64(10), response.ActivitiesLast24h)
+		assert.Equal(t, int64(50), response.ActivitiesLast7Days)
+		assert.Equal(t, int64(100), response.ActivitiesLast30Days)
 	})
 
-	t.Run("returns error when validation fails", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		log := utils.NewTestLogger()
-		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
-
-		req := &activityV1.ActivityCreateRequest{
-			Description: "", // Invalid - empty description
-			EmployeeID:  1,
-			UrgencyID:   2,
-		}
-
-		response, err := service.CreateActivity(req)
-		assert.Error(t, err)
-		assert.Nil(t, response)
-		assert.Contains(t, err.Error(), "validation failed")
-	})
-
-	t.Run("returns error when repository fails", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		log := utils.NewTestLogger()
-		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
-
-		req := &activityV1.ActivityCreateRequest{
-			Description: "Test",
-			EmployeeID:  1,
-			UrgencyID:   2,
-		}
-
-		mockRepo.EXPECT().Create(gomock.Any()).Return(fmt.Errorf("database error"))
-
-		response, err := service.CreateActivity(req)
-		assert.Error(t, err)
-		assert.Nil(t, response)
-		assert.Contains(t, err.Error(), "failed to create activity")
-	})
-}
-
-func TestActivityService_GetActivityByID(t *testing.T) {
-	t.Parallel()
-
-	t.Run("successfully retrieves activity by ID", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		log := utils.NewTestLogger()
-		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
-
-		activity := &model.Activity{
-			ID:          1,
-			Description: "New employee was created",
-			EmployeeID:  1,
-			UrgencyID:   2,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
-		}
-
-		mockRepo.EXPECT().GetByID(uint(1)).Return(activity, nil)
-
-		response, err := service.GetActivityByID(1)
-		assert.NoError(t, err)
-		require.NotNil(t, response)
-		assert.Equal(t, uint(1), response.ID)
-		assert.Equal(t, "New employee was created", response.Description)
-		assert.Equal(t, uint(1), response.EmployeeID)
-		assert.Equal(t, uint(2), response.UrgencyID)
-	})
-
-	t.Run("returns error when activity not found", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		log := utils.NewTestLogger()
-		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
-
-		mockRepo.EXPECT().GetByID(uint(999)).Return(nil, fmt.Errorf("activity not found"))
-
-		response, err := service.GetActivityByID(999)
-		assert.Error(t, err)
-		assert.Nil(t, response)
-		assert.Contains(t, err.Error(), "failed to get activity")
-	})
 }
 
 func TestActivityService_DeleteActivity(t *testing.T) {
 	t.Parallel()
+
+	t.Run("it returns error for invalid ID", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		service := NewActivityService(log, mockRepo)
+
+		err := service.DeleteActivity(0)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid activity ID")
+	})
 
 	t.Run("successfully deletes activity", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -607,5 +611,90 @@ func TestActivityService_ResetAllData(t *testing.T) {
 		err := service.ResetAllData()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to reset activity data")
+	})
+}
+
+func TestActivityService_LogActivity(t *testing.T) {
+	t.Parallel()
+
+	t.Run("successfully logs activity", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		service := NewActivityService(log, mockRepo)
+
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).DoAndReturn(func(activity *model.Activity, _ any) error {
+			assert.Equal(t, "User logged in successfully", activity.Description)
+			assert.Equal(t, uint(50), activity.EmployeeID)
+			assert.Equal(t, uint(75), activity.UrgencyID)
+			return nil
+		})
+
+		err := service.LogActivity("User logged in successfully", 50, 75)
+		assert.NoError(t, err)
+	})
+
+	t.Run("returns error for empty description", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		service := NewActivityService(log, mockRepo)
+
+		err := service.LogActivity("", 1, 2)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "validation failed")
+	})
+
+	t.Run("handles repository error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		service := NewActivityService(log, mockRepo)
+
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).Return(fmt.Errorf("disk full"))
+
+		err := service.LogActivity("Test activity", 1, 2)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to create activity")
+	})
+
+	t.Run("it succeeds when CreateWithOutbox succeeds", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		svc := NewActivityService(log, mockRepo)
+
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).DoAndReturn(func(a *model.Activity, _ any) error {
+			// Ensure inputs are mapped correctly
+			assert.Equal(t, "Quick note", a.Description)
+			assert.Equal(t, uint(11), a.EmployeeID)
+			assert.Equal(t, uint(22), a.UrgencyID)
+			return nil
+		})
+
+		err := svc.LogActivity("Quick note", 11, 22)
+		assert.NoError(t, err)
+	})
+
+	t.Run("it fails/returns an error when CreateWithOutbox returns error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		svc := NewActivityService(log, mockRepo)
+
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).Return(assert.AnError)
+
+		err := svc.LogActivity("Something happened", 1, 2)
+		assert.Error(t, err)
 	})
 }

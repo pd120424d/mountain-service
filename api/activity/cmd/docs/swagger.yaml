@@ -4,14 +4,14 @@ definitions:
     properties:
       description:
         type: string
-      employee_id:
+      employeeId:
         type: integer
-      urgency_id:
+      urgencyId:
         type: integer
     required:
     - description
-    - employee_id
-    - urgency_id
+    - employeeId
+    - urgencyId
     type: object
   github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityListResponse:
     properties:
@@ -30,35 +30,40 @@ definitions:
     type: object
   github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse:
     properties:
-      created_at:
+      createdAt:
         type: string
       description:
         type: string
-      employee_id:
+      employeeId:
         description: ID of the employee who created the activity
         type: integer
       id:
         type: integer
-      updated_at:
+      updatedAt:
         type: string
-      urgency_id:
+      urgencyId:
         description: ID of the urgency this activity relates to
         type: integer
     type: object
   github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityStatsResponse:
     properties:
-      activities_last_7_days:
+      activitiesLast7Days:
         type: integer
-      activities_last_24h:
+      activitiesLast24h:
         type: integer
-      activities_last_30_days:
+      activitiesLast30Days:
         type: integer
-      recent_activities:
+      recentActivities:
         items:
           $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse'
         type: array
-      total_activities:
+      totalActivities:
         type: integer
+    type: object
+  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ErrorResponse:
+    properties:
+      error:
+        type: string
     type: object
 host: localhost:8084
 info:
@@ -138,13 +143,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ErrorResponse'
       summary: Креирање нове активности
       tags:
       - activities

@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
+	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"gorm.io/gorm"
 )
 
 type ActivityRepository interface {
 	Create(activity *model.Activity) error
+	CreateWithOutbox(activity *model.Activity, event *models.OutboxEvent) error
 	GetByID(id uint) (*model.Activity, error)
 	List(filter *model.ActivityFilter) ([]model.Activity, int64, error)
 	GetStats() (*model.ActivityStats, error)
@@ -41,6 +43,23 @@ func (r *activityRepository) Create(activity *model.Activity) error {
 	return nil
 }
 
+func (r *activityRepository) CreateWithOutbox(activity *model.Activity, event *models.OutboxEvent) error {
+	r.log.Infof("Creating activity with outbox event")
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(activity).Error; err != nil {
+			r.log.Errorf("Failed to create activity: %v", err)
+			return fmt.Errorf("failed to create activity: %w", err)
+		}
+		if event != nil {
+			if err := tx.Create(event).Error; err != nil {
+				r.log.Errorf("Failed to create outbox event: %v", err)
+				return fmt.Errorf("failed to create outbox event: %w", err)
+			}
+		}
+		return nil
+	})
+}
+
 func (r *activityRepository) GetByID(id uint) (*model.Activity, error) {
 	r.log.Infof("Getting activity by ID: %d", id)
 
@@ -61,10 +80,8 @@ func (r *activityRepository) GetByID(id uint) (*model.Activity, error) {
 func (r *activityRepository) List(filter *model.ActivityFilter) ([]model.Activity, int64, error) {
 	r.log.Infof("Listing activities with filter: page=%d, pageSize=%d", filter.Page, filter.PageSize)
 
-	// Validate filter
-	if err := filter.Validate(); err != nil {
-		return nil, 0, fmt.Errorf("invalid filter: %w", err)
-	}
+	// Validation of filter just sets defaults if needed and doesn't return error
+	_ = filter.Validate()
 
 	query := r.db.Model(&model.Activity{})
 

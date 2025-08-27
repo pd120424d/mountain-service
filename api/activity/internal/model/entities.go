@@ -67,7 +67,6 @@ func NewActivityFilter() *ActivityFilter {
 	}
 }
 
-// Validate validates the activity filter
 func (f *ActivityFilter) Validate() error {
 	if f.Page < 1 {
 		f.Page = 1
@@ -81,17 +80,14 @@ func (f *ActivityFilter) Validate() error {
 	return nil
 }
 
-// GetOffset calculates the offset for pagination
 func (f *ActivityFilter) GetOffset() int {
 	return (f.Page - 1) * f.PageSize
 }
 
-// GetLimit returns the page size
 func (f *ActivityFilter) GetLimit() int {
 	return f.PageSize
 }
 
-// ActivityStats represents statistics about activities
 type ActivityStats struct {
 	TotalActivities      int64
 	RecentActivities     []Activity
@@ -100,7 +96,6 @@ type ActivityStats struct {
 	ActivitiesLast30Days int64
 }
 
-// ToResponse converts ActivityStats to ActivityStatsResponse DTO
 func (s *ActivityStats) ToResponse() activityV1.ActivityStatsResponse {
 	recentActivities := make([]activityV1.ActivityResponse, len(s.RecentActivities))
 	for i, activity := range s.RecentActivities {

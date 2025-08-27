@@ -174,19 +174,26 @@ func TestOutboxEvent_GetEventData(t *testing.T) {
 
 	t.Run("it unmarshals the event data correctly", func(t *testing.T) {
 		activityID := uint(1)
+		createdAt := time.Now()
 		activityEvent := ActivityEvent{
 			Type:        "test_type",
 			ActivityID:  activityID,
 			UrgencyID:   2,
 			EmployeeID:  3,
 			Description: "test description",
-			CreatedAt:   time.Now(),
+			CreatedAt:   createdAt,
 		}
 
 		outboxEvent := CreateOutboxEvent(ActivityEventCreated, activityID, activityEvent)
 
 		eventData, err := outboxEvent.GetEventData()
 		assert.NoError(t, err)
-		assert.Equal(t, &activityEvent, eventData)
+		// Compare fields explicitly to avoid monotonic clock differences in time.Time
+		assert.Equal(t, activityEvent.Type, eventData.Type)
+		assert.Equal(t, activityEvent.ActivityID, eventData.ActivityID)
+		assert.Equal(t, activityEvent.UrgencyID, eventData.UrgencyID)
+		assert.Equal(t, activityEvent.EmployeeID, eventData.EmployeeID)
+		assert.Equal(t, activityEvent.Description, eventData.Description)
+		assert.WithinDuration(t, createdAt, eventData.CreatedAt, time.Second)
 	})
 }

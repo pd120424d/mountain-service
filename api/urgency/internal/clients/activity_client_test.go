@@ -202,7 +202,7 @@ func TestActivityClient_GetActivitiesByUrgency(t *testing.T) {
 			Body:       io.NopCloser(bytes.NewReader(responseBody)),
 		}
 
-		mockHTTP.EXPECT().Get(gomock.Any(), "/activities?urgency_id=456").Return(mockResp, nil)
+		mockHTTP.EXPECT().Get(gomock.Any(), "/activities?urgencyId=456").Return(mockResp, nil)
 
 		result, err := client.GetActivitiesByUrgency(context.Background(), 456)
 		assert.NoError(t, err)
@@ -225,7 +225,7 @@ func TestActivityClient_GetActivitiesByUrgency(t *testing.T) {
 			logger:     logger.WithName("activityClient"),
 		}
 
-		mockHTTP.EXPECT().Get(gomock.Any(), "/activities?urgency_id=456").Return(nil, fmt.Errorf("network error"))
+		mockHTTP.EXPECT().Get(gomock.Any(), "/activities?urgencyId=456").Return(nil, fmt.Errorf("network error"))
 
 		result, err := client.GetActivitiesByUrgency(context.Background(), 456)
 		assert.Error(t, err)
@@ -250,7 +250,7 @@ func TestActivityClient_GetActivitiesByUrgency(t *testing.T) {
 			Body:       io.NopCloser(bytes.NewReader([]byte(`{"error":"database error"}`))),
 		}
 
-		mockHTTP.EXPECT().Get(gomock.Any(), "/activities?urgency_id=456").Return(mockResp, nil)
+		mockHTTP.EXPECT().Get(gomock.Any(), "/activities?urgencyId=456").Return(mockResp, nil)
 
 		result, err := client.GetActivitiesByUrgency(context.Background(), 456)
 		assert.Error(t, err)
@@ -275,7 +275,7 @@ func TestActivityClient_GetActivitiesByUrgency(t *testing.T) {
 			Body:       io.NopCloser(bytes.NewReader([]byte(`invalid json`))),
 		}
 
-		mockHTTP.EXPECT().Get(gomock.Any(), "/activities?urgency_id=456").Return(mockResp, nil)
+		mockHTTP.EXPECT().Get(gomock.Any(), "/activities?urgencyId=456").Return(mockResp, nil)
 
 		result, err := client.GetActivitiesByUrgency(context.Background(), 456)
 		assert.Error(t, err)
@@ -309,7 +309,7 @@ func TestActivityClient_GetActivitiesByUrgency(t *testing.T) {
 			Body:       io.NopCloser(bytes.NewReader(responseBody)),
 		}
 
-		mockHTTP.EXPECT().Get(gomock.Any(), "/activities?urgency_id=999").Return(mockResp, nil)
+		mockHTTP.EXPECT().Get(gomock.Any(), "/activities?urgencyId=999").Return(mockResp, nil)
 
 		result, err := client.GetActivitiesByUrgency(context.Background(), 999)
 		assert.NoError(t, err)
@@ -548,7 +548,7 @@ func TestActivityClient_EdgeCases(t *testing.T) {
 			Body:       io.NopCloser(bytes.NewReader(responseBody)),
 		}
 
-		expectedEndpoint := fmt.Sprintf("/activities?urgency_id=%d", largeID)
+		expectedEndpoint := fmt.Sprintf("/activities?urgencyId=%d", largeID)
 		mockHTTP.EXPECT().Get(gomock.Any(), expectedEndpoint).Return(mockResp, nil)
 
 		result, err := client.GetActivitiesByUrgency(context.Background(), largeID)

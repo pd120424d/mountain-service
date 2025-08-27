@@ -10,7 +10,7 @@ command -v go-acc >/dev/null || {
 
 cd api
 
-SERVICES=("employee" "urgency" "activity") # Add "activity-readmodel-updater" when the tests are implemented and have enough coverage
+SERVICES=("activity" "employee" "urgency") # Add "activity-readmodel-updater" when the tests are implemented and have enough coverage
 THRESHOLD=75.0
 OVERALL_SUCCESS=true
 

@@ -75,12 +75,6 @@ func main() {
 	}
 	logger.Infof("Starting Activity Read Model Updater version=%s git_sha=%s", cfg.Version, cfg.GitSHA)
 
-	// Initialize database connection
-	db, err := initDatabase(cfg.DatabaseURL, logger)
-	if err != nil {
-		logger.Fatalf("Failed to initialize database: %v", err)
-	}
-
 	// Initialize Firebase Firestore
 	firestoreClient, err := initFirestore(cfg.FirebaseCredentialsPath, cfg.FirebaseProjectID)
 	if err != nil {
@@ -97,7 +91,6 @@ func main() {
 
 	// Initialize services
 	firebaseService := service.NewFirebaseService(firestoreClient, logger)
-	outboxRepo := repositories.NewOutboxRepository(logger, db)
 
 	// Start health check server
 	go func() {
@@ -114,27 +107,11 @@ func main() {
 		}
 	}()
 
-	// Start outbox publisher (polls outbox table and publishes to Pub/Sub)
+	// Create a cancellable context for subscriber
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go func() {
-		ticker := time.NewTicker(time.Duration(cfg.OutboxPollIntervalSeconds) * time.Second)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				if err := processOutboxEvents(ctx, outboxRepo, pubsubClient, cfg.PubSubTopic, logger); err != nil {
-					logger.Errorf("Failed to process outbox events: %v", err)
-				}
-			}
-		}
-	}()
-
-	// Start Pub/Sub subscriber (receives events and updates Firestore)
+	// Start Pub/Sub subscriber
 	go func() {
 		subscription := pubsubClient.Subscription(cfg.PubSubSubscription)
 		logger.Infof("Starting Pub/Sub subscriber: subscription=%s", cfg.PubSubSubscription)

@@ -1,15 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"time"
 
+	"cloud.google.com/go/pubsub"
 	_ "github.com/pd120424d/mountain-service/api/activity/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/activity/internal/handler"
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
+	"github.com/pd120424d/mountain-service/api/activity/internal/publisher"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/activity/internal/service"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	globConf "github.com/pd120424d/mountain-service/api/shared/config"
+	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/server"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
@@ -55,7 +61,7 @@ func main() {
 		ServiceName: svcName,
 		Port:        globConf.ActivityServicePort,
 		DatabaseConfig: server.GetDatabaseConfigWithDefaults(
-			[]interface{}{&model.Activity{}},
+			[]interface{}{&model.Activity{}, &models.OutboxEvent{}},
 			globConf.ActivityDBName,
 		),
 		CORSConfig: server.DefaultCORSConfig(),
@@ -64,6 +70,7 @@ func main() {
 		},
 		SetupCustomRoutes: func(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 			setupRoutes(log, r, db)
+			startPublisherIfConfigured(log, db)
 		},
 	}
 
@@ -71,6 +78,34 @@ func main() {
 	if err := server.InitializeServer(log, serverConfig); err != nil {
 		log.Fatalf("Failed to initialize server: %v", err)
 	}
+}
+
+func startPublisherIfConfigured(log utils.Logger, db *gorm.DB) {
+	// Build Pub/Sub client if GOOGLE_APPLICATION_CREDENTIALS/FIREBASE creds are available
+	projectID := os.Getenv("FIREBASE_PROJECT_ID")
+	if projectID == "" {
+		projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	}
+	if projectID == "" {
+		log.Warn("Pub/Sub publisher disabled: no project ID in env")
+		return
+	}
+
+	client, err := pubsub.NewClient(context.Background(), projectID)
+	if err != nil {
+		log.Errorf("Failed to create Pub/Sub client: %v", err)
+		return
+	}
+
+	repo := repositories.NewOutboxRepository(log, db)
+	topic := os.Getenv("PUBSUB_TOPIC")
+	if topic == "" {
+		topic = "activity-events"
+	}
+
+	pub := publisher.New(log, repo, client, publisher.Config{TopicName: topic, Interval: 10 * time.Second})
+	ctx, _ := context.WithCancel(context.Background())
+	pub.Start(ctx)
 }
 
 func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {

@@ -9,6 +9,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
+	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
@@ -47,8 +48,22 @@ func (s *activityService) CreateActivity(req *activityV1.ActivityCreateRequest) 
 
 	activity := model.FromCreateRequest(req)
 
-	if err := s.repo.Create(activity); err != nil {
-		s.log.Errorf("Failed to create activity: %v", err)
+	// Build outbox event payload for CQRS
+	event := activityV1.CreateOutboxEvent(
+		activityV1.ActivityEventCreated,
+		activity.ID,
+		activityV1.ActivityEvent{
+			Type:        string(activityV1.ActivityEventCreated),
+			ActivityID:  activity.ID,
+			UrgencyID:   activity.UrgencyID,
+			EmployeeID:  activity.EmployeeID,
+			Description: activity.Description,
+			CreatedAt:   activity.CreatedAt,
+		},
+	)
+
+	if err := s.repo.CreateWithOutbox(activity, (*models.OutboxEvent)(event)); err != nil {
+		s.log.Errorf("Failed to create activity with outbox: %v", err)
 		return nil, fmt.Errorf("failed to create activity: %w", err)
 	}
 
@@ -90,18 +105,6 @@ func (s *activityService) DeleteActivity(id uint) error {
 	}
 
 	s.log.Infof("Activity deleted successfully with ID: %d", id)
-	return nil
-}
-
-func (s *activityService) ResetAllData() error {
-	s.log.Info("Resetting all activity data")
-
-	if err := s.repo.ResetAllData(); err != nil {
-		s.log.Errorf("Failed to reset activity data: %v", err)
-		return fmt.Errorf("failed to reset activity data: %w", err)
-	}
-
-	s.log.Info("All activity data reset successfully")
 	return nil
 }
 
@@ -177,6 +180,18 @@ func (s *activityService) GetActivityStats() (*activityV1.ActivityStatsResponse,
 
 	response := stats.ToResponse()
 	return &response, nil
+}
+
+func (s *activityService) ResetAllData() error {
+	s.log.Info("Resetting all activity data")
+
+	if err := s.repo.ResetAllData(); err != nil {
+		s.log.Errorf("Failed to reset activity data: %v", err)
+		return fmt.Errorf("failed to reset activity data: %w", err)
+	}
+
+	s.log.Info("All activity data reset successfully")
+	return nil
 }
 
 func (s *activityService) LogActivity(description string, employeeID, urgencyID uint) error {

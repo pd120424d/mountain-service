@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 
 	model "github.com/pd120424d/mountain-service/api/activity/internal/model"
+	models "github.com/pd120424d/mountain-service/api/shared/models"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -52,6 +53,20 @@ func (m *MockActivityRepository) Create(activity *model.Activity) error {
 func (mr *MockActivityRepositoryMockRecorder) Create(activity any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockActivityRepository)(nil).Create), activity)
+}
+
+// CreateWithOutbox mocks base method.
+func (m *MockActivityRepository) CreateWithOutbox(activity *model.Activity, event *models.OutboxEvent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateWithOutbox", activity, event)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateWithOutbox indicates an expected call of CreateWithOutbox.
+func (mr *MockActivityRepositoryMockRecorder) CreateWithOutbox(activity, event any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWithOutbox", reflect.TypeOf((*MockActivityRepository)(nil).CreateWithOutbox), activity, event)
 }
 
 // Delete mocks base method.

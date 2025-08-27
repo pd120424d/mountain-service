@@ -81,7 +81,7 @@ func (c *activityClient) CreateActivity(ctx context.Context, req *activityV1.Act
 func (c *activityClient) GetActivitiesByUrgency(ctx context.Context, urgencyID uint) ([]activityV1.ActivityResponse, error) {
 	c.logger.Infof("Getting activities for urgency %d", urgencyID)
 
-	endpoint := fmt.Sprintf("/activities?urgency_id=%d", urgencyID)
+	endpoint := fmt.Sprintf("/activities?urgencyId=%d", urgencyID)
 	resp, err := c.httpClient.Get(ctx, endpoint)
 	if err != nil {
 		c.logger.Errorf("Failed to get activities: %v", err)
