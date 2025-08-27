@@ -69,7 +69,7 @@ describe('ActivityService', () => {
       service.getActivities().subscribe({
         next: () => fail('Expected an error'),
         error: (error) => {
-          expect(error.message).toBe('Something went wrong. Please try again later.');
+          expect(error.message).toBe('Server error');
         }
       });
 

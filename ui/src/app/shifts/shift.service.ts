@@ -67,21 +67,31 @@ export class ShiftManagementService {
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An unknown error occurred';
-
-    if (error.error instanceof ErrorEvent) {
-      // Client-side error
-      errorMessage = `Client error: ${error.error.message}`;
-    } else {
-      // Server-side error
-      errorMessage = `Server error: ${error.status} - ${error.message}`;
-      if (error.error && typeof error.error === 'string') {
-        errorMessage += ` - ${error.error}`;
-      } else if (error.error && error.error.message) {
-        errorMessage += ` - ${error.error.message}`;
+    // Backend should return: { error: CODE, limit?: number|string, role?: string, max?: number }
+    if (error && error.error && typeof error.error === 'object' && 'error' in error.error) {
+      const payload = error.error as { error?: string; limit?: number | string } & Record<string, any>;
+      if (payload.error === 'SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT' && (payload.limit !== undefined)) {
+        // Preserve existing FE translation behavior: "CODE|param"
+        return throwError(() => new Error(`${payload.error}|${payload.limit}`));
+      }
+      // Generic code passthrough for other typed errors
+      if (typeof payload.error === 'string' && payload.error) {
+        return throwError(() => new Error(payload.error));
       }
     }
 
+    // Fallback for old unstructured errors
+    let errorMessage = 'An unknown error occurred';
+    if (error.error instanceof ErrorEvent) {
+      errorMessage = `Client error: ${error.error.message}`;
+    } else {
+      errorMessage = `Server error: ${error.status} - ${error.message}`;
+      if (error.error && typeof error.error === 'string') {
+        errorMessage += ` - ${error.error}`;
+      } else if (error.error && (error.error as any).message) {
+        errorMessage += ` - ${(error.error as any).message}`;
+      }
+    }
     return throwError(() => new Error(errorMessage));
   }
 }

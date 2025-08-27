@@ -55,17 +55,22 @@ export class ActivityService {
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'Something went wrong. Please try again later.';
+    if (error && error.error && typeof error.error === 'object' && 'error' in error.error) {
+      const payload = error.error as { error?: string } & Record<string, any>;
+      if (typeof payload.error === 'string' && payload.error) {
+        return throwError(() => new Error(payload.error));
+      }
+    }
 
+    // Fallback to the old behavior
+    let errorMessage = 'Something went wrong. Please try again later.';
     if (error.error instanceof ErrorEvent) {
-      // Client-side error
       errorMessage = `Client error: ${error.error.message}`;
     } else {
-      // Server-side error - only show specific messages for certain status codes
       if (error.status === 409) {
-        errorMessage = error.error?.error || 'Conflict: Resource already exists';
+        errorMessage = (error.error as any)?.error || 'Conflict: Resource already exists';
       } else if (error.status === 400) {
-        errorMessage = error.error?.error || 'Invalid data provided';
+        errorMessage = (error.error as any)?.error || 'Invalid data provided';
       }
     }
 

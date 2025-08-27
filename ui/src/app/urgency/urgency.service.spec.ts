@@ -191,7 +191,24 @@ describe('UrgencyService', () => {
 
     const req = httpMock.expectOne(expectedUrgencyUrl);
     req.flush(errorMessage, { status: 500, statusText: 'Server Error' });
+
+
   });
+
+  it('it returns an error when backend provides typed error code', () => {
+    service.addUrgency({
+      firstName: 'John', lastName: 'Doe', email: 'u@example.com', contactPhone: '1', location: 'L', description: 'D', level: GeneratedUrgencyLevel.Medium
+    }).subscribe({
+      next: () => fail('Expected error'),
+      error: (error) => {
+        expect(error.message).toBe('VALIDATION_ERROR.REQUIRED_FIELD');
+      }
+    });
+
+    const req = httpMock.expectOne(expectedUrgencyUrl);
+    req.flush({ error: 'VALIDATION_ERROR.REQUIRED_FIELD' }, { status: 400, statusText: 'Bad Request' });
+  });
+
 });
 
 

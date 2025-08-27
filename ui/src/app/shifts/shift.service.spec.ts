@@ -93,7 +93,7 @@ describe('ShiftManagementService', () => {
 
     it('should fetch shift availability with custom days parameter', () => {
       const customDays = 14;
-      
+
       service.getShiftAvailability(customDays).subscribe(response => {
         expect(response).toEqual(mockShiftAvailability);
       });
@@ -105,7 +105,7 @@ describe('ShiftManagementService', () => {
 
     it('should handle HTTP errors gracefully', () => {
       const errorMessage = 'Server error';
-      
+
       service.getShiftAvailability().subscribe({
         next: () => fail('Expected error'),
         error: (error) => {
@@ -186,6 +186,23 @@ describe('ShiftManagementService', () => {
       const req = httpMock.expectOne(`/api/v1/employees/${employeeId}/shifts`);
       req.flush('Conflict - Employee already assigned', { status: 409, statusText: 'Conflict' });
     });
+
+	    it('it returns an error when consecutive shifts limit is exceeded (code|param)', () => {
+	      const shiftType = 1;
+	      const employeeId = 'emp123';
+	      const date = new Date('2024-01-15');
+
+	      service.assignEmployeeToShift(shiftType, employeeId, date).subscribe({
+	        next: () => fail('Expected error'),
+	        error: (error) => {
+	          expect(error.message).toBe('SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT|3');
+	        }
+	      });
+
+	      const req = httpMock.expectOne(`/api/v1/employees/${employeeId}/shifts`);
+	      req.flush({ error: 'SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT', limit: 3 }, { status: 400, statusText: 'Bad Request' });
+	    });
+
   });
 
   describe('removeEmployeeFromShiftByDetails', () => {
