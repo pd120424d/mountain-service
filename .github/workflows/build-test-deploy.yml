@@ -107,7 +107,7 @@ jobs:
           password: ${{ secrets.GHCR_PAT }}
 
       - name: Build and push UI image
-        if: steps.changes.outputs.ui == 'true' || inputs.force_deploy
+        if: steps.changes.outputs.ui == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd ui
           docker build -t ghcr.io/pd120424d/mountain-ui:latest \
@@ -120,7 +120,7 @@ jobs:
           docker push ghcr.io/pd120424d/mountain-ui:${{ github.sha }}
 
       - name: Build and push Employee service
-        if: steps.changes.outputs.employee == 'true' || inputs.force_deploy
+        if: steps.changes.outputs.employee == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd api
           docker build -f employee/Dockerfile -t ghcr.io/pd120424d/employee-service:latest \
@@ -132,7 +132,7 @@ jobs:
           docker push ghcr.io/pd120424d/employee-service:${{ github.sha }}
 
       - name: Build and push Urgency service
-        if: steps.changes.outputs.urgency == 'true' || inputs.force_deploy
+        if: steps.changes.outputs.urgency == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd api
           docker build -f urgency/Dockerfile -t ghcr.io/pd120424d/urgency-service:latest \
@@ -144,7 +144,7 @@ jobs:
           docker push ghcr.io/pd120424d/urgency-service:${{ github.sha }}
 
       - name: Build and push Activity service (with CQRS support)
-        if: steps.changes.outputs.activity == 'true' || inputs.force_deploy
+        if: steps.changes.outputs.activity == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd api
           docker build -f activity/Dockerfile -t ghcr.io/pd120424d/activity-service:latest \
@@ -156,7 +156,7 @@ jobs:
           docker push ghcr.io/pd120424d/activity-service:${{ github.sha }}
 
       - name: Build and push Activity Read Model Updater service
-        if: steps.changes.outputs.activity-updater == 'true' || inputs.force_deploy
+        if: steps.changes.outputs.activity-updater == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd api
           docker build -f activity-readmodel-updater/Dockerfile \
@@ -169,7 +169,7 @@ jobs:
           docker push ghcr.io/pd120424d/activity-readmodel-updater:${{ github.sha }}
 
       - name: Build and push Version service
-        if: steps.changes.outputs.version == 'true' || inputs.force_deploy
+        if: steps.changes.outputs.version == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd api
           docker build -f version-service/Dockerfile -t ghcr.io/pd120424d/version-service:latest \
@@ -334,42 +334,42 @@ jobs:
 
 
       - name: Roll out Frontend image
-        if: ${{ needs.build-and-push-images.outputs.ui-changed == 'true' || inputs.force_deploy }}
+        if: ${{ needs.build-and-push-images.outputs.ui-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
         run: |
           kubectl -n mountain-service set image deploy/frontend \
             frontend=ghcr.io/pd120424d/mountain-ui:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/frontend --timeout=180s
 
       - name: Roll out Employee image
-        if: ${{ needs.build-and-push-images.outputs.employee-changed == 'true' || inputs.force_deploy }}
+        if: ${{ needs.build-and-push-images.outputs.employee-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
         run: |
           kubectl -n mountain-service set image deploy/employee-service \
             employee=ghcr.io/pd120424d/employee-service:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/employee-service --timeout=180s
 
       - name: Roll out Urgency image
-        if: ${{ needs.build-and-push-images.outputs.urgency-changed == 'true' || inputs.force_deploy }}
+        if: ${{ needs.build-and-push-images.outputs.urgency-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
         run: |
           kubectl -n mountain-service set image deploy/urgency-service \
             urgency=ghcr.io/pd120424d/urgency-service:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/urgency-service --timeout=180s
 
       - name: Roll out Activity image
-        if: ${{ needs.build-and-push-images.outputs.activity-changed == 'true' || inputs.force_deploy }}
+        if: ${{ needs.build-and-push-images.outputs.activity-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
         run: |
           kubectl -n mountain-service set image deploy/activity-service \
             activity=ghcr.io/pd120424d/activity-service:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/activity-service --timeout=180s
 
       - name: Roll out Activity Readmodel Updater image
-        if: ${{ needs.build-and-push-images.outputs.activity-updater-changed == 'true' || inputs.force_deploy }}
+        if: ${{ needs.build-and-push-images.outputs.activity-updater-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
         run: |
           kubectl -n mountain-service set image deploy/activity-readmodel-updater \
             activity-readmodel-updater=ghcr.io/pd120424d/activity-readmodel-updater:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/activity-readmodel-updater --timeout=180s
 
       - name: Roll out Version image
-        if: ${{ needs.build-and-push-images.outputs.version-changed == 'true' || inputs.force_deploy }}
+        if: ${{ needs.build-and-push-images.outputs.version-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
         run: |
           kubectl -n mountain-service set image deploy/version-service \
             version=ghcr.io/pd120424d/version-service:${{ github.sha }}
