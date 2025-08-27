@@ -4,7 +4,7 @@ import { AuthService } from './services/auth.service';
 import { EmployeeService } from './employee/employee.service';
 import { AppInitializationService } from './services/app-initialization.service';
 import { CommonModule } from '@angular/common';
-import { RouterModule, RouterOutlet } from '@angular/router';
+import { RouterModule, RouterOutlet, Router } from '@angular/router';
 import { VersionBannerComponent } from './version-banner/version-banner.component';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { Employee } from './shared/models';
@@ -32,7 +32,8 @@ export class AppComponent implements OnInit, OnDestroy {
     public authService: AuthService,
     private employeeService: EmployeeService,
     private translate: TranslateService,
-    private appInitService: AppInitializationService
+    private appInitService: AppInitializationService,
+    private router: Router
   ) {
     const savedLanguage = localStorage.getItem('language') || 'en';
     this.translate.use(savedLanguage);
@@ -47,6 +48,9 @@ export class AppComponent implements OnInit, OnDestroy {
     }).catch((error) => {
       console.error('Failed to initialize application:', error);
     });
+
+    // Update header when auth state changes (e.g., after login/logout)
+    this.authService.authChanged$.subscribe(() => this.loadCurrentUser());
   }
 
   ngOnDestroy(): void {
@@ -101,6 +105,12 @@ export class AppComponent implements OnInit, OnDestroy {
       return `${this.currentUser.firstName} ${this.currentUser.lastName}`;
     }
     return '';
+  }
+
+  goToProfile(): void {
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/profile']);
+    }
   }
 
   getUserProfilePicture(): string | null {

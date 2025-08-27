@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
+	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/service"
 	sharedAuth "github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
@@ -505,12 +506,25 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	if err != nil {
 		h.log.Errorf("failed to assign shift: %v", err)
 
+		if strings.HasPrefix(err.Error(), model.ErrorConsecutiveShiftsLimit) {
+			parts := strings.Split(err.Error(), "|")
+			ctx.JSON(http.StatusConflict, gin.H{
+				"error": "SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT",
+				"limit": parts[len(parts)-1],
+			})
+			return
+		}
+		if strings.HasPrefix(err.Error(), "shift capacity is full for ") || strings.HasPrefix(err.Error(), "maximum capacity for this role reached") {
+			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+
 		switch err.Error() {
 		case "employee not found":
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		case "invalid shift date format", "cannot assign shift in the past", "cannot assign shift more than 3 months in advance":
+		case "invalid shift date format", "shift date must be in the future", "shift date cannot be more than 3 months in the future", "cannot assign shift in the past", "cannot assign shift more than 3 months in advance":
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		case "employee is already assigned to this shift", "maximum capacity for this role reached in the selected shift":
+		case "employee is already assigned to this shift":
 			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		default:
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})

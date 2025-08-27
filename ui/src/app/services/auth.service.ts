@@ -1,7 +1,7 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpBackend, HttpHeaders } from '@angular/common/http';
-import { interval, Observable, Subscription, tap, finalize } from 'rxjs';
+import { interval, Observable, Subscription, tap, finalize, Subject } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { EmployeeRole, MedicRole, AdministratorRole } from '../shared/models';
@@ -14,6 +14,9 @@ export class AuthService {
   private checkInterval = 300 * 1000; // Check every 5 minutes
   private intervalSub: Subscription | null = null;
   private bareHttp!: HttpClient;
+  private authChangedSubject = new Subject<'login' | 'logout'>();
+  authChanged$ = this.authChangedSubject.asObservable();
+
 
   constructor(private http: HttpClient, private router: Router, private httpBackend: HttpBackend) {
     this.bareHttp = new HttpClient(this.httpBackend);
@@ -40,28 +43,29 @@ export class AuthService {
     return this.http.post<{ token: string }>(`${this.apiUrl}/login`, credentials).pipe(
       tap(response => {
         localStorage.setItem('token', response.token);
+        // notify listeners (e.g., header) to refresh current user and UI
+        this.authChangedSubject.next('login');
       })
     );
   }
-  
+
   logout(): void {
     const token = localStorage.getItem('token');
+    const finish = () => {
+      localStorage.removeItem('token');
+      this.stopPeriodicCheck();
+      // notify listeners
+      this.authChangedSubject.next('logout');
+      this.router.navigate(['/login']);
+    };
     if (token) {
       const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
       // Use bare HttpClient to bypass interceptors and avoid 401 -> logout recursion
       this.bareHttp.post<{ message: string }>(`${this.apiUrl}/logout`, {}, { headers }).pipe(
-        finalize(() => {
-          localStorage.removeItem('token');
-          this.stopPeriodicCheck();
-          this.router.navigate(['/login']);
-        })
-      ).subscribe({
-        next: () => {},
-        error: () => {} // Ignore errors and still clear local state
-      });
+        finalize(finish)
+      ).subscribe({ next: () => {}, error: () => {} });
     } else {
-      this.stopPeriodicCheck();
-      this.router.navigate(['/login']);
+      finish();
     }
   }
 

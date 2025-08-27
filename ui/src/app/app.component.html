@@ -1,7 +1,7 @@
 <!-- Top-left section (User Profile) -->
 <div class="top-left-container" *ngIf="authService.isAuthenticated() && currentUser">
   <div class="user-profile">
-    <div class="profile-picture-container">
+    <div class="profile-picture-container" (click)="goToProfile()" style="cursor: pointer;">
       <img
         *ngIf="getUserProfilePicture()"
         [src]="getUserProfilePicture()"
