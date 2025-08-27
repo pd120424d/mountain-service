@@ -17,16 +17,16 @@ export * from './extensions';
 
 // Employee Service
 export type {
-  V1EmployeeResponse as Employee,
-  V1EmployeeResponse as EmployeeResponse,
+  InternalHandlerEmployeeResponse as Employee,
+  InternalHandlerEmployeeResponse as EmployeeResponse,
   InternalHandlerEmployeeCreateRequest as EmployeeCreateRequest,
   InternalHandlerEmployeeUpdateRequest as EmployeeUpdateRequest,
   InternalHandlerEmployeeLogin as EmployeeLogin,
   InternalHandlerTokenResponse as TokenResponse,
   InternalHandlerErrorResponse as ErrorResponse,
   InternalHandlerMessageResponse as MessageResponse,
-  V1ShiftAvailability as ShiftAvailability,
-  V1ShiftAvailabilityPerDay as ShiftAvailabilityPerDay,
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailability as ShiftAvailability,
+  GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailabilityPerDay as ShiftAvailabilityPerDay,
   InternalHandlerShiftAvailabilityResponse as ShiftAvailabilityResponse,
   InternalHandlerAssignShiftRequest as AssignShiftRequest,
   InternalHandlerAssignShiftResponse as AssignShiftResponse,

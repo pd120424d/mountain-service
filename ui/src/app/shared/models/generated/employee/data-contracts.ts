@@ -10,6 +10,36 @@
  * ---------------------------------------------------------------
  */
 
+export interface GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeResponse {
+  email?: string;
+  firstName?: string;
+  gender?: string;
+  id?: number;
+  lastName?: string;
+  phone?: string;
+  /** this may be represented as a byte array if we read the picture from somewhere for an example */
+  profilePicture?: string;
+  profileType?: string;
+  username?: string;
+}
+
+export interface GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailability {
+  /** Whether the requesting employee is assigned to this shift */
+  isAssignedToEmployee?: boolean;
+  /** Whether the shift is at full capacity (2 medics + 4 technicians) */
+  isFullyBooked?: boolean;
+  /** Available slots for medics (0-2) */
+  medicSlotsAvailable?: number;
+  /** Available slots for technical staff (0-4) */
+  technicalSlotsAvailable?: number;
+}
+
+export interface GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailabilityPerDay {
+  firstShift?: GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailability;
+  secondShift?: GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailability;
+  thirdShift?: GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailability;
+}
+
 export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerActiveEmergenciesResponse {
   hasActiveEmergencies?: boolean;
 }
@@ -36,6 +66,7 @@ export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerEmpl
   lastName: string;
   password: string;
   phone: string;
+  profilePicture?: string;
   profileType: string;
   username: string;
 }
@@ -78,7 +109,7 @@ export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerMess
 }
 
 export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerOnCallEmployeesResponse {
-  employees?: V1EmployeeResponse[];
+  employees?: GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeResponse[];
 }
 
 export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerRemoveShiftRequest {
@@ -91,7 +122,7 @@ export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerRemo
 }
 
 export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerShiftAvailabilityResponse {
-  days?: Record<string, V1ShiftAvailabilityPerDay>;
+  days?: Record<string, GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailabilityPerDay>;
 }
 
 export interface GithubComPd120424DMountainServiceApiEmployeeInternalHandlerShiftResponse {
@@ -140,6 +171,7 @@ export interface InternalHandlerEmployeeCreateRequest {
   lastName: string;
   password: string;
   phone: string;
+  profilePicture?: string;
   profileType: string;
   username: string;
 }
@@ -182,7 +214,7 @@ export interface InternalHandlerMessageResponse {
 }
 
 export interface InternalHandlerOnCallEmployeesResponse {
-  employees?: V1EmployeeResponse[];
+  employees?: GithubComPd120424DMountainServiceApiContractsEmployeeV1EmployeeResponse[];
 }
 
 export interface InternalHandlerRemoveShiftRequest {
@@ -195,7 +227,7 @@ export interface InternalHandlerRemoveShiftRequest {
 }
 
 export interface InternalHandlerShiftAvailabilityResponse {
-  days?: Record<string, V1ShiftAvailabilityPerDay>;
+  days?: Record<string, GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailabilityPerDay>;
 }
 
 export interface InternalHandlerShiftResponse {
@@ -216,34 +248,4 @@ export interface InternalHandlerUploadProfilePictureResponse {
   blobUrl?: string;
   message?: string;
   size?: number;
-}
-
-export interface V1EmployeeResponse {
-  email?: string;
-  firstName?: string;
-  gender?: string;
-  id?: number;
-  lastName?: string;
-  phone?: string;
-  /** this may be represented as a byte array if we read the picture from somewhere for an example */
-  profilePicture?: string;
-  profileType?: string;
-  username?: string;
-}
-
-export interface V1ShiftAvailability {
-  /** Whether the requesting employee is assigned to this shift */
-  isAssignedToEmployee?: boolean;
-  /** Whether the shift is at full capacity (2 medics + 4 technicians) */
-  isFullyBooked?: boolean;
-  /** Available slots for medics (0-2) */
-  medicSlotsAvailable?: number;
-  /** Available slots for technical staff (0-4) */
-  technicalSlotsAvailable?: number;
-}
-
-export interface V1ShiftAvailabilityPerDay {
-  firstShift?: V1ShiftAvailability;
-  secondShift?: V1ShiftAvailability;
-  thirdShift?: V1ShiftAvailability;
 }

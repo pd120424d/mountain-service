@@ -1,7 +1,7 @@
 // Employee model extensions and utilities
 // These extend the generated models with frontend-specific functionality
 
-import { EmployeeResponse } from '../index';
+import type { EmployeeResponse } from '../index';
 
 // Role constants for backward compatibility
 export const MedicRole = 'Medic' as const;
