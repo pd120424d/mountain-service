@@ -197,8 +197,14 @@ jobs:
         run: |
           mkdir -p ~/.kube
           if [ -f /etc/rancher/k3s/k3s.yaml ]; then
-            sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-            sudo chown "$USER:$USER" ~/.kube/config
+            SRC=$(readlink -f /etc/rancher/k3s/k3s.yaml)
+            DEST=$(readlink -f ~/.kube/config || echo ~/.kube/config)
+            if [ "$SRC" = "$DEST" ]; then
+              echo "k3s kubeconfig already at ~/.kube/config; skipping copy"
+            else
+              sudo cp "$SRC" ~/.kube/config
+              sudo chown "$USER:$USER" ~/.kube/config
+            fi
             # Force local API server for self-hosted runner to avoid public IP hairpin/firewall issues
             sed -E -i 's#^([[:space:]]*)server:.*#\1server: https://127.0.0.1:6443#' ~/.kube/config || true
             echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
