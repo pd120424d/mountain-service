@@ -107,7 +107,7 @@ jobs:
           password: ${{ secrets.GHCR_PAT }}
 
       - name: Build and push UI image
-        if: steps.changes.outputs.ui == 'true'
+        if: steps.changes.outputs.ui == 'true' || inputs.force_deploy
         run: |
           cd ui
           docker build -t ghcr.io/pd120424d/mountain-ui:latest \
@@ -120,10 +120,10 @@ jobs:
           docker push ghcr.io/pd120424d/mountain-ui:${{ github.sha }}
 
       - name: Build and push Employee service
-        if: steps.changes.outputs.employee == 'true'
+        if: steps.changes.outputs.employee == 'true' || inputs.force_deploy
         run: |
-          cd api/employee
-          docker build -t ghcr.io/pd120424d/employee-service:latest \
+          cd api
+          docker build -f employee/Dockerfile -t ghcr.io/pd120424d/employee-service:latest \
                        -t ghcr.io/pd120424d/employee-service:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
@@ -132,10 +132,10 @@ jobs:
           docker push ghcr.io/pd120424d/employee-service:${{ github.sha }}
 
       - name: Build and push Urgency service
-        if: steps.changes.outputs.urgency == 'true'
+        if: steps.changes.outputs.urgency == 'true' || inputs.force_deploy
         run: |
-          cd api/urgency
-          docker build -t ghcr.io/pd120424d/urgency-service:latest \
+          cd api
+          docker build -f urgency/Dockerfile -t ghcr.io/pd120424d/urgency-service:latest \
                        -t ghcr.io/pd120424d/urgency-service:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
@@ -144,10 +144,10 @@ jobs:
           docker push ghcr.io/pd120424d/urgency-service:${{ github.sha }}
 
       - name: Build and push Activity service (with CQRS support)
-        if: steps.changes.outputs.activity == 'true'
+        if: steps.changes.outputs.activity == 'true' || inputs.force_deploy
         run: |
-          cd api/activity
-          docker build -t ghcr.io/pd120424d/activity-service:latest \
+          cd api
+          docker build -f activity/Dockerfile -t ghcr.io/pd120424d/activity-service:latest \
                        -t ghcr.io/pd120424d/activity-service:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
@@ -156,7 +156,7 @@ jobs:
           docker push ghcr.io/pd120424d/activity-service:${{ github.sha }}
 
       - name: Build and push Activity Read Model Updater service
-        if: steps.changes.outputs.activity-updater == 'true'
+        if: steps.changes.outputs.activity-updater == 'true' || inputs.force_deploy
         run: |
           cd api
           docker build -f activity-readmodel-updater/Dockerfile \
@@ -169,10 +169,10 @@ jobs:
           docker push ghcr.io/pd120424d/activity-readmodel-updater:${{ github.sha }}
 
       - name: Build and push Version service
-        if: steps.changes.outputs.version == 'true'
+        if: steps.changes.outputs.version == 'true' || inputs.force_deploy
         run: |
-          cd api/version-service
-          docker build -t ghcr.io/pd120424d/version-service:latest \
+          cd api
+          docker build -f version-service/Dockerfile -t ghcr.io/pd120424d/version-service:latest \
                        -t ghcr.io/pd120424d/version-service:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
