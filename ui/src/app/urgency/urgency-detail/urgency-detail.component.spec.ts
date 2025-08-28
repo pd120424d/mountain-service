@@ -40,10 +40,10 @@ describe('UrgencyDetailComponent', () => {
     {
       id: 1,
       description: 'Emergency report was created',
-      employee_id: 1,
-      urgency_id: 1,
-      created_at: '2024-01-15T10:00:00Z',
-      updated_at: '2024-01-15T10:00:00Z'
+      employeeId: 1,
+      urgencyId: 1,
+      createdAt: '2024-01-15T10:00:00Z',
+      updatedAt: '2024-01-15T10:00:00Z'
     }
   ];
 
@@ -110,10 +110,10 @@ describe('UrgencyDetailComponent', () => {
     const newActivity: Activity = {
       id: 2,
       description: 'Test Description',
-      employee_id: 1,
-      urgency_id: 1,
-      created_at: '2024-01-15T11:00:00Z',
-      updated_at: '2024-01-15T11:00:00Z'
+      employeeId: 1,
+      urgencyId: 1,
+      createdAt: '2024-01-15T11:00:00Z',
+      updatedAt: '2024-01-15T11:00:00Z'
     };
 
     // Set up the mocks before calling ngOnInit

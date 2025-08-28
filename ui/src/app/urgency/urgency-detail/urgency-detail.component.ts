@@ -71,7 +71,7 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
 
   loadUrgency(): void {
     if (!this.urgencyId) return;
-    
+
     this.isLoading = true;
     this.error = null;
 
@@ -89,13 +89,13 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
 
   loadActivities(): void {
     if (!this.urgencyId) return;
-    
+
     this.isLoadingActivities = true;
 
     this.activityService.getActivitiesByUrgency(this.urgencyId).subscribe({
       next: (activities) => {
         this.activities = activities.sort((a, b) =>
-          new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+          new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
         );
         this.isLoadingActivities = false;
       },
@@ -111,17 +111,17 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
       this.isSubmittingActivity = true;
 
       const formValue = this.activityForm.value;
-      const activityRequest: ActivityCreateRequest = {
-        urgency_id: this.urgencyId,
-        employee_id: parseInt(this.authService.getUserId()),
+      const activityRequest = {
+        urgencyId: this.urgencyId,
+        employeeId: parseInt(this.authService.getUserId()),
         description: formValue.description
       };
 
       this.activityService.createActivity(activityRequest).subscribe({
-        next: (activity) => {
+        next: () => {
           this.toastr.success(this.translate.instant('URGENCY_DETAIL.ACTIVITY_ADDED_SUCCESS'));
           this.activityForm.reset();
-          this.loadActivities(); // Reload activities
+          this.loadActivities();
           this.isSubmittingActivity = false;
         },
         error: (error) => {

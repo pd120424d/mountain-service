@@ -1,14 +1,22 @@
 // Activity model extensions and utilities
-// These extend the generated models with frontend-specific functionality
+// CamelCase-only UI models and helpers
 
-import {
-  ActivityResponse
-} from '../generated/activity';
+export interface Activity {
+  id?: number;
+  description?: string;
+  employeeId?: number;
+  urgencyId?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
-// Type aliases for cleaner imports
-export type Activity = ActivityResponse;
+export interface ActivityCreatePayload {
+  description: string;
+  employeeId: number;
+  urgencyId: number;
+}
 
-export const getActivityIcon = (activity: ActivityResponse): string => {
+export const getActivityIcon = (activity: Activity): string => {
   const description = activity.description?.toLowerCase() || '';
 
   if (description.includes('employee') || description.includes('user')) {
@@ -26,14 +34,14 @@ export const getActivityIcon = (activity: ActivityResponse): string => {
   }
 };
 
-export const formatActivityDescription = (activity: ActivityResponse): string => {
+export const formatActivityDescription = (activity: Activity): string => {
   return activity.description || 'No description available';
 };
 
-export const getActivityDisplayTime = (activity: ActivityResponse): string => {
-  if (!activity.created_at) return '';
+export const getActivityDisplayTime = (activity: Activity): string => {
+  if (!activity.createdAt) return '';
 
-  const date = new Date(activity.created_at);
+  const date = new Date(activity.createdAt);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / (1000 * 60));

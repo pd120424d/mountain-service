@@ -52,7 +52,6 @@ export {
 // Activity Service
 export type {
   ActivityResponse,
-  ActivityCreateRequest,
   ActivityListResponse,
   ActivityStatsResponse
 } from './generated/activity';
