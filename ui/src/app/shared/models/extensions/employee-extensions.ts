@@ -11,6 +11,18 @@ export const AdministratorRole = 'Administrator' as const;
 // Type for employee roles
 export type EmployeeRole = typeof MedicRole | typeof TechnicalRole | typeof AdministratorRole;
 
+// Create request shape used by the UI (backend swagger lacks a dedicated create type)
+export interface EmployeeCreateRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  username: string;
+  password: string;
+  profileType: string; // Use string to align with existing enums in index
+  gender: string;
+}
+
 // Extended employee interface with computed properties
 export interface EmployeeWithDisplayName extends EmployeeResponse {
   displayName: string;

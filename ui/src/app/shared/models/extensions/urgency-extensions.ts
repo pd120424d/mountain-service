@@ -2,11 +2,11 @@
 // These extend the generated models with frontend-specific functionality
 
 import {
-  UrgencyResponse,
-  UrgencyCreateRequest,
-  UrgencyUpdateRequest,
-  UrgencyLevel,
-  UrgencyStatus
+  V1UrgencyResponse as UrgencyResponse,
+  V1UrgencyCreateRequest as UrgencyCreateRequest,
+  V1UrgencyUpdateRequest as UrgencyUpdateRequest,
+  V1UrgencyLevel as UrgencyLevel,
+  V1UrgencyStatus as UrgencyStatus
 } from '../generated/urgency';
 
 // Type aliases for cleaner imports

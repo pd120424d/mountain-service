@@ -19,14 +19,14 @@ export * from './extensions';
 export type {
   InternalHandlerEmployeeResponse as Employee,
   InternalHandlerEmployeeResponse as EmployeeResponse,
-  InternalHandlerEmployeeCreateRequest as EmployeeCreateRequest,
+
   InternalHandlerEmployeeUpdateRequest as EmployeeUpdateRequest,
   InternalHandlerEmployeeLogin as EmployeeLogin,
   InternalHandlerTokenResponse as TokenResponse,
   InternalHandlerErrorResponse as ErrorResponse,
   InternalHandlerMessageResponse as MessageResponse,
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailability as ShiftAvailability,
-  GithubComPd120424DMountainServiceApiContractsEmployeeV1ShiftAvailabilityPerDay as ShiftAvailabilityPerDay,
+  V1ShiftAvailability as ShiftAvailability,
+  V1ShiftAvailabilityPerDay as ShiftAvailabilityPerDay,
   InternalHandlerShiftAvailabilityResponse as ShiftAvailabilityResponse,
   InternalHandlerAssignShiftRequest as AssignShiftRequest,
   InternalHandlerAssignShiftResponse as AssignShiftResponse,
@@ -37,23 +37,23 @@ export type {
 
 // Urgency Service
 export type {
-  UrgencyResponse,
-  UrgencyCreateRequest,
-  UrgencyUpdateRequest
+  V1UrgencyResponse as UrgencyResponse,
+  V1UrgencyCreateRequest as UrgencyCreateRequest,
+  V1UrgencyUpdateRequest as UrgencyUpdateRequest
 } from './generated/urgency';
 
 export {
-  UrgencyLevel,
-  UrgencyStatus,
-  UrgencyLevel as GeneratedUrgencyLevel,
-  UrgencyStatus as GeneratedUrgencyStatus
+  V1UrgencyLevel as UrgencyLevel,
+  V1UrgencyStatus as UrgencyStatus,
+  V1UrgencyLevel as GeneratedUrgencyLevel,
+  V1UrgencyStatus as GeneratedUrgencyStatus
 } from './generated/urgency';
 
 // Activity Service
 export type {
-  ActivityResponse,
-  ActivityListResponse,
-  ActivityStatsResponse
+  V1ActivityResponse as ActivityResponse,
+  V1ActivityListResponse as ActivityListResponse,
+  V1ActivityStatsResponse as ActivityStatsResponse
 } from './generated/activity';
 
 export {

@@ -15,7 +15,8 @@ describe('authInterceptor', () => {
     TestBed.runInInjectionContext(() => authInterceptor(req, next));
 
   beforeEach(() => {
-    const authSpy = jasmine.createSpyObj('AuthService', ['logout']);
+    const authSpy = jasmine.createSpyObj('AuthService', ['logout', 'isAuthenticated']);
+    authSpy.isAuthenticated.and.returnValue(false);
 
     TestBed.configureTestingModule({
       providers: [

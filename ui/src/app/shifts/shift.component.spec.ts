@@ -21,6 +21,7 @@ describe('ShiftManagementComponent', () => {
 
     // Mock services before detectChanges to prevent real HTTP calls
     spyOn(component['shiftService'], 'getShiftAvailability').and.returnValue(of({ days: {} }));
+    spyOn(component['shiftService'], 'getAdminShiftAvailability').and.returnValue(of({ days: {} }));
     spyOn(component['shiftService'], 'getShiftWarnings').and.returnValue(of({ warnings: [] }));
     spyOn(component['auth'], 'getRole').and.returnValue('Technical');
     spyOn(component['auth'], 'getUserId').and.returnValue('1');
@@ -96,6 +97,7 @@ describe('ShiftManagementComponent', () => {
   it('should fetch role, userid and load shifts and employees on init when user is administrator', () => {
     // Reset the existing spies and set up for administrator test
     (component['shiftService'].getShiftAvailability as jasmine.Spy).calls.reset();
+    (component['shiftService'].getAdminShiftAvailability as jasmine.Spy).calls.reset();
     (component['shiftService'].getShiftWarnings as jasmine.Spy).calls.reset();
     (component['auth'].getRole as jasmine.Spy).and.returnValue('Administrator');
     spyOn(component['shiftService'], 'getAllEmployees').and.returnValue(of([]));
@@ -103,7 +105,7 @@ describe('ShiftManagementComponent', () => {
     // Call ngOnInit to test administrator flow
     component.ngOnInit();
 
-    expect(component['shiftService'].getShiftAvailability).toHaveBeenCalled();
+    expect(component['shiftService'].getAdminShiftAvailability).toHaveBeenCalled();
     expect(component['shiftService'].getAllEmployees).toHaveBeenCalled();
     expect(component.userRole).toBe('Administrator');
     expect(component.userId).toBe('1');

@@ -4,6 +4,8 @@ import { sharedTestingProviders } from './test-utils/shared-test-imports';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from './services/auth.service';
 import { EmployeeService } from './employee/employee.service';
+import { UrgencyService } from './urgency/urgency.service';
+import { UrgencyStatus } from './shared/models';
 import { AppInitializationService } from './services/app-initialization.service';
 import { of, throwError } from 'rxjs';
 import { Employee } from './shared/models';
@@ -15,6 +17,7 @@ describe('AppComponent', () => {
   let authService: jasmine.SpyObj<AuthService>;
   let employeeService: jasmine.SpyObj<EmployeeService>;
   let appInitService: jasmine.SpyObj<AppInitializationService>;
+  let urgencyService: jasmine.SpyObj<UrgencyService>;
 
   const mockEmployee: Employee = {
     id: 1,
@@ -33,6 +36,7 @@ describe('AppComponent', () => {
     const authSpy = jasmine.createSpyObj('AuthService', ['getRole', 'getUserId', 'isAuthenticated']);
     const employeeSpy = jasmine.createSpyObj('EmployeeService', ['getEmployeeById']);
     const appInitSpy = jasmine.createSpyObj('AppInitializationService', ['initialize', 'cleanup']);
+    const urgencySpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies']);
 
     await TestBed.configureTestingModule({
       imports: [AppComponent],
@@ -41,7 +45,8 @@ describe('AppComponent', () => {
         { provide: TranslateService, useValue: translateSpy },
         { provide: AuthService, useValue: authSpy },
         { provide: EmployeeService, useValue: employeeSpy },
-        { provide: AppInitializationService, useValue: appInitSpy }
+        { provide: AppInitializationService, useValue: appInitSpy },
+        { provide: UrgencyService, useValue: urgencySpy }
       ],
     }).compileComponents();
 
@@ -51,6 +56,7 @@ describe('AppComponent', () => {
     authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
     employeeService = TestBed.inject(EmployeeService) as jasmine.SpyObj<EmployeeService>;
     appInitService = TestBed.inject(AppInitializationService) as jasmine.SpyObj<AppInitializationService>;
+    urgencyService = TestBed.inject(UrgencyService) as jasmine.SpyObj<UrgencyService>;
 
     // Setup default return values
     appInitService.initialize.and.returnValue(Promise.resolve());
@@ -236,5 +242,53 @@ describe('AppComponent', () => {
     const profilePicture = component.getUserProfilePicture();
 
     expect(profilePicture).toBeNull();
+  });
+
+  it('should navigate to profile when authenticated', () => {
+    authService.isAuthenticated.and.returnValue(true);
+    const navSpy = spyOn((component as any)['router'], 'navigate');
+
+    component.goToProfile();
+
+    expect(navSpy).toHaveBeenCalledWith(['/profile']);
+  });
+
+  it('should not navigate to profile when not authenticated', () => {
+    authService.isAuthenticated.and.returnValue(false);
+    const navSpy = spyOn((component as any)['router'], 'navigate');
+
+    component.goToProfile();
+
+    expect(navSpy).not.toHaveBeenCalled();
+  });
+
+  it('should set openUrgenciesCount to 0 when not authenticated', () => {
+    authService.isAuthenticated.and.returnValue(false);
+    (component as any)['refreshOpenUrgencies']();
+    expect(component.openUrgenciesCount).toBe(0);
+  });
+
+  it('should compute open urgencies count when authenticated', () => {
+    authService.isAuthenticated.and.returnValue(true);
+    const urgencies = [
+      { id: 1, status: UrgencyStatus.Open },
+      { id: 2, status: UrgencyStatus.Open },
+      { id: 3, status: UrgencyStatus.Resolved }
+    ] as any[];
+    urgencyService.getUrgencies.and.returnValue(of(urgencies));
+
+    (component as any)['refreshOpenUrgencies']();
+
+    expect(component.openUrgenciesCount).toBe(2);
+  });
+
+  it('should keep previous openUrgenciesCount on error', () => {
+    authService.isAuthenticated.and.returnValue(true);
+    component.openUrgenciesCount = 5;
+    urgencyService.getUrgencies.and.returnValue(throwError(() => new Error('fail')));
+
+    (component as any)['refreshOpenUrgencies']();
+
+    expect(component.openUrgenciesCount).toBe(5);
   });
 });
