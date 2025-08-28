@@ -306,11 +306,14 @@
         "ACTIVITY_ADDED_SUCCESS": "Aktivnost je uspešno dodata!",
         "ACTIVITY_ADDED_ERROR": "Neuspešno dodavanje aktivnosti. Pokušajte ponovo.",
         "ASSIGN_TO_ME": "Preuzmi",
+        "ASSIGNING": "Dodeljivanje...",
         "UNASSIGN": "Otpusti",
+        "UNASSIGNING": "Otpuštanje...",
         "ASSIGN_SUCCESS": "Urgentna situacija je preuzeta.",
         "ASSIGN_ERROR": "Neuspešno preuzimanje urgentne situacije.",
         "UNASSIGN_SUCCESS": "Urgentna situacija je otpuštena.",
-        "UNASSIGN_ERROR": "Neuspešno otpuštanje urgentne situacije."
+        "UNASSIGN_ERROR": "Neuspešno otpuštanje urgentne situacije.",
+        "ASSIGNED_TO": "Dodeljeno"
     },
     "ACTIVITY_LEVEL": {
         "INFO": "Informacija",

@@ -291,11 +291,14 @@
         "ACTIVITY_ADDED_SUCCESS": "Activity added successfully!",
         "ACTIVITY_ADDED_ERROR": "Failed to add activity. Please try again.",
         "ASSIGN_TO_ME": "Assign to me",
+        "ASSIGNING": "Assigning...",
         "UNASSIGN": "Unassign",
+        "UNASSIGNING": "Unassigning...",
         "ASSIGN_SUCCESS": "Urgency assigned successfully.",
         "ASSIGN_ERROR": "Failed to assign urgency.",
         "UNASSIGN_SUCCESS": "Urgency unassigned successfully.",
-        "UNASSIGN_ERROR": "Failed to unassign urgency."
+        "UNASSIGN_ERROR": "Failed to unassign urgency.",
+        "ASSIGNED_TO": "Assigned to"
     },
     "ACTIVITY_LEVEL": {
         "INFO": "Info",
