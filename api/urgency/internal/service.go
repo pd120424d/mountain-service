@@ -24,14 +24,14 @@ type UrgencyService interface {
 	DeleteUrgency(id uint) error
 	ResetAllData() error
 
-	AssignUrgency(urgencyID, employeeID uint) (urgencyV1.EmergencyAssignmentResponse, error)
+	AssignUrgency(urgencyID, employeeID uint) error
 	UnassignUrgency(urgencyID uint, actorID uint, isAdmin bool) error
+	GetAssignment(urgencyID uint) (*urgencyV1.AssignmentResponse, error)
 }
 
 type urgencyService struct {
 	log              utils.Logger
 	repo             repositories.UrgencyRepository
-	assignmentRepo   repositories.AssignmentRepository
 	notificationRepo repositories.NotificationRepository
 	employeeClient   clients.EmployeeClient
 }
@@ -39,14 +39,12 @@ type urgencyService struct {
 func NewUrgencyService(
 	log utils.Logger,
 	repo repositories.UrgencyRepository,
-	assignmentRepo repositories.AssignmentRepository,
 	notificationRepo repositories.NotificationRepository,
 	employeeClient clients.EmployeeClient,
 ) UrgencyService {
 	return &urgencyService{
 		log:              log.WithName("urgencyService"),
 		repo:             repo,
-		assignmentRepo:   assignmentRepo,
 		notificationRepo: notificationRepo,
 		employeeClient:   employeeClient,
 	}
@@ -123,81 +121,68 @@ func (s *urgencyService) ResetAllData() error {
 	return nil
 }
 
-func (s *urgencyService) AssignUrgency(urgencyID, employeeID uint) (urgencyV1.EmergencyAssignmentResponse, error) {
+func (s *urgencyService) AssignUrgency(urgencyID, employeeID uint) error {
 	if urgencyID == 0 || employeeID == 0 {
-		return urgencyV1.EmergencyAssignmentResponse{}, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId and employeeId are required", nil)
+		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId and employeeId are required", nil)
 	}
 
-	// Check if urgency exists
 	urg, err := s.GetUrgencyByID(urgencyID)
 	if err != nil {
-		return urgencyV1.EmergencyAssignmentResponse{}, err
+		return err
 	}
-
-	// Check if employee is already assigned to this urgency
-	assignments, err := s.assignmentRepo.GetByUrgencyID(urgencyID)
-	if err != nil {
-		return urgencyV1.EmergencyAssignmentResponse{}, commonv1.NewAppError("URGENCY_ERRORS.ASSIGNMENT_LIST_FAILED", "failed to list assignments", map[string]interface{}{"cause": err.Error()})
+	if urg.AssignedEmployeeID != nil {
+		return commonv1.NewAppError("URGENCY_ERRORS.ALREADY_ASSIGNED", "urgency already assigned", nil)
 	}
-	for _, a := range assignments {
-		if a.Status == model.AssignmentAccepted {
-			return urgencyV1.EmergencyAssignmentResponse{}, commonv1.NewAppError("URGENCY_ERRORS.ALREADY_ASSIGNED", "urgency already assigned", nil)
-		}
+	now := time.Now()
+	urg.AssignedEmployeeID = &employeeID
+	urg.AssignedAt = &now
+	if err := s.repo.Update(urg); err != nil {
+		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to update urgency with assignment", map[string]interface{}{"cause": err.Error()})
 	}
-	assignment := &model.EmergencyAssignment{
-		UrgencyID:  urg.ID,
-		EmployeeID: employeeID,
-		Status:     model.AssignmentAccepted,
-		AssignedAt: time.Now(),
-	}
-	if err := s.assignmentRepo.Create(assignment); err != nil {
-		return urgencyV1.EmergencyAssignmentResponse{}, commonv1.NewAppError("URGENCY_ERRORS.ASSIGNMENT_CREATE_FAILED", "failed to create assignment", map[string]interface{}{"cause": err.Error()})
-	}
-	return assignment.ToResponse(), nil
+	return nil
 }
 
 func (s *urgencyService) UnassignUrgency(urgencyID uint, actorID uint, isAdmin bool) error {
 	if urgencyID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
 	}
-	assignments, err := s.assignmentRepo.GetByUrgencyID(urgencyID)
+	urg, err := s.GetUrgencyByID(urgencyID)
 	if err != nil {
-		return commonv1.NewAppError("URGENCY_ERRORS.ASSIGNMENT_LIST_FAILED", "failed to list assignments", map[string]interface{}{"cause": err.Error()})
+		return err
 	}
-	var accepted *model.EmergencyAssignment
-	for i := range assignments {
-		if assignments[i].Status == model.AssignmentAccepted {
-			accepted = &assignments[i]
-			break
-		}
+	if urg.AssignedEmployeeID == nil {
+		return commonv1.NewAppError("URGENCY_ERRORS.NOT_ASSIGNED", "urgency has no assigned employee", nil)
 	}
-	if accepted == nil {
-		return commonv1.NewAppError("URGENCY_ERRORS.NOT_ASSIGNED", "urgency has no accepted assignment", nil)
+	if !isAdmin && *urg.AssignedEmployeeID != actorID {
+		return commonv1.NewAppError("AUTH_ERRORS.FORBIDDEN", "only assignee or admin can unassign", map[string]interface{}{"assignee": *urg.AssignedEmployeeID})
 	}
-
-	// Only assignee or admin sjould be able to unassign
-	if !isAdmin && accepted.EmployeeID != actorID {
-		return commonv1.NewAppError("AUTH_ERRORS.FORBIDDEN", "only assignee or admin can unassign", map[string]interface{}{"assignee": accepted.EmployeeID})
-	}
-	if err := s.assignmentRepo.Delete(accepted.ID); err != nil {
+	urg.AssignedEmployeeID = nil
+	urg.AssignedAt = nil
+	if err := s.repo.Update(urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UNASSIGN_FAILED", "failed to unassign", map[string]interface{}{"cause": err.Error()})
 	}
 	return nil
 }
 
+func (s *urgencyService) GetAssignment(urgencyID uint) (*urgencyV1.AssignmentResponse, error) {
+	if urgencyID == 0 {
+		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
+	}
+	urg, err := s.GetUrgencyByID(urgencyID)
+	if err != nil {
+		return nil, err
+	}
+	if urg.AssignedEmployeeID == nil || urg.AssignedAt == nil {
+		return nil, nil
+	}
+	return &urgencyV1.AssignmentResponse{
+		UrgencyID:        urg.ID,
+		AssignedEmployee: *urg.AssignedEmployeeID,
+		AssignedAt:       urg.AssignedAt.Format(time.RFC3339),
+	}, nil
+}
+
 func (s *urgencyService) createAssignmentAndNotification(urgency *model.Urgency, employee employeeV1.EmployeeResponse) error {
-	assignment := &model.EmergencyAssignment{
-		UrgencyID:  urgency.ID,
-		EmployeeID: employee.ID,
-		Status:     model.AssignmentPending,
-		AssignedAt: time.Now(),
-	}
-
-	if err := s.assignmentRepo.Create(assignment); err != nil {
-		return commonv1.NewAppError("URGENCY_ERRORS.ASSIGNMENT_CREATE_FAILED", "failed to create assignment", map[string]interface{}{"cause": err.Error()})
-	}
-
-	s.log.Infof("Created assignment %d for employee %d and urgency %d", assignment.ID, employee.ID, urgency.ID)
 
 	if employee.Phone != "" {
 		smsNotification := &model.Notification{

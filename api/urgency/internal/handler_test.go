@@ -751,7 +751,7 @@ func TestUrgencyHandler_AssignUrgency(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies/1/assign", strings.NewReader(`{"employeeId":2}`))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 		svc := NewMockUrgencyService(ctrl)
-		svc.EXPECT().AssignUrgency(uint(1), uint(2)).Return(urgencyV1.EmergencyAssignmentResponse{}, errors.New("fail"))
+		svc.EXPECT().AssignUrgency(uint(1), uint(2)).Return(errors.New("fail"))
 		handler := NewUrgencyHandler(log, svc)
 		handler.AssignUrgency(ctx)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -766,11 +766,11 @@ func TestUrgencyHandler_AssignUrgency(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies/1/assign", strings.NewReader(`{"employeeId":2}`))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 		svc := NewMockUrgencyService(ctrl)
-		svc.EXPECT().AssignUrgency(uint(1), uint(2)).Return(urgencyV1.EmergencyAssignmentResponse{ID: 5, UrgencyID: 1, EmployeeID: 2, Status: "accepted"}, nil)
+		svc.EXPECT().AssignUrgency(uint(1), uint(2)).Return(nil)
 		handler := NewUrgencyHandler(log, svc)
 		handler.AssignUrgency(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "\"id\":5")
+		assert.Contains(t, w.Body.String(), "\"status\":\"assigned\"")
 	})
 }
 

@@ -22,7 +22,6 @@ import (
 
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
-	urgencyv1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
@@ -79,7 +78,7 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, w.Code)
 
-		var createResponse urgencyv1.UrgencyResponse
+		var createResponse urgencyV1.UrgencyResponse
 		err := json.Unmarshal(w.Body.Bytes(), &createResponse)
 		require.NoError(t, err)
 		assert.Equal(t, "Mountain", createResponse.FirstName)
@@ -96,7 +95,7 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var listResponse []urgencyv1.UrgencyResponse
+		var listResponse []urgencyV1.UrgencyResponse
 		err = json.Unmarshal(w.Body.Bytes(), &listResponse)
 		require.NoError(t, err)
 		assert.Len(t, listResponse, 1)
@@ -110,7 +109,7 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var getResponse urgencyv1.UrgencyResponse
+		var getResponse urgencyV1.UrgencyResponse
 		err = json.Unmarshal(w.Body.Bytes(), &getResponse)
 		require.NoError(t, err)
 		assert.Equal(t, urgencyID, getResponse.ID)
@@ -132,7 +131,7 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var updateResponse urgencyv1.UrgencyResponse
+		var updateResponse urgencyV1.UrgencyResponse
 		err = json.Unmarshal(w.Body.Bytes(), &updateResponse)
 		require.NoError(t, err)
 		assert.Equal(t, "in_progress", string(updateResponse.Status))
@@ -274,20 +273,19 @@ func setupIntegrationTest(t *testing.T) (*gin.Engine, *gorm.DB, func()) {
 	db, err := gorm.Open(sqlite.Dialector{Conn: sqlDB}, &gorm.Config{})
 	require.NoError(t, err)
 
-	err = db.AutoMigrate(&model.Urgency{})
+	err = db.AutoMigrate(&model.Urgency{}, &model.Notification{})
 	require.NoError(t, err)
 
 	log := utils.NewTestLogger()
 
 	// Initialize all repositories
 	urgencyRepo := repositories.NewUrgencyRepository(log, db)
-	assignmentRepo := repositories.NewAssignmentRepository(log, db)
 	notificationRepo := repositories.NewNotificationRepository(log, db)
 
 	// Create a mock employee client for testing
 	mockEmployeeClient := &mockEmployeeClient{}
 
-	svc := NewUrgencyService(log, urgencyRepo, assignmentRepo, notificationRepo, mockEmployeeClient)
+	svc := NewUrgencyService(log, urgencyRepo, notificationRepo, mockEmployeeClient)
 	urgencyHandler := NewUrgencyHandler(log, svc)
 
 	gin.SetMode(gin.TestMode)

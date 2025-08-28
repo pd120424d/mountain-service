@@ -23,7 +23,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Dialector{Conn: sqlDB}, &gorm.Config{})
 	require.NoError(t, err)
 
-	err = db.AutoMigrate(&model.Urgency{})
+	err = db.AutoMigrate(&model.Urgency{}, &model.Notification{})
 	require.NoError(t, err)
 
 	return db

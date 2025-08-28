@@ -174,4 +174,12 @@ export const getUrgencyStatusColor = (status: UrgencyStatus): string => {
     default:
       return 'gray';
   }
+
+}
+export const hasAcceptedAssignment = (urgency: UrgencyResponse): boolean => {
+  const id = (urgency as any)?.assignmentId as string | number | undefined;
+  if (id === undefined || id === null) return false;
+  if (typeof id === 'string') return id.trim() !== '' && id !== '0';
+  if (typeof id === 'number') return id > 0;
+  return false;
 };

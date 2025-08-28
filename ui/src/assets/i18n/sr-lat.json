@@ -215,7 +215,7 @@
         "CANCEL": "Otkaži",
         "SUBMITTING": "Slanje...",
         "SUCCESS_MESSAGE": "Prijavljen incident je prihvaćen! Nešto će vas kontaktirati uskoro.",
-        "NAME_PLACEHOLDER": "Unesite ime prijavioca",
+        "NAME_PLACEHOLDER": "Unesite ime",
         "EMAIL_PLACEHOLDER": "Unesite e-mail adresu",
         "CONTACT_PHONE_PLACEHOLDER": "Unesite kontakt telefon",
         "LOCATION_PLACEHOLDER": "Unesite lokaciju incidenta",
@@ -283,7 +283,7 @@
         "RETRY": "Pokušaj ponovo",
         "URGENCY_INFO": "Informacije o urgentnoj situaciji",
         "ID": "ID",
-        "REPORTER_NAME": "Ime prijavioca",
+        "REPORTER_NAME": "Prijavio/la",
         "EMAIL": "I-mejl",
         "CONTACT_PHONE": "Kontakt telefon",
         "LOCATION": "Lokacija",
@@ -304,7 +304,13 @@
         "ADDED_BY": "dodao/la",
         "EMPLOYEE_PLACEHOLDER": "Zaposleni #{{id}}",
         "ACTIVITY_ADDED_SUCCESS": "Aktivnost je uspešno dodata!",
-        "ACTIVITY_ADDED_ERROR": "Neuspešno dodavanje aktivnosti. Pokušajte ponovo."
+        "ACTIVITY_ADDED_ERROR": "Neuspešno dodavanje aktivnosti. Pokušajte ponovo.",
+        "ASSIGN_TO_ME": "Preuzmi",
+        "UNASSIGN": "Otpusti",
+        "ASSIGN_SUCCESS": "Urgentna situacija je preuzeta.",
+        "ASSIGN_ERROR": "Neuspešno preuzimanje urgentne situacije.",
+        "UNASSIGN_SUCCESS": "Urgentna situacija je otpuštena.",
+        "UNASSIGN_ERROR": "Neuspešno otpuštanje urgentne situacije."
     },
     "ACTIVITY_LEVEL": {
         "INFO": "Informacija",

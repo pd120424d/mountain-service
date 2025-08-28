@@ -289,7 +289,13 @@
         "ADDED_BY": "added by",
         "EMPLOYEE_PLACEHOLDER": "Employee #{{id}}",
         "ACTIVITY_ADDED_SUCCESS": "Activity added successfully!",
-        "ACTIVITY_ADDED_ERROR": "Failed to add activity. Please try again."
+        "ACTIVITY_ADDED_ERROR": "Failed to add activity. Please try again.",
+        "ASSIGN_TO_ME": "Assign to me",
+        "UNASSIGN": "Unassign",
+        "ASSIGN_SUCCESS": "Urgency assigned successfully.",
+        "ASSIGN_ERROR": "Failed to assign urgency.",
+        "UNASSIGN_SUCCESS": "Urgency unassigned successfully.",
+        "UNASSIGN_ERROR": "Failed to unassign urgency."
     },
     "ACTIVITY_LEVEL": {
         "INFO": "Info",

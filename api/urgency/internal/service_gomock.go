@@ -122,12 +122,11 @@ func (mr *MockUrgencyServiceMockRecorder) UpdateUrgency(urgency interface{}) *go
 }
 
 // AssignUrgency mocks base method.
-func (m *MockUrgencyService) AssignUrgency(urgencyID, employeeID uint) (urgencyV1.EmergencyAssignmentResponse, error) {
+func (m *MockUrgencyService) AssignUrgency(urgencyID, employeeID uint) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AssignUrgency", urgencyID, employeeID)
-	ret0, _ := ret[0].(urgencyV1.EmergencyAssignmentResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // AssignUrgency indicates an expected call of AssignUrgency.
@@ -148,4 +147,19 @@ func (m *MockUrgencyService) UnassignUrgency(urgencyID uint, actorID uint, isAdm
 func (mr *MockUrgencyServiceMockRecorder) UnassignUrgency(urgencyID, actorID, isAdmin interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnassignUrgency", reflect.TypeOf((*MockUrgencyService)(nil).UnassignUrgency), urgencyID, actorID, isAdmin)
+}
+
+// GetAssignment mocks base method.
+func (m *MockUrgencyService) GetAssignment(urgencyID uint) (*urgencyV1.AssignmentResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssignment", urgencyID)
+	ret0, _ := ret[0].(*urgencyV1.AssignmentResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssignment indicates an expected call of GetAssignment.
+func (mr *MockUrgencyServiceMockRecorder) GetAssignment(urgencyID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignment", reflect.TypeOf((*MockUrgencyService)(nil).GetAssignment), urgencyID)
 }

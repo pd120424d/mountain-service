@@ -22,21 +22,16 @@ type Urgency struct {
 	Level        urgencyV1.UrgencyLevel  `gorm:"type:text;not null;default:'Medium'"`
 	Status       urgencyV1.UrgencyStatus `gorm:"type:text;not null;default:'Open'"`
 
-	// Relationships
-	Assignments []EmergencyAssignment `gorm:"foreignKey:UrgencyID"`
+	AssignedEmployeeID *uint      `gorm:"index"`
+	AssignedAt         *time.Time `gorm:"index"`
 }
 
 type (
-	AssignmentStatus   string
 	NotificationStatus string
 	NotificationType   string
 )
 
 const (
-	AssignmentPending  AssignmentStatus = "pending"
-	AssignmentAccepted AssignmentStatus = "accepted"
-	AssignmentDeclined AssignmentStatus = "declined"
-
 	NotificationPending NotificationStatus = "pending"
 	NotificationSent    NotificationStatus = "sent"
 	NotificationFailed  NotificationStatus = "failed"
@@ -44,18 +39,6 @@ const (
 	NotificationSMS   NotificationType = "sms"
 	NotificationEmail NotificationType = "email"
 )
-
-// EmergencyAssignment represents the assignment of an employee to an emergency
-type EmergencyAssignment struct {
-	gorm.Model
-	ID         uint             `gorm:"primaryKey"`
-	UrgencyID  uint             `gorm:"not null;index"`
-	EmployeeID uint             `gorm:"not null;index"`
-	Status     AssignmentStatus `gorm:"type:text;not null;default:'pending'"`
-	AssignedAt time.Time        `gorm:"not null;default:CURRENT_TIMESTAMP"`
-
-	Urgency *Urgency `gorm:"foreignKey:UrgencyID"`
-}
 
 // Notification represents a notification to be sent to an employee
 type Notification struct {
@@ -91,7 +74,7 @@ func UrgencyLevelFromString(s string) urgencyV1.UrgencyLevel {
 }
 
 func (u *Urgency) ToResponse() urgencyV1.UrgencyResponse {
-	return urgencyV1.UrgencyResponse{
+	resp := urgencyV1.UrgencyResponse{
 		ID:           u.ID,
 		FirstName:    u.FirstName,
 		LastName:     u.LastName,
@@ -104,18 +87,13 @@ func (u *Urgency) ToResponse() urgencyV1.UrgencyResponse {
 		CreatedAt:    u.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:    u.UpdatedAt.Format(time.RFC3339),
 	}
-}
-
-func (ea *EmergencyAssignment) ToResponse() urgencyV1.EmergencyAssignmentResponse {
-	return urgencyV1.EmergencyAssignmentResponse{
-		ID:         ea.ID,
-		UrgencyID:  ea.UrgencyID,
-		EmployeeID: ea.EmployeeID,
-		Status:     string(ea.Status),
-		AssignedAt: ea.AssignedAt.Format(time.RFC3339),
-		CreatedAt:  ea.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:  ea.UpdatedAt.Format(time.RFC3339),
+	if u.AssignedEmployeeID != nil {
+		resp.AssignedEmployeeId = u.AssignedEmployeeID
 	}
+	if u.AssignedAt != nil {
+		resp.AssignedAt = u.AssignedAt.Format(time.RFC3339)
+	}
+	return resp
 }
 
 func (n *Notification) ToResponse() urgencyV1.NotificationResponse {

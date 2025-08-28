@@ -256,12 +256,12 @@ func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
 
 	var warnings []string
 
-	// Get next two weeks date range
-	now := time.Now()
-	twoWeeksFromNow := now.AddDate(0, 0, 14)
+	// Get next two weeks date range (start of today to start of day +14)
+	start := time.Now().Truncate(24 * time.Hour)
+	end := start.AddDate(0, 0, 14)
 
 	// Check coverage for the employee's role in the next two weeks
-	availability, err := s.shiftsRepo.GetShiftAvailability(now, twoWeeksFromNow)
+	availability, err := s.shiftsRepo.GetShiftAvailability(start, end)
 	if err != nil {
 		s.log.Errorf("failed to get shift availability: %v", err)
 		return nil, fmt.Errorf("failed to check shift coverage")
@@ -296,37 +296,25 @@ func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
 		return warnings, nil
 	}
 
-	// Compute per-week distinct days scheduled by the employee in the next two weeks
+	// Compute distinct days scheduled by the employee in the next two weeks (total over 14 days)
 	var employeeShifts []model.Shift
-	err = s.shiftsRepo.GetShiftsByEmployeeIDInDateRange(employeeID, now, twoWeeksFromNow, &employeeShifts)
+	err = s.shiftsRepo.GetShiftsByEmployeeIDInDateRange(employeeID, start, end, &employeeShifts)
 	if err != nil {
 		s.log.Errorf("failed to get employee shifts: %v", err)
 		return nil, fmt.Errorf("failed to check employee shifts")
 	}
 
-	// Distinct days within each week block
-	week1Start := now.Truncate(24 * time.Hour)
-	week1End := week1Start.AddDate(0, 0, 7)
-	week2Start := week1End
-	week2End := twoWeeksFromNow
-
-	week1Days := map[string]struct{}{}
-	week2Days := map[string]struct{}{}
-
+	distinctDays := map[string]struct{}{}
 	for _, sft := range employeeShifts {
 		day := sft.ShiftDate.Truncate(24 * time.Hour)
 		key := day.Format("2006-01-02")
-		if (day.Equal(week1Start) || day.After(week1Start)) && day.Before(week1End) {
-			week1Days[key] = struct{}{}
-		} else if (day.Equal(week2Start) || day.After(week2Start)) && day.Before(week2End) {
-			week2Days[key] = struct{}{}
-		}
+		distinctDays[key] = struct{}{}
 	}
 
-	totalDistinctDays := len(week1Days) + len(week2Days)
+	totalDistinctDays := len(distinctDays)
 
-	// If the employee hasn't met 5 days per week in either week, show warning
-	if len(week1Days) < 5 || len(week2Days) < 5 {
+	// Warn only if fewer than 10 distinct days are scheduled in the next 14 days
+	if totalDistinctDays < 10 {
 		warnings = append(warnings, fmt.Sprintf("%s|%d|14|5", model.WarningInsufficientShifts, totalDistinctDays))
 	}
 

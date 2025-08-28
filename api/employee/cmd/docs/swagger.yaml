@@ -360,15 +360,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.MessageResponse'
+            $ref: '#/definitions/internal_handler.MessageResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Ресетовање свих података
@@ -386,15 +386,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ShiftAvailabilityResponse'
+            $ref: '#/definitions/internal_handler.ShiftAvailabilityResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Дохватање доступности смена за админе
@@ -411,7 +411,7 @@ paths:
           schema:
             items:
               items:
-                $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeResponse'
+                $ref: '#/definitions/internal_handler.EmployeeResponse'
               type: array
             type: array
       security:
@@ -424,11 +424,11 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeResponse'
+            $ref: '#/definitions/internal_handler.EmployeeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
   /employees/{id}:
     delete:
       description: Брисање запосленог по ID-ју
@@ -444,7 +444,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Брисање запосленог
@@ -464,15 +464,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeResponse'
+            $ref: '#/definitions/internal_handler.EmployeeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Преузимање запосленог по ID-ју
@@ -491,24 +491,24 @@ paths:
         name: employee
         required: true
         schema:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeUpdateRequest'
+          $ref: '#/definitions/internal_handler.EmployeeUpdateRequest'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeResponse'
+            $ref: '#/definitions/internal_handler.EmployeeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Ажурирање запосленог
@@ -531,19 +531,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ActiveEmergenciesResponse'
+            $ref: '#/definitions/internal_handler.ActiveEmergenciesResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Провера активних хитних случајева за запосленог
@@ -569,15 +569,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.MessageResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
       summary: Delete profile picture
       tags:
       - files
@@ -602,15 +602,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.UploadProfilePictureResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.UploadProfilePictureResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
       summary: Upload profile picture
       tags:
       - files
@@ -636,15 +636,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Дохватање упозорења о сменама за запосленог
@@ -664,14 +664,14 @@ paths:
         name: shift
         required: true
         schema:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.RemoveShiftRequest'
+          $ref: '#/definitions/internal_handler.RemoveShiftRequest'
       responses:
         "204":
           description: No Content
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Уклањање смене за запосленог
@@ -690,7 +690,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ShiftResponse'
+              $ref: '#/definitions/internal_handler.ShiftResponse'
             type: array
       security:
       - OAuth2Password: []
@@ -710,16 +710,16 @@ paths:
         name: shift
         required: true
         schema:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.AssignShiftRequest'
+          $ref: '#/definitions/internal_handler.AssignShiftRequest'
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.AssignShiftResponse'
+            $ref: '#/definitions/internal_handler.AssignShiftResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Додељује смену запосленом
@@ -742,15 +742,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.OnCallEmployeesResponse'
+            $ref: '#/definitions/internal_handler.OnCallEmployeesResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Претрага запослених који су тренутно на дужности
@@ -776,11 +776,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
       summary: Get profile picture info
       tags:
       - files
@@ -795,18 +795,18 @@ paths:
         name: employee
         required: true
         schema:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeLogin'
+          $ref: '#/definitions/internal_handler.EmployeeLogin'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.TokenResponse'
+            $ref: '#/definitions/internal_handler.TokenResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: Пријавање запосленог
       tags:
       - запослени
@@ -819,15 +819,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.MessageResponse'
+            $ref: '#/definitions/internal_handler.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Одјављивање запосленог
@@ -860,11 +860,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       summary: OAuth2 token endpoint
       tags:
       - authentication
@@ -880,11 +880,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ShiftAvailabilityResponse'
+            $ref: '#/definitions/internal_handler.ShiftAvailabilityResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_employee_internal_handler.ErrorResponse'
+            $ref: '#/definitions/internal_handler.ErrorResponse'
       security:
       - OAuth2Password: []
       summary: Дохватање доступности смена

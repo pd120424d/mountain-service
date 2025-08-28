@@ -17,7 +17,8 @@ import {
   getUrgencyLevelColor,
   getUrgencyStatusColor,
   getActivityIcon,
-  getActivityDisplayTime
+  getActivityDisplayTime,
+  hasAcceptedAssignment
 } from '../../shared/models';
 
 @Component({
@@ -41,6 +42,8 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   private fetchingEmployeeIds = new Set<number>();
 
   UrgencyStatus = UrgencyStatus;
+  isAssigning = false;
+  isUnassigning = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -141,6 +144,51 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
 
   goBack(): void {
     this.router.navigate(['/urgencies']);
+  }
+
+  canAssign(): boolean {
+    if (!this.urgency) return false;
+    const assigned = hasAcceptedAssignment(this.urgency);
+    return !assigned && (this.urgency.status === UrgencyStatus.Open || this.urgency.status === UrgencyStatus.InProgress);
+  }
+
+  canUnassign(): boolean {
+    if (!this.urgency) return false;
+    const assigned = hasAcceptedAssignment(this.urgency);
+    return assigned && this.authService.isAdmin();
+  }
+
+  onAssignToMe(): void {
+    if (!this.urgencyId || this.isAssigning) return;
+    this.isAssigning = true;
+    const employeeId = parseInt(this.authService.getUserId());
+    this.urgencyService.assignUrgency(this.urgencyId, employeeId).subscribe({
+      next: () => {
+        this.toastr.success(this.translate.instant('URGENCY_DETAIL.ASSIGN_SUCCESS'));
+        this.isAssigning = false;
+        this.loadUrgency();
+      },
+      error: (err) => {
+        this.toastr.error(err?.message || this.translate.instant('URGENCY_DETAIL.ASSIGN_ERROR'));
+        this.isAssigning = false;
+      }
+    });
+  }
+
+  onUnassign(): void {
+    if (!this.urgencyId || this.isUnassigning) return;
+    this.isUnassigning = true;
+    this.urgencyService.unassignUrgency(this.urgencyId).subscribe({
+      next: () => {
+        this.toastr.success(this.translate.instant('URGENCY_DETAIL.UNASSIGN_SUCCESS'));
+        this.isUnassigning = false;
+        this.loadUrgency();
+      },
+      error: (err) => {
+        this.toastr.error(err?.message || this.translate.instant('URGENCY_DETAIL.UNASSIGN_ERROR'));
+        this.isUnassigning = false;
+      }
+    });
   }
 
   getDisplayName(urgency: Urgency): string {

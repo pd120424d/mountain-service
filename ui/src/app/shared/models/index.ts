@@ -102,7 +102,8 @@ export {
   formatCoordinatesDisplay,
   calculateDistance,
   isValidCoordinates,
-  isInMountainRegion
+  isInMountainRegion,
+  hasAcceptedAssignment
 } from './extensions/urgency-extensions';
 
 export {

@@ -72,6 +72,14 @@
             <span>{{ formatDate(urgency.updatedAt!) }}</span>
           </div>
         </div>
+        <div class="actions-row">
+          <button class="btn btn-primary" *ngIf="canAssign()" (click)="onAssignToMe()">
+            {{ 'URGENCY_DETAIL.ASSIGN_TO_ME' | translate }}
+          </button>
+          <button class="btn btn-warning" *ngIf="canUnassign()" (click)="onUnassign()">
+            {{ 'URGENCY_DETAIL.UNASSIGN' | translate }}
+          </button>
+        </div>
       </div>
     </div>
 

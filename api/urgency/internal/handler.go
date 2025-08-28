@@ -249,7 +249,7 @@ func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
 // @Security OAuth2Password
 // @Param id path int true "Urgency ID"
 // @Param payload body urgencyV1.AssignmentCreateRequest true "Assignment payload"
-// @Success 200 {object} urgencyV1.EmergencyAssignmentResponse
+// @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Router /urgencies/{id}/assign [post]
@@ -267,13 +267,12 @@ func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	assignment, appErr := h.svc.AssignUrgency(uint(urgencyID64), req.EmployeeID)
-	if appErr != nil {
+	if appErr := h.svc.AssignUrgency(uint(urgencyID64), req.EmployeeID); appErr != nil {
 		h.log.Errorf("assign failed: %v", appErr)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": appErr.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, assignment)
+	ctx.JSON(http.StatusOK, gin.H{"status": "assigned"})
 }
 
 // UnassignUrgency removes assignment for an urgency (admin or same assignee)

@@ -20,6 +20,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/server"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
+	"google.golang.org/api/option"
 
 	// Import contracts for Swagger documentation
 	_ "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
@@ -93,7 +94,14 @@ func startPublisherIfConfigured(log utils.Logger, db *gorm.DB) {
 		return
 	}
 
-	client, err := pubsub.NewClient(context.Background(), projectID)
+	var client *pubsub.Client
+	var err error
+	credsPath := os.Getenv("FIREBASE_CREDENTIALS_PATH")
+	if credsPath != "" {
+		client, err = pubsub.NewClient(context.Background(), projectID, option.WithCredentialsFile(credsPath))
+	} else {
+		client, err = pubsub.NewClient(context.Background(), projectID)
+	}
 	if err != nil {
 		log.Errorf("Failed to create Pub/Sub client: %v", err)
 		return
@@ -124,7 +132,14 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	}
 	if projectID != "" {
-		fsClient, err := firestore.NewClient(context.Background(), projectID)
+		credsPath := os.Getenv("FIREBASE_CREDENTIALS_PATH")
+		var fsClient *firestore.Client
+		var err error
+		if credsPath != "" {
+			fsClient, err = firestore.NewClient(context.Background(), projectID, option.WithCredentialsFile(credsPath))
+		} else {
+			fsClient, err = firestore.NewClient(context.Background(), projectID)
+		}
 		if err != nil {
 			log.Errorf("Failed to create Firestore client, continuing without read model: %v", err)
 		} else {

@@ -61,6 +61,8 @@ definitions:
     - Critical
   v1.UrgencyResponse:
     properties:
+      assignmentId:
+        type: string
       contactPhone:
         type: string
       createdAt:

@@ -385,6 +385,9 @@ const docTemplate = `{
         "v1.UrgencyResponse": {
             "type": "object",
             "properties": {
+                "assignmentId": {
+                    "type": "string"
+                },
                 "contactPhone": {
                     "type": "string"
                 },

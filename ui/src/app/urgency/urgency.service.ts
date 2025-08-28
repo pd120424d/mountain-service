@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Urgency, UrgencyCreateRequest, UrgencyUpdateRequest } from '../shared/models';
 
@@ -13,7 +13,7 @@ export class UrgencyService {
   private baseApiUrl = environment.useMockApi
     ? '/api/v1'
     : `${environment.apiUrl}`;
-  private urgencyApiUrl = this.baseApiUrl + "/urgencies"
+  private urgencyApiUrl = this.baseApiUrl + "/urgencies";
 
   constructor(private http: HttpClient) { }
 
@@ -47,6 +47,18 @@ export class UrgencyService {
     );
   }
 
+  assignUrgency(id: number, employeeId: number): Observable<any> {
+    return this.http.post(`${this.urgencyApiUrl}/${id}/assign`, { employeeId }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  unassignUrgency(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.urgencyApiUrl}/${id}/assign`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   private handleError(error: HttpErrorResponse): Observable<never> {
     // Prefer structured backend error contract when available
     if (error && error.error && typeof error.error === 'object' && 'error' in error.error) {
@@ -65,13 +77,11 @@ export class UrgencyService {
         errorMessage = (error.error as any)?.error || 'Conflict: Resource already exists';
       } else if (error.status === 400) {
         errorMessage = (error.error as any)?.error || 'Invalid data provided';
+      } else if (error.status === 403) {
+        errorMessage = (error.error as any)?.error || 'Forbidden';
       }
     }
 
     return throwError(() => new Error(errorMessage));
   }
 }
-
-
-
-

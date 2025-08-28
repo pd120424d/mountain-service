@@ -55,7 +55,7 @@ func main() {
 		ServiceName: svcName,
 		Port:        globConf.UrgencyServicePort,
 		DatabaseConfig: server.GetDatabaseConfigWithDefaults(
-			[]interface{}{&model.Urgency{}, &model.EmergencyAssignment{}, &model.Notification{}},
+			[]interface{}{&model.Urgency{}, &model.Notification{}},
 			globConf.UrgencyDBName,
 		),
 		CORSConfig: server.DefaultCORSConfig(),
@@ -78,7 +78,6 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 
 	// Initialize repositories
 	urgencyRepo := repositories.NewUrgencyRepository(log, db)
-	assignmentRepo := repositories.NewAssignmentRepository(log, db)
 	notificationRepo := repositories.NewNotificationRepository(log, db)
 
 	// Initialize service clients
@@ -94,7 +93,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	}
 
 	// Initialize service with all dependencies
-	urgencySvc := internal.NewUrgencyService(log, urgencyRepo, assignmentRepo, notificationRepo, serviceClients.EmployeeClient)
+	urgencySvc := internal.NewUrgencyService(log, urgencyRepo, notificationRepo, serviceClients.EmployeeClient)
 	urgencyHandler := internal.NewUrgencyHandler(log, urgencySvc)
 
 	// Public routes (no authentication required) - registering a new urgency

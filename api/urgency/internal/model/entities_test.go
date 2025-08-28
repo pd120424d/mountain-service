@@ -72,38 +72,6 @@ func TestUrgency_ToResponse(t *testing.T) {
 	})
 }
 
-func TestEmergencyAssignment_ToResponse(t *testing.T) {
-	t.Parallel()
-
-	t.Run("it converts emergency assignment to response correctly", func(t *testing.T) {
-		createdAt := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
-		updatedAt := time.Date(2023, 1, 2, 12, 0, 0, 0, time.UTC)
-		assignedAt := time.Date(2023, 1, 1, 10, 0, 0, 0, time.UTC)
-
-		assignment := &EmergencyAssignment{
-			Model: gorm.Model{
-				CreatedAt: createdAt,
-				UpdatedAt: updatedAt,
-			},
-			ID:         1,
-			UrgencyID:  123,
-			EmployeeID: 456,
-			Status:     AssignmentAccepted,
-			AssignedAt: assignedAt,
-		}
-
-		response := assignment.ToResponse()
-
-		assert.Equal(t, uint(1), response.ID)
-		assert.Equal(t, uint(123), response.UrgencyID)
-		assert.Equal(t, uint(456), response.EmployeeID)
-		assert.Equal(t, string(AssignmentAccepted), response.Status)
-		assert.Equal(t, assignedAt.Format(time.RFC3339), response.AssignedAt)
-		assert.Equal(t, createdAt.Format(time.RFC3339), response.CreatedAt)
-		assert.Equal(t, updatedAt.Format(time.RFC3339), response.UpdatedAt)
-	})
-}
-
 func TestNotification_ToResponse(t *testing.T) {
 	t.Parallel()
 

@@ -75,7 +75,15 @@ func (z *zapLogger) rotate() error {
 		return err
 	}
 
-	logger := newLoggerFromWriter(file)
+	// In Kubernetes (or when explicitly requested), mirror logs to stdout so `kubectl logs` works
+	var writer io.Writer = file
+	if os.Getenv("LOG_TO_STDOUT_ONLY") == "true" {
+		writer = os.Stdout
+	} else if os.Getenv("LOG_TO_STDOUT") == "true" || os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
+		writer = io.MultiWriter(file, os.Stdout)
+	}
+
+	logger := newLoggerFromWriter(writer)
 
 	if z.logger != nil {
 		_ = z.logger.Sync()

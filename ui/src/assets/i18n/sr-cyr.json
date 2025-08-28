@@ -215,7 +215,7 @@
     "CANCEL": "Откажи",
     "SUBMITTING": "Слање...",
     "SUCCESS_MESSAGE": "Случај је прихваћен! Неко ће вас контактирати ускоро.",
-    "NAME_PLACEHOLDER": "Унесите име пријавиоца",
+    "NAME_PLACEHOLDER": "Унесите име",
     "EMAIL_PLACEHOLDER": "Унесите и-мејл адресу",
     "CONTACT_PHONE_PLACEHOLDER": "Унесите контакт телефон",
     "LOCATION_PLACEHOLDER": "Унесите локацију инцидента",
@@ -284,7 +284,7 @@
     "RETRY": "Покушајте поново",
     "URGENCY_INFO": "Информације о ургентној ситуацији",
     "ID": "ID",
-    "REPORTER_NAME": "Име пријавиоца",
+    "REPORTER_NAME": "Пријавио/ла",
     "EMAIL": "И-мејл",
     "CONTACT_PHONE": "Контакт телефон",
     "LOCATION": "Локација",
@@ -305,7 +305,13 @@
     "ADDED_BY": "додао/ла",
     "EMPLOYEE_PLACEHOLDER": "Запослени #{{id}}",
     "ACTIVITY_ADDED_SUCCESS": "Активност је успешно додата!",
-    "ACTIVITY_ADDED_ERROR": "Неуспешно додавање активности. Покушајте поново."
+    "ACTIVITY_ADDED_ERROR": "Неуспешно додавање активности. Покушајте поново.",
+    "ASSIGN_TO_ME": "Преузми",
+    "UNASSIGN": "Отпусти",
+    "ASSIGN_SUCCESS": "Ургентна ситуација је успешно преузета.",
+    "ASSIGN_ERROR": "Неуспешно преузимање ургентне ситуације.",
+    "UNASSIGN_SUCCESS": "Ургентна ситуација је успешно отпуштена.",
+    "UNASSIGN_ERROR": "Неуспешно отпуштање ургентне ситуације."
   },
   "ACTIVITY_LEVEL": {
     "INFO": "Информација",
