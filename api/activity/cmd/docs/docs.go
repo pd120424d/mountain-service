@@ -66,7 +66,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityListResponse"
+                            "$ref": "#/definitions/v1.ActivityListResponse"
                         }
                     },
                     "400": {
@@ -104,7 +104,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityCreateRequest"
+                            "$ref": "#/definitions/v1.ActivityCreateRequest"
                         }
                     }
                 ],
@@ -112,7 +112,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse"
+                            "$ref": "#/definitions/v1.ActivityResponse"
                         }
                     },
                     "400": {
@@ -169,7 +169,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityStatsResponse"
+                            "$ref": "#/definitions/v1.ActivityStatsResponse"
                         }
                     },
                     "500": {
@@ -205,7 +205,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse"
+                            "$ref": "#/definitions/v1.ActivityResponse"
                         }
                     },
                     "400": {
@@ -280,7 +280,15 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityCreateRequest": {
+        "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.ActivityCreateRequest": {
             "type": "object",
             "required": [
                 "description",
@@ -299,13 +307,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityListResponse": {
+        "v1.ActivityListResponse": {
             "type": "object",
             "properties": {
                 "activities": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse"
+                        "$ref": "#/definitions/v1.ActivityResponse"
                     }
                 },
                 "page": {
@@ -322,7 +330,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse": {
+        "v1.ActivityResponse": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -347,7 +355,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityStatsResponse": {
+        "v1.ActivityStatsResponse": {
             "type": "object",
             "properties": {
                 "activitiesLast24h": {
@@ -362,19 +370,11 @@ const docTemplate = `{
                 "recentActivities": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse"
+                        "$ref": "#/definitions/v1.ActivityResponse"
                     }
                 },
                 "totalActivities": {
                     "type": "integer"
-                }
-            }
-        },
-        "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
                 }
             }
         }

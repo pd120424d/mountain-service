@@ -61,7 +61,7 @@ const docTemplate = `{
                             "items": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse"
+                                    "$ref": "#/definitions/v1.UrgencyResponse"
                                 }
                             }
                         }
@@ -92,7 +92,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyCreateRequest"
+                            "$ref": "#/definitions/v1.UrgencyCreateRequest"
                         }
                     }
                 ],
@@ -100,7 +100,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse"
+                            "$ref": "#/definitions/v1.UrgencyResponse"
                         }
                     }
                 }
@@ -134,7 +134,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse"
+                            "$ref": "#/definitions/v1.UrgencyResponse"
                         }
                     }
                 }
@@ -170,7 +170,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyUpdateRequest"
+                            "$ref": "#/definitions/v1.UrgencyUpdateRequest"
                         }
                     }
                 ],
@@ -178,7 +178,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse"
+                            "$ref": "#/definitions/v1.UrgencyResponse"
                         }
                     }
                 }
@@ -209,10 +209,132 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/urgencies/{id}/assign": {
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Assign urgency to an employee",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Urgency ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Assignment payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.AssignmentCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.EmergencyAssignmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Unassign urgency",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Urgency ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyCreateRequest": {
+        "v1.AssignmentCreateRequest": {
+            "type": "object",
+            "required": [
+                "employeeId"
+            ],
+            "properties": {
+                "employeeId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.EmergencyAssignmentResponse": {
+            "type": "object",
+            "properties": {
+                "assignedAt": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "employeeId": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "urgencyId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.UrgencyCreateRequest": {
             "type": "object",
             "required": [
                 "contactPhone",
@@ -238,14 +360,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "level": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
+                    "$ref": "#/definitions/v1.UrgencyLevel"
                 },
                 "location": {
                     "type": "string"
                 }
             }
         },
-        "github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel": {
+        "v1.UrgencyLevel": {
             "type": "string",
             "enum": [
                 "low",
@@ -260,7 +382,7 @@ const docTemplate = `{
                 "Critical"
             ]
         },
-        "github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyResponse": {
+        "v1.UrgencyResponse": {
             "type": "object",
             "properties": {
                 "contactPhone": {
@@ -285,20 +407,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "level": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
+                    "$ref": "#/definitions/v1.UrgencyLevel"
                 },
                 "location": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus"
+                    "$ref": "#/definitions/v1.UrgencyStatus"
                 },
                 "updatedAt": {
                     "type": "string"
                 }
             }
         },
-        "github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus": {
+        "v1.UrgencyStatus": {
             "type": "string",
             "enum": [
                 "open",
@@ -313,7 +435,7 @@ const docTemplate = `{
                 "Closed"
             ]
         },
-        "github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyUpdateRequest": {
+        "v1.UrgencyUpdateRequest": {
             "type": "object",
             "properties": {
                 "contactPhone": {
@@ -332,13 +454,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "level": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyLevel"
+                    "$ref": "#/definitions/v1.UrgencyLevel"
                 },
                 "location": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_urgency_v1.UrgencyStatus"
+                    "$ref": "#/definitions/v1.UrgencyStatus"
                 }
             }
         }

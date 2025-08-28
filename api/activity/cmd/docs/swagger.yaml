@@ -1,6 +1,11 @@
 basePath: /api/v1
 definitions:
-  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityCreateRequest:
+  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  v1.ActivityCreateRequest:
     properties:
       description:
         type: string
@@ -13,11 +18,11 @@ definitions:
     - employeeId
     - urgencyId
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityListResponse:
+  v1.ActivityListResponse:
     properties:
       activities:
         items:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse'
+          $ref: '#/definitions/v1.ActivityResponse'
         type: array
       page:
         type: integer
@@ -28,7 +33,7 @@ definitions:
       totalPages:
         type: integer
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse:
+  v1.ActivityResponse:
     properties:
       createdAt:
         type: string
@@ -45,7 +50,7 @@ definitions:
         description: ID of the urgency this activity relates to
         type: integer
     type: object
-  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityStatsResponse:
+  v1.ActivityStatsResponse:
     properties:
       activitiesLast7Days:
         type: integer
@@ -55,15 +60,10 @@ definitions:
         type: integer
       recentActivities:
         items:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse'
+          $ref: '#/definitions/v1.ActivityResponse'
         type: array
       totalActivities:
         type: integer
-    type: object
-  github_com_pd120424d_mountain-service_api_contracts_activity_v1.ErrorResponse:
-    properties:
-      error:
-        type: string
     type: object
 host: localhost:8084
 info:
@@ -108,7 +108,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityListResponse'
+            $ref: '#/definitions/v1.ActivityListResponse'
         "400":
           description: Bad Request
           schema:
@@ -132,14 +132,14 @@ paths:
         name: activity
         required: true
         schema:
-          $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityCreateRequest'
+          $ref: '#/definitions/v1.ActivityCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse'
+            $ref: '#/definitions/v1.ActivityResponse'
         "400":
           description: Bad Request
           schema:
@@ -198,7 +198,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityResponse'
+            $ref: '#/definitions/v1.ActivityResponse'
         "400":
           description: Bad Request
           schema:
@@ -243,7 +243,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ActivityStatsResponse'
+            $ref: '#/definitions/v1.ActivityStatsResponse'
         "500":
           description: Internal Server Error
           schema:
