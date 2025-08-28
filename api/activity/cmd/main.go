@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
 	_ "github.com/pd120424d/mountain-service/api/activity/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/activity/internal/handler"
@@ -15,6 +16,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/activity/internal/service"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	globConf "github.com/pd120424d/mountain-service/api/shared/config"
+	"github.com/pd120424d/mountain-service/api/shared/firestorex/googleadapter"
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/server"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
@@ -114,7 +116,27 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	// Initialize repositories and services
 	activityRepo := repositories.NewActivityRepository(log, db)
 	activitySvc := service.NewActivityService(log, activityRepo)
-	activityHandler := handler.NewActivityHandler(log, activitySvc)
+
+	// Initialize Firestore service if env vars present
+	var readModel service.FirestoreService
+	projectID := os.Getenv("FIREBASE_PROJECT_ID")
+	if projectID == "" {
+		projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	}
+	if projectID != "" {
+		fsClient, err := firestore.NewClient(context.Background(), projectID)
+		if err != nil {
+			log.Errorf("Failed to create Firestore client, continuing without read model: %v", err)
+		} else {
+			adapter := googleadapter.NewClientAdapter(fsClient)
+			readModel = service.NewFirebaseReadService(adapter, log)
+			log.Info("Activity read-model (Firestore) enabled")
+		}
+	} else {
+		log.Warn("Firestore project ID not set, fetching activities will fallback to SQL DB!")
+	}
+
+	activityHandler := handler.NewActivityHandler(log, activitySvc, readModel)
 
 	// Setup JWT secret
 	jwtSecret := server.SetupJWTSecret(log)

@@ -143,3 +143,30 @@ func (n *Notification) ToResponse() urgencyV1.NotificationResponse {
 
 	return response
 }
+
+func (u *Urgency) UpdateWithRequest(req *urgencyV1.UrgencyUpdateRequest) {
+	if req.FirstName != "" {
+		u.FirstName = req.FirstName
+	}
+	if req.LastName != "" {
+		u.LastName = req.LastName
+	}
+	if req.Email != "" {
+		u.Email = req.Email
+	}
+	if req.ContactPhone != "" {
+		u.ContactPhone = req.ContactPhone
+	}
+	if req.Location != "" {
+		u.Location = req.Location
+	}
+	if req.Description != "" {
+		u.Description = req.Description
+	}
+	if req.Level != "" {
+		u.Level = urgencyV1.UrgencyLevel(req.Level)
+	}
+	if req.Status != "" {
+		u.Status = urgencyV1.UrgencyStatus(req.Status)
+	}
+}

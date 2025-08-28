@@ -56,8 +56,8 @@ func (s *shiftService) AssignShift(employeeID uint, req employeeV1.AssignShiftRe
 		return nil, commonv1.NewAppError("VALIDATION.SHIFT_TOO_FAR", "shift date cannot be more than 3 months in the future", nil)
 	}
 
-	// Step 5: Check consecutive shifts rule (max 6 consecutive shifts)
-	if err := s.validateConsecutiveShifts(employeeID, shiftDate); err != nil {
+	// Step 5: Check consecutive shifts rule (max 2 consecutive shifts, then 1 day rest)
+	if err := s.validateConsecutiveShifts(employeeID, shiftDate, req.ShiftType); err != nil {
 		s.log.Errorf("consecutive shifts validation failed: %v", err)
 		return nil, err
 	}
@@ -345,54 +345,118 @@ func (s *shiftService) GetAdminShiftsAvailability(days int) (*employeeV1.ShiftAv
 
 // Helper methods
 
-func (s *shiftService) validateConsecutiveShifts(employeeID uint, shiftDate time.Time) error {
-	// Get shifts for the employee in a range around the requested date
-	startDate := shiftDate.AddDate(0, 0, -6) // 6 days before
-	endDate := shiftDate.AddDate(0, 0, 6)    // 6 days after
+func (s *shiftService) validateConsecutiveShifts(employeeID uint, shiftDate time.Time, shiftType int) error {
+	// Build a small window around the candidate date to check adjacency and calendar-day rest rules
+	startDate := shiftDate.AddDate(0, 0, -3)
+	endDate := shiftDate.AddDate(0, 0, 3)
 
 	var shifts []model.Shift
-	err := s.shiftsRepo.GetShiftsByEmployeeIDInDateRange(employeeID, startDate, endDate, &shifts)
-	if err != nil {
+	if err := s.shiftsRepo.GetShiftsByEmployeeIDInDateRange(employeeID, startDate, endDate, &shifts); err != nil {
 		return fmt.Errorf("failed to get employee shifts: %w", err)
 	}
 
-	// Create a map of dates for quick lookup
-	shiftDates := make(map[string]bool)
-	for _, shift := range shifts {
-		dateStr := shift.ShiftDate.Format("2006-01-02")
-		shiftDates[dateStr] = true
+	// Map assignments per slot and per day
+	dayKey := func(d time.Time) string { return d.Truncate(24 * time.Hour).Format("2006-01-02") }
+	slotKey := func(d time.Time, t int) string { return fmt.Sprintf("%s|%d", dayKey(d), t) }
+	assigned := make(map[string]bool)
+	assignedDayAny := make(map[string]bool)
+	for _, sh := range shifts {
+		assigned[slotKey(sh.ShiftDate, sh.ShiftType)] = true
+		assignedDayAny[dayKey(sh.ShiftDate)] = true
 	}
 
-	// Add the requested shift date
-	requestedDateStr := shiftDate.Format("2006-01-02")
-	shiftDates[requestedDateStr] = true
+	// Helpers for adjacent slots
+	prevSlot := func(d time.Time, t int) (time.Time, int) {
+		switch t {
+		case 1:
+			return d.AddDate(0, 0, -1), 3
+		case 2:
+			return d, 1
+		default: // 3
+			return d, 2
+		}
+	}
+	nextSlot := func(d time.Time, t int) (time.Time, int) {
+		switch t {
+		case 1:
+			return d, 2
+		case 2:
+			return d, 3
+		default: // 3
+			return d.AddDate(0, 0, 1), 1
+		}
+	}
+	endDayOfShift := func(d time.Time, t int) time.Time {
+		// 1 and 2 end same day, 3 ends next day
+		switch t {
+		case 3:
+			return d.AddDate(0, 0, 1).Truncate(24 * time.Hour)
+		default:
+			return d.Truncate(24 * time.Hour)
+		}
+	}
+	dayHasAny := func(d time.Time) bool { return assignedDayAny[dayKey(d)] }
 
-	// Check for consecutive shifts
-	consecutiveCount := 0
-	maxConsecutive := 0
-
-	// Check from 6 days before to 6 days after
-	for i := -6; i <= 6; i++ {
-		checkDate := shiftDate.AddDate(0, 0, i)
-		checkDateStr := checkDate.Format("2006-01-02")
-
-		if shiftDates[checkDateStr] {
-			consecutiveCount++
-			if consecutiveCount > maxConsecutive {
-				maxConsecutive = consecutiveCount
+	// 1) Block if any existing double's rest day equals the candidate day
+	candDay := dayKey(shiftDate)
+	for _, sh := range shifts {
+		pd, pt := prevSlot(sh.ShiftDate, sh.ShiftType)
+		if assigned[slotKey(pd, pt)] {
+			rest := endDayOfShift(sh.ShiftDate, sh.ShiftType).AddDate(0, 0, 1)
+			if dayKey(rest) == candDay {
+				return commonv1.NewAppError(
+					model.ErrorConsecutiveShiftsLimit,
+					fmt.Sprintf("%s|%d", model.ErrorConsecutiveShiftsLimit, 3),
+					map[string]interface{}{"limit": 3},
+				)
 			}
-		} else {
-			consecutiveCount = 0
 		}
 	}
 
-	// Enforce business rule: max 2 consecutive working days, then at least 1 day off
-	if maxConsecutive > 2 {
+	// 2) No triples (max 2 consecutive including candidate)
+	leftRun := 0
+	if pd, pt := prevSlot(shiftDate, shiftType); assigned[slotKey(pd, pt)] {
+		leftRun = 1
+		if p2d, p2t := prevSlot(pd, pt); assigned[slotKey(p2d, p2t)] {
+			leftRun = 2
+		}
+	}
+	rightRun := 0
+	if nd, nt := nextSlot(shiftDate, shiftType); assigned[slotKey(nd, nt)] {
+		rightRun = 1
+		if n2d, n2t := nextSlot(nd, nt); assigned[slotKey(n2d, n2t)] {
+			rightRun = 2
+		}
+	}
+	if leftRun+1+rightRun > 2 {
 		return commonv1.NewAppError(
 			model.ErrorConsecutiveShiftsLimit,
-			fmt.Sprintf("%s|%d", model.ErrorConsecutiveShiftsLimit, maxConsecutive),
-			map[string]interface{}{"limit": maxConsecutive},
+			fmt.Sprintf("%s|%d", model.ErrorConsecutiveShiftsLimit, leftRun+1+rightRun),
+			map[string]interface{}{"limit": leftRun + 1 + rightRun},
 		)
+	}
+
+	// 3) If candidate forms a new double, enforce calendar-day rest for that double
+	if leftRun == 1 {
+		rest := endDayOfShift(shiftDate, shiftType).AddDate(0, 0, 1)
+		if dayHasAny(rest) {
+			return commonv1.NewAppError(
+				model.ErrorConsecutiveShiftsLimit,
+				fmt.Sprintf("%s|%d", model.ErrorConsecutiveShiftsLimit, 3),
+				map[string]interface{}{"limit": 3},
+			)
+		}
+	}
+	if rightRun == 1 {
+		nd, nt := nextSlot(shiftDate, shiftType)
+		rest := endDayOfShift(nd, nt).AddDate(0, 0, 1)
+		if dayHasAny(rest) {
+			return commonv1.NewAppError(
+				model.ErrorConsecutiveShiftsLimit,
+				fmt.Sprintf("%s|%d", model.ErrorConsecutiveShiftsLimit, 3),
+				map[string]interface{}{"limit": 3},
+			)
+		}
 	}
 
 	return nil

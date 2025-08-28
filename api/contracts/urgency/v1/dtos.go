@@ -92,6 +92,12 @@ type AssignmentAcceptRequest struct {
 	AssignmentID uint `json:"assignmentId" binding:"required"`
 }
 
+// AssignmentCreateRequest DTO for direct assignment to an urgency
+// swagger:model
+type AssignmentCreateRequest struct {
+	EmployeeID uint `json:"employeeId" binding:"required"`
+}
+
 // AssignmentDeclineRequest DTO for declining an assignment
 // swagger:model
 type AssignmentDeclineRequest struct {

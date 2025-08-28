@@ -21,6 +21,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
+	"github.com/pd120424d/mountain-service/api/shared/firestorex/googleadapter"
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
@@ -90,7 +91,8 @@ func main() {
 	defer pubsubClient.Close()
 
 	// Initialize services
-	firebaseService := service.NewFirebaseService(firestoreClient, logger)
+	fsAdapter := googleadapter.NewClientAdapter(firestoreClient)
+	firebaseService := service.NewFirebaseService(fsAdapter, logger)
 
 	// Start health check server
 	go func() {

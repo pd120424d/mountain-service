@@ -22,12 +22,13 @@ type ActivityHandler interface {
 }
 
 type activityHandler struct {
-	log utils.Logger
-	svc service.ActivityService
+	log       utils.Logger
+	svc       service.ActivityService
+	readModel service.FirestoreService
 }
 
-func NewActivityHandler(log utils.Logger, svc service.ActivityService) ActivityHandler {
-	return &activityHandler{log: log.WithName("activityHandler"), svc: svc}
+func NewActivityHandler(log utils.Logger, svc service.ActivityService, readModel service.FirestoreService) ActivityHandler {
+	return &activityHandler{log: log.WithName("activityHandler"), svc: svc, readModel: readModel}
 }
 
 // CreateActivity Креирање нове активности
@@ -138,6 +139,22 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	}
 	req.StartDate = ctx.Query("startDate")
 	req.EndDate = ctx.Query("endDate")
+
+	// If a Firestore read model is configured, use it for simple list-by-urgency reads
+	if h.readModel != nil && req.UrgencyID != nil && (req.Page == 0 && req.PageSize == 0) {
+		activities, err := h.readModel.ListByUrgency(ctx, *req.UrgencyID, 0)
+		if err != nil {
+			h.log.Warnf("Read-model fetch failed, falling back to DB: %v", err)
+		} else {
+			resp := &activityV1.ActivityListResponse{Activities: make([]activityV1.ActivityResponse, 0, len(activities)), Total: int64(len(activities)), Page: 1, PageSize: len(activities), TotalPages: 1}
+			for _, a := range activities {
+				ar := a.ToResponse()
+				resp.Activities = append(resp.Activities, *ar)
+			}
+			ctx.JSON(http.StatusOK, resp)
+			return
+		}
+	}
 
 	response, err := h.svc.ListActivities(&req)
 	if err != nil {

@@ -6,35 +6,92 @@ import (
 	"time"
 
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
+	"github.com/pd120424d/mountain-service/api/shared/firestoretest"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFirebaseService_SyncActivity(t *testing.T) {
+func TestFirebaseService_WithFakeFirestore(t *testing.T) {
 	t.Parallel()
+	logger := utils.NewTestLogger()
 
-	t.Run("it succeeds when syncing activity with valid data", func(t *testing.T) {
-		// This is a placeholder test since we can't easily mock Firestore client
-		// In a real implementation, you would use a Firestore emulator or mock
-		logger := utils.NewTestLogger()
-
-		// For now, just test that the service can be created
-		service := NewFirebaseService(nil, logger)
-		assert.NotNil(t, service)
-
-		// Test with nil client should return error
-		activityEvent := activityV1.ActivityEvent{
-			Type:        "CREATE",
-			ActivityID:  1,
-			UrgencyID:   1,
-			EmployeeID:  1,
-			Description: "Test activity",
-		}
-
-		err := service.SyncActivity(context.Background(), activityEvent)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "Firestore client is nil")
+	fake := firestoretest.NewFake().WithCollection("activities", []map[string]interface{}{
+		{"id": uint(1), "urgency_id": uint(2), "employee_id": uint(5), "description": "A", "created_at": "2025-01-02T10:00:00Z"},
+		{"id": uint(2), "urgency_id": uint(3), "employee_id": uint(6), "description": "B", "created_at": "2025-01-03T10:00:00Z"},
+		{"id": uint(3), "urgency_id": uint(2), "employee_id": uint(7), "description": "C", "created_at": "2025-01-04T10:00:00Z"},
 	})
+	svc := NewFirebaseService(fake, logger)
+
+	t.Run("it succeeds when GetActivitiesByUrgency filters correctly", func(t *testing.T) {
+		ctx := context.Background()
+		items, err := svc.GetActivitiesByUrgency(ctx, 2)
+		assert.NoError(t, err)
+		assert.Len(t, items, 2)
+	})
+
+	t.Run("it succeeds when GetAllActivities orders desc and limits", func(t *testing.T) {
+		ctx := context.Background()
+		items, err := svc.GetAllActivities(ctx, 2)
+		assert.NoError(t, err)
+		assert.Len(t, items, 2)
+		// Expect the two latest by created_at desc to be first (ids 3 and 2 based on times)
+	})
+
+	t.Run("it succeeds when SyncActivity CREATE writes a doc", func(t *testing.T) {
+		ctx := context.Background()
+		ev := activityV1.ActivityEvent{Type: "CREATE", ActivityID: 10, UrgencyID: 5, EmployeeID: 9, Description: "New", CreatedAt: time.Now()}
+		err := svc.SyncActivity(ctx, ev)
+		assert.NoError(t, err)
+
+		items, err := svc.GetActivitiesByUrgency(ctx, 5)
+		assert.NoError(t, err)
+		found := false
+		for _, it := range items {
+			if it.ID == 10 {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found)
+	})
+
+	t.Run("it succeeds when SyncActivity UPDATE increments version", func(t *testing.T) {
+		ctx := context.Background()
+		fake := firestoretest.NewFake().WithCollection("activities", nil)
+		svc2 := NewFirebaseService(fake, logger)
+
+		create := activityV1.ActivityEvent{Type: "CREATE", ActivityID: 11, UrgencyID: 6, EmployeeID: 9, Description: "Old", CreatedAt: time.Now()}
+		err := svc2.SyncActivity(ctx, create)
+		assert.NoError(t, err)
+
+		ev := activityV1.ActivityEvent{Type: "UPDATE", ActivityID: 11, UrgencyID: 6, EmployeeID: 9, Description: "New"}
+		err = svc2.SyncActivity(ctx, ev)
+		assert.NoError(t, err)
+
+		items, err := svc2.GetActivitiesByUrgency(ctx, 6)
+		assert.NoError(t, err)
+		assert.Len(t, items, 1)
+		assert.Equal(t, "New", items[0].Description)
+	})
+
+	t.Run("it succeeds when SyncActivity DELETE removes document", func(t *testing.T) {
+		ctx := context.Background()
+		fake := firestoretest.NewFake().WithCollection("activities", nil)
+		svc3 := NewFirebaseService(fake, logger)
+
+		evCreate := activityV1.ActivityEvent{Type: "CREATE", ActivityID: 12, UrgencyID: 7, EmployeeID: 9, Description: "ToDelete", CreatedAt: time.Now()}
+		err := svc3.SyncActivity(ctx, evCreate)
+		assert.NoError(t, err)
+
+		ev := activityV1.ActivityEvent{Type: "DELETE", ActivityID: 12}
+		err = svc3.SyncActivity(ctx, ev)
+		assert.NoError(t, err)
+
+		items, err := svc3.GetActivitiesByUrgency(ctx, 7)
+		assert.NoError(t, err)
+		assert.Len(t, items, 0)
+	})
+
 }
 
 func TestFirebaseService_HealthCheck(t *testing.T) {
@@ -60,7 +117,6 @@ func TestFirebaseService_GetActivitiesByUrgency(t *testing.T) {
 		service := NewFirebaseService(nil, logger)
 		assert.NotNil(t, service)
 
-		// With nil client, should return error
 		activities, err := service.GetActivitiesByUrgency(context.Background(), 1)
 		assert.Error(t, err)
 		assert.Nil(t, activities)
@@ -76,7 +132,6 @@ func TestFirebaseService_GetAllActivities(t *testing.T) {
 		service := NewFirebaseService(nil, logger)
 		assert.NotNil(t, service)
 
-		// With nil client, should return error
 		activities, err := service.GetAllActivities(context.Background(), 10)
 		assert.Error(t, err)
 		assert.Nil(t, activities)
@@ -158,7 +213,6 @@ func TestFirebaseService_NewFirebaseService_Comprehensive(t *testing.T) {
 
 		ctx := context.Background()
 
-		// Test all interface methods return appropriate errors
 		_, err := service.GetActivitiesByUrgency(ctx, 1)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "Firestore client is nil")
@@ -171,7 +225,6 @@ func TestFirebaseService_NewFirebaseService_Comprehensive(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "Firestore client is nil")
 
-		// Test different event types
 		eventTypes := []string{"CREATE", "UPDATE", "DELETE", "UNKNOWN"}
 		for _, eventType := range eventTypes {
 			activityEvent := activityV1.ActivityEvent{
@@ -192,7 +245,6 @@ func TestFirebaseService_NewFirebaseService_Comprehensive(t *testing.T) {
 
 		ctx := context.Background()
 
-		// Test with different urgency IDs
 		urgencyIDs := []uint{0, 1, 999, 1000000}
 		for _, urgencyID := range urgencyIDs {
 			_, err := service.GetActivitiesByUrgency(ctx, urgencyID)
@@ -208,7 +260,6 @@ func TestFirebaseService_NewFirebaseService_Comprehensive(t *testing.T) {
 
 		ctx := context.Background()
 
-		// Test with different limits
 		limits := []int{-1, 0, 1, 10, 100, 1000}
 		for _, limit := range limits {
 			_, err := service.GetAllActivities(ctx, limit)

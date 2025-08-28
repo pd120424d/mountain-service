@@ -9,6 +9,7 @@ import (
 
 	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
+	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/clients"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
@@ -22,6 +23,9 @@ type UrgencyService interface {
 	UpdateUrgency(urgency *model.Urgency) error
 	DeleteUrgency(id uint) error
 	ResetAllData() error
+
+	AssignUrgency(urgencyID, employeeID uint) (urgencyV1.EmergencyAssignmentResponse, error)
+	UnassignUrgency(urgencyID uint, actorID uint, isAdmin bool) error
 }
 
 type urgencyService struct {
@@ -115,6 +119,68 @@ func (s *urgencyService) ResetAllData() error {
 	if err := s.repo.ResetAllData(); err != nil {
 		s.log.Errorf("Failed to reset all data: %v", err)
 		return commonv1.NewAppError("URGENCY_ERRORS.RESET_FAILED", "failed to reset all data", map[string]interface{}{"cause": err.Error()})
+	}
+	return nil
+}
+
+func (s *urgencyService) AssignUrgency(urgencyID, employeeID uint) (urgencyV1.EmergencyAssignmentResponse, error) {
+	if urgencyID == 0 || employeeID == 0 {
+		return urgencyV1.EmergencyAssignmentResponse{}, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId and employeeId are required", nil)
+	}
+
+	// Check if urgency exists
+	urg, err := s.GetUrgencyByID(urgencyID)
+	if err != nil {
+		return urgencyV1.EmergencyAssignmentResponse{}, err
+	}
+
+	// Check if employee is already assigned to this urgency
+	assignments, err := s.assignmentRepo.GetByUrgencyID(urgencyID)
+	if err != nil {
+		return urgencyV1.EmergencyAssignmentResponse{}, commonv1.NewAppError("URGENCY_ERRORS.ASSIGNMENT_LIST_FAILED", "failed to list assignments", map[string]interface{}{"cause": err.Error()})
+	}
+	for _, a := range assignments {
+		if a.Status == model.AssignmentAccepted {
+			return urgencyV1.EmergencyAssignmentResponse{}, commonv1.NewAppError("URGENCY_ERRORS.ALREADY_ASSIGNED", "urgency already assigned", nil)
+		}
+	}
+	assignment := &model.EmergencyAssignment{
+		UrgencyID:  urg.ID,
+		EmployeeID: employeeID,
+		Status:     model.AssignmentAccepted,
+		AssignedAt: time.Now(),
+	}
+	if err := s.assignmentRepo.Create(assignment); err != nil {
+		return urgencyV1.EmergencyAssignmentResponse{}, commonv1.NewAppError("URGENCY_ERRORS.ASSIGNMENT_CREATE_FAILED", "failed to create assignment", map[string]interface{}{"cause": err.Error()})
+	}
+	return assignment.ToResponse(), nil
+}
+
+func (s *urgencyService) UnassignUrgency(urgencyID uint, actorID uint, isAdmin bool) error {
+	if urgencyID == 0 {
+		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
+	}
+	assignments, err := s.assignmentRepo.GetByUrgencyID(urgencyID)
+	if err != nil {
+		return commonv1.NewAppError("URGENCY_ERRORS.ASSIGNMENT_LIST_FAILED", "failed to list assignments", map[string]interface{}{"cause": err.Error()})
+	}
+	var accepted *model.EmergencyAssignment
+	for i := range assignments {
+		if assignments[i].Status == model.AssignmentAccepted {
+			accepted = &assignments[i]
+			break
+		}
+	}
+	if accepted == nil {
+		return commonv1.NewAppError("URGENCY_ERRORS.NOT_ASSIGNED", "urgency has no accepted assignment", nil)
+	}
+
+	// Only assignee or admin sjould be able to unassign
+	if !isAdmin && accepted.EmployeeID != actorID {
+		return commonv1.NewAppError("AUTH_ERRORS.FORBIDDEN", "only assignee or admin can unassign", map[string]interface{}{"assignee": accepted.EmployeeID})
+	}
+	if err := s.assignmentRepo.Delete(accepted.ID); err != nil {
+		return commonv1.NewAppError("URGENCY_ERRORS.UNASSIGN_FAILED", "failed to unassign", map[string]interface{}{"cause": err.Error()})
 	}
 	return nil
 }

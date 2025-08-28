@@ -818,3 +818,194 @@ func TestUrgencyService_buildNotificationMessage(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestUrgencyService_AssignUrgency(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns error on invalid parameters", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		nrepo := repositories.NewMockNotificationRepository(ctrl)
+		ecli := clients.NewMockEmployeeClient(ctrl)
+
+		svc := NewUrgencyService(log, repo, arepo, nrepo, ecli)
+		_, err := svc.AssignUrgency(0, 10)
+		assert.Error(t, err)
+		_, err = svc.AssignUrgency(10, 0)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when urgency not found", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		nrepo := repositories.NewMockNotificationRepository(ctrl)
+		ecli := clients.NewMockEmployeeClient(ctrl)
+
+		repo.EXPECT().GetByID(uint(1), gomock.Any()).Return(assert.AnError)
+		svc := NewUrgencyService(log, repo, arepo, nrepo, ecli)
+		_, err := svc.AssignUrgency(1, 2)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when urgency already has accepted assignment", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		nrepo := repositories.NewMockNotificationRepository(ctrl)
+		ecli := clients.NewMockEmployeeClient(ctrl)
+
+		repo.EXPECT().GetByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
+		arepo.EXPECT().GetByUrgencyID(uint(1)).Return([]model.EmergencyAssignment{{Status: model.AssignmentAccepted}}, nil)
+
+		svc := NewUrgencyService(log, repo, arepo, nrepo, ecli)
+		_, err := svc.AssignUrgency(1, 2)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when listing assignments fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		nrepo := repositories.NewMockNotificationRepository(ctrl)
+		ecli := clients.NewMockEmployeeClient(ctrl)
+
+		repo.EXPECT().GetByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
+		arepo.EXPECT().GetByUrgencyID(uint(1)).Return(nil, assert.AnError)
+
+		svc := NewUrgencyService(log, repo, arepo, nrepo, ecli)
+		_, err := svc.AssignUrgency(1, 2)
+		assert.Error(t, err)
+	})
+
+	t.Run("it creates accepted assignment and returns response", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		nrepo := repositories.NewMockNotificationRepository(ctrl)
+		ecli := clients.NewMockEmployeeClient(ctrl)
+
+		repo.EXPECT().GetByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
+		arepo.EXPECT().GetByUrgencyID(uint(1)).Return([]model.EmergencyAssignment{}, nil)
+		arepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(a *model.EmergencyAssignment) error {
+			assert.Equal(t, uint(1), a.UrgencyID)
+			assert.Equal(t, uint(2), a.EmployeeID)
+			assert.Equal(t, model.AssignmentAccepted, a.Status)
+			a.ID = 123
+			return nil
+		})
+
+		svc := NewUrgencyService(log, repo, arepo, nrepo, ecli)
+		resp, err := svc.AssignUrgency(1, 2)
+		assert.NoError(t, err)
+		assert.Equal(t, uint(123), resp.ID)
+		assert.Equal(t, uint(1), resp.UrgencyID)
+		assert.Equal(t, uint(2), resp.EmployeeID)
+		assert.Equal(t, "accepted", resp.Status)
+	})
+}
+
+func TestUrgencyService_UnassignUrgency(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns error on invalid urgencyID", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		svc := &urgencyService{log: log}
+		err := svc.UnassignUrgency(0, 10, false)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when listing assignments fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		svc := &urgencyService{log: log, assignmentRepo: arepo}
+		arepo.EXPECT().GetByUrgencyID(uint(1)).Return(nil, assert.AnError)
+		err := svc.UnassignUrgency(1, 99, false)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when no accepted assignment exists", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		svc := &urgencyService{log: log, assignmentRepo: arepo}
+		arepo.EXPECT().GetByUrgencyID(uint(1)).Return([]model.EmergencyAssignment{}, nil)
+		err := svc.UnassignUrgency(1, 99, false)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns forbidden when actor is not assignee and not admin", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		svc := &urgencyService{log: log, assignmentRepo: arepo}
+		arepo.EXPECT().GetByUrgencyID(uint(1)).Return([]model.EmergencyAssignment{{ID: 7, EmployeeID: 55, Status: model.AssignmentAccepted}}, nil)
+		err := svc.UnassignUrgency(1, 99, false)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when delete fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		svc := &urgencyService{log: log, assignmentRepo: arepo}
+		arepo.EXPECT().GetByUrgencyID(uint(1)).Return([]model.EmergencyAssignment{{ID: 7, EmployeeID: 55, Status: model.AssignmentAccepted}}, nil)
+		arepo.EXPECT().Delete(uint(7)).Return(assert.AnError)
+		err := svc.UnassignUrgency(1, 55, false)
+		assert.Error(t, err)
+	})
+
+	t.Run("it succeeds when assignee unassigns", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		svc := &urgencyService{log: log, assignmentRepo: arepo}
+		arepo.EXPECT().GetByUrgencyID(uint(1)).Return([]model.EmergencyAssignment{{ID: 7, EmployeeID: 55, Status: model.AssignmentAccepted}}, nil)
+		arepo.EXPECT().Delete(uint(7)).Return(nil)
+		err := svc.UnassignUrgency(1, 55, false)
+		assert.NoError(t, err)
+	})
+
+	t.Run("it succeeds when admin unassigns", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		arepo := repositories.NewMockAssignmentRepository(ctrl)
+		svc := &urgencyService{log: log, assignmentRepo: arepo}
+		arepo.EXPECT().GetByUrgencyID(uint(1)).Return([]model.EmergencyAssignment{{ID: 7, EmployeeID: 55, Status: model.AssignmentAccepted}}, nil)
+		arepo.EXPECT().Delete(uint(7)).Return(nil)
+		err := svc.UnassignUrgency(1, 99, true)
+		assert.NoError(t, err)
+	})
+}

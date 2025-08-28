@@ -7,6 +7,7 @@ package internal
 import (
 	reflect "reflect"
 
+	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	model "github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -118,4 +119,33 @@ func (m *MockUrgencyService) UpdateUrgency(urgency *model.Urgency) error {
 func (mr *MockUrgencyServiceMockRecorder) UpdateUrgency(urgency interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUrgency", reflect.TypeOf((*MockUrgencyService)(nil).UpdateUrgency), urgency)
+}
+
+// AssignUrgency mocks base method.
+func (m *MockUrgencyService) AssignUrgency(urgencyID, employeeID uint) (urgencyV1.EmergencyAssignmentResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AssignUrgency", urgencyID, employeeID)
+	ret0, _ := ret[0].(urgencyV1.EmergencyAssignmentResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AssignUrgency indicates an expected call of AssignUrgency.
+func (mr *MockUrgencyServiceMockRecorder) AssignUrgency(urgencyID, employeeID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignUrgency", reflect.TypeOf((*MockUrgencyService)(nil).AssignUrgency), urgencyID, employeeID)
+}
+
+// UnassignUrgency mocks base method.
+func (m *MockUrgencyService) UnassignUrgency(urgencyID uint, actorID uint, isAdmin bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnassignUrgency", urgencyID, actorID, isAdmin)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnassignUrgency indicates an expected call of UnassignUrgency.
+func (mr *MockUrgencyServiceMockRecorder) UnassignUrgency(urgencyID, actorID, isAdmin interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnassignUrgency", reflect.TypeOf((*MockUrgencyService)(nil).UnassignUrgency), urgencyID, actorID, isAdmin)
 }

@@ -187,3 +187,42 @@ func TestNotification_ToResponse(t *testing.T) {
 		assert.Equal(t, updatedAt.Format(time.RFC3339), response.UpdatedAt)
 	})
 }
+
+func TestUrgency_UpdateWithRequest(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it updates urgency with request correctly", func(t *testing.T) {
+		urgency := &Urgency{
+			FirstName:    "Marko",
+			LastName:     "Markovic",
+			Email:        "test@example.com",
+			ContactPhone: "123456789",
+			Location:     "Test Location",
+			Description:  "Test Description",
+			Level:        urgencyV1.UrgencyLevel(urgencyV1.High),
+			Status:       urgencyV1.UrgencyStatus(urgencyV1.Open),
+		}
+
+		req := &urgencyV1.UrgencyUpdateRequest{
+			FirstName:    "Updated",
+			LastName:     "Name",
+			Email:        "updated@example.com",
+			ContactPhone: "987654321",
+			Location:     "Updated Location",
+			Description:  "Updated Description",
+			Level:        urgencyV1.Critical,
+			Status:       urgencyV1.InProgress,
+		}
+
+		urgency.UpdateWithRequest(req)
+
+		assert.Equal(t, "Updated", urgency.FirstName)
+		assert.Equal(t, "Name", urgency.LastName)
+		assert.Equal(t, "updated@example.com", urgency.Email)
+		assert.Equal(t, "987654321", urgency.ContactPhone)
+		assert.Equal(t, "Updated Location", urgency.Location)
+		assert.Equal(t, "Updated Description", urgency.Description)
+		assert.Equal(t, urgencyV1.UrgencyLevel(urgencyV1.Critical), urgency.Level)
+		assert.Equal(t, urgencyV1.UrgencyStatus(urgencyV1.InProgress), urgency.Status)
+	})
+}

@@ -488,7 +488,23 @@ func TestActivityService_ListActivities(t *testing.T) {
 func TestActivityService_GetActivityStats(t *testing.T) {
 	t.Parallel()
 
-	t.Run("successfully retrieves activity statistics", func(t *testing.T) {
+	t.Run("it returns error when repository fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		mockRepo := repositories.NewMockActivityRepository(ctrl)
+		service := NewActivityService(log, mockRepo)
+
+		mockRepo.EXPECT().GetStats().Return(nil, fmt.Errorf("database timeout"))
+
+		response, err := service.GetActivityStats()
+		assert.Error(t, err)
+		assert.Nil(t, response)
+		assert.Contains(t, err.Error(), "failed to get activity stats")
+	})
+
+	t.Run("it successfully retrieves activity statistics", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 

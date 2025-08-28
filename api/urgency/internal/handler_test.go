@@ -717,3 +717,104 @@ func TestUrgencyHandler_ResetAllData(t *testing.T) {
 		assert.Equal(t, http.StatusNoContent, w.Code)
 	})
 }
+
+func TestUrgencyHandler_AssignUrgency(t *testing.T) {
+	t.Parallel()
+	log := utils.NewTestLogger()
+
+	t.Run("it returns status 400 for invalid urgency ID", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "abc"}}
+		handler := NewUrgencyHandler(log, nil)
+		handler.AssignUrgency(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("it returns status 400 for invalid request payload", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies/1/assign", strings.NewReader("{"))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		handler := NewUrgencyHandler(log, nil)
+		handler.AssignUrgency(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("it returns status 400 when service fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies/1/assign", strings.NewReader(`{"employeeId":2}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		svc := NewMockUrgencyService(ctrl)
+		svc.EXPECT().AssignUrgency(uint(1), uint(2)).Return(urgencyV1.EmergencyAssignmentResponse{}, errors.New("fail"))
+		handler := NewUrgencyHandler(log, svc)
+		handler.AssignUrgency(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("it successfully assigns urgency", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies/1/assign", strings.NewReader(`{"employeeId":2}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		svc := NewMockUrgencyService(ctrl)
+		svc.EXPECT().AssignUrgency(uint(1), uint(2)).Return(urgencyV1.EmergencyAssignmentResponse{ID: 5, UrgencyID: 1, EmployeeID: 2, Status: "accepted"}, nil)
+		handler := NewUrgencyHandler(log, svc)
+		handler.AssignUrgency(ctx)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "\"id\":5")
+	})
+}
+
+func TestUrgencyHandler_UnassignUrgency(t *testing.T) {
+	t.Parallel()
+	log := utils.NewTestLogger()
+
+	t.Run("it returns status 400 for invalid urgency ID", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "abc"}}
+		handler := NewUrgencyHandler(log, nil)
+		handler.UnassignUrgency(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("it returns status 400 when service fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Set("employeeID", uint(10))
+		ctx.Set("role", "Medic")
+		svc := NewMockUrgencyService(ctrl)
+		svc.EXPECT().UnassignUrgency(uint(1), uint(10), false).Return(errors.New("cannot"))
+		handler := NewUrgencyHandler(log, svc)
+		handler.UnassignUrgency(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("it successfully unassigns urgency when user is admin", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Set("employeeID", uint(10))
+		ctx.Set("role", "Administrator")
+		svc := NewMockUrgencyService(ctrl)
+		svc.EXPECT().UnassignUrgency(uint(1), uint(10), true).Return(nil)
+		handler := NewUrgencyHandler(log, svc)
+		handler.UnassignUrgency(ctx)
+		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
+
+}

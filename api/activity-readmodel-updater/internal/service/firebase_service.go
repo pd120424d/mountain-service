@@ -6,11 +6,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-
-	"cloud.google.com/go/firestore"
-	"google.golang.org/api/iterator"
+	"time"
 
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
+	"github.com/pd120424d/mountain-service/api/shared/firestorex"
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
@@ -24,7 +23,7 @@ type FirebaseService interface {
 }
 
 type firebaseService struct {
-	client     *firestore.Client
+	client     firestorex.Client
 	logger     utils.Logger
 	collection string
 }
@@ -43,13 +42,14 @@ type FirebaseActivityDoc struct {
 	Version      int    `firestore:"version"`
 }
 
-func NewFirebaseService(client *firestore.Client, logger utils.Logger) FirebaseService {
+func NewFirebaseService(client firestorex.Client, logger utils.Logger) FirebaseService {
 	return &firebaseService{
 		client:     client,
 		logger:     logger.WithName("firebaseService"),
 		collection: "activities",
 	}
 }
+func isDone(err error) bool { return firestorex.IsDone(err) }
 
 // GetActivitiesByUrgency retrieves activities for a specific urgency from Firestore
 func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID uint) ([]*models.Activity, error) {
@@ -61,14 +61,14 @@ func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID 
 
 	iter := s.client.Collection(s.collection).
 		Where("urgency_id", "==", urgencyID).
-		OrderBy("created_at", firestore.Desc).
+		OrderBy("created_at", firestorex.Desc).
 		Documents(ctx)
 
 	var activities []*models.Activity
 
 	for {
 		doc, err := iter.Next()
-		if err == iterator.Done {
+		if isDone(err) {
 			break
 		}
 		if err != nil {
@@ -78,7 +78,7 @@ func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID 
 
 		var fbDoc FirebaseActivityDoc
 		if err := doc.DataTo(&fbDoc); err != nil {
-			s.logger.Errorf("Failed to unmarshal Firebase document %s: %v", doc.Ref.ID, err)
+			s.logger.Errorf("Failed to unmarshal Firebase document: %v", err)
 			continue
 		}
 
@@ -102,7 +102,7 @@ func (s *firebaseService) GetAllActivities(ctx context.Context, limit int) ([]*m
 
 	s.logger.Infof("Getting all activities from Firebase with limit: %d", limit)
 
-	query := s.client.Collection(s.collection).OrderBy("created_at", firestore.Desc)
+	query := s.client.Collection(s.collection).OrderBy("created_at", firestorex.Desc)
 	if limit > 0 {
 		query = query.Limit(limit)
 	}
@@ -112,7 +112,7 @@ func (s *firebaseService) GetAllActivities(ctx context.Context, limit int) ([]*m
 
 	for {
 		doc, err := iter.Next()
-		if err == iterator.Done {
+		if isDone(err) {
 			break
 		}
 		if err != nil {
@@ -122,7 +122,7 @@ func (s *firebaseService) GetAllActivities(ctx context.Context, limit int) ([]*m
 
 		var fbDoc FirebaseActivityDoc
 		if err := doc.DataTo(&fbDoc); err != nil {
-			s.logger.Errorf("Failed to unmarshal Firebase document %s: %v", doc.Ref.ID, err)
+			s.logger.Errorf("Failed to unmarshal Firebase document: %v", err)
 			continue
 		}
 
@@ -162,7 +162,7 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 			EmployeeName: eventData.EmployeeName,
 			UrgencyTitle: eventData.UrgencyTitle,
 			UrgencyLevel: eventData.UrgencyLevel,
-			SyncedAt:     firestore.ServerTimestamp.String(),
+			SyncedAt:     time.Now().UTC().Format(time.RFC3339),
 			Version:      1,
 		}
 
@@ -173,13 +173,13 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 		}
 
 	case "UPDATE":
-		updates := []firestore.Update{
+		updates := []firestorex.Update{
 			{Path: "description", Value: eventData.Description},
 			{Path: "employee_name", Value: eventData.EmployeeName},
 			{Path: "urgency_title", Value: eventData.UrgencyTitle},
 			{Path: "urgency_level", Value: eventData.UrgencyLevel},
-			{Path: "synced_at", Value: firestore.ServerTimestamp},
-			{Path: "version", Value: firestore.Increment(1)},
+			{Path: "synced_at", Value: firestorex.ServerTimestamp()},
+			{Path: "version", Value: firestorex.Increment(1)},
 		}
 
 		_, err := docRef.Update(ctx, updates)
@@ -212,7 +212,7 @@ func (s *firebaseService) HealthCheck(ctx context.Context) error {
 	// Try to read a single document to test connectivity
 	iter := s.client.Collection(s.collection).Limit(1).Documents(ctx)
 	_, err := iter.Next()
-	if err != nil && err != iterator.Done {
+	if err != nil && !isDone(err) {
 		s.logger.Errorf("Firebase health check failed: %v", err)
 		return fmt.Errorf("Firebase health check failed: %w", err)
 	}

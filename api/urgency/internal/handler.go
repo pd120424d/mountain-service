@@ -18,6 +18,9 @@ type UrgencyHandler interface {
 	UpdateUrgency(ctx *gin.Context)
 	DeleteUrgency(ctx *gin.Context)
 	ResetAllData(ctx *gin.Context)
+
+	AssignUrgency(ctx *gin.Context)
+	UnassignUrgency(ctx *gin.Context)
 }
 
 type urgencyHandler struct {
@@ -178,31 +181,7 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 		return
 	}
 
-	// Update fields if provided
-	if req.FirstName != "" {
-		urgency.FirstName = req.FirstName
-	}
-	if req.LastName != "" {
-		urgency.LastName = req.LastName
-	}
-	if req.Email != "" {
-		urgency.Email = req.Email
-	}
-	if req.ContactPhone != "" {
-		urgency.ContactPhone = req.ContactPhone
-	}
-	if req.Location != "" {
-		urgency.Location = req.Location
-	}
-	if req.Description != "" {
-		urgency.Description = req.Description
-	}
-	if req.Level != "" {
-		urgency.Level = urgencyV1.UrgencyLevel(req.Level)
-	}
-	if req.Status != "" {
-		urgency.Status = urgencyV1.UrgencyStatus(req.Status)
-	}
+	urgency.UpdateWithRequest(&req)
 
 	if err := h.svc.UpdateUrgency(urgency); err != nil {
 		h.log.Errorf("failed to update urgency: %v", err)
@@ -261,5 +240,66 @@ func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
 	}
 
 	h.log.Info("Successfully reset all urgency data")
+	ctx.JSON(http.StatusNoContent, nil)
+}
+
+// AssignUrgency assigns (or accepts) an urgency to an employee
+// @Summary Assign urgency to an employee
+// @Tags urgency
+// @Security OAuth2Password
+// @Param id path int true "Urgency ID"
+// @Param payload body urgencyV1.AssignmentCreateRequest true "Assignment payload"
+// @Success 200 {object} urgencyV1.EmergencyAssignmentResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /urgencies/{id}/assign [post]
+func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	urgencyID64, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil || urgencyID64 == 0 {
+		h.log.Errorf("invalid urgency ID: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
+		return
+	}
+	var req urgencyV1.AssignmentCreateRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		h.log.Errorf("failed to bind json: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+	assignment, appErr := h.svc.AssignUrgency(uint(urgencyID64), req.EmployeeID)
+	if appErr != nil {
+		h.log.Errorf("assign failed: %v", appErr)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": appErr.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, assignment)
+}
+
+// UnassignUrgency removes assignment for an urgency (admin or same assignee)
+// @Summary Unassign urgency
+// @Tags urgency
+// @Security OAuth2Password
+// @Param id path int true "Urgency ID"
+// @Success 204
+// @Failure 400 {object} map[string]interface{}
+// @Router /urgencies/{id}/assign [delete]
+func (h *urgencyHandler) UnassignUrgency(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	urgencyID64, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil || urgencyID64 == 0 {
+		h.log.Errorf("invalid urgency ID: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
+		return
+	}
+	actorIDVal, _ := ctx.Get("employeeID")
+	roleVal, _ := ctx.Get("role")
+	actorID, _ := actorIDVal.(uint)
+	isAdmin := roleVal == "Administrator"
+	if err := h.svc.UnassignUrgency(uint(urgencyID64), actorID, isAdmin); err != nil {
+		h.log.Errorf("unassign failed: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusNoContent, nil)
 }
