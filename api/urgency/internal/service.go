@@ -133,6 +133,11 @@ func (s *urgencyService) AssignUrgency(urgencyID, employeeID uint) error {
 	if urg.AssignedEmployeeID != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.ALREADY_ASSIGNED", "urgency already assigned", nil)
 	}
+
+	ctx := context.Background()
+	if _, err := s.employeeClient.GetEmployeeByID(ctx, employeeID); err != nil {
+		return commonv1.NewAppError("URGENCY_ERRORS.INVALID_ASSIGNEE", "employee does not exist or is not accessible", map[string]interface{}{"cause": err.Error(), "employeeId": employeeID})
+	}
 	now := time.Now()
 	urg.AssignedEmployeeID = &employeeID
 	urg.AssignedAt = &now

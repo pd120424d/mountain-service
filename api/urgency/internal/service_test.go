@@ -854,10 +854,29 @@ func TestUrgencyService_AssignUrgency(t *testing.T) {
 
 		repo.EXPECT().GetByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
 		repo.EXPECT().Update(gomock.Any()).Return(nil)
+		ecli.EXPECT().GetEmployeeByID(gomock.Any(), uint(2)).Return(&employeeV1.EmployeeResponse{ID: 2}, nil)
 
 		svc := NewUrgencyService(log, repo, nrepo, ecli)
 		err := svc.AssignUrgency(1, 2)
 		assert.NoError(t, err)
+
+		t.Run("it returns error when employee does not exist", func(t *testing.T) {
+			log := utils.NewTestLogger()
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			repo := repositories.NewMockUrgencyRepository(ctrl)
+			nrepo := repositories.NewMockNotificationRepository(ctrl)
+			ecli := clients.NewMockEmployeeClient(ctrl)
+
+			repo.EXPECT().GetByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
+			ecli.EXPECT().GetEmployeeByID(gomock.Any(), uint(2)).Return(nil, assert.AnError)
+
+			svc := NewUrgencyService(log, repo, nrepo, ecli)
+			err := svc.AssignUrgency(1, 2)
+			assert.Error(t, err)
+		})
+
 	})
 }
 

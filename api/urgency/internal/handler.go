@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
 	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
@@ -269,6 +270,10 @@ func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
 	}
 	if appErr := h.svc.AssignUrgency(uint(urgencyID64), req.EmployeeID); appErr != nil {
 		h.log.Errorf("assign failed: %v", appErr)
+		if aerr, ok := appErr.(*commonv1.AppError); ok {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": aerr.Code, "details": aerr.Error()})
+			return
+		}
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": appErr.Error()})
 		return
 	}

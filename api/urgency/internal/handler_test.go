@@ -13,6 +13,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
+	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
 	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
@@ -755,6 +756,22 @@ func TestUrgencyHandler_AssignUrgency(t *testing.T) {
 		handler := NewUrgencyHandler(log, svc)
 		handler.AssignUrgency(ctx)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("it returns 400 when employee is invalid (service returns INVALID_ASSIGNEE)", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies/1/assign", strings.NewReader(`{"employeeId":999}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		svc := NewMockUrgencyService(ctrl)
+		svc.EXPECT().AssignUrgency(uint(1), uint(999)).Return(commonv1.NewAppError("URGENCY_ERRORS.INVALID_ASSIGNEE", "employee does not exist or is not accessible", nil))
+		handler := NewUrgencyHandler(log, svc)
+		handler.AssignUrgency(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "INVALID_ASSIGNEE")
 	})
 
 	t.Run("it successfully assigns urgency", func(t *testing.T) {
