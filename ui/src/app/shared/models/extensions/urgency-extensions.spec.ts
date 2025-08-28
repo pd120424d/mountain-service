@@ -6,13 +6,29 @@ import {
   parseLocationString,
   formatLocationForApi,
   LocationCoordinates,
-  EnhancedLocation
+  EnhancedLocation,
+  hasAcceptedAssignment
 } from './urgency-extensions';
 import {
-  V1UrgencyLevel as UrgencyLevel,
-  V1UrgencyStatus as UrgencyStatus,
-  V1UrgencyResponse as UrgencyResponse
+  UrgencyLevel,
+  UrgencyStatus,
+  UrgencyResponse
 } from '../generated/urgency';
+
+  describe('hasAcceptedAssignment', () => {
+    it('returns false when assignedEmployeeId is undefined', () => {
+      const u: UrgencyResponse = { id: 1, status: UrgencyStatus.Open } as any;
+      expect(hasAcceptedAssignment(u as any)).toBe(false);
+    });
+    it('returns false when assignedEmployeeId is 0', () => {
+      const u: UrgencyResponse = { id: 2, assignedEmployeeId: 0 } as any;
+      expect(hasAcceptedAssignment(u as any)).toBe(false);
+    });
+    it('returns true when assignedEmployeeId > 0', () => {
+      const u: UrgencyResponse = { id: 3, assignedEmployeeId: 7 } as any;
+      expect(hasAcceptedAssignment(u as any)).toBe(true);
+    });
+  });
 
 describe('Urgency Extensions', () => {
   describe('getUrgencyLevelColor', () => {

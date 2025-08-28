@@ -97,9 +97,18 @@ func startPublisherIfConfigured(log utils.Logger, db *gorm.DB) {
 	var client *pubsub.Client
 	var err error
 	credsPath := os.Getenv("FIREBASE_CREDENTIALS_PATH")
+	useADC := false
 	if credsPath != "" {
+		if info, statErr := os.Stat(credsPath); statErr != nil || info.Size() == 0 {
+			log.Warnf("FIREBASE_CREDENTIALS_PATH set but file missing/empty (path=%s). Falling back to ADC.", credsPath)
+			useADC = true
+		}
+	}
+	if credsPath != "" && !useADC {
+		log.Infof("Initializing Pub/Sub client with credentials file: %s", credsPath)
 		client, err = pubsub.NewClient(context.Background(), projectID, option.WithCredentialsFile(credsPath))
 	} else {
+		log.Info("Initializing Pub/Sub client using Application Default Credentials (ADC)")
 		client, err = pubsub.NewClient(context.Background(), projectID)
 	}
 	if err != nil {
@@ -135,9 +144,18 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		credsPath := os.Getenv("FIREBASE_CREDENTIALS_PATH")
 		var fsClient *firestore.Client
 		var err error
+		useADC := false
 		if credsPath != "" {
+			if info, statErr := os.Stat(credsPath); statErr != nil || info.Size() == 0 {
+				log.Warnf("FIREBASE_CREDENTIALS_PATH set but file missing/empty (path=%s). Falling back to ADC.", credsPath)
+				useADC = true
+			}
+		}
+		if credsPath != "" && !useADC {
+			log.Infof("Initializing Firestore client with credentials file: %s", credsPath)
 			fsClient, err = firestore.NewClient(context.Background(), projectID, option.WithCredentialsFile(credsPath))
 		} else {
+			log.Info("Initializing Firestore client using Application Default Credentials (ADC)")
 			fsClient, err = firestore.NewClient(context.Background(), projectID)
 		}
 		if err != nil {

@@ -86,6 +86,10 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
       next: (urgency) => {
         this.urgency = urgency;
         this.isLoading = false;
+        const assignedId = (urgency as any)?.assignedEmployeeId as number | undefined;
+        if (assignedId && !this.employeeNames[assignedId]) {
+          this.fetchAssignedEmployeeName(assignedId);
+        }
       },
       error: (error) => {
         this.error = error.message || 'Failed to load urgency details';
@@ -250,8 +254,22 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
         }
       });
     }
-
     return this.translate.instant('URGENCY_DETAIL.EMPLOYEE_PLACEHOLDER', { id: employeeId });
+  }
+
+  private fetchAssignedEmployeeName(employeeId: number): void {
+    if (this.fetchingEmployeeIds.has(employeeId)) return;
+    this.fetchingEmployeeIds.add(employeeId);
+    this.employeeService.getEmployeeById(employeeId).subscribe({
+      next: (emp) => {
+        this.employeeNames[employeeId] = `${emp.firstName} ${emp.lastName}`;
+        this.fetchingEmployeeIds.delete(employeeId);
+      },
+      error: () => {
+        this.employeeNames[employeeId] = this.translate.instant('URGENCY_DETAIL.EMPLOYEE_PLACEHOLDER', { id: employeeId });
+        this.fetchingEmployeeIds.delete(employeeId);
+      }
+    });
   }
 
   private markFormGroupTouched(): void {

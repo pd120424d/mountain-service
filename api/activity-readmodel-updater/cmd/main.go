@@ -14,6 +14,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -74,7 +75,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
-	logger.Infof("Starting Activity Read Model Updater version=%s git_sha=%s", cfg.Version, cfg.GitSHA)
+	credsSrc := "ADC"
+	if cfg.FirebaseCredentialsPath != "" {
+		credsSrc = fmt.Sprintf("file:%s", cfg.FirebaseCredentialsPath)
+	}
+	logger.Infof("Starting Activity Read Model Updater version=%s git_sha=%s project_id=%s topic=%s subscription=%s creds=%s", cfg.Version, cfg.GitSHA, cfg.FirebaseProjectID, cfg.PubSubTopic, cfg.PubSubSubscription, credsSrc)
 
 	// Initialize Firebase Firestore
 	firestoreClient, err := initFirestore(cfg.FirebaseCredentialsPath, cfg.FirebaseProjectID)
@@ -98,6 +103,15 @@ func main() {
 	go func() {
 		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
+			ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+			defer cancel()
+			// Perform a lightweight Firestore operation
+			_, err := firestoreClient.Collections(ctx).Next()
+			if err != nil && err != iterator.Done {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				w.Write([]byte(fmt.Sprintf(`{"status":"unhealthy","service":"activity-readmodel-updater","firestore_error":"%v"}`, err)))
+				return
+			}
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"status":"healthy","service":"activity-readmodel-updater"}`))
 		})
@@ -172,9 +186,18 @@ func initFirestore(credentialsPath, projectID string) (*firestore.Client, error)
 	var client *firestore.Client
 	var err error
 
+	useADC := false
 	if credentialsPath != "" {
+		if info, statErr := os.Stat(credentialsPath); statErr != nil || info.Size() == 0 {
+			fmt.Printf("[WARN] FIREBASE_CREDENTIALS_PATH set but file missing/empty (path=%s). Falling back to ADC.\n", credentialsPath)
+			useADC = true
+		}
+	}
+	if credentialsPath != "" && !useADC {
+		fmt.Printf("[INFO] Initializing Firestore with credentials file: %s\n", credentialsPath)
 		client, err = firestore.NewClient(ctx, projectID, option.WithCredentialsFile(credentialsPath))
 	} else {
+		fmt.Println("[INFO] Initializing Firestore using Application Default Credentials (ADC)")
 		client, err = firestore.NewClient(ctx, projectID)
 	}
 
@@ -191,9 +214,18 @@ func initPubSub(credentialsPath, projectID string) (*pubsub.Client, error) {
 	var client *pubsub.Client
 	var err error
 
+	useADC := false
 	if credentialsPath != "" {
+		if info, statErr := os.Stat(credentialsPath); statErr != nil || info.Size() == 0 {
+			fmt.Printf("[WARN] FIREBASE_CREDENTIALS_PATH set but file missing/empty (path=%s). Falling back to ADC.\n", credentialsPath)
+			useADC = true
+		}
+	}
+	if credentialsPath != "" && !useADC {
+		fmt.Printf("[INFO] Initializing Pub/Sub with credentials file: %s\n", credentialsPath)
 		client, err = pubsub.NewClient(ctx, projectID, option.WithCredentialsFile(credentialsPath))
 	} else {
+		fmt.Println("[INFO] Initializing Pub/Sub using Application Default Credentials (ADC)")
 		client, err = pubsub.NewClient(ctx, projectID)
 	}
 
@@ -294,29 +326,36 @@ func publishEvent(ctx context.Context, topic *pubsub.Topic, event *models.Outbox
 func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseService service.FirebaseService, logger utils.Logger) error {
 	logger.Infof("Received activity event: message_id=%s, publish_time=%v", msg.ID, msg.PublishTime)
 
-	var event activityV1.OutboxEvent
-	if err := json.Unmarshal(msg.Data, &event); err != nil {
-		logger.Errorf("Failed to unmarshal event message: error=%v, message_id=%s", err, msg.ID)
-		return fmt.Errorf("failed to unmarshal event message: %w", err)
+	var envelope activityV1.OutboxEvent
+	if err := json.Unmarshal(msg.Data, &envelope); err == nil && (envelope.EventData != "" || envelope.EventType != "") {
+		logger.Infof("Processing activity event: event_type=%s, aggregate_id=%s", envelope.EventType, envelope.AggregateID)
+		activityEvent, err := envelope.GetEventData()
+		if err != nil {
+			logger.Errorf("Failed to extract activity event data from envelope: error=%v", err)
+			return fmt.Errorf("failed to extract activity event data: %w", err)
+		}
+		if err := firebaseService.SyncActivity(ctx, *activityEvent); err != nil {
+			logger.Errorf("Failed to sync activity to Firebase: activity_id=%d, error=%v", activityEvent.ActivityID, err)
+			return fmt.Errorf("failed to sync activity to Firebase: %w", err)
+		}
+		logger.Infof("Activity synced to Firebase successfully: activity_id=%d", activityEvent.ActivityID)
+		return nil
 	}
 
-	logger.Infof("Processing activity event: event_type=%s, aggregate_id=%s", event.EventType, event.AggregateID)
-
-	// Extract the ActivityEvent from the outbox event
-	activityEvent, err := event.GetEventData()
-	if err != nil {
-		logger.Errorf("Failed to extract activity event data: error=%v", err)
-		return fmt.Errorf("failed to extract activity event data: %w", err)
+	// Fallback to legacy format where message data is the ActivityEvent
+	var legacy activityV1.ActivityEvent
+	if err := json.Unmarshal(msg.Data, &legacy); err == nil && legacy.ActivityID != 0 {
+		logger.Infof("Processing legacy activity event: type=%s, activity_id=%d", legacy.Type, legacy.ActivityID)
+		if err := firebaseService.SyncActivity(ctx, legacy); err != nil {
+			logger.Errorf("Failed to sync legacy activity to Firebase: activity_id=%d, error=%v", legacy.ActivityID, err)
+			return fmt.Errorf("failed to sync legacy activity to Firebase: %w", err)
+		}
+		logger.Infof("Legacy activity synced to Firebase successfully: activity_id=%d", legacy.ActivityID)
+		return nil
 	}
 
-	if err := firebaseService.SyncActivity(ctx, *activityEvent); err != nil {
-		logger.Errorf("Failed to sync activity to Firebase: activity_id=%d, error=%v", activityEvent.ActivityID, err)
-		return fmt.Errorf("failed to sync activity to Firebase: %w", err)
-
-	}
-
-	logger.Infof("Activity synced to Firebase successfully: activity_id=%d", activityEvent.ActivityID)
-	return nil
+	logger.Errorf("Unrecognized event payload format, cannot parse message_id=%s", msg.ID)
+	return fmt.Errorf("unrecognized event payload format")
 }
 
 // buildDatabaseURLFromEnv constructs a Postgres DSN from DB_* environment variables.

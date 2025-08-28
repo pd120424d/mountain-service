@@ -2,11 +2,11 @@
 // These extend the generated models with frontend-specific functionality
 
 import {
-  V1UrgencyResponse as UrgencyResponse,
-  V1UrgencyCreateRequest as UrgencyCreateRequest,
-  V1UrgencyUpdateRequest as UrgencyUpdateRequest,
-  V1UrgencyLevel as UrgencyLevel,
-  V1UrgencyStatus as UrgencyStatus
+  UrgencyResponse,
+  UrgencyCreateRequest,
+  UrgencyUpdateRequest,
+  UrgencyLevel,
+  UrgencyStatus
 } from '../generated/urgency';
 
 // Type aliases for cleaner imports
@@ -177,9 +177,6 @@ export const getUrgencyStatusColor = (status: UrgencyStatus): string => {
 
 }
 export const hasAcceptedAssignment = (urgency: UrgencyResponse): boolean => {
-  const id = (urgency as any)?.assignmentId as string | number | undefined;
-  if (id === undefined || id === null) return false;
-  if (typeof id === 'string') return id.trim() !== '' && id !== '0';
-  if (typeof id === 'number') return id > 0;
-  return false;
+  const assignedEmployeeId = (urgency as any)?.assignedEmployeeId as number | undefined;
+  return typeof assignedEmployeeId === 'number' && assignedEmployeeId > 0;
 };

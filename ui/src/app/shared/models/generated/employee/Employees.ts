@@ -11,17 +11,18 @@
  */
 
 import {
+  GithubComPd120424DMountainServiceApiEmployeeInternalHandlerErrorResponse,
+  GithubComPd120424DMountainServiceApiEmployeeInternalHandlerMessageResponse,
+  GithubComPd120424DMountainServiceApiEmployeeInternalHandlerUploadProfilePictureResponse,
   InternalHandlerActiveEmergenciesResponse,
   InternalHandlerAssignShiftRequest,
   InternalHandlerAssignShiftResponse,
   InternalHandlerEmployeeResponse,
   InternalHandlerEmployeeUpdateRequest,
   InternalHandlerErrorResponse,
-  InternalHandlerMessageResponse,
   InternalHandlerOnCallEmployeesResponse,
   InternalHandlerRemoveShiftRequest,
   InternalHandlerShiftResponse,
-  InternalHandlerUploadProfilePictureResponse,
 } from "./data-contracts";
 import { ContentType, HttpClient, RequestParams } from "./http-client";
 
@@ -168,7 +169,10 @@ export class Employees<SecurityDataType = unknown> extends HttpClient<SecurityDa
     },
     params: RequestParams = {},
   ) =>
-    this.request<InternalHandlerUploadProfilePictureResponse, InternalHandlerErrorResponse>({
+    this.request<
+      GithubComPd120424DMountainServiceApiEmployeeInternalHandlerUploadProfilePictureResponse,
+      GithubComPd120424DMountainServiceApiEmployeeInternalHandlerErrorResponse
+    >({
       path: `/employees/${id}/profile-picture`,
       method: "POST",
       body: data,
@@ -194,7 +198,10 @@ export class Employees<SecurityDataType = unknown> extends HttpClient<SecurityDa
     },
     params: RequestParams = {},
   ) =>
-    this.request<InternalHandlerMessageResponse, InternalHandlerErrorResponse>({
+    this.request<
+      GithubComPd120424DMountainServiceApiEmployeeInternalHandlerMessageResponse,
+      GithubComPd120424DMountainServiceApiEmployeeInternalHandlerErrorResponse
+    >({
       path: `/employees/${id}/profile-picture`,
       method: "DELETE",
       query: query,

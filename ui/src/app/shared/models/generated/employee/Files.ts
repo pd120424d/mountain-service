@@ -10,7 +10,7 @@
  * ---------------------------------------------------------------
  */
 
-import { InternalHandlerErrorResponse } from "./data-contracts";
+import { GithubComPd120424DMountainServiceApiEmployeeInternalHandlerErrorResponse } from "./data-contracts";
 import { HttpClient, RequestParams } from "./http-client";
 
 export class Files<SecurityDataType = unknown> extends HttpClient<SecurityDataType> {
@@ -30,7 +30,7 @@ export class Files<SecurityDataType = unknown> extends HttpClient<SecurityDataTy
     },
     params: RequestParams = {},
   ) =>
-    this.request<Record<string, any>, InternalHandlerErrorResponse>({
+    this.request<Record<string, any>, GithubComPd120424DMountainServiceApiEmployeeInternalHandlerErrorResponse>({
       path: `/files/profile-picture/info`,
       method: "GET",
       query: query,

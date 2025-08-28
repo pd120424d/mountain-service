@@ -1,6 +1,6 @@
 <div class="urgency-detail-container">
   <div class="header">
-    <button class="btn btn-secondary back-button" (click)="goBack()" 
+    <button class="btn btn-secondary back-button" (click)="goBack()"
             [title]="'URGENCY_DETAIL.BACK_TO_LIST' | translate">
       <i class="fas fa-arrow-left"></i>
       {{ 'URGENCY_DETAIL.BACK_TO_LIST' | translate }}
@@ -34,9 +34,13 @@
           <span class="status-badge" [style.background-color]="getUrgencyStatusColor(urgency.status!)">
             {{ 'URGENCY_STATUS.' + (urgency.status?.toUpperCase()?.replace(' ', '_') || 'UNKNOWN') | translate }}
           </span>
+          <span *ngIf="urgency?.assignedEmployeeId as assignedId" class="assigned-badge">
+            {{ 'URGENCY_DETAIL.ASSIGNED_TO' | translate }}: {{ getEmployeeName(assignedId) }}
+          </span>
+
         </div>
       </div>
-      
+
       <div class="card-content">
         <div class="info-grid">
           <div class="info-item">
@@ -73,11 +77,13 @@
           </div>
         </div>
         <div class="actions-row">
-          <button class="btn btn-primary" *ngIf="canAssign()" (click)="onAssignToMe()">
-            {{ 'URGENCY_DETAIL.ASSIGN_TO_ME' | translate }}
+          <button class="btn btn-primary" *ngIf="canAssign()" [disabled]="isAssigning" (click)="onAssignToMe()">
+            <span *ngIf="isAssigning">{{ 'URGENCY_DETAIL.ASSIGNING' | translate }}</span>
+            <span *ngIf="!isAssigning">{{ 'URGENCY_DETAIL.ASSIGN_TO_ME' | translate }}</span>
           </button>
-          <button class="btn btn-warning" *ngIf="canUnassign()" (click)="onUnassign()">
-            {{ 'URGENCY_DETAIL.UNASSIGN' | translate }}
+          <button class="btn btn-warning" *ngIf="canUnassign()" [disabled]="isUnassigning" (click)="onUnassign()">
+            <span *ngIf="isUnassigning">{{ 'URGENCY_DETAIL.UNASSIGNING' | translate }}</span>
+            <span *ngIf="!isUnassigning">{{ 'URGENCY_DETAIL.UNASSIGN' | translate }}</span>
           </button>
         </div>
       </div>
@@ -86,7 +92,7 @@
     <!-- Activities Section -->
     <div class="activities-section">
       <h3>{{ 'URGENCY_DETAIL.ACTIVITIES' | translate }}</h3>
-      
+
       <!-- Add Activity Form -->
       <div class="add-activity-form">
         <h4>{{ 'URGENCY_DETAIL.ADD_ACTIVITY' | translate }}</h4>

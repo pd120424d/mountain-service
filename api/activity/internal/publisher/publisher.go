@@ -2,11 +2,13 @@ package publisher
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
+	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
@@ -85,8 +87,24 @@ func (p *Publisher) processOnce(ctx context.Context) error {
 
 	sent := 0
 	for _, e := range events {
+		// Build the payload from the contract dto
+		payload := activityV1.OutboxEvent{
+			ID:          e.ID,
+			EventType:   e.EventType,
+			AggregateID: e.AggregateID,
+			EventData:   e.EventData,
+			Published:   e.Published,
+			CreatedAt:   e.CreatedAt,
+			PublishedAt: e.PublishedAt,
+		}
+		data, mErr := json.Marshal(payload)
+		if mErr != nil {
+			p.log.Errorf("failed to marshal outbox envelope id=%d: %v", e.ID, mErr)
+			continue
+		}
+
 		res := topic.Publish(ctx, &pubsub.Message{
-			Data:       []byte(e.EventData),
+			Data:       data,
 			Attributes: map[string]string{"eventType": e.EventType, "aggregateId": e.AggregateID},
 		})
 		if _, err := res.Get(ctx); err != nil {

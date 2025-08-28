@@ -4,7 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
-import { Urgency, UrgencyLevel, UrgencyStatus, UrgencyStatus as GeneratedUrgencyStatus, UrgencyLevel as GeneratedUrgencyLevel, createUrgencyDisplayName } from '../../shared/models';
+import { Urgency, UrgencyLevel, UrgencyStatus, UrgencyStatus as GeneratedUrgencyStatus, UrgencyLevel as GeneratedUrgencyLevel, createUrgencyDisplayName, hasAcceptedAssignment } from '../../shared/models';
 
 @Component({
   selector: 'app-urgency-list',
@@ -22,7 +22,7 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   Status = UrgencyStatus;
 
   get unassignedCount(): number {
-    return (this.urgencies || []).filter(u => (u.status as any) === UrgencyStatus.Open).length;
+    return (this.urgencies || []).filter(u => !hasAcceptedAssignment(u as any)).length;
   }
 
   constructor(

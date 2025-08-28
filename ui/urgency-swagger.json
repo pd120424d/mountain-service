@@ -112,6 +112,14 @@
           "type": "string",
           "format": "date-time"
         },
+        "assignedEmployeeId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "assignedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
         "updatedAt": {
           "type": "string",
           "format": "date-time"
