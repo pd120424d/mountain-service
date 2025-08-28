@@ -156,6 +156,14 @@ th {
   background-color: #f8f9fa;
 }
 
+/* Highlight for unassigned/open urgencies */
+.urgency-unassigned {
+  background: linear-gradient(90deg, rgba(255,238,240,0.9), rgba(255,255,255,0.6));
+}
+.urgency-unassigned td {
+  border-bottom-color: #f5c6cb; /* subtle red-ish divider */
+}
+
 .level-badge,
 .status-badge {
   padding: 0.25rem 0.5rem;

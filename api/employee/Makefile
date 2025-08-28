@@ -59,5 +59,5 @@ lint:
 # Generate Swagger documentation
 swagger:
 	@echo "Generating Swagger documentation..."
-	@~/go/bin/swag init -g cmd/main.go -o cmd/docs --exclude cmd/docs --parseInternal --parseDependency --pdl 3
+	@~/go/bin/swag init -g cmd/main.go -o cmd/docs --exclude cmd/docs --pdl 3
 	@echo "Swagger documentation generated."

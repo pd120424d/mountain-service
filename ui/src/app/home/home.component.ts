@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../services/auth.service';
+import { UrgencyService } from '../urgency/urgency.service';
+import { UrgencyStatus } from '../shared/models';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrService } from 'ngx-toastr';
 import { NgxSpinnerModule } from 'ngx-spinner';
@@ -34,9 +36,12 @@ export class HomeComponent implements OnInit {
   prevImageIndex = 0;
   isStaging = environment.staging;
 
+  openUrgenciesCount: number = 0;
+
   constructor(
     private translate: TranslateService,
     public authService: AuthService,
+    private urgencyService: UrgencyService,
     private spinner: NgxSpinnerService,
     private toastr: ToastrService) {
     this.translate.setDefaultLang('sr-cyr')
@@ -44,6 +49,18 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     this.preloadImage(this.images[1]); // preload second image immediately
+
+    // Fetch open urgencies count when user is authenticated
+    if (this.authService.isAuthenticated()) {
+      this.urgencyService.getUrgencies().subscribe({
+        next: (urgencies) => {
+          this.openUrgenciesCount = (urgencies || []).filter(u => (u as any)?.status === UrgencyStatus.Open).length;
+        },
+        error: () => {
+          this.openUrgenciesCount = this.openUrgenciesCount || 0;
+        }
+      });
+    }
 
     setInterval(() => {
       const nextIndex = (this.currentImageIndex + 1) % this.images.length;

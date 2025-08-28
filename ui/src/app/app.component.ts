@@ -143,6 +143,10 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  goToUrgencies(): void {
+    this.router.navigate(['/urgencies']);
+  }
+
   getUserProfilePicture(): string | null {
     return this.currentUser?.profilePicture || null;
   }
