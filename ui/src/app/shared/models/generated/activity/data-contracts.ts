@@ -10,66 +10,39 @@
  * ---------------------------------------------------------------
  */
 
-export interface ErrorResponse {
+export interface GithubComPd120424DMountainServiceApiContractsActivityV1ErrorResponse {
   error?: string;
 }
 
-export interface MessageResponse {
-  message?: string;
-}
-
-export interface ActivityResponse {
-  /** @format int64 */
-  id?: number;
-  description?: string;
-  /** @format int64 */
-  employee_id?: number;
-  /** @format int64 */
-  urgency_id?: number;
-  /** @format date-time */
-  created_at?: string;
-  /** @format date-time */
-  updated_at?: string;
-}
-
-export interface ActivityCreateRequest {
+export interface V1ActivityCreateRequest {
   description: string;
-  /** @format int64 */
-  employee_id: number;
-  /** @format int64 */
-  urgency_id: number;
+  employeeId: number;
+  urgencyId: number;
 }
 
-export interface ActivityListRequest {
-  /** @format int64 */
-  employee_id?: number;
-  /** @format int64 */
-  urgency_id?: number;
-  /** @format date-time */
-  start_date?: string;
-  /** @format date-time */
-  end_date?: string;
-  page?: number;
-  page_size?: number;
-}
-
-export interface ActivityListResponse {
-  activities?: ActivityResponse[];
-  /** @format int64 */
-  total?: number;
+export interface V1ActivityListResponse {
+  activities?: V1ActivityResponse[];
   page?: number;
   pageSize?: number;
+  total?: number;
   totalPages?: number;
 }
 
-export interface ActivityStatsResponse {
-  /** @format int64 */
-  total_activities?: number;
-  recent_activities?: ActivityResponse[];
-  /** @format int64 */
-  activities_last_24h?: number;
-  /** @format int64 */
-  activities_last_7_days?: number;
-  /** @format int64 */
-  activities_last_30_days?: number;
+export interface V1ActivityResponse {
+  createdAt?: string;
+  description?: string;
+  /** ID of the employee who created the activity */
+  employeeId?: number;
+  id?: number;
+  updatedAt?: string;
+  /** ID of the urgency this activity relates to */
+  urgencyId?: number;
+}
+
+export interface V1ActivityStatsResponse {
+  activitiesLast24h?: number;
+  activitiesLast30Days?: number;
+  activitiesLast7Days?: number;
+  recentActivities?: V1ActivityResponse[];
+  totalActivities?: number;
 }

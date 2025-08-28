@@ -11,18 +11,17 @@
  */
 
 import {
-  GithubComPd120424DMountainServiceApiEmployeeInternalHandlerErrorResponse,
-  GithubComPd120424DMountainServiceApiEmployeeInternalHandlerMessageResponse,
-  GithubComPd120424DMountainServiceApiEmployeeInternalHandlerUploadProfilePictureResponse,
   InternalHandlerActiveEmergenciesResponse,
   InternalHandlerAssignShiftRequest,
   InternalHandlerAssignShiftResponse,
   InternalHandlerEmployeeResponse,
   InternalHandlerEmployeeUpdateRequest,
   InternalHandlerErrorResponse,
+  InternalHandlerMessageResponse,
   InternalHandlerOnCallEmployeesResponse,
   InternalHandlerRemoveShiftRequest,
   InternalHandlerShiftResponse,
+  InternalHandlerUploadProfilePictureResponse,
 } from "./data-contracts";
 import { ContentType, HttpClient, RequestParams } from "./http-client";
 
@@ -45,47 +44,17 @@ export class Employees<SecurityDataType = unknown> extends HttpClient<SecurityDa
       ...params,
     });
   /**
-   * @description Креирање новог запосленог у систему (supports both JSON and multipart form data)
+   * No description
    *
-   * @tags запослени
    * @name EmployeesCreate
-   * @summary Креирање новог запосленог
    * @request POST:/employees
    * @secure
    */
-  employeesCreate = (
-    employee: {
-      /** First Name (form data) */
-      firstName?: string;
-      /** Last Name (form data) */
-      lastName?: string;
-      /** Username (form data) */
-      username?: string;
-      /** Password (form data) */
-      password?: string;
-      /** Email (form data) */
-      email?: string;
-      /** Gender (form data) */
-      gender?: string;
-      /** Phone (form data) */
-      phone?: string;
-      /** Profile Type (form data) */
-      profileType?: string;
-      /**
-       * Profile Picture (form data)
-       * @format binary
-       */
-      profilePicture?: File;
-    },
-    params: RequestParams = {},
-  ) =>
+  employeesCreate = (params: RequestParams = {}) =>
     this.request<InternalHandlerEmployeeResponse, InternalHandlerErrorResponse>({
       path: `/employees`,
       method: "POST",
-      body: employee,
       secure: true,
-      type: ContentType.FormData,
-      format: "json",
       ...params,
     });
   /**
@@ -199,10 +168,7 @@ export class Employees<SecurityDataType = unknown> extends HttpClient<SecurityDa
     },
     params: RequestParams = {},
   ) =>
-    this.request<
-      GithubComPd120424DMountainServiceApiEmployeeInternalHandlerUploadProfilePictureResponse,
-      GithubComPd120424DMountainServiceApiEmployeeInternalHandlerErrorResponse
-    >({
+    this.request<InternalHandlerUploadProfilePictureResponse, InternalHandlerErrorResponse>({
       path: `/employees/${id}/profile-picture`,
       method: "POST",
       body: data,
@@ -228,10 +194,7 @@ export class Employees<SecurityDataType = unknown> extends HttpClient<SecurityDa
     },
     params: RequestParams = {},
   ) =>
-    this.request<
-      GithubComPd120424DMountainServiceApiEmployeeInternalHandlerMessageResponse,
-      GithubComPd120424DMountainServiceApiEmployeeInternalHandlerErrorResponse
-    >({
+    this.request<InternalHandlerMessageResponse, InternalHandlerErrorResponse>({
       path: `/employees/${id}/profile-picture`,
       method: "DELETE",
       query: query,

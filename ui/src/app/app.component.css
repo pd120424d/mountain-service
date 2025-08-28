@@ -1,3 +1,20 @@
+/* Global open urgencies indicator */
+.open-urgencies-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff3cd; /* Bootstrap warning background */
+  color: #856404;      /* Bootstrap warning text */
+  border: 1px solid #ffeeba;
+  border-radius: 12px;
+  padding: 2px 8px;
+  margin-left: 12px;
+  cursor: help; /* reflects tooltip hover */
+}
+.open-urgencies-indicator i {
+  color: #d39e00;
+}
+
 .top-left-container {
   position: absolute;
   top: 10px;

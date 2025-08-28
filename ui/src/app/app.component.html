@@ -20,6 +20,14 @@
       </span>
     </div>
   </div>
+  <!-- Global open urgencies indicator -->
+  <div *ngIf="authService.isAuthenticated() && openUrgenciesCount > 0"
+       class="open-urgencies-indicator"
+       title="{{ 'URGENCY_LIST.UNASSIGNED_WARNING' | translate:{ count: openUrgenciesCount } }}">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>{{ openUrgenciesCount }}</span>
+  </div>
+
 </div>
 
 <!-- Top-right section (Language Switcher + Login Button) -->

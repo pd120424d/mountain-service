@@ -4,10 +4,11 @@ import { AuthService } from './services/auth.service';
 import { EmployeeService } from './employee/employee.service';
 import { AppInitializationService } from './services/app-initialization.service';
 import { CommonModule } from '@angular/common';
-import { RouterModule, RouterOutlet, Router } from '@angular/router';
+import { RouterModule, RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { VersionBannerComponent } from './version-banner/version-banner.component';
 import { NgxSpinnerModule } from 'ngx-spinner';
-import { Employee } from './shared/models';
+import { Employee, Urgency, UrgencyStatus } from './shared/models';
+import { UrgencyService } from './urgency/urgency.service';
 
 @Component({
   selector: 'app-root',
@@ -21,6 +22,8 @@ export class AppComponent implements OnInit, OnDestroy {
   currentLanguageLabel = 'EN';
   currentUser: Employee | null = null;
 
+  openUrgenciesCount: number = 0;
+
   private languageMap: { [key: string]: string } = {
     'en': 'EN',
     'sr-lat': 'SR',
@@ -31,6 +34,7 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     public authService: AuthService,
     private employeeService: EmployeeService,
+    private urgencyService: UrgencyService,
     private translate: TranslateService,
     private appInitService: AppInitializationService,
     private router: Router
@@ -45,12 +49,23 @@ export class AppComponent implements OnInit, OnDestroy {
     this.appInitService.initialize().then(() => {
       console.log('Application initialized successfully');
       this.loadCurrentUser();
+      this.refreshOpenUrgencies();
     }).catch((error) => {
       console.error('Failed to initialize application:', error);
     });
 
     // Update header when auth state changes (e.g., after login/logout)
-    this.authService.authChanged$.subscribe(() => this.loadCurrentUser());
+    this.authService.authChanged$.subscribe(() => {
+      this.loadCurrentUser();
+      this.refreshOpenUrgencies();
+    });
+
+    // Refresh global indicator on route changes
+    this.router.events.subscribe((evt) => {
+      if (evt instanceof NavigationEnd) {
+        this.refreshOpenUrgencies();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -111,6 +126,21 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/profile']);
     }
+  }
+
+  private refreshOpenUrgencies(): void {
+    if (!this.authService.isAuthenticated()) {
+      this.openUrgenciesCount = 0;
+      return;
+    }
+    this.urgencyService.getUrgencies().subscribe({
+      next: (urgencies) => {
+        this.openUrgenciesCount = (urgencies || []).filter(u => (u as any)?.status === UrgencyStatus.Open).length;
+      },
+      error: () => {
+        this.openUrgenciesCount = this.openUrgenciesCount || 0;
+      }
+    });
   }
 
   getUserProfilePicture(): string | null {
