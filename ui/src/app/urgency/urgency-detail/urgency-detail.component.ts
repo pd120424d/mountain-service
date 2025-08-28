@@ -8,10 +8,10 @@ import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
 import { ActivityService } from '../../services/activity.service';
 import { AuthService } from '../../services/auth.service';
+import { EmployeeService } from '../../employee/employee.service';
 import {
   Urgency,
   Activity,
-  ActivityCreateRequest,
   UrgencyStatus,
   createUrgencyDisplayName,
   getUrgencyLevelColor,
@@ -37,6 +37,9 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   error: string | null = null;
   urgencyId: number | null = null;
 
+  employeeNames: Record<number, string> = {};
+  private fetchingEmployeeIds = new Set<number>();
+
   UrgencyStatus = UrgencyStatus;
 
   constructor(
@@ -47,6 +50,7 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
     private activityService: ActivityService,
     private authService: AuthService,
     private toastr: ToastrService,
+    private employeeService: EmployeeService,
     translate: TranslateService
   ) {
     super(translate);
@@ -179,6 +183,27 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
       }
     }
     return '';
+  }
+
+  getEmployeeName(employeeId: number): string {
+    const cached = this.employeeNames[employeeId];
+    if (cached) return cached;
+
+    if (!this.fetchingEmployeeIds.has(employeeId)) {
+      this.fetchingEmployeeIds.add(employeeId);
+      this.employeeService.getEmployeeById(employeeId).subscribe({
+        next: (emp) => {
+          this.employeeNames[employeeId] = `${emp.firstName} ${emp.lastName}`;
+          this.fetchingEmployeeIds.delete(employeeId);
+        },
+        error: () => {
+          this.employeeNames[employeeId] = this.translate.instant('URGENCY_DETAIL.EMPLOYEE_PLACEHOLDER', { id: employeeId });
+          this.fetchingEmployeeIds.delete(employeeId);
+        }
+      });
+    }
+
+    return this.translate.instant('URGENCY_DETAIL.EMPLOYEE_PLACEHOLDER', { id: employeeId });
   }
 
   private markFormGroupTouched(): void {

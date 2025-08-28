@@ -129,7 +129,7 @@
                 <div class="activity-info">
                   <span class="activity-date">{{ getActivityDisplayTime(activity) }}</span>
                   <span *ngIf="activity.employeeId" class="activity-actor">
-                    {{ 'URGENCY_DETAIL.BY_EMPLOYEE' | translate }} {{ activity.employeeId }}
+                    {{ 'URGENCY_DETAIL.ADDED_BY' | translate }} {{ getEmployeeName(activity.employeeId) }}
                   </span>
                 </div>
               </div>

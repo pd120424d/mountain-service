@@ -15,7 +15,9 @@
     </div>
     <div class="user-info">
       <span class="user-name">{{ getUserDisplayName() }}</span>
-      <span class="user-role">{{ currentUser.profileType }}</span>
+      <span class="user-role">
+        {{ ('PROFILE.PROFILE_OPTIONS.' + (currentUser.profileType?.toUpperCase() || '')) | translate }}
+      </span>
     </div>
   </div>
 </div>
