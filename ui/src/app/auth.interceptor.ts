@@ -16,7 +16,13 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        authService.logout();
+        const isExpiredOrMissing = !authService.isAuthenticated();
+        const url = (req && (req as any).url) ? (req as any).url.toString() : '';
+        const isAuthEndpoint = url.includes('/login') || url.includes('/oauth/token');
+        // Only force logout if token is missing/expired or the 401 came from auth endpoints
+        if (isExpiredOrMissing || isAuthEndpoint) {
+          authService.logout();
+        }
       }
       return throwError(() => error);
     })

@@ -249,6 +249,7 @@
         "LOADING": "Loading emergencies...",
         "RETRY": "Retry",
         "NO_URGENCIES": "No emergency reports found.",
+        "UNASSIGNED_WARNING": "There are {{count}} open emergencies awaiting assignment.",
         "TABLE_HEADERS": {
             "ID": "ID",
             "NAME": "Reporter Name",

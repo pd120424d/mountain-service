@@ -21,6 +21,10 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   UrgencyLevel = UrgencyLevel;
   Status = UrgencyStatus;
 
+  get unassignedCount(): number {
+    return (this.urgencies || []).filter(u => (u.status as any) === UrgencyStatus.Open).length;
+  }
+
   constructor(
     private urgencyService: UrgencyService,
     private router: Router,

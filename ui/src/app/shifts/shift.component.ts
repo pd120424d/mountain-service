@@ -53,7 +53,10 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
 
   loadShifts() {
     this.isLoading = true;
-    this.shiftService.getShiftAvailability(this.selectedTimeSpan).subscribe({
+    const obs = (this.userRole === AdministratorRole)
+      ? this.shiftService.getAdminShiftAvailability(this.selectedTimeSpan)
+      : this.shiftService.getShiftAvailability(this.selectedTimeSpan);
+    obs.subscribe({
       next: (data) => {
         this.shiftAvailability = data;
         this.dates = Object.keys(data.days || {})

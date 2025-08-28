@@ -20,6 +20,17 @@ export class ShiftManagementService {
     );
   }
 
+  getAdminShiftAvailability(days: number = 7): Observable<ShiftAvailabilityResponse> {
+    console.log(`Fetching admin shift availability for ${days} days`);
+    return this.http.get<ShiftAvailabilityResponse>(
+      `/api/v1/admin/shifts/availability?days=${days}`
+    ).pipe(
+      tap(response => console.log('Admin shift availability response:', response)),
+      catchError(this.handleError)
+    );
+  }
+
+
   getAllEmployees(): Observable<Employee[]> {
     console.log('Fetching all employees');
     return this.http.get<Employee[]>('/api/v1/employees').pipe(
