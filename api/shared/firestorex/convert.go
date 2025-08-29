@@ -37,6 +37,16 @@ func SnapshotDataTo(ds map[string]interface{}, out interface{}) error {
 					} else if n, ok := val.(uint); ok {
 						fv.SetUint(uint64(n))
 					}
+				case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
+					if n, ok := val.(int64); ok {
+						fv.SetInt(n)
+					} else if n, ok := val.(int); ok {
+						fv.SetInt(int64(n))
+					} else if n, ok := val.(uint64); ok {
+						fv.SetInt(int64(n))
+					} else if n, ok := val.(uint); ok {
+						fv.SetInt(int64(n))
+					}
 				case reflect.String:
 					if s, ok := val.(string); ok {
 						fv.SetString(s)
@@ -47,4 +57,3 @@ func SnapshotDataTo(ds map[string]interface{}, out interface{}) error {
 	}
 	return nil
 }
-
