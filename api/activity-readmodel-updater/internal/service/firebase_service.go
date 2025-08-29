@@ -145,6 +145,9 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 	if s.client == nil {
 		return fmt.Errorf("Firestore client is nil")
 	}
+	if eventData.ActivityID == 0 {
+		return fmt.Errorf("invalid activity id: 0")
+	}
 
 	s.logger.Infof("Syncing activity to Firebase: activity_id=%d, type=%s", eventData.ActivityID, eventData.Type)
 

@@ -339,6 +339,11 @@ func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseServi
 		logger.Infof("Processing activity event: event_type=%s, aggregate_id=%s", envelope.EventType, envelope.AggregateID)
 		// Try direct
 		if ev, err := envelope.GetEventData(); err == nil {
+			// If producer forgot to set ActivityID, try to recover from aggregateId (activity-<id>)
+			// TODO: fix this in a proper way
+			if ev.ActivityID == 0 {
+				fillIDFromAggregateID(ev, envelope.AggregateID)
+			}
 			if normalizeAndProcess(ctx, *ev, firebaseService, logger) == nil {
 				return nil
 			}
@@ -348,6 +353,9 @@ func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseServi
 			if unq, uErr := strconv.Unquote(envelope.EventData); uErr == nil {
 				var ev activityV1.ActivityEvent
 				if jErr := json.Unmarshal([]byte(unq), &ev); jErr == nil {
+					if ev.ActivityID == 0 {
+						fillIDFromAggregateID(&ev, envelope.AggregateID)
+					}
 					if normalizeAndProcess(ctx, ev, firebaseService, logger) == nil {
 						return nil
 					}
@@ -373,6 +381,9 @@ func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseServi
 		if err := json.Unmarshal(raw, &envelope); err == nil && (envelope.EventData != "" || envelope.EventType != "") {
 			logger.Infof("Processing activity event (quoted): event_type=%s, aggregate_id=%s", envelope.EventType, envelope.AggregateID)
 			if ev, err := envelope.GetEventData(); err == nil {
+				if ev.ActivityID == 0 {
+					fillIDFromAggregateID(ev, envelope.AggregateID)
+				}
 				if normalizeAndProcess(ctx, *ev, firebaseService, logger) == nil {
 					return nil
 				}
@@ -381,6 +392,9 @@ func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseServi
 				if unq, uErr := strconv.Unquote(envelope.EventData); uErr == nil {
 					var ev activityV1.ActivityEvent
 					if jErr := json.Unmarshal([]byte(unq), &ev); jErr == nil {
+						if ev.ActivityID == 0 {
+							fillIDFromAggregateID(&ev, envelope.AggregateID)
+						}
 						if normalizeAndProcess(ctx, ev, firebaseService, logger) == nil {
 							return nil
 						}
@@ -398,6 +412,17 @@ func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseServi
 
 	logger.Errorf("Unrecognized event payload format, cannot parse message_id=%s", msg.ID)
 	return fmt.Errorf("unrecognized event payload format")
+}
+
+// fillIDFromAggregateID parses patterns like "activity-123" and sets ev.ActivityID if zero
+func fillIDFromAggregateID(ev *activityV1.ActivityEvent, aggregateID string) {
+	if ev == nil || ev.ActivityID != 0 || aggregateID == "" {
+		return
+	}
+	var id uint64
+	if _, err := fmt.Sscanf(aggregateID, "activity-%d", &id); err == nil && id > 0 {
+		ev.ActivityID = uint(id)
+	}
 }
 
 // buildDatabaseURLFromEnv constructs a Postgres DSN from DB_* environment variables.
