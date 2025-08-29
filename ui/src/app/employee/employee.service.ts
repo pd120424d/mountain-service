@@ -44,8 +44,6 @@ export class EmployeeService {
     );
   }
 
-
-
   updateEmployee(id: number, employeeUpdate: EmployeeUpdateRequest): Observable<Employee> {
     return this.http.put<Employee>(`${this.employeeApiUrl}/${id}`, employeeUpdate).pipe(
       catchError(this.handleError)
