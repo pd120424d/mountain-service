@@ -12,12 +12,12 @@ import (
 	"syscall"
 	"time"
 
+	"strings"
+
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
 	"github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/service"
@@ -52,10 +52,15 @@ func loadConfig() *Config {
 		dbURL = buildDatabaseURLFromEnv()
 	}
 
+	// Prefer explicit FIREBASE_CREDENTIALS_PATH; fallback to GOOGLE_APPLICATION_CREDENTIALS
+	credPath := getEnvOrDefault("FIREBASE_CREDENTIALS_PATH", "")
+	if credPath == "" {
+		credPath = getEnvOrDefault("GOOGLE_APPLICATION_CREDENTIALS", "")
+	}
 	return &Config{
 		DatabaseURL:               dbURL,
 		FirebaseProjectID:         getEnvOrDefault("FIREBASE_PROJECT_ID", "your-project-id"),
-		FirebaseCredentialsPath:   getEnvOrDefault("FIREBASE_CREDENTIALS_PATH", ""),
+		FirebaseCredentialsPath:   credPath,
 		PubSubTopic:               getEnvOrDefault("PUBSUB_TOPIC", "activity-events"),
 		PubSubSubscription:        getEnvOrDefault("PUBSUB_SUBSCRIPTION", "activity-events-sub"),
 		OutboxPollIntervalSeconds: getEnvAsIntOrDefault("OUTBOX_POLL_INTERVAL_SECONDS", 10),
@@ -161,23 +166,25 @@ func main() {
 	logger.Infof("Activity Read Model Updater stopped")
 }
 
-func initDatabase(databaseURL string, logger utils.Logger) (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+func normalizeAndProcess(ctx context.Context, ev activityV1.ActivityEvent, firebaseService service.FirebaseService, logger utils.Logger) error {
+	// normalize Type: in case that producer uses fully qualified event types like "activity.created"
+	t := strings.ToUpper(ev.Type)
+	switch t {
+	case "ACTIVITY.CREATED":
+		t = "CREATE"
+	case "ACTIVITY.UPDATED":
+		t = "UPDATE"
+	case "ACTIVITY.DELETED":
+		t = "DELETE"
+	case "CREATED":
+		t = "CREATE" // defensively handle past tense
+	case "UPDATED":
+		t = "UPDATE"
+	case "DELETED":
+		t = "DELETE"
 	}
-
-	sqlDB, err := db.DB()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get database instance: %w", err)
-	}
-
-	if err := sqlDB.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
-	}
-
-	logger.Infof("Database connection established")
-	return db, nil
+	ev.Type = t
+	return firebaseService.SyncActivity(ctx, ev)
 }
 
 func initFirestore(credentialsPath, projectID string) (*firestore.Client, error) {
@@ -326,32 +333,67 @@ func publishEvent(ctx context.Context, topic *pubsub.Topic, event *models.Outbox
 func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseService service.FirebaseService, logger utils.Logger) error {
 	logger.Infof("Received activity event: message_id=%s, publish_time=%v", msg.ID, msg.PublishTime)
 
+	// 1) Envelope with eventData JSON
 	var envelope activityV1.OutboxEvent
 	if err := json.Unmarshal(msg.Data, &envelope); err == nil && (envelope.EventData != "" || envelope.EventType != "") {
 		logger.Infof("Processing activity event: event_type=%s, aggregate_id=%s", envelope.EventType, envelope.AggregateID)
-		activityEvent, err := envelope.GetEventData()
-		if err != nil {
-			logger.Errorf("Failed to extract activity event data from envelope: error=%v", err)
-			return fmt.Errorf("failed to extract activity event data: %w", err)
+		// Try direct
+		if ev, err := envelope.GetEventData(); err == nil {
+			if normalizeAndProcess(ctx, *ev, firebaseService, logger) == nil {
+				return nil
+			}
 		}
-		if err := firebaseService.SyncActivity(ctx, *activityEvent); err != nil {
-			logger.Errorf("Failed to sync activity to Firebase: activity_id=%d, error=%v", activityEvent.ActivityID, err)
-			return fmt.Errorf("failed to sync activity to Firebase: %w", err)
+		// Try unquoting eventData if double-encoded
+		if len(envelope.EventData) > 0 && envelope.EventData[0] == '"' {
+			if unq, uErr := strconv.Unquote(envelope.EventData); uErr == nil {
+				var ev activityV1.ActivityEvent
+				if jErr := json.Unmarshal([]byte(unq), &ev); jErr == nil {
+					if normalizeAndProcess(ctx, ev, firebaseService, logger) == nil {
+						return nil
+					}
+				}
+			}
 		}
-		logger.Infof("Activity synced to Firebase successfully: activity_id=%d", activityEvent.ActivityID)
-		return nil
 	}
 
-	// Fallback to legacy format where message data is the ActivityEvent
+	// 2) Legacy direct ActivityEvent
 	var legacy activityV1.ActivityEvent
 	if err := json.Unmarshal(msg.Data, &legacy); err == nil && legacy.ActivityID != 0 {
 		logger.Infof("Processing legacy activity event: type=%s, activity_id=%d", legacy.Type, legacy.ActivityID)
-		if err := firebaseService.SyncActivity(ctx, legacy); err != nil {
-			logger.Errorf("Failed to sync legacy activity to Firebase: activity_id=%d, error=%v", legacy.ActivityID, err)
-			return fmt.Errorf("failed to sync legacy activity to Firebase: %w", err)
+		if normalizeAndProcess(ctx, legacy, firebaseService, logger) == nil {
+			return nil
 		}
-		logger.Infof("Legacy activity synced to Firebase successfully: activity_id=%d", legacy.ActivityID)
-		return nil
+	}
+
+	// 3) Whole message is quoted JSON string -> unquote then retry 1 and 2
+	var msgAsString string
+	if err := json.Unmarshal(msg.Data, &msgAsString); err == nil && msgAsString != "" {
+		raw := []byte(msgAsString)
+		// try envelope again
+		if err := json.Unmarshal(raw, &envelope); err == nil && (envelope.EventData != "" || envelope.EventType != "") {
+			logger.Infof("Processing activity event (quoted): event_type=%s, aggregate_id=%s", envelope.EventType, envelope.AggregateID)
+			if ev, err := envelope.GetEventData(); err == nil {
+				if normalizeAndProcess(ctx, *ev, firebaseService, logger) == nil {
+					return nil
+				}
+			}
+			if len(envelope.EventData) > 0 && envelope.EventData[0] == '"' {
+				if unq, uErr := strconv.Unquote(envelope.EventData); uErr == nil {
+					var ev activityV1.ActivityEvent
+					if jErr := json.Unmarshal([]byte(unq), &ev); jErr == nil {
+						if normalizeAndProcess(ctx, ev, firebaseService, logger) == nil {
+							return nil
+						}
+					}
+				}
+			}
+		}
+		// try legacy again
+		if err := json.Unmarshal(raw, &legacy); err == nil && legacy.ActivityID != 0 {
+			if normalizeAndProcess(ctx, legacy, firebaseService, logger) == nil {
+				return nil
+			}
+		}
 	}
 
 	logger.Errorf("Unrecognized event payload format, cannot parse message_id=%s", msg.ID)

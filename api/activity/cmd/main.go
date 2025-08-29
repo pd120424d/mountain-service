@@ -97,10 +97,13 @@ func startPublisherIfConfigured(log utils.Logger, db *gorm.DB) {
 	var client *pubsub.Client
 	var err error
 	credsPath := os.Getenv("FIREBASE_CREDENTIALS_PATH")
+	if credsPath == "" {
+		credsPath = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	}
 	useADC := false
 	if credsPath != "" {
 		if info, statErr := os.Stat(credsPath); statErr != nil || info.Size() == 0 {
-			log.Warnf("FIREBASE_CREDENTIALS_PATH set but file missing/empty (path=%s). Falling back to ADC.", credsPath)
+			log.Warnf("Credentials path set but file missing/empty (path=%s). Falling back to ADC.", credsPath)
 			useADC = true
 		}
 	}
@@ -142,12 +145,15 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	}
 	if projectID != "" {
 		credsPath := os.Getenv("FIREBASE_CREDENTIALS_PATH")
+		if credsPath == "" {
+			credsPath = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+		}
 		var fsClient *firestore.Client
 		var err error
 		useADC := false
 		if credsPath != "" {
 			if info, statErr := os.Stat(credsPath); statErr != nil || info.Size() == 0 {
-				log.Warnf("FIREBASE_CREDENTIALS_PATH set but file missing/empty (path=%s). Falling back to ADC.", credsPath)
+				log.Warnf("Credentials path set but file missing/empty (path=%s). Falling back to ADC.", credsPath)
 				useADC = true
 			}
 		}
