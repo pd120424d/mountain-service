@@ -30,9 +30,9 @@ type firebaseService struct {
 
 // FirebaseActivityDoc represents the document structure in Firestore
 type FirebaseActivityDoc struct {
-	ID           uint   `firestore:"id"`
-	UrgencyID    uint   `firestore:"urgency_id"`
-	EmployeeID   uint   `firestore:"employee_id"`
+	ID           int64  `firestore:"id"`
+	UrgencyID    int64  `firestore:"urgency_id"`
+	EmployeeID   int64  `firestore:"employee_id"`
 	Description  string `firestore:"description"`
 	CreatedAt    string `firestore:"created_at"`
 	EmployeeName string `firestore:"employee_name"`
@@ -60,7 +60,7 @@ func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID 
 	s.logger.Infof("Getting activities from Firebase for urgency: %d", urgencyID)
 
 	iter := s.client.Collection(s.collection).
-		Where("urgency_id", "==", urgencyID).
+		Where("urgency_id", "==", int64(urgencyID)).
 		OrderBy("created_at", firestorex.Desc).
 		Documents(ctx)
 
@@ -83,7 +83,7 @@ func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID 
 		}
 
 		activity := &models.Activity{
-			ID:          fbDoc.ID,
+			ID:          uint(fbDoc.ID),
 			Description: fbDoc.Description,
 		}
 
@@ -128,7 +128,7 @@ func (s *firebaseService) GetAllActivities(ctx context.Context, limit int) ([]*m
 
 		// Convert Firebase doc to Activity model
 		activity := &models.Activity{
-			ID:          fbDoc.ID,
+			ID:          uint(fbDoc.ID),
 			Description: fbDoc.Description,
 			// Map other fields as needed
 		}
@@ -154,9 +154,9 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 	switch eventData.Type {
 	case "CREATE":
 		fbDoc := FirebaseActivityDoc{
-			ID:           eventData.ActivityID,
-			UrgencyID:    eventData.UrgencyID,
-			EmployeeID:   eventData.EmployeeID,
+			ID:           int64(eventData.ActivityID),
+			UrgencyID:    int64(eventData.UrgencyID),
+			EmployeeID:   int64(eventData.EmployeeID),
 			Description:  eventData.Description,
 			CreatedAt:    eventData.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 			EmployeeName: eventData.EmployeeName,
