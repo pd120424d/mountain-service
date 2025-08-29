@@ -141,16 +141,3 @@ spec:
             items:
               - key: key.json
                 path: key.json
-      volumes:
-        - name: gcp-sa
-          secret:
-            secretName: gcp-sa
-            items:
-              - key: key.json
-                path: key.json
-        - name: gcp-readmodel-updater-key
-          secret:
-            secretName: gcp-readmodel-updater-key
-            items:
-              - key: key.json
-                path: key.json

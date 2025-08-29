@@ -72,11 +72,6 @@ spec:
             - "--credentials-file=/var/secrets/key.json"
             - "$(INSTANCE_CONNECTION_NAME)"
           env:
-          volumeMounts:
-            - name: gcp-logging-writer-key
-              mountPath: /var/secrets/gcp-logging
-              readOnly: true
-
             - name: INSTANCE_CONNECTION_NAME
               valueFrom:
                 secretKeyRef:
@@ -104,6 +99,12 @@ spec:
         - name: gcp-sa
           secret:
             secretName: gcp-sa
+            items:
+              - key: key.json
+                path: key.json
+        - name: gcp-logging-writer-key
+          secret:
+            secretName: gcp-logging-writer-key
             items:
               - key: key.json
                 path: key.json
