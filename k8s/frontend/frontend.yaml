@@ -24,6 +24,18 @@ spec:
           env:
             - name: NODE_ENV
               value: production
+            - name: GCP_LOGGING_ENABLED
+              value: "true"
+            - name: GCP_PROJECT_ID
+              value: "reflecting-card-469410-q1"
+            - name: LOG_TO_STDOUT_ONLY
+              value: "true"
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: "/var/secrets/gcp-logging/key.json"
+          volumeMounts:
+            - name: gcp-logging-writer-key
+              mountPath: /var/secrets/gcp-logging
+              readOnly: true
           resources:
             requests:
               cpu: "50m"
@@ -31,6 +43,13 @@ spec:
             limits:
               cpu: "300m"
               memory: "256Mi"
+      volumes:
+        - name: gcp-logging-writer-key
+          secret:
+            secretName: gcp-logging-writer-key
+            items:
+              - key: key.json
+                path: key.json
 ---
 apiVersion: v1
 kind: Service

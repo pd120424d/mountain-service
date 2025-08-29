@@ -57,6 +57,11 @@ spec:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: "/var/secrets/gcp-logging/key.json"
 
+          volumeMounts:
+            - name: gcp-logging-writer-key
+              mountPath: /var/secrets/gcp-logging
+              readOnly: true
+
           resources:
             requests:
               cpu: "100m"
@@ -81,20 +86,6 @@ spec:
             - name: gcp-sa
               mountPath: /var/secrets
               readOnly: true
-        - name: gcp-logging-writer-key
-          secret:
-            secretName: gcp-logging-writer-key
-            items:
-              - key: key.json
-                path: key.json
-
-          resources:
-            requests:
-              cpu: "20m"
-              memory: "32Mi"
-            limits:
-              cpu: "100m"
-              memory: "64Mi"
       volumes:
         - name: gcp-sa
           secret:
