@@ -1,258 +1,460 @@
 {
-  "swagger": "2.0",
-  "info": {
-    "title": "Urgency Service API",
-    "version": "1.0.0",
-    "description": "Mountain Service Urgency Management API"
-  },
-  "host": "localhost:8083",
-  "basePath": "/api/v1",
-  "schemes": ["http"],
-  "consumes": ["application/json"],
-  "produces": ["application/json"],
-  "definitions": {
-    "UrgencyLevel": {
-      "type": "string",
-      "enum": ["low", "medium", "high", "critical"]
+    "swagger": "2.0",
+    "info": {
+        "title": "API Сервис за Ургентне ситуације",
+        "contact": {},
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
     },
-    "UrgencyStatus": {
-      "type": "string",
-      "enum": ["open", "in_progress", "resolved", "closed"]
-    },
-    "UrgencyCreateRequest": {
-      "type": "object",
-      "required": ["firstName", "lastName", "contactPhone", "location", "description"],
-      "properties": {
-        "firstName": {
-          "type": "string"
+    "host": "mountain-service.duckdns.org",
+    "basePath": "/api/v1",
+    "paths": {
+        "/admin/urgencies/reset": {
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Брисање свих ургентних ситуација (само за администраторе)",
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Ресетовање свих података",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
         },
-        "lastName": {
-          "type": "string"
+        "/urgencies": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Извлачење свих ургентних ситуација",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Извлачење листе ургентних ситуација",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/v1.UrgencyResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Креирање нове ургентне ситуације са свим потребним подацима",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Креирање нове ургентне ситуације",
+                "parameters": [
+                    {
+                        "description": "Urgency data",
+                        "name": "urgency",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.UrgencyCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/v1.UrgencyResponse"
+                        }
+                    }
+                }
+            }
         },
-        "email": {
-          "type": "string",
-          "format": "email"
+        "/urgencies/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Извлачење ургентне ситуације по њеном ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Извлачење ургентне ситуације по ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Urgency ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.UrgencyResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Ажурирање постојеће ургентне ситуације",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Ажурирање ургентне ситуације",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Urgency ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated urgency data",
+                        "name": "urgency",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.UrgencyUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.UrgencyResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Брисање ургентне ситуације по ID",
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Брисање ургентне ситуације",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Urgency ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
         },
-        "contactPhone": {
-          "type": "string"
-        },
-        "location": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "level": {
-          "$ref": "#/definitions/UrgencyLevel"
+        "/urgencies/{id}/assign": {
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Assign urgency to an employee",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Urgency ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Assignment payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.AssignmentCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "tags": [
+                    "urgency"
+                ],
+                "summary": "Unassign urgency",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Urgency ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
-      }
     },
-    "UrgencyUpdateRequest": {
-      "type": "object",
-      "properties": {
-        "firstName": {
-          "type": "string"
+    "definitions": {
+        "v1.AssignmentCreateRequest": {
+            "type": "object",
+            "required": [
+                "employeeId"
+            ],
+            "properties": {
+                "employeeId": {
+                    "type": "integer"
+                }
+            }
         },
-        "lastName": {
-          "type": "string"
+        "v1.UrgencyCreateRequest": {
+            "type": "object",
+            "required": [
+                "contactPhone",
+                "description",
+                "firstName",
+                "lastName",
+                "location"
+            ],
+            "properties": {
+                "contactPhone": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "level": {
+                    "$ref": "#/definitions/v1.UrgencyLevel"
+                },
+                "location": {
+                    "type": "string"
+                }
+            }
         },
-        "email": {
-          "type": "string",
-          "format": "email"
+        "v1.UrgencyLevel": {
+            "type": "string",
+            "enum": [
+                "low",
+                "medium",
+                "high",
+                "critical"
+            ],
+            "x-enum-varnames": [
+                "Low",
+                "Medium",
+                "High",
+                "Critical"
+            ]
         },
-        "contactPhone": {
-          "type": "string"
+        "v1.UrgencyResponse": {
+            "type": "object",
+            "properties": {
+                "assignedAt": {
+                    "type": "string"
+                },
+                "assignedEmployeeId": {
+                    "type": "integer"
+                },
+                "contactPhone": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "level": {
+                    "$ref": "#/definitions/v1.UrgencyLevel"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/v1.UrgencyStatus"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
         },
-        "location": {
-          "type": "string"
+        "v1.UrgencyStatus": {
+            "type": "string",
+            "enum": [
+                "open",
+                "in_progress",
+                "resolved",
+                "closed"
+            ],
+            "x-enum-varnames": [
+                "Open",
+                "InProgress",
+                "Resolved",
+                "Closed"
+            ]
         },
-        "description": {
-          "type": "string"
-        },
-        "level": {
-          "$ref": "#/definitions/UrgencyLevel"
-        },
-        "status": {
-          "$ref": "#/definitions/UrgencyStatus"
+        "v1.UrgencyUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "contactPhone": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "level": {
+                    "$ref": "#/definitions/v1.UrgencyLevel"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/v1.UrgencyStatus"
+                }
+            }
         }
-      }
     },
-    "UrgencyResponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "firstName": {
-          "type": "string"
-        },
-        "lastName": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "contactPhone": {
-          "type": "string"
-        },
-        "location": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "level": {
-          "$ref": "#/definitions/UrgencyLevel"
-        },
-        "status": {
-          "$ref": "#/definitions/UrgencyStatus"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "assignedEmployeeId": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "assignedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
+    "securityDefinitions": {
+        "OAuth2Password": {
+            "type": "oauth2",
+            "flow": "password",
+            "tokenUrl": "/api/v1/oauth/token",
+            "scopes": {
+                "read": "Grants read access",
+                "write": "Grants write access"
+            }
         }
-      }
     },
-    "UrgencyList": {
-      "type": "object",
-      "properties": {
-        "urgencies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/UrgencyResponse"
-          }
+    "security": [
+        {
+            "OAuth2Password": []
         }
-      }
-    },
-    "EmergencyAssignmentResponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "urgencyId": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "employeeId": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "status": {
-          "type": "string"
-        },
-        "assignedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "AssignmentAcceptRequest": {
-      "type": "object",
-      "required": ["assignmentId"],
-      "properties": {
-        "assignmentId": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "AssignmentDeclineRequest": {
-      "type": "object",
-      "required": ["assignmentId"],
-      "properties": {
-        "assignmentId": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "reason": {
-          "type": "string"
-        }
-      }
-    },
-    "EmployeeAssignmentsResponse": {
-      "type": "object",
-      "properties": {
-        "assignments": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/EmergencyAssignmentResponse"
-          }
-        }
-      }
-    },
-    "NotificationResponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "urgencyId": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "employeeId": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "notificationType": {
-          "type": "string"
-        },
-        "recipient": {
-          "type": "string"
-        },
-        "message": {
-          "type": "string"
-        },
-        "status": {
-          "type": "string"
-        },
-        "attempts": {
-          "type": "integer"
-        },
-        "lastAttemptAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "sentAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "errorMessage": {
-          "type": "string"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    }
-  }
+    ]
 }

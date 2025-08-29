@@ -10,23 +10,25 @@
  * ---------------------------------------------------------------
  */
 
-import { HttpClient, RequestParams } from "./http-client";
 
-export class Admin<SecurityDataType = unknown> extends HttpClient<SecurityDataType> {
-  /**
-   * @description Брисање свих ургентних ситуација (само за администраторе)
-   *
-   * @tags urgency
-   * @name UrgenciesResetDelete
-   * @summary Ресетовање свих података
-   * @request DELETE:/admin/urgencies/reset
-   * @secure
-   */
-  urgenciesResetDelete = (params: RequestParams = {}) =>
+
+import { HttpClient, RequestParams, ContentType, HttpResponse } from "./http-client";
+import { V1UrgencyStatus, V1UrgencyLevel, V1AssignmentCreateRequest, V1UrgencyCreateRequest, V1UrgencyResponse, V1UrgencyUpdateRequest } from "./data-contracts"
+
+export class Admin<SecurityDataType = unknown> extends HttpClient<SecurityDataType>  {
+
+            /**
+ * @description Брисање свих ургентних ситуација (само за администраторе)
+ *
+ * @tags urgency
+ * @name UrgenciesResetDelete
+ * @summary Ресетовање свих података
+ * @request DELETE:/admin/urgencies/reset
+ * @secure
+ */
+urgenciesResetDelete: (params: RequestParams = {}) =>
     this.request<void, any>({
-      path: `/admin/urgencies/reset`,
-      method: "DELETE",
-      secure: true,
-      ...params,
-    });
-}
+        path: `/admin/urgencies/reset`,
+        method: 'DELETE',
+                        secure: true,                        ...params,
+    }),    }

@@ -243,7 +243,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.EmergencyAssignmentResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
@@ -308,32 +311,6 @@ const docTemplate = `{
                 }
             }
         },
-        "v1.EmergencyAssignmentResponse": {
-            "type": "object",
-            "properties": {
-                "assignedAt": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "employeeId": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "urgencyId": {
-                    "type": "integer"
-                }
-            }
-        },
         "v1.UrgencyCreateRequest": {
             "type": "object",
             "required": [
@@ -385,8 +362,11 @@ const docTemplate = `{
         "v1.UrgencyResponse": {
             "type": "object",
             "properties": {
-                "assignmentId": {
+                "assignedAt": {
                     "type": "string"
+                },
+                "assignedEmployeeId": {
+                    "type": "integer"
                 },
                 "contactPhone": {
                     "type": "string"

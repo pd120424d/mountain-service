@@ -7,23 +7,6 @@ definitions:
     required:
     - employeeId
     type: object
-  v1.EmergencyAssignmentResponse:
-    properties:
-      assignedAt:
-        type: string
-      createdAt:
-        type: string
-      employeeId:
-        type: integer
-      id:
-        type: integer
-      status:
-        type: string
-      updatedAt:
-        type: string
-      urgencyId:
-        type: integer
-    type: object
   v1.UrgencyCreateRequest:
     properties:
       contactPhone:
@@ -61,8 +44,10 @@ definitions:
     - Critical
   v1.UrgencyResponse:
     properties:
-      assignmentId:
+      assignedAt:
         type: string
+      assignedEmployeeId:
+        type: integer
       contactPhone:
         type: string
       createdAt:
@@ -282,7 +267,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.EmergencyAssignmentResponse'
+            additionalProperties:
+              type: string
+            type: object
         "400":
           description: Bad Request
           schema:

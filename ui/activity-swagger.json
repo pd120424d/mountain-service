@@ -1,154 +1,392 @@
 {
-  "swagger": "2.0",
-  "info": {
-    "title": "Activity Service API",
-    "version": "1.0.0",
-    "description": "Mountain Activity Logging API"
-  },
-  "host": "localhost:8084",
-  "basePath": "/api/v1",
-  "schemes": ["http"],
-  "consumes": ["application/json"],
-  "produces": ["application/json"],
-  "definitions": {
-    "ErrorResponse": {
-      "type": "object",
-      "properties": {
-        "error": {
-          "type": "string"
-        }
-      }
+    "swagger": "2.0",
+    "info": {
+        "description": "Activity tracking and audit service for the Mountain Emergency Management System",
+        "title": "Activity Service API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
     },
-    "MessageResponse": {
-      "type": "object",
-      "properties": {
-        "message": {
-          "type": "string"
+    "host": "mountain-service.duckdns.org",
+    "basePath": "/api/v1",
+    "paths": {
+        "/activities": {
+            "get": {
+                "description": "Извлачење листе активности са опционим филтрирањем и страничењем",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "activities"
+                ],
+                "summary": "Листа активности",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Activity type filter",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Activity level filter",
+                        "name": "level",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ActivityListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Креирање нове активности у систему",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "activities"
+                ],
+                "summary": "Креирање нове активности",
+                "parameters": [
+                    {
+                        "description": "Activity data",
+                        "name": "activity",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.ActivityCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ActivityResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_activity_v1.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/activities/reset": {
+            "delete": {
+                "description": "Брисање свих активности из система",
+                "tags": [
+                    "activities"
+                ],
+                "summary": "Ресетовање свих података о активностима",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/activities/stats": {
+            "get": {
+                "description": "Преузимање свеобухватних статистика активности",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "activities"
+                ],
+                "summary": "Статистике активности",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ActivityStatsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/activities/{id}": {
+            "get": {
+                "description": "Преузимање одређене активности по њеном ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "activities"
+                ],
+                "summary": "Преузимање активности по ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Activity ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ActivityResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Брисање одређене активности по њеном ID",
+                "tags": [
+                    "activities"
+                ],
+                "summary": "Брисање активности",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Activity ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
-      }
     },
-    "ActivityResponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
+    "definitions": {
+        "github_com_pd120424d_mountain-service_api_contracts_activity_v1.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
         },
-        "description": {
-          "type": "string"
+        "v1.ActivityCreateRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "employeeId",
+                "urgencyId"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "employeeId": {
+                    "type": "integer"
+                },
+                "urgencyId": {
+                    "type": "integer"
+                }
+            }
         },
-        "employee_id": {
-          "type": "integer",
-          "format": "int64"
+        "v1.ActivityListResponse": {
+            "type": "object",
+            "properties": {
+                "activities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.ActivityResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
         },
-        "urgency_id": {
-          "type": "integer",
-          "format": "int64"
+        "v1.ActivityResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "employeeId": {
+                    "description": "ID of the employee who created the activity",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "urgencyId": {
+                    "description": "ID of the urgency this activity relates to",
+                    "type": "integer"
+                }
+            }
         },
-        "created_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updated_at": {
-          "type": "string",
-          "format": "date-time"
+        "v1.ActivityStatsResponse": {
+            "type": "object",
+            "properties": {
+                "activitiesLast24h": {
+                    "type": "integer"
+                },
+                "activitiesLast30Days": {
+                    "type": "integer"
+                },
+                "activitiesLast7Days": {
+                    "type": "integer"
+                },
+                "recentActivities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.ActivityResponse"
+                    }
+                },
+                "totalActivities": {
+                    "type": "integer"
+                }
+            }
         }
-      }
     },
-    "ActivityCreateRequest": {
-      "type": "object",
-      "required": ["description", "employee_id", "urgency_id"],
-      "properties": {
-        "description": {
-          "type": "string"
-        },
-        "employee_id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "urgency_id": {
-          "type": "integer",
-          "format": "int64"
+    "securityDefinitions": {
+        "OAuth2Password": {
+            "type": "oauth2",
+            "flow": "password",
+            "tokenUrl": "/api/v1/oauth/token",
+            "scopes": {
+                "read": "Grants read access",
+                "write": "Grants write access"
+            }
         }
-      }
     },
-    "ActivityListRequest": {
-      "type": "object",
-      "properties": {
-        "employee_id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "urgency_id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "start_date": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "end_date": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "page": {
-          "type": "integer"
-        },
-        "page_size": {
-          "type": "integer"
+    "security": [
+        {
+            "OAuth2Password": []
         }
-      }
-    },
-    "ActivityListResponse": {
-      "type": "object",
-      "properties": {
-        "activities": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ActivityResponse"
-          }
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "page": {
-          "type": "integer"
-        },
-        "pageSize": {
-          "type": "integer"
-        },
-        "totalPages": {
-          "type": "integer"
-        }
-      }
-    },
-    "ActivityStatsResponse": {
-      "type": "object",
-      "properties": {
-        "total_activities": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "recent_activities": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ActivityResponse"
-          }
-        },
-        "activities_last_24h": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "activities_last_7_days": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "activities_last_30_days": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    }
-  }
+    ]
 }

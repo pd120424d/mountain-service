@@ -9,7 +9,7 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:8082",
+    "host": "mountain-service.duckdns.org",
     "basePath": "/api/v1",
     "paths": {
         "/admin/reset": {
@@ -122,83 +122,6 @@
                 }
             },
             "post": {
-                "description": "Креирање новог запосленог у систему (supports both JSON and multipart form data)",
-                "consumes": [
-                    "application/json",
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "запослени"
-                ],
-                "summary": "Креирање новог запосленог",
-                "parameters": [
-                    {
-                        "description": "Подаци о новом запосленом (JSON)",
-                        "name": "employee",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler.EmployeeCreateRequest"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "First Name (form data)",
-                        "name": "firstName",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Last Name (form data)",
-                        "name": "lastName",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Username (form data)",
-                        "name": "username",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Password (form data)",
-                        "name": "password",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Email (form data)",
-                        "name": "email",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Gender (form data)",
-                        "name": "gender",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Phone (form data)",
-                        "name": "phone",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Profile Type (form data)",
-                        "name": "profileType",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Profile Picture (form data)",
-                        "name": "profilePicture",
-                        "in": "formData"
-                    }
-                ],
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -805,6 +728,43 @@
                 }
             }
         },
+        "/logout": {
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Password": []
+                    }
+                ],
+                "description": "Одјављивање запосленог и поништавање токена",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "запослени"
+                ],
+                "summary": "Одјављивање запосленог",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/oauth/token": {
             "post": {
                 "description": "OAuth2 password flow token endpoint for Swagger UI authentication",
@@ -895,74 +855,6 @@
         }
     },
     "definitions": {
-        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "firstName": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "lastName": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "profilePicture": {
-                    "description": "this may be represented as a byte array if we read the picture from somewhere for an example",
-                    "type": "string"
-                },
-                "profileType": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability": {
-            "type": "object",
-            "properties": {
-                "isAssignedToEmployee": {
-                    "description": "Whether the requesting employee is assigned to this shift",
-                    "type": "boolean"
-                },
-                "isFullyBooked": {
-                    "description": "Whether the shift is at full capacity (2 medics + 4 technicians)",
-                    "type": "boolean"
-                },
-                "medicSlotsAvailable": {
-                    "description": "Available slots for medics (0-2)",
-                    "type": "integer"
-                },
-                "technicalSlotsAvailable": {
-                    "description": "Available slots for technical staff (0-4)",
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay": {
-            "type": "object",
-            "properties": {
-                "firstShift": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
-                },
-                "secondShift": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
-                },
-                "thirdShift": {
-                    "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailability"
-                }
-            }
-        },
         "github_com_pd120424d_mountain-service_api_employee_internal_handler.ActiveEmergenciesResponse": {
             "type": "object",
             "properties": {
@@ -1004,48 +896,6 @@
                 },
                 "shiftType": {
                     "type": "integer"
-                }
-            }
-        },
-        "github_com_pd120424d_mountain-service_api_employee_internal_handler.EmployeeCreateRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "firstName",
-                "gender",
-                "lastName",
-                "password",
-                "phone",
-                "profileType",
-                "username"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "firstName": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "lastName": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "profilePicture": {
-                    "type": "string"
-                },
-                "profileType": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         },
@@ -1148,7 +998,7 @@
                 "employees": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse"
+                        "$ref": "#/definitions/v1.EmployeeResponse"
                     }
                 }
             }
@@ -1176,7 +1026,7 @@
                 "days": {
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay"
+                        "$ref": "#/definitions/v1.ShiftAvailabilityPerDay"
                     }
                 }
             }
@@ -1266,48 +1116,6 @@
                 },
                 "shiftType": {
                     "type": "integer"
-                }
-            }
-        },
-        "internal_handler.EmployeeCreateRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "firstName",
-                "gender",
-                "lastName",
-                "password",
-                "phone",
-                "profileType",
-                "username"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "firstName": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "lastName": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "profilePicture": {
-                    "type": "string"
-                },
-                "profileType": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         },
@@ -1410,7 +1218,7 @@
                 "employees": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.EmployeeResponse"
+                        "$ref": "#/definitions/v1.EmployeeResponse"
                     }
                 }
             }
@@ -1438,7 +1246,7 @@
                 "days": {
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/github_com_pd120424d_mountain-service_api_contracts_employee_v1.ShiftAvailabilityPerDay"
+                        "$ref": "#/definitions/v1.ShiftAvailabilityPerDay"
                     }
                 }
             }
@@ -1484,6 +1292,74 @@
                 },
                 "size": {
                     "type": "integer"
+                }
+            }
+        },
+        "v1.EmployeeResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profilePicture": {
+                    "description": "this may be represented as a byte array if we read the picture from somewhere for an example",
+                    "type": "string"
+                },
+                "profileType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.ShiftAvailability": {
+            "type": "object",
+            "properties": {
+                "isAssignedToEmployee": {
+                    "description": "Whether the requesting employee is assigned to this shift",
+                    "type": "boolean"
+                },
+                "isFullyBooked": {
+                    "description": "Whether the shift is at full capacity (2 medics + 4 technicians)",
+                    "type": "boolean"
+                },
+                "medicSlotsAvailable": {
+                    "description": "Available slots for medics (0-2)",
+                    "type": "integer"
+                },
+                "technicalSlotsAvailable": {
+                    "description": "Available slots for technical staff (0-4)",
+                    "type": "integer"
+                }
+            }
+        },
+        "v1.ShiftAvailabilityPerDay": {
+            "type": "object",
+            "properties": {
+                "firstShift": {
+                    "$ref": "#/definitions/v1.ShiftAvailability"
+                },
+                "secondShift": {
+                    "$ref": "#/definitions/v1.ShiftAvailability"
+                },
+                "thirdShift": {
+                    "$ref": "#/definitions/v1.ShiftAvailability"
                 }
             }
         }
