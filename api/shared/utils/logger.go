@@ -1,15 +1,18 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"sync"
 	"time"
 
+	"cloud.google.com/go/logging"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/api/option"
 )
 
 type Logger interface {
@@ -34,6 +37,9 @@ type zapLogger struct {
 	file        *os.File
 	svcName     string
 	currentDate string
+
+	// GCP client for Cloud Logging flush
+	gcpClient *logging.Client
 }
 
 func NewLogger(svcName string) (Logger, error) {
@@ -56,40 +62,98 @@ func (z *zapLogger) rotate() error {
 	// Close old file if exists
 	if z.file != nil {
 		_ = z.file.Close()
+		z.file = nil
 	}
 
-	logDir := os.Getenv("LOG_DIR")
-	if logDir == "" {
-		logDir = "/var/log"
+	isKubernetes := os.Getenv("KUBERNETES_SERVICE_HOST") != ""
+	forceStdoutOnly := os.Getenv("LOG_TO_STDOUT_ONLY") == "true" || isKubernetes
+	enableFile := os.Getenv("LOG_TO_FILE") == "true" && !forceStdoutOnly
+
+	var writers []io.Writer
+
+	// Setup file writer (local/dev) if enabled
+	if enableFile {
+		logDir := os.Getenv("LOG_DIR")
+		if logDir == "" {
+			logDir = "/var/log"
+		}
+		// Create log directory if it doesn't exist
+		if err := os.MkdirAll(logDir, 0755); err != nil {
+			return err
+		}
+		// New log file (date-based)
+		filename := fmt.Sprintf("%s/%s.%s.log", logDir, z.svcName, currentDate)
+		file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+		z.file = file
+		writers = append(writers, file)
 	}
 
-	// Create log directory if it doesn't exist
-	if err := os.MkdirAll(logDir, 0755); err != nil {
-		return err
+	if forceStdoutOnly || os.Getenv("LOG_TO_STDOUT") == "true" || isKubernetes {
+		writers = append(writers, os.Stdout)
+	}
+	if len(writers) == 0 {
+		writers = append(writers, os.Stdout)
 	}
 
-	// New log file
-	filename := fmt.Sprintf("%s/%s.%s.log", logDir, z.svcName, currentDate)
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
+	// Build base zap core (JSON) with combined writer(s)
+	encoderConfig := buildEncoderConfig()
+	baseCore := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderConfig),
+		zapcore.AddSync(io.MultiWriter(writers...)),
+		zapcore.DebugLevel,
+	)
+
+	cores := []zapcore.Core{baseCore}
+
+	// Optionally add Google Cloud Logging cores
+	if os.Getenv("GCP_LOGGING_ENABLED") == "true" {
+		projectID := firstNonEmpty(os.Getenv("GCP_PROJECT_ID"), os.Getenv("FIREBASE_PROJECT_ID"))
+		logID := os.Getenv("GCP_LOG_ID")
+		if logID == "" {
+			logID = z.svcName
+		}
+		if projectID != "" {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			// Prefer separate credentials for logging if provided
+			var client *logging.Client
+			var err error
+			if credPath := os.Getenv("GCP_LOGGING_CREDENTIALS_PATH"); credPath != "" {
+				client, err = logging.NewClient(ctx, projectID, option.WithCredentialsFile(credPath))
+			} else {
+				client, err = logging.NewClient(ctx, projectID)
+			}
+			if err == nil {
+				z.gcpClient = client
+				gcpLogger := client.Logger(logID)
+
+				// One writer per severity to preserve levels in Cloud Logging
+				wDebug := gcpLogger.StandardLogger(logging.Debug).Writer()
+				wInfo := gcpLogger.StandardLogger(logging.Info).Writer()
+				wWarn := gcpLogger.StandardLogger(logging.Warning).Writer()
+				wError := gcpLogger.StandardLogger(logging.Error).Writer()
+
+				enc := zapcore.NewJSONEncoder(encoderConfig)
+				cores = append(cores,
+					zapcore.NewCore(enc, zapcore.AddSync(wDebug), exactLevelEnabler{level: zapcore.DebugLevel}),
+					zapcore.NewCore(enc, zapcore.AddSync(wInfo), exactLevelEnabler{level: zapcore.InfoLevel}),
+					zapcore.NewCore(enc, zapcore.AddSync(wWarn), exactLevelEnabler{level: zapcore.WarnLevel}),
+					zapcore.NewCore(enc, zapcore.AddSync(wError), errorAndAboveEnabler{}),
+				)
+			}
+		}
 	}
 
-	// In Kubernetes (or when explicitly requested), mirror logs to stdout so `kubectl logs` works
-	var writer io.Writer = file
-	if os.Getenv("LOG_TO_STDOUT_ONLY") == "true" {
-		writer = os.Stdout
-	} else if os.Getenv("LOG_TO_STDOUT") == "true" || os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
-		writer = io.MultiWriter(file, os.Stdout)
-	}
-
-	logger := newLoggerFromWriter(writer)
+	logger := zap.New(zapcore.NewTee(cores...), zap.AddCaller(), zap.AddCallerSkip(1))
 
 	if z.logger != nil {
 		_ = z.logger.Sync()
 	}
 
-	z.file = file
 	z.logger = logger
 	z.currentDate = currentDate
 
@@ -150,8 +214,13 @@ func (z *zapLogger) Fatalf(format string, args ...interface{}) {
 func (z *zapLogger) Sync() error {
 	z.mutex.Lock()
 	defer z.mutex.Unlock()
+	// Flush zap buffers
 	if z.logger != nil {
-		return z.logger.Sync()
+		_ = z.logger.Sync()
+	}
+	// Flush Cloud Logging, if configured
+	if z.gcpClient != nil {
+		return z.gcpClient.Close()
 	}
 	return nil
 }
@@ -164,6 +233,7 @@ func (z *zapLogger) WithName(name string) Logger {
 		file:        z.file,
 		svcName:     z.svcName,
 		currentDate: z.currentDate,
+		gcpClient:   z.gcpClient,
 	}
 }
 
@@ -177,31 +247,15 @@ func NewTestLogger() Logger {
 
 func newLoggerFromWriter(writer io.Writer) *zap.Logger {
 	writeSyncer := zapcore.AddSync(writer)
-
-	var encoderConfig zapcore.EncoderConfig
-	level := os.Getenv("LOG_LEVEL")
-	if level == "DEBUG" {
-		encoderConfig = zap.NewProductionEncoderConfig()
-		encoderConfig.LevelKey = "level"
-	} else {
-		encoderConfig = zap.NewProductionEncoderConfig()
-	}
-	encoderConfig.LevelKey = "level"
-	encoderConfig.TimeKey = "time"
-	encoderConfig.MessageKey = "message"
-	encoderConfig.CallerKey = "caller"
-	encoderConfig.NameKey = "logger"
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-
 	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig),
+		zapcore.NewJSONEncoder(buildEncoderConfig()),
 		writeSyncer,
 		zapcore.DebugLevel,
 	)
-
 	return zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 }
 
+// RequestLogger returns a Gin middleware that logs request info
 func (l *zapLogger) RequestLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -218,4 +272,32 @@ func (l *zapLogger) RequestLogger() gin.HandlerFunc {
 
 		l.Infof("[%d] %s %s from %s (%s)", status, method, path, clientIP, duration)
 	}
+}
+
+func buildEncoderConfig() zapcore.EncoderConfig {
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.LevelKey = "level"
+	encoderConfig.TimeKey = "time"
+	encoderConfig.MessageKey = "message"
+	encoderConfig.CallerKey = "caller"
+	encoderConfig.NameKey = "logger"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	return encoderConfig
+}
+
+type exactLevelEnabler struct{ level zapcore.Level }
+
+func (e exactLevelEnabler) Enabled(l zapcore.Level) bool { return l == e.level }
+
+type errorAndAboveEnabler struct{}
+
+func (errorAndAboveEnabler) Enabled(l zapcore.Level) bool { return l >= zapcore.ErrorLevel }
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }

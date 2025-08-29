@@ -63,9 +63,21 @@ spec:
               value: "/var/secrets/gcp/key.json"
             - name: FIREBASE_CREDENTIALS_PATH
               value: "/var/secrets/gcp/key.json"
+            - name: GCP_LOGGING_ENABLED
+              value: "true"
+            - name: GCP_PROJECT_ID
+              value: "reflecting-card-469410-q1"
+            - name: LOG_TO_STDOUT_ONLY
+              value: "true"
+            - name: GCP_LOGGING_CREDENTIALS_PATH
+              value: "/var/secrets/gcp-logging/key.json"
+
           volumeMounts:
             - name: gcp-readmodel-updater-key
               mountPath: /var/secrets/gcp
+              readOnly: true
+            - name: gcp-logging-writer-key
+              mountPath: /var/secrets/gcp-logging
               readOnly: true
           resources:
             requests:
@@ -110,6 +122,25 @@ spec:
             limits:
               cpu: "100m"
               memory: "64Mi"
+      volumes:
+        - name: gcp-sa
+          secret:
+            secretName: gcp-sa
+            items:
+              - key: key.json
+                path: key.json
+        - name: gcp-readmodel-updater-key
+          secret:
+            secretName: gcp-readmodel-updater-key
+            items:
+              - key: key.json
+                path: key.json
+        - name: gcp-logging-writer-key
+          secret:
+            secretName: gcp-logging-writer-key
+            items:
+              - key: key.json
+                path: key.json
       volumes:
         - name: gcp-sa
           secret:

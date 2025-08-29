@@ -55,6 +55,13 @@ spec:
               value: "activity-events"
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: "/var/secrets/gcp/key.json"
+            - name: GCP_LOGGING_ENABLED
+              value: "true"
+            - name: GCP_PROJECT_ID
+              value: "reflecting-card-469410-q1"
+            - name: LOG_TO_STDOUT_ONLY
+              value: "true"
+
             # External Services
             - name: EMPLOYEE_SERVICE_URL
               value: "http://employee-service.mountain-service.svc.cluster.local:8082/api/v1"
@@ -64,6 +71,10 @@ spec:
             - name: gcp-activity-api-key
               mountPath: /var/secrets/gcp
               readOnly: true
+            - name: gcp-logging-writer-key
+              mountPath: /var/secrets/gcp-logging
+              readOnly: true
+
           resources:
             requests:
               cpu: "50m"
@@ -108,6 +119,12 @@ spec:
         - name: gcp-activity-api-key
           secret:
             secretName: gcp-activity-api-key
+            items:
+              - key: key.json
+                path: key.json
+        - name: gcp-logging-writer-key
+          secret:
+            secretName: gcp-logging-writer-key
             items:
               - key: key.json
                 path: key.json

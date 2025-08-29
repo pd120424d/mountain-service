@@ -50,6 +50,20 @@ spec:
               valueFrom: { secretKeyRef: { name: azure-storage, key: AZURE_STORAGE_ACCOUNT_KEY } }
             - name: AZURE_STORAGE_CONTAINER_NAME
               valueFrom: { secretKeyRef: { name: azure-storage, key: AZURE_STORAGE_CONTAINER_NAME } }
+            - name: GCP_LOGGING_ENABLED
+              value: "true"
+            - name: GCP_PROJECT_ID
+              value: "reflecting-card-469410-q1"
+            - name: LOG_TO_STDOUT_ONLY
+              value: "true"
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: "/var/secrets/gcp-logging/key.json"
+
+          volumeMounts:
+            - name: gcp-logging-writer-key
+              mountPath: /var/secrets/gcp-logging
+              readOnly: true
+
 
           resources:
             requests:
@@ -89,6 +103,13 @@ spec:
             items:
               - key: key.json
                 path: key.json
+        - name: gcp-logging-writer-key
+          secret:
+            secretName: gcp-logging-writer-key
+            items:
+              - key: key.json
+                path: key.json
+
 ---
 apiVersion: v1
 kind: Service

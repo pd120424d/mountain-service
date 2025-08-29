@@ -286,6 +286,24 @@ jobs:
           # Clean up temp files
           rm -f /tmp/activity-api-key.json /tmp/activity-updater-key.json
 
+
+      - name: Create/Update Secret - GCP Logging Writer
+        env:
+          GCP_LOGGING_WRITER_KEY: ${{ secrets.GCP_LOGGING_WRITER_KEY }}
+        if: ${{ env.GCP_LOGGING_WRITER_KEY != '' }}
+        run: |
+          set -euo pipefail
+          echo 'Creating gcp-logging-writer-key secret from GitHub secret...'
+          printf "%s" "$GCP_LOGGING_WRITER_KEY" > /tmp/ms-logger.json
+          [ $(wc -c < /tmp/ms-logger.json) -gt 100 ] || { echo "Logging writer key empty or too small"; exit 1; }
+          grep -q '"client_email"' /tmp/ms-logger.json || { echo "Logging writer key malformed"; exit 1; }
+
+          kubectl -n mountain-service create secret generic gcp-logging-writer-key \
+            --from-file=key.json=/tmp/ms-logger.json \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          rm -f /tmp/ms-logger.json
+
       - name: Create/Update Secrets - App Shared
         run: |
           kubectl -n mountain-service create secret generic app-shared \
