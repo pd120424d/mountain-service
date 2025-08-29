@@ -264,8 +264,8 @@ jobs:
       - name: Create/Update Secrets - GCP CQRS Keys
         run: |
           # Create GCP service account secrets for CQRS
-          echo '${{ secrets.GCP_ACTIVITY_API_KEY }}' | base64 -d > /tmp/activity-api-key.json
-          echo '${{ secrets.GCP_ACTIVITY_UPDATER_KEY }}' | base64 -d > /tmp/activity-updater-key.json
+          printf "%s" '${{ secrets.GCP_ACTIVITY_API_KEY }}' > /tmp/activity-api-key.json
+          printf "%s" '${{ secrets.GCP_ACTIVITY_UPDATER_KEY }}' > /tmp/activity-updater-key.json
 
           kubectl -n mountain-service create secret generic gcp-activity-api-key \
             --from-file=key.json=/tmp/activity-api-key.json \

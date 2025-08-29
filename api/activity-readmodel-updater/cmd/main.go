@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"encoding/base64"
 	"strings"
 
 	"cloud.google.com/go/firestore"
@@ -406,6 +407,75 @@ func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseServi
 		if err := json.Unmarshal(raw, &legacy); err == nil && legacy.ActivityID != 0 {
 			if normalizeAndProcess(ctx, legacy, firebaseService, logger) == nil {
 				return nil
+			}
+		}
+	}
+
+	// 4) Treat message data as base64-encoded JSON and retry
+	if decoded, decErr := base64.StdEncoding.DecodeString(string(msg.Data)); decErr == nil && len(decoded) > 0 {
+		// envelope on decoded
+		var env2 activityV1.OutboxEvent
+		if err := json.Unmarshal(decoded, &env2); err == nil && (env2.EventData != "" || env2.EventType != "") {
+			if ev, err := env2.GetEventData(); err == nil {
+				if ev.ActivityID == 0 {
+					fillIDFromAggregateID(ev, env2.AggregateID)
+				}
+				if normalizeAndProcess(ctx, *ev, firebaseService, logger) == nil {
+					return nil
+				}
+			}
+			if len(env2.EventData) > 0 && env2.EventData[0] == '"' {
+				if unq, uErr := strconv.Unquote(env2.EventData); uErr == nil {
+					var ev activityV1.ActivityEvent
+					if jErr := json.Unmarshal([]byte(unq), &ev); jErr == nil {
+						if ev.ActivityID == 0 {
+							fillIDFromAggregateID(&ev, env2.AggregateID)
+						}
+						if normalizeAndProcess(ctx, ev, firebaseService, logger) == nil {
+							return nil
+						}
+					}
+				}
+			}
+		}
+		// legacy on decoded
+		var leg2 activityV1.ActivityEvent
+		if err := json.Unmarshal(decoded, &leg2); err == nil && leg2.ActivityID != 0 {
+			if normalizeAndProcess(ctx, leg2, firebaseService, logger) == nil {
+				return nil
+			}
+		}
+		// decoded may itself be a quoted string
+		var s2 string
+		if err := json.Unmarshal(decoded, &s2); err == nil && s2 != "" {
+			raw2 := []byte(s2)
+			if err := json.Unmarshal(raw2, &env2); err == nil && (env2.EventData != "" || env2.EventType != "") {
+				if ev, err := env2.GetEventData(); err == nil {
+					if ev.ActivityID == 0 {
+						fillIDFromAggregateID(ev, env2.AggregateID)
+					}
+					if normalizeAndProcess(ctx, *ev, firebaseService, logger) == nil {
+						return nil
+					}
+				}
+				if len(env2.EventData) > 0 && env2.EventData[0] == '"' {
+					if unq, uErr := strconv.Unquote(env2.EventData); uErr == nil {
+						var ev activityV1.ActivityEvent
+						if jErr := json.Unmarshal([]byte(unq), &ev); jErr == nil {
+							if ev.ActivityID == 0 {
+								fillIDFromAggregateID(&ev, env2.AggregateID)
+							}
+							if normalizeAndProcess(ctx, ev, firebaseService, logger) == nil {
+								return nil
+							}
+						}
+					}
+				}
+			}
+			if err := json.Unmarshal(raw2, &leg2); err == nil && leg2.ActivityID != 0 {
+				if normalizeAndProcess(ctx, leg2, firebaseService, logger) == nil {
+					return nil
+				}
 			}
 		}
 	}
