@@ -177,6 +177,7 @@ jobs:
                        -t ghcr.io/pd120424d/employee-service:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --build-arg SWAGGER_HOST=mountain-service.duckdns.org \
                        --no-cache .
           docker push ghcr.io/pd120424d/employee-service:latest
           docker push ghcr.io/pd120424d/employee-service:${{ github.sha }}
@@ -189,6 +190,7 @@ jobs:
                        -t ghcr.io/pd120424d/urgency-service:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --build-arg SWAGGER_HOST=mountain-service.duckdns.org \
                        --no-cache .
           docker push ghcr.io/pd120424d/urgency-service:latest
           docker push ghcr.io/pd120424d/urgency-service:${{ github.sha }}
@@ -201,6 +203,7 @@ jobs:
                        -t ghcr.io/pd120424d/activity-service:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --build-arg SWAGGER_HOST=mountain-service.duckdns.org \
                        --no-cache .
           docker push ghcr.io/pd120424d/activity-service:latest
           docker push ghcr.io/pd120424d/activity-service:${{ github.sha }}

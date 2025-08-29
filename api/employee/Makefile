@@ -59,5 +59,17 @@ lint:
 # Generate Swagger documentation
 swagger:
 	@echo "Generating Swagger documentation..."
-	@~/go/bin/swag init -g cmd/main.go -o cmd/docs --exclude cmd/docs --pdl 3
+	@if [ -n "$(SWAGGER_HOST)" ]; then \
+		echo "Using SWAGGER_HOST: $(SWAGGER_HOST)"; \
+		SWAGGER_HOST=$(SWAGGER_HOST) ~/go/bin/swag init -g cmd/main.go -o cmd/docs --exclude cmd/docs --pdl 3; \
+	else \
+		echo "No SWAGGER_HOST set, generating with empty host for local development"; \
+		~/go/bin/swag init -g cmd/main.go -o cmd/docs --exclude cmd/docs --pdl 3; \
+	fi
 	@echo "Swagger documentation generated."
+
+# Generate Swagger for production
+swagger-prod:
+	@echo "Generating Swagger documentation for production..."
+	@SWAGGER_HOST=mountain-service.duckdns.org ~/go/bin/swag init -g cmd/main.go -o cmd/docs --exclude cmd/docs --pdl 3
+	@echo "Production Swagger documentation generated."

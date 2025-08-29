@@ -65,7 +65,6 @@ definitions:
       totalActivities:
         type: integer
     type: object
-host: localhost:8084
 info:
   contact:
     email: support@swagger.io

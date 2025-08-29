@@ -35,7 +35,6 @@ import (
 
 // @security OAuth2Password
 
-// @host localhost:8083
 // @BasePath /api/v1
 func main() {
 	svcName := globConf.UrgencyServiceName

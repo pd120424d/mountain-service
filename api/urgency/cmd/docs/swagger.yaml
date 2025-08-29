@@ -102,7 +102,6 @@ definitions:
       status:
         $ref: '#/definitions/v1.UrgencyStatus'
     type: object
-host: localhost:8083
 info:
   contact: {}
   license:
