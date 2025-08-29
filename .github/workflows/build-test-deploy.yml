@@ -264,14 +264,22 @@ jobs:
       - name: Create/Update Secrets - GCP CQRS Keys
         run: |
           # Create GCP service account secrets for CQRS
-          printf "%s" '${{ secrets.GCP_ACTIVITY_API_KEY }}' > /tmp/activity-api-key.json
-          printf "%s" '${{ secrets.GCP_ACTIVITY_UPDATER_KEY }}' > /tmp/activity-updater-key.json
+          set -euo pipefail
+
+          printf "%s" '${{ secrets.GCP_ACTIVITY_KEY }}' > /tmp/activity-api-key.json
+          printf "%s" '${{ secrets.GCP_READMODEL_UPDATER_KEY }}' > /tmp/activity-updater-key.json
+
+          # Fail fast if secrets are missing/empty
+          [ $(wc -c < /tmp/activity-api-key.json) -gt 100 ] || { echo "Activity key empty or too small"; exit 1; }
+          [ $(wc -c < /tmp/activity-updater-key.json) -gt 100 ] || { echo "Updater key empty or too small"; exit 1; }
+          grep -q '"client_email"' /tmp/activity-api-key.json || { echo "Activity key malformed"; exit 1; }
+          grep -q '"client_email"' /tmp/activity-updater-key.json || { echo "Updater key malformed"; exit 1; }
 
           kubectl -n mountain-service create secret generic gcp-activity-api-key \
             --from-file=key.json=/tmp/activity-api-key.json \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          kubectl -n mountain-service create secret generic gcp-activity-updater-key \
+          kubectl -n mountain-service create secret generic gcp-readmodel-updater-key \
             --from-file=key.json=/tmp/activity-updater-key.json \
             --dry-run=client -o yaml | kubectl apply -f -
 
@@ -296,12 +304,14 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
 
 
-      - name: (Optional) Create/Update Secrets - GCP Service Account
+      - name: Create/Update Secrets - GCP Service Account
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         if: ${{ env.GCP_SA_KEY != '' }}
         run: |
+          echo 'GCP_SA_KEY is set, creating GCP SA secret...'
+          echo "$GCP_SA_KEY" | grep email
           echo "$GCP_SA_KEY" > sa.json
           kubectl -n mountain-service create secret generic gcp-sa \
             --from-file=key.json=sa.json \

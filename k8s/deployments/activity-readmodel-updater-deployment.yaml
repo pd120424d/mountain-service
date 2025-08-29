@@ -64,7 +64,7 @@ spec:
             - name: FIREBASE_CREDENTIALS_PATH
               value: "/var/secrets/gcp/key.json"
           volumeMounts:
-            - name: gcp-activity-updater-key
+            - name: gcp-readmodel-updater-key
               mountPath: /var/secrets/gcp
               readOnly: true
           resources:
@@ -117,9 +117,9 @@ spec:
             items:
               - key: key.json
                 path: key.json
-        - name: gcp-activity-updater-key
+        - name: gcp-readmodel-updater-key
           secret:
-            secretName: gcp-activity-updater-key
+            secretName: gcp-readmodel-updater-key
             items:
               - key: key.json
                 path: key.json
