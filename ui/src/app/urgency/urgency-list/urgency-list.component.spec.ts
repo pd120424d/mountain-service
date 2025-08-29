@@ -26,7 +26,8 @@ describe('UrgencyListComponent', () => {
       level: UrgencyLevel.High,
       status: UrgencyStatus.Open,
       createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-15T10:00:00Z'
+      updatedAt: '2024-01-15T10:00:00Z',
+      assignedEmployeeId: undefined
     },
     {
       id: 2,
@@ -39,7 +40,8 @@ describe('UrgencyListComponent', () => {
       level: UrgencyLevel.Critical,
       status: UrgencyStatus.InProgress,
       createdAt: '2024-01-16T11:00:00Z',
-      updatedAt: '2024-01-16T11:00:00Z'
+      updatedAt: '2024-01-16T11:00:00Z',
+      assignedEmployeeId: 456
     }
   ];
 

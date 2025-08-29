@@ -37,17 +37,18 @@ export type {
 
 // Urgency Service
 export type {
-  UrgencyResponse,
-  UrgencyCreateRequest,
-  UrgencyUpdateRequest
+  V1UrgencyResponse as UrgencyResponse,
+  V1UrgencyCreateRequest as UrgencyCreateRequest,
+  V1UrgencyUpdateRequest as UrgencyUpdateRequest
 } from './generated/urgency';
 
 export {
-  UrgencyLevel,
-  UrgencyStatus,
-  UrgencyLevel as GeneratedUrgencyLevel,
-  UrgencyStatus as GeneratedUrgencyStatus
+  V1UrgencyLevel as UrgencyLevel,
+  V1UrgencyStatus as UrgencyStatus,
+  V1UrgencyLevel as GeneratedUrgencyLevel,
+  V1UrgencyStatus as GeneratedUrgencyStatus
 } from './generated/urgency';
+
 
 // Activity Service
 export type {

@@ -10,9 +10,9 @@ import {
   hasAcceptedAssignment
 } from './urgency-extensions';
 import {
-  UrgencyLevel,
-  UrgencyStatus,
-  UrgencyResponse
+  V1UrgencyLevel as UrgencyLevel,
+  V1UrgencyStatus as UrgencyStatus,
+  V1UrgencyResponse as UrgencyResponse
 } from '../generated/urgency';
 
   describe('hasAcceptedAssignment', () => {

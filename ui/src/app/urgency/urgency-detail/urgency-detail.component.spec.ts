@@ -33,7 +33,8 @@ describe('UrgencyDetailComponent', () => {
     level: UrgencyLevel.High,
     status: UrgencyStatus.Open,
     createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z'
+    updatedAt: '2024-01-15T10:00:00Z',
+    assignedEmployeeId: undefined
   };
 
   const mockActivities: Activity[] = [

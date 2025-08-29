@@ -48,7 +48,8 @@ describe('UrgencyService', () => {
         level: GeneratedUrgencyLevel.Medium,
         status: GeneratedUrgencyStatus.Open,
         createdAt: '2024-01-15',
-        updatedAt: '2024-01-15'
+        updatedAt: '2024-01-15',
+        assignedEmployeeId: undefined
       },
       {
         id: 2,
@@ -61,7 +62,8 @@ describe('UrgencyService', () => {
         level: GeneratedUrgencyLevel.High,
         status: GeneratedUrgencyStatus.InProgress,
         createdAt: '2024-01-16',
-        updatedAt: '2024-01-16'
+        updatedAt: '2024-01-16',
+        assignedEmployeeId: 123
       }
     ];
 
@@ -86,7 +88,8 @@ describe('UrgencyService', () => {
       level: GeneratedUrgencyLevel.Medium,
       status: GeneratedUrgencyStatus.Open,
       createdAt: '2024-01-15',
-      updatedAt: '2024-01-15'
+      updatedAt: '2024-01-15',
+      assignedEmployeeId: undefined
     };
 
     service.getUrgencyById(1).subscribe(urgency => {
@@ -120,7 +123,8 @@ describe('UrgencyService', () => {
       level: GeneratedUrgencyLevel.Medium,
       status: GeneratedUrgencyStatus.Open,
       createdAt: '2024-01-15',
-      updatedAt: '2024-01-15'
+      updatedAt: '2024-01-15',
+      assignedEmployeeId: undefined
     };
 
     service.addUrgency(mockUrgencyCreateRequest).subscribe(urgency => {
@@ -156,7 +160,8 @@ describe('UrgencyService', () => {
       level: GeneratedUrgencyLevel.Medium,
       status: GeneratedUrgencyStatus.InProgress,
       createdAt: '2024-01-15',
-      updatedAt: '2024-01-15'
+      updatedAt: '2024-01-15',
+      assignedEmployeeId: undefined
     };
 
     service.updateUrgency(1, mockUrgencyUpdateRequest).subscribe(urgency => {

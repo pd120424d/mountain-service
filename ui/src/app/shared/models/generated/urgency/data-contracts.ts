@@ -10,20 +10,6 @@
  * ---------------------------------------------------------------
  */
 
-export enum V1UrgencyStatus {
-  Open = "open",
-  InProgress = "in_progress",
-  Resolved = "resolved",
-  Closed = "closed",
-}
-
-export enum V1UrgencyLevel {
-  Low = "low",
-  Medium = "medium",
-  High = "high",
-  Critical = "critical",
-}
-
 export interface V1AssignmentCreateRequest {
   employeeId: number;
 }
@@ -36,6 +22,13 @@ export interface V1UrgencyCreateRequest {
   lastName: string;
   level?: V1UrgencyLevel;
   location: string;
+}
+
+export enum V1UrgencyLevel {
+  Low = "low",
+  Medium = "medium",
+  High = "high",
+  Critical = "critical",
 }
 
 export interface V1UrgencyResponse {
@@ -52,6 +45,13 @@ export interface V1UrgencyResponse {
   location?: string;
   status?: V1UrgencyStatus;
   updatedAt?: string;
+}
+
+export enum V1UrgencyStatus {
+  Open = "open",
+  InProgress = "in_progress",
+  Resolved = "resolved",
+  Closed = "closed",
 }
 
 export interface V1UrgencyUpdateRequest {
