@@ -61,6 +61,8 @@ spec:
               value: "reflecting-card-469410-q1"
             - name: LOG_TO_STDOUT_ONLY
               value: "true"
+            - name: GCP_LOGGING_CREDENTIALS_PATH
+              value: "/var/secrets/gcp-logging/key.json"
 
             # External Services
             - name: EMPLOYEE_SERVICE_URL
