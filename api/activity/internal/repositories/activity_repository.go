@@ -3,10 +3,12 @@ package repositories
 //go:generate mockgen -source=activity_repository.go -destination=activity_repository_gomock.go -package=repositories mountain_service/activity/internal/repositories -imports=gomock=go.uber.org/mock/gomock -typed
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
+	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"gorm.io/gorm"
@@ -51,6 +53,16 @@ func (r *activityRepository) CreateWithOutbox(activity *model.Activity, event *m
 			return fmt.Errorf("failed to create activity: %w", err)
 		}
 		if event != nil {
+			// Make sure that we have aggregate ID at this point since it won't be processed if it is 0
+			event.AggregateID = fmt.Sprintf("activity-%d", activity.ID)
+			// Try to update eventData.ActivityID if it's a valid ActivityEvent JSON
+			var ev activityV1.ActivityEvent
+			if json.Unmarshal([]byte(event.EventData), &ev) == nil {
+				ev.ActivityID = activity.ID
+				if b, mErr := json.Marshal(ev); mErr == nil {
+					event.EventData = string(b)
+				}
+			}
 			if err := tx.Create(event).Error; err != nil {
 				r.log.Errorf("Failed to create outbox event: %v", err)
 				return fmt.Errorf("failed to create outbox event: %w", err)

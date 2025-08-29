@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,19 +11,18 @@ import (
 	"syscall"
 	"time"
 
-	"encoding/base64"
 	"strings"
+
+	events "github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/event"
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
-	"github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/repositories"
 	"github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/firestorex/googleadapter"
-	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
@@ -138,8 +136,10 @@ func main() {
 		subscription := pubsubClient.Subscription(cfg.PubSubSubscription)
 		logger.Infof("Starting Pub/Sub subscriber: subscription=%s", cfg.PubSubSubscription)
 
+		// Use event handler service
+		h := events.NewHandler(firebaseService, logger)
 		err := subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-			if err := handleActivityEvent(ctx, msg, firebaseService, logger); err != nil {
+			if err := h.Handle(ctx, msg); err != nil {
 				logger.Errorf("Failed to handle activity event: error=%v, message_id=%s", err, msg.ID)
 				msg.Nack()
 			} else {
@@ -258,241 +258,6 @@ func getEnvAsIntOrDefault(key string, defaultValue int) int {
 		}
 	}
 	return defaultValue
-}
-
-// processOutboxEvents processes unpublished events from the outbox and publishes them to Pub/Sub
-func processOutboxEvents(ctx context.Context, outboxRepo repositories.OutboxRepository, pubsubClient *pubsub.Client, topicName string, logger utils.Logger) error {
-	logger.Infof("Processing outbox events")
-
-	// Get unpublished events
-	events, err := outboxRepo.GetUnpublishedEvents(100) // Process up to 100 events at a time
-	if err != nil {
-		logger.Errorf("Failed to get unpublished events: %v", err)
-		return fmt.Errorf("failed to get unpublished events: %w", err)
-	}
-
-	if len(events) == 0 {
-		logger.Infof("No unpublished events found")
-		return nil
-	}
-
-	logger.Infof("Found %d unpublished events to process", len(events))
-
-	// Get the topic
-	topic := pubsubClient.Topic(topicName)
-	defer topic.Stop()
-
-	// Process each event
-	successCount := 0
-	for _, event := range events {
-		if err := publishEvent(ctx, topic, event, logger); err != nil {
-			logger.Errorf("Failed to publish event: event_id=%d, error=%v", event.ID, err)
-			continue
-		}
-
-		if err := outboxRepo.MarkAsPublished(event.ID); err != nil {
-			logger.Errorf("Failed to mark event as published: event_id=%d, error=%v", event.ID, err)
-			continue
-		}
-
-		successCount++
-	}
-
-	logger.Infof("Successfully processed %d out of %d outbox events", successCount, len(events))
-	return nil
-}
-
-func publishEvent(ctx context.Context, topic *pubsub.Topic, event *models.OutboxEvent, logger utils.Logger) error {
-	logger.Infof("Publishing event to Pub/Sub: event_id=%d, type=%s", event.ID, event.EventType)
-
-	messageBytes, err := json.Marshal(event)
-	if err != nil {
-		logger.Errorf("Failed to marshal event: event_id=%d, error=%v", event.ID, err)
-		return fmt.Errorf("failed to marshal event: %w", err)
-	}
-
-	pubsubMessage := &pubsub.Message{
-		Data: messageBytes,
-		Attributes: map[string]string{
-			"eventType":   event.EventType,
-			"aggregateId": event.AggregateID,
-		},
-	}
-
-	result := topic.Publish(ctx, pubsubMessage)
-	messageID, err := result.Get(ctx)
-	if err != nil {
-		logger.Errorf("Failed to publish message to Pub/Sub: event_id=%d, error=%v", event.ID, err)
-		return fmt.Errorf("failed to publish message to Pub/Sub: %w", err)
-	}
-
-	logger.Infof("Event published to Pub/Sub successfully: event_id=%d, message_id=%s", event.ID, messageID)
-	return nil
-}
-
-// handleActivityEvent processes an activity event message from Pub/Sub
-func handleActivityEvent(ctx context.Context, msg *pubsub.Message, firebaseService service.FirebaseService, logger utils.Logger) error {
-	logger.Infof("Received activity event: message_id=%s, publish_time=%v", msg.ID, msg.PublishTime)
-
-	// 1) Envelope with eventData JSON
-	var envelope activityV1.OutboxEvent
-	if err := json.Unmarshal(msg.Data, &envelope); err == nil && (envelope.EventData != "" || envelope.EventType != "") {
-		logger.Infof("Processing activity event: event_type=%s, aggregate_id=%s", envelope.EventType, envelope.AggregateID)
-		// Try direct
-		if ev, err := envelope.GetEventData(); err == nil {
-			// If producer forgot to set ActivityID, try to recover from aggregateId (activity-<id>)
-			// TODO: fix this in a proper way
-			if ev.ActivityID == 0 {
-				fillIDFromAggregateID(ev, envelope.AggregateID)
-			}
-			if normalizeAndProcess(ctx, *ev, firebaseService, logger) == nil {
-				return nil
-			}
-		}
-		// Try unquoting eventData if double-encoded
-		if len(envelope.EventData) > 0 && envelope.EventData[0] == '"' {
-			if unq, uErr := strconv.Unquote(envelope.EventData); uErr == nil {
-				var ev activityV1.ActivityEvent
-				if jErr := json.Unmarshal([]byte(unq), &ev); jErr == nil {
-					if ev.ActivityID == 0 {
-						fillIDFromAggregateID(&ev, envelope.AggregateID)
-					}
-					if normalizeAndProcess(ctx, ev, firebaseService, logger) == nil {
-						return nil
-					}
-				}
-			}
-		}
-	}
-
-	// 2) Legacy direct ActivityEvent
-	var legacy activityV1.ActivityEvent
-	if err := json.Unmarshal(msg.Data, &legacy); err == nil && legacy.ActivityID != 0 {
-		logger.Infof("Processing legacy activity event: type=%s, activity_id=%d", legacy.Type, legacy.ActivityID)
-		if normalizeAndProcess(ctx, legacy, firebaseService, logger) == nil {
-			return nil
-		}
-	}
-
-	// 3) Whole message is quoted JSON string -> unquote then retry 1 and 2
-	var msgAsString string
-	if err := json.Unmarshal(msg.Data, &msgAsString); err == nil && msgAsString != "" {
-		raw := []byte(msgAsString)
-		// try envelope again
-		if err := json.Unmarshal(raw, &envelope); err == nil && (envelope.EventData != "" || envelope.EventType != "") {
-			logger.Infof("Processing activity event (quoted): event_type=%s, aggregate_id=%s", envelope.EventType, envelope.AggregateID)
-			if ev, err := envelope.GetEventData(); err == nil {
-				if ev.ActivityID == 0 {
-					fillIDFromAggregateID(ev, envelope.AggregateID)
-				}
-				if normalizeAndProcess(ctx, *ev, firebaseService, logger) == nil {
-					return nil
-				}
-			}
-			if len(envelope.EventData) > 0 && envelope.EventData[0] == '"' {
-				if unq, uErr := strconv.Unquote(envelope.EventData); uErr == nil {
-					var ev activityV1.ActivityEvent
-					if jErr := json.Unmarshal([]byte(unq), &ev); jErr == nil {
-						if ev.ActivityID == 0 {
-							fillIDFromAggregateID(&ev, envelope.AggregateID)
-						}
-						if normalizeAndProcess(ctx, ev, firebaseService, logger) == nil {
-							return nil
-						}
-					}
-				}
-			}
-		}
-		// try legacy again
-		if err := json.Unmarshal(raw, &legacy); err == nil && legacy.ActivityID != 0 {
-			if normalizeAndProcess(ctx, legacy, firebaseService, logger) == nil {
-				return nil
-			}
-		}
-	}
-
-	// 4) Treat message data as base64-encoded JSON and retry
-	if decoded, decErr := base64.StdEncoding.DecodeString(string(msg.Data)); decErr == nil && len(decoded) > 0 {
-		// envelope on decoded
-		var env2 activityV1.OutboxEvent
-		if err := json.Unmarshal(decoded, &env2); err == nil && (env2.EventData != "" || env2.EventType != "") {
-			if ev, err := env2.GetEventData(); err == nil {
-				if ev.ActivityID == 0 {
-					fillIDFromAggregateID(ev, env2.AggregateID)
-				}
-				if normalizeAndProcess(ctx, *ev, firebaseService, logger) == nil {
-					return nil
-				}
-			}
-			if len(env2.EventData) > 0 && env2.EventData[0] == '"' {
-				if unq, uErr := strconv.Unquote(env2.EventData); uErr == nil {
-					var ev activityV1.ActivityEvent
-					if jErr := json.Unmarshal([]byte(unq), &ev); jErr == nil {
-						if ev.ActivityID == 0 {
-							fillIDFromAggregateID(&ev, env2.AggregateID)
-						}
-						if normalizeAndProcess(ctx, ev, firebaseService, logger) == nil {
-							return nil
-						}
-					}
-				}
-			}
-		}
-		// legacy on decoded
-		var leg2 activityV1.ActivityEvent
-		if err := json.Unmarshal(decoded, &leg2); err == nil && leg2.ActivityID != 0 {
-			if normalizeAndProcess(ctx, leg2, firebaseService, logger) == nil {
-				return nil
-			}
-		}
-		// decoded may itself be a quoted string
-		var s2 string
-		if err := json.Unmarshal(decoded, &s2); err == nil && s2 != "" {
-			raw2 := []byte(s2)
-			if err := json.Unmarshal(raw2, &env2); err == nil && (env2.EventData != "" || env2.EventType != "") {
-				if ev, err := env2.GetEventData(); err == nil {
-					if ev.ActivityID == 0 {
-						fillIDFromAggregateID(ev, env2.AggregateID)
-					}
-					if normalizeAndProcess(ctx, *ev, firebaseService, logger) == nil {
-						return nil
-					}
-				}
-				if len(env2.EventData) > 0 && env2.EventData[0] == '"' {
-					if unq, uErr := strconv.Unquote(env2.EventData); uErr == nil {
-						var ev activityV1.ActivityEvent
-						if jErr := json.Unmarshal([]byte(unq), &ev); jErr == nil {
-							if ev.ActivityID == 0 {
-								fillIDFromAggregateID(&ev, env2.AggregateID)
-							}
-							if normalizeAndProcess(ctx, ev, firebaseService, logger) == nil {
-								return nil
-							}
-						}
-					}
-				}
-			}
-			if err := json.Unmarshal(raw2, &leg2); err == nil && leg2.ActivityID != 0 {
-				if normalizeAndProcess(ctx, leg2, firebaseService, logger) == nil {
-					return nil
-				}
-			}
-		}
-	}
-
-	logger.Errorf("Unrecognized event payload format, cannot parse message_id=%s", msg.ID)
-	return fmt.Errorf("unrecognized event payload format")
-}
-
-// fillIDFromAggregateID parses patterns like "activity-123" and sets ev.ActivityID if zero
-func fillIDFromAggregateID(ev *activityV1.ActivityEvent, aggregateID string) {
-	if ev == nil || ev.ActivityID != 0 || aggregateID == "" {
-		return
-	}
-	var id uint64
-	if _, err := fmt.Sscanf(aggregateID, "activity-%d", &id); err == nil && id > 0 {
-		ev.ActivityID = uint(id)
-	}
 }
 
 // buildDatabaseURLFromEnv constructs a Postgres DSN from DB_* environment variables.

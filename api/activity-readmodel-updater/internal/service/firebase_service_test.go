@@ -16,9 +16,9 @@ func TestFirebaseService_WithFakeFirestore(t *testing.T) {
 	logger := utils.NewTestLogger()
 
 	fake := firestoretest.NewFake().WithCollection("activities", []map[string]interface{}{
-		{"id": uint(1), "urgency_id": uint(2), "employee_id": uint(5), "description": "A", "created_at": "2025-01-02T10:00:00Z"},
-		{"id": uint(2), "urgency_id": uint(3), "employee_id": uint(6), "description": "B", "created_at": "2025-01-03T10:00:00Z"},
-		{"id": uint(3), "urgency_id": uint(2), "employee_id": uint(7), "description": "C", "created_at": "2025-01-04T10:00:00Z"},
+		{"id": int64(1), "urgency_id": int64(2), "employee_id": int64(5), "description": "A", "created_at": "2025-01-02T10:00:00Z"},
+		{"id": int64(2), "urgency_id": int64(3), "employee_id": int64(6), "description": "B", "created_at": "2025-01-03T10:00:00Z"},
+		{"id": int64(3), "urgency_id": int64(2), "employee_id": int64(7), "description": "C", "created_at": "2025-01-04T10:00:00Z"},
 	})
 	svc := NewFirebaseService(fake, logger)
 
@@ -39,7 +39,7 @@ func TestFirebaseService_WithFakeFirestore(t *testing.T) {
 
 	t.Run("it succeeds when SyncActivity CREATE writes a doc", func(t *testing.T) {
 		ctx := context.Background()
-		ev := activityV1.ActivityEvent{Type: "CREATE", ActivityID: 10, UrgencyID: 5, EmployeeID: 9, Description: "New", CreatedAt: time.Now()}
+		ev := activityV1.ActivityEvent{Type: "CREATE", ActivityID: 10, UrgencyID: 5, EmployeeID: 9, Description: "New", CreatedAt: time.Now().UTC()}
 		err := svc.SyncActivity(ctx, ev)
 		assert.NoError(t, err)
 

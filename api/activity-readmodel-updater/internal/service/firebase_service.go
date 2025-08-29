@@ -51,7 +51,6 @@ func NewFirebaseService(client firestorex.Client, logger utils.Logger) FirebaseS
 }
 func isDone(err error) bool { return firestorex.IsDone(err) }
 
-// GetActivitiesByUrgency retrieves activities for a specific urgency from Firestore
 func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID uint) ([]*models.Activity, error) {
 	if s.client == nil {
 		return nil, fmt.Errorf("Firestore client is nil")
@@ -94,7 +93,6 @@ func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID 
 	return activities, nil
 }
 
-// GetAllActivities retrieves all activities from Firestore with limit
 func (s *firebaseService) GetAllActivities(ctx context.Context, limit int) ([]*models.Activity, error) {
 	if s.client == nil {
 		return nil, fmt.Errorf("Firestore client is nil")
@@ -140,7 +138,6 @@ func (s *firebaseService) GetAllActivities(ctx context.Context, limit int) ([]*m
 	return activities, nil
 }
 
-// SyncActivity syncs an activity event to Firestore (called by the updater service)
 func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1.ActivityEvent) error {
 	if s.client == nil {
 		return fmt.Errorf("Firestore client is nil")
@@ -206,10 +203,9 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 	return nil
 }
 
-// HealthCheck checks if Firebase is accessible
 func (s *firebaseService) HealthCheck(ctx context.Context) error {
 	if s.client == nil {
-		return fmt.Errorf("Firestore client is nil")
+		return fmt.Errorf("failed to check health: Firestore client is nil")
 	}
 
 	// Try to read a single document to test connectivity
@@ -217,7 +213,7 @@ func (s *firebaseService) HealthCheck(ctx context.Context) error {
 	_, err := iter.Next()
 	if err != nil && !isDone(err) {
 		s.logger.Errorf("Firebase health check failed: %v", err)
-		return fmt.Errorf("Firebase health check failed: %w", err)
+		return fmt.Errorf("failed to check health: %w", err)
 	}
 
 	s.logger.Debug("Firebase health check passed")
