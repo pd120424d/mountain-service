@@ -11,8 +11,74 @@ spec:
     - host: mountain-service.duckdns.org
       http:
         paths:
-          # All traffic goes to frontend service
-          # Nginx inside frontend container handles routing to backend services
+          # === SWAGGER ENDPOINTS ===
+          # Swagger UI endpoints (must come before / catch-all)
+          - path: /employee-swagger
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+          - path: /urgency-swagger
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+          - path: /activity-swagger
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+
+          # Swagger JSON endpoints
+          - path: /employee-swagger.json
+            pathType: Exact
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+          - path: /urgency-swagger.json
+            pathType: Exact
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+          - path: /activity-swagger.json
+            pathType: Exact
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+
+          # === API ENDPOINTS ===
+          # API endpoints (must come before / catch-all)
+          - path: /api/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+
+          # Health check endpoint
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+
+          # === FRONTEND ===
+          # Angular frontend - catch all for client-side routing (MUST BE LAST)
           - path: /
             pathType: Prefix
             backend:
