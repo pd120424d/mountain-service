@@ -149,6 +149,20 @@ func (mr *MockUrgencyServiceMockRecorder) UnassignUrgency(urgencyID, actorID, is
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnassignUrgency", reflect.TypeOf((*MockUrgencyService)(nil).UnassignUrgency), urgencyID, actorID, isAdmin)
 }
 
+// CloseUrgency mocks base method.
+func (m *MockUrgencyService) CloseUrgency(urgencyID uint, actorID uint, isAdmin bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CloseUrgency", urgencyID, actorID, isAdmin)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CloseUrgency indicates an expected call of CloseUrgency.
+func (mr *MockUrgencyServiceMockRecorder) CloseUrgency(urgencyID, actorID, isAdmin interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseUrgency", reflect.TypeOf((*MockUrgencyService)(nil).CloseUrgency), urgencyID, actorID, isAdmin)
+}
+
 // GetAssignment mocks base method.
 func (m *MockUrgencyService) GetAssignment(urgencyID uint) (*urgencyV1.AssignmentResponse, error) {
 	m.ctrl.T.Helper()

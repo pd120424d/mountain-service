@@ -102,6 +102,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		authorized.DELETE("/urgencies/:id", urgencyHandler.DeleteUrgency)
 		authorized.POST("/urgencies/:id/assign", urgencyHandler.AssignUrgency)
 		authorized.DELETE("/urgencies/:id/assign", urgencyHandler.UnassignUrgency)
+		authorized.PUT("/urgencies/:id/close", urgencyHandler.CloseUrgency)
 	}
 
 	// Admin-only routes

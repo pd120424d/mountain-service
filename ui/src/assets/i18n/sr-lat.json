@@ -313,7 +313,23 @@
         "ASSIGN_ERROR": "Neuspešno preuzimanje urgentne situacije.",
         "UNASSIGN_SUCCESS": "Urgentna situacija je otpuštena.",
         "UNASSIGN_ERROR": "Neuspešno otpuštanje urgentne situacije.",
-        "ASSIGNED_TO": "Dodeljeno"
+        "ASSIGNED_TO": "Dodeljeno",
+        "RESOLVE": "Zatvori",
+        "RESOLVING": "Zatvaranje...",
+        "RESOLVE_SUCCESS": "Urgentna situacija je zatvorena.",
+        "RESOLVE_ERROR": "Neuspešno zatvaranje urgentne situacije."
+    },
+    "RESOLVE_MODAL": {
+        "TITLE": "Zatvori urgentnu situaciju",
+        "CLOSE": "Zatvori",
+        "CONFIRMATION_MESSAGE": "Da li ste sigurni da želite da zatvorite ovu urgentnu situaciju?",
+        "ADD_ACTIVITY_CHECKBOX": "Dodaj aktivnost pre zatvaranja",
+        "ACTIVITY_DESCRIPTION": "Opis aktivnosti",
+        "ACTIVITY_PLACEHOLDER": "Ukratko opišite šta je urađeno",
+        "CANCEL": "Otkaži",
+        "CONFIRM": "Potvrdi",
+        "ACTIVITY_REQUIRED": "Opis aktivnosti je obavezan",
+        "ACTIVITY_MIN_LENGTH": "Opis aktivnosti mora imati najmanje 10 karaktera"
     },
     "ACTIVITY_LEVEL": {
         "INFO": "Informacija",

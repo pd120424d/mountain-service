@@ -298,7 +298,23 @@
         "ASSIGN_ERROR": "Failed to assign urgency.",
         "UNASSIGN_SUCCESS": "Urgency unassigned successfully.",
         "UNASSIGN_ERROR": "Failed to unassign urgency.",
-        "ASSIGNED_TO": "Assigned to"
+        "ASSIGNED_TO": "Assigned to",
+        "RESOLVE": "Resolve",
+        "RESOLVING": "Resolving...",
+        "RESOLVE_SUCCESS": "Urgency closed successfully.",
+        "RESOLVE_ERROR": "Failed to close urgency."
+    },
+    "RESOLVE_MODAL": {
+        "TITLE": "Resolve Urgency",
+        "CLOSE": "Close",
+        "CONFIRMATION_MESSAGE": "Are you sure you want to mark this urgency as closed?",
+        "ADD_ACTIVITY_CHECKBOX": "Add an activity update before closing",
+        "ACTIVITY_DESCRIPTION": "Activity Description",
+        "ACTIVITY_PLACEHOLDER": "Briefly describe what was done",
+        "CANCEL": "Cancel",
+        "CONFIRM": "Confirm",
+        "ACTIVITY_REQUIRED": "Activity description is required",
+        "ACTIVITY_MIN_LENGTH": "Activity description must be at least 3 characters"
     },
     "ACTIVITY_LEVEL": {
         "INFO": "Info",

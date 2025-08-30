@@ -26,6 +26,7 @@ type UrgencyService interface {
 
 	AssignUrgency(urgencyID, employeeID uint) error
 	UnassignUrgency(urgencyID uint, actorID uint, isAdmin bool) error
+	CloseUrgency(urgencyID uint, actorID uint, isAdmin bool) error
 	GetAssignment(urgencyID uint) (*urgencyV1.AssignmentResponse, error)
 }
 
@@ -166,6 +167,36 @@ func (s *urgencyService) UnassignUrgency(urgencyID uint, actorID uint, isAdmin b
 	urg.AssignedAt = nil
 	if err := s.repo.Update(urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UNASSIGN_FAILED", "failed to unassign", map[string]interface{}{"cause": err.Error()})
+	}
+	return nil
+}
+
+func (s *urgencyService) CloseUrgency(urgencyID uint, actorID uint, isAdmin bool) error {
+	if urgencyID == 0 {
+		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
+	}
+	urg, err := s.GetUrgencyByID(urgencyID)
+	if err != nil {
+		return err
+	}
+	if urg.AssignedEmployeeID == nil {
+		return commonv1.NewAppError("URGENCY_ERRORS.NOT_ASSIGNED", "urgency has no assigned employee", nil)
+	}
+	if urg.Status != urgencyV1.InProgress {
+		return commonv1.NewAppError("URGENCY_ERRORS.INVALID_STATE", "only in_progress urgencies can be closed", map[string]interface{}{"status": urg.Status})
+	}
+	// Authorization: only assignee or admin can close
+	if !isAdmin && *urg.AssignedEmployeeID != actorID {
+		return commonv1.NewAppError("AUTH_ERRORS.FORBIDDEN", "only assignee or admin can close", map[string]interface{}{"assignee": *urg.AssignedEmployeeID})
+	}
+	// Validate that assigned employee still exists
+	ctx := context.Background()
+	if _, err := s.employeeClient.GetEmployeeByID(ctx, *urg.AssignedEmployeeID); err != nil {
+		return commonv1.NewAppError("URGENCY_ERRORS.INVALID_ASSIGNEE", "assigned employee does not exist or is not accessible", map[string]interface{}{"cause": err.Error(), "employeeId": *urg.AssignedEmployeeID})
+	}
+	urg.Status = urgencyV1.Closed
+	if err := s.repo.Update(urg); err != nil {
+		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to close urgency", map[string]interface{}{"cause": err.Error()})
 	}
 	return nil
 }

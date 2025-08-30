@@ -22,6 +22,7 @@ type UrgencyHandler interface {
 
 	AssignUrgency(ctx *gin.Context)
 	UnassignUrgency(ctx *gin.Context)
+	CloseUrgency(ctx *gin.Context)
 }
 
 type urgencyHandler struct {
@@ -244,8 +245,9 @@ func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
-// AssignUrgency assigns (or accepts) an urgency to an employee
-// @Summary Assign urgency to an employee
+// AssignUrgency Додела ургентне ситуације запосленом
+// @Summary Додела ургентне ситуације запосленом
+// @Description Додела ургентне ситуације запосленом
 // @Tags urgency
 // @Security OAuth2Password
 // @Param id path int true "Urgency ID"
@@ -280,8 +282,9 @@ func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "assigned"})
 }
 
-// UnassignUrgency removes assignment for an urgency (admin or same assignee)
-// @Summary Unassign urgency
+// UnassignUrgency Уклањање доделе ургентне ситуације (админ)
+// @Summary Уклањање доделе ургентне ситуације
+// @Description Уклањање доделе ургентне ситуације (админ)
 // @Tags urgency
 // @Security OAuth2Password
 // @Param id path int true "Urgency ID"
@@ -302,6 +305,39 @@ func (h *urgencyHandler) UnassignUrgency(ctx *gin.Context) {
 	isAdmin := roleVal == "Administrator"
 	if err := h.svc.UnassignUrgency(uint(urgencyID64), actorID, isAdmin); err != nil {
 		h.log.Errorf("unassign failed: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusNoContent, nil)
+}
+
+// CloseUrgency Затварање ургентне ситуације (админ)
+// @Summary Затварање ургентне ситуације (админ)
+// @Description Затварање ургентне ситуације (админ)
+// @Tags urgency
+// @Security OAuth2Password
+// @Param id path int true "Urgency ID"
+// @Success 204
+// @Failure 400 {object} map[string]interface{}
+// @Router /urgencies/{id}/close [put]
+func (h *urgencyHandler) CloseUrgency(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	urgencyID64, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil || urgencyID64 == 0 {
+		h.log.Errorf("invalid urgency ID: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
+		return
+	}
+	actorIDVal, _ := ctx.Get("employeeID")
+	roleVal, _ := ctx.Get("role")
+	actorID, _ := actorIDVal.(uint)
+	isAdmin := roleVal == "Administrator"
+	if err := h.svc.CloseUrgency(uint(urgencyID64), actorID, isAdmin); err != nil {
+		h.log.Errorf("close failed: %v", err)
+		if aerr, ok := err.(*commonv1.AppError); ok {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": aerr.Code, "details": aerr.Error()})
+			return
+		}
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
