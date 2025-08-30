@@ -85,6 +85,10 @@
             <span *ngIf="isUnassigning">{{ 'URGENCY_DETAIL.UNASSIGNING' | translate }}</span>
             <span *ngIf="!isUnassigning">{{ 'URGENCY_DETAIL.UNASSIGN' | translate }}</span>
           </button>
+          <button class="btn btn-success" *ngIf="canResolve()" [disabled]="isResolving" (click)="onResolve()">
+            <span *ngIf="isResolving">{{ 'URGENCY_DETAIL.RESOLVING' | translate }}</span>
+            <span *ngIf="!isResolving">{{ 'URGENCY_DETAIL.RESOLVE' | translate }}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -100,6 +104,7 @@
           <div class="form-group">
             <label for="description">{{ 'URGENCY_DETAIL.ACTIVITY_DESCRIPTION' | translate }}:</label>
             <textarea
+              #activityTextarea
               id="description"
               formControlName="description"
               [class.error]="isFieldInvalid('description')"
@@ -157,3 +162,10 @@
     </div>
   </div>
 </div>
+
+<!-- Resolve Modal -->
+<app-resolve-modal
+  [isVisible]="showResolveModal"
+  [urgencyId]="urgencyId"
+  (result)="onResolveModalResult($event)">
+</app-resolve-modal>

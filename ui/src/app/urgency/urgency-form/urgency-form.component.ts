@@ -18,7 +18,12 @@ import { LocationMapComponent } from '../../shared/components';
 })
 export class UrgencyFormComponent extends BaseTranslatableComponent implements OnInit {
   urgencyForm!: FormGroup;
-  urgencyLevels = Object.values(UrgencyLevel);
+  urgencyLevels = [
+    UrgencyLevel.Low,
+    UrgencyLevel.Medium,
+    UrgencyLevel.High,
+    UrgencyLevel.Critical
+  ];
   isSubmitting = false;
 
   currentLocation?: EnhancedLocation;

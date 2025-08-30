@@ -46,7 +46,10 @@
       <tbody>
         <tr *ngFor="let urgency of urgencies"
             class="urgency-row"
-            [ngClass]="{ 'urgency-unassigned': urgency.status === Status.Open }">
+            [ngClass]="{
+              'urgency-unassigned': !hasAcceptedAssignment(urgency),
+              'urgency-assigned': hasAcceptedAssignment(urgency)
+            }">
           <td>{{ urgency.id }}</td>
           <td>{{ getDisplayName(urgency) }}</td>
           <td>{{ urgency.location }}</td>

@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { VersionBannerComponent } from './version-banner/version-banner.component';
 import { NgxSpinnerModule } from 'ngx-spinner';
-import { Employee, Urgency, UrgencyStatus } from './shared/models';
+import { Employee, hasAcceptedAssignment } from './shared/models';
 import { UrgencyService } from './urgency/urgency.service';
 
 @Component({
@@ -135,7 +135,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
     this.urgencyService.getUrgencies().subscribe({
       next: (urgencies) => {
-        this.openUrgenciesCount = (urgencies || []).filter(u => (u as any)?.status === UrgencyStatus.Open).length;
+        this.openUrgenciesCount = (urgencies || []).filter(u => !hasAcceptedAssignment(u as any)).length;
       },
       error: () => {
         this.openUrgenciesCount = this.openUrgenciesCount || 0;

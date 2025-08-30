@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -21,15 +21,18 @@ import {
   hasAcceptedAssignment
 } from '../../shared/models';
 import { DateTimeModule } from '../../shared/utils/date-time.module';
+import { ResolveModalComponent, ResolveModalResult } from '../resolve-modal/resolve-modal.component';
 
 @Component({
   selector: 'app-urgency-detail',
   standalone: true,
-  imports: [RouterModule, TranslateModule, CommonModule, ReactiveFormsModule, DateTimeModule],
+  imports: [RouterModule, TranslateModule, CommonModule, ReactiveFormsModule, DateTimeModule, ResolveModalComponent],
   templateUrl: './urgency-detail.component.html',
   styleUrls: ['./urgency-detail.component.css']
 })
 export class UrgencyDetailComponent extends BaseTranslatableComponent implements OnInit {
+  @ViewChild('activityTextarea') activityTextarea!: ElementRef<HTMLTextAreaElement>;
+
   urgency: Urgency | null = null;
   activities: Activity[] = [];
   activityForm!: FormGroup;
@@ -45,6 +48,8 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   UrgencyStatus = UrgencyStatus;
   isAssigning = false;
   isUnassigning = false;
+  isResolving = false;
+  showResolveModal = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -135,6 +140,10 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
           this.activityForm.reset();
           this.loadActivities();
           this.isSubmittingActivity = false;
+          // Focus the textarea for easier consecutive activity additions
+          setTimeout(() => {
+            this.activityTextarea?.nativeElement?.focus();
+          }, 100);
         },
         error: (error) => {
           console.error('Error creating activity:', error);
@@ -161,6 +170,16 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
     if (!this.urgency) return false;
     const assigned = hasAcceptedAssignment(this.urgency);
     return assigned && this.authService.isAdmin();
+  }
+
+  canResolve(): boolean {
+    if (!this.urgency) return false;
+    const currentUserId = parseInt(this.authService.getUserId());
+    const isAssignedToCurrentUser = this.urgency.assignedEmployeeId === currentUserId;
+    const isAdmin = this.authService.isAdmin();
+    const isNotResolved = this.urgency.status !== UrgencyStatus.Resolved && this.urgency.status !== UrgencyStatus.Closed;
+
+    return isNotResolved && (isAssignedToCurrentUser || isAdmin);
   }
 
   onAssignToMe(): void {
@@ -192,6 +211,57 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
       error: (err) => {
         this.toastr.error(err?.message || this.translate.instant('URGENCY_DETAIL.UNASSIGN_ERROR'));
         this.isUnassigning = false;
+      }
+    });
+  }
+
+  onResolve(): void {
+    this.showResolveModal = true;
+  }
+
+  onResolveModalResult(result: ResolveModalResult): void {
+    if (!result.confirmed || !this.urgencyId || this.isResolving) return;
+
+    this.isResolving = true;
+
+    // If user wants to add an activity, create it first
+    if (result.activityDescription) {
+      const activityRequest = {
+        urgencyId: this.urgencyId,
+        employeeId: parseInt(this.authService.getUserId()),
+        description: result.activityDescription
+      };
+
+      this.activityService.createActivity(activityRequest).subscribe({
+        next: () => {
+          // Activity created successfully, now close the urgency
+          this.closeUrgency();
+        },
+        error: (error) => {
+          console.error('Error creating activity:', error);
+          this.toastr.error(this.translate.instant('URGENCY_DETAIL.ACTIVITY_ADDED_ERROR'));
+          this.isResolving = false;
+        }
+      });
+    } else {
+      // No activity to add, directly close the urgency
+      this.closeUrgency();
+    }
+  }
+
+  private closeUrgency(): void {
+    if (!this.urgencyId) return;
+
+    this.urgencyService.closeUrgency(this.urgencyId).subscribe({
+      next: () => {
+        this.toastr.success(this.translate.instant('URGENCY_DETAIL.RESOLVE_SUCCESS'));
+        this.isResolving = false;
+        this.loadUrgency();
+        this.loadActivities(); // Refresh activities if we added one
+      },
+      error: (err) => {
+        this.toastr.error(err?.message || this.translate.instant('URGENCY_DETAIL.RESOLVE_ERROR'));
+        this.isResolving = false;
       }
     });
   }

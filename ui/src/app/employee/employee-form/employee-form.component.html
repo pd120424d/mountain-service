@@ -27,7 +27,7 @@
   <input id="phoneNumber" formControlName="phoneNumber" type="text">
 
   <label for="email">{{ 'EMPLOYEE_FORM.EMAIL' | translate }}:</label>
-  <input id="email" formControlName="email" type="email">
+  <input id="email" formControlName="email" type="email" [disabled]="isEditMode">
 
   <ng-container *ngIf="isEditMode">
     <label for="profilePicture">{{ 'EMPLOYEE_FORM.PROFILE_PICTURE' | translate }}:</label>

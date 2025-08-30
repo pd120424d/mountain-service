@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../services/auth.service';
 import { UrgencyService } from '../urgency/urgency.service';
-import { UrgencyStatus } from '../shared/models';
+import { hasAcceptedAssignment } from '../shared/models';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrService } from 'ngx-toastr';
 import { NgxSpinnerModule } from 'ngx-spinner';
@@ -54,7 +54,7 @@ export class HomeComponent implements OnInit {
     if (this.authService.isAuthenticated()) {
       this.urgencyService.getUrgencies().subscribe({
         next: (urgencies) => {
-          this.openUrgenciesCount = (urgencies || []).filter(u => (u as any)?.status === UrgencyStatus.Open).length;
+          this.openUrgenciesCount = (urgencies || []).filter(u => !hasAcceptedAssignment(u as any)).length;
         },
         error: () => {
           this.openUrgenciesCount = this.openUrgenciesCount || 0;

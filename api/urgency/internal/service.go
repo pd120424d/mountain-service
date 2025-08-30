@@ -141,6 +141,7 @@ func (s *urgencyService) AssignUrgency(urgencyID, employeeID uint) error {
 	now := time.Now().UTC()
 	urg.AssignedEmployeeID = &employeeID
 	urg.AssignedAt = &now
+	urg.Status = urgencyV1.InProgress
 	if err := s.repo.Update(urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to update urgency with assignment", map[string]interface{}{"cause": err.Error()})
 	}
@@ -188,7 +189,6 @@ func (s *urgencyService) GetAssignment(urgencyID uint) (*urgencyV1.AssignmentRes
 }
 
 func (s *urgencyService) createAssignmentAndNotification(urgency *model.Urgency, employee employeeV1.EmployeeResponse) error {
-
 	if employee.Phone != "" {
 		smsNotification := &model.Notification{
 			UrgencyID:        urgency.ID,

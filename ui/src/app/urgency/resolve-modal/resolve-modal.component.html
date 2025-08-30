@@ -1,0 +1,46 @@
+<div class="modal-overlay" *ngIf="isVisible" (click)="onCancel()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ 'RESOLVE_MODAL.TITLE' | translate }}</h3>
+      <button class="close-button" (click)="onCancel()" [title]="'RESOLVE_MODAL.CLOSE' | translate">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p>{{ 'RESOLVE_MODAL.CONFIRMATION_MESSAGE' | translate }}</p>
+      
+      <form [formGroup]="resolveForm">
+        <div class="form-group">
+          <label class="checkbox-container">
+            <input type="checkbox" formControlName="addActivity">
+            <span class="checkmark"></span>
+            {{ 'RESOLVE_MODAL.ADD_ACTIVITY_CHECKBOX' | translate }}
+          </label>
+        </div>
+
+        <div class="form-group" *ngIf="showActivityField">
+          <label for="activityDescription">{{ 'RESOLVE_MODAL.ACTIVITY_DESCRIPTION' | translate }}:</label>
+          <textarea
+            id="activityDescription"
+            formControlName="activityDescription"
+            [class.error]="isFieldInvalid('activityDescription')"
+            placeholder="{{ 'RESOLVE_MODAL.ACTIVITY_PLACEHOLDER' | translate }}"
+            rows="3"></textarea>
+          <div *ngIf="isFieldInvalid('activityDescription')" class="error-message">
+            {{ getFieldError('activityDescription') | translate }}
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="onCancel()">
+        {{ 'RESOLVE_MODAL.CANCEL' | translate }}
+      </button>
+      <button class="btn btn-success" (click)="onConfirm()" [disabled]="!resolveForm.valid">
+        {{ 'RESOLVE_MODAL.CONFIRM' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

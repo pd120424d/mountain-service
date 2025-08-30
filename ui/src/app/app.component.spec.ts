@@ -5,7 +5,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from './services/auth.service';
 import { EmployeeService } from './employee/employee.service';
 import { UrgencyService } from './urgency/urgency.service';
-import { UrgencyStatus } from './shared/models';
 import { AppInitializationService } from './services/app-initialization.service';
 import { of, throwError } from 'rxjs';
 import { Employee } from './shared/models';
@@ -271,9 +270,9 @@ describe('AppComponent', () => {
   it('should compute open urgencies count when authenticated', () => {
     authService.isAuthenticated.and.returnValue(true);
     const urgencies = [
-      { id: 1, status: UrgencyStatus.Open },
-      { id: 2, status: UrgencyStatus.Open },
-      { id: 3, status: UrgencyStatus.Resolved }
+      { id: 1, assignedEmployeeId: undefined }, // unassigned
+      { id: 2, assignedEmployeeId: null }, // unassigned
+      { id: 3, assignedEmployeeId: 5 } // assigned
     ] as any[];
     urgencyService.getUrgencies.and.returnValue(of(urgencies));
 

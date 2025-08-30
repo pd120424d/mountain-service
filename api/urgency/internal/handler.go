@@ -66,7 +66,7 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 		ContactPhone: req.ContactPhone,
 		Location:     req.Location,
 		Description:  req.Description,
-		Level:        urgencyV1.High,
+		Level:        req.Level,
 		Status:       urgencyV1.Open,
 	}
 

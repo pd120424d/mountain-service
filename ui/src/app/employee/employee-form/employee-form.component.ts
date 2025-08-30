@@ -78,6 +78,10 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
       profileType: employee.profileType,
     });
 
+    if (this.isEditMode) {
+      this.employeeForm.get('email')?.disable();
+    }
+
     // Set current profile picture URL for display
     this.currentProfilePictureUrl = employee.profilePicture || undefined;
   }

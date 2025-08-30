@@ -59,6 +59,18 @@ export class UrgencyService {
     );
   }
 
+  resolveUrgency(id: number): Observable<Urgency> {
+    return this.http.put<Urgency>(`${this.urgencyApiUrl}/${id}`, { status: 'resolved' }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  closeUrgency(id: number): Observable<Urgency> {
+    return this.http.put<Urgency>(`${this.urgencyApiUrl}/${id}/close`, {}).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   private handleError(error: HttpErrorResponse): Observable<never> {
     // Prefer structured backend error contract when available
     if (error && error.error && typeof error.error === 'object' && 'error' in error.error) {

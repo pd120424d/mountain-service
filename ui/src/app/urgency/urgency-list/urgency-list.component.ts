@@ -44,7 +44,12 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
 
     this.urgencyService.getUrgencies().subscribe({
       next: (urgencies) => {
-        this.urgencies = urgencies;
+        // Sort urgencies by createdAt date in descending order
+        this.urgencies = (urgencies || []).sort((a, b) => {
+          const dateA = new Date(a.createdAt || '').getTime();
+          const dateB = new Date(b.createdAt || '').getTime();
+          return dateB - dateA; // Descending order
+        });
         this.isLoading = false;
       },
       error: (error) => {
@@ -94,5 +99,9 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
 
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString();
+  }
+
+  hasAcceptedAssignment(urgency: Urgency): boolean {
+    return hasAcceptedAssignment(urgency);
   }
 }

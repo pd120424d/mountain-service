@@ -835,3 +835,61 @@ func TestUrgencyHandler_UnassignUrgency(t *testing.T) {
 	})
 
 }
+
+func TestUrgencyHandler_CreateUrgency_LevelMapping(t *testing.T) {
+	t.Parallel()
+
+	log := utils.NewTestLogger()
+
+	testCases := []struct {
+		name          string
+		level         string
+		expectedLevel urgencyV1.UrgencyLevel
+	}{
+		{"Low level", "low", urgencyV1.Low},
+		{"Medium level", "medium", urgencyV1.Medium},
+		{"High level", "high", urgencyV1.High},
+		{"Critical level", "critical", urgencyV1.Critical},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := NewMockUrgencyService(ctrl)
+			handler := NewUrgencyHandler(log, mockService)
+
+			w := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(w)
+
+			payload := `{
+				"firstName": "John",
+				"lastName": "Doe",
+				"email": "john.doe@example.com",
+				"contactPhone": "+1234567890",
+				"location": "N 43.401123 E 22.662756",
+				"description": "Test urgency description",
+				"level": "` + tc.level + `"
+			}`
+
+			ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies", strings.NewReader(payload))
+			ctx.Request.Header.Set("Content-Type", "application/json")
+
+			var capturedUrgency *model.Urgency
+			mockService.EXPECT().CreateUrgency(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
+				capturedUrgency = urgency
+				urgency.ID = 1
+				urgency.CreatedAt = time.Now()
+				urgency.UpdatedAt = time.Now()
+				return nil
+			})
+
+			handler.CreateUrgency(ctx)
+
+			assert.Equal(t, http.StatusCreated, w.Code)
+			assert.NotNil(t, capturedUrgency)
+			assert.Equal(t, tc.expectedLevel, capturedUrgency.Level)
+		})
+	}
+}
