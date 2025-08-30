@@ -138,7 +138,7 @@ func (s *urgencyService) AssignUrgency(urgencyID, employeeID uint) error {
 	if _, err := s.employeeClient.GetEmployeeByID(ctx, employeeID); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.INVALID_ASSIGNEE", "employee does not exist or is not accessible", map[string]interface{}{"cause": err.Error(), "employeeId": employeeID})
 	}
-	now := time.Now()
+	now := time.Now().UTC()
 	urg.AssignedEmployeeID = &employeeID
 	urg.AssignedAt = &now
 	if err := s.repo.Update(urg); err != nil {

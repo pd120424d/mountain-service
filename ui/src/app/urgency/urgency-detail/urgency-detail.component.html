@@ -69,11 +69,11 @@
           </div>
           <div class="info-item">
             <label>{{ 'URGENCY_DETAIL.CREATED_AT' | translate }}:</label>
-            <span>{{ formatDate(urgency.createdAt!) }}</span>
+            <span>{{ urgency.createdAt | localDateTime }}</span>
           </div>
           <div class="info-item">
             <label>{{ 'URGENCY_DETAIL.UPDATED_AT' | translate }}:</label>
-            <span>{{ formatDate(urgency.updatedAt!) }}</span>
+            <span>{{ urgency.updatedAt | localDateTime }}</span>
           </div>
         </div>
         <div class="actions-row">

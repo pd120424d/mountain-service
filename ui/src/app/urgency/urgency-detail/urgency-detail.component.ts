@@ -20,11 +20,12 @@ import {
   getActivityDisplayTime,
   hasAcceptedAssignment
 } from '../../shared/models';
+import { DateTimeModule } from '../../shared/utils/date-time.module';
 
 @Component({
   selector: 'app-urgency-detail',
   standalone: true,
-  imports: [RouterModule, TranslateModule, CommonModule, ReactiveFormsModule],
+  imports: [RouterModule, TranslateModule, CommonModule, ReactiveFormsModule, DateTimeModule],
   templateUrl: './urgency-detail.component.html',
   styleUrls: ['./urgency-detail.component.css']
 })
@@ -215,9 +216,7 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
     return getActivityDisplayTime(activity);
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString();
-  }
+
 
   isFieldInvalid(fieldName: string): boolean {
     const field = this.activityForm.get(fieldName);

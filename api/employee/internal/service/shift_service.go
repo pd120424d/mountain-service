@@ -37,20 +37,22 @@ func (s *shiftService) AssignShift(employeeID uint, req employeeV1.AssignShiftRe
 	}
 
 	// Step 2: Parse and validate shift date
-	shiftDate, err := time.Parse("2006-01-02", req.ShiftDate)
+	shiftDate, err := time.ParseInLocation("2006-01-02", req.ShiftDate, time.UTC)
 	if err != nil {
 		s.log.Errorf("failed to parse shift date: %v", err)
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_SHIFT_DATE", "invalid shift date format", nil)
 	}
+	// ensure normalized to 00:00:00 UTC
+	shiftDate = shiftDate.UTC().Truncate(24 * time.Hour)
 
 	// Step 3: Validate shift date is in the future
-	if shiftDate.Before(time.Now().Truncate(24 * time.Hour)) {
+	if shiftDate.Before(time.Now().UTC().Truncate(24 * time.Hour)) {
 		s.log.Errorf("shift date %s is in the past", req.ShiftDate)
 		return nil, commonv1.NewAppError("VALIDATION.SHIFT_IN_PAST", "shift date must be in the future", nil)
 	}
 
 	// Step 4: Validate shift date is within 3 months
-	threeMonthsFromNow := time.Now().AddDate(0, 3, 0)
+	threeMonthsFromNow := time.Now().UTC().AddDate(0, 3, 0)
 	if shiftDate.After(threeMonthsFromNow) {
 		s.log.Errorf("shift date %s is more than 3 months in the future", req.ShiftDate)
 		return nil, commonv1.NewAppError("VALIDATION.SHIFT_TOO_FAR", "shift date cannot be more than 3 months in the future", nil)
@@ -209,11 +211,13 @@ func (s *shiftService) GetShiftsAvailability(employeeID uint, days int) (*employ
 func (s *shiftService) RemoveShift(employeeID uint, req employeeV1.RemoveShiftRequest) error {
 	s.log.Infof("Removing shift for employee ID %d", employeeID)
 
-	shiftDate, err := time.Parse("2006-01-02", req.ShiftDate)
+	shiftDate, err := time.ParseInLocation("2006-01-02", req.ShiftDate, time.UTC)
 	if err != nil {
 		s.log.Errorf("failed to parse shift date: %v", err)
 		return commonv1.NewAppError("VALIDATION.INVALID_SHIFT_DATE", "invalid shift date format", nil)
 	}
+	// normalize to midnight UTC for matching persisted shift_date
+	shiftDate = shiftDate.UTC().Truncate(24 * time.Hour)
 
 	err = s.shiftsRepo.RemoveEmployeeFromShiftByDetails(employeeID, shiftDate, req.ShiftType)
 	if err != nil {

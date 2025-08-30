@@ -89,7 +89,7 @@ describe('LocationMapComponent', () => {
   it('should accept initial location input', () => {
     component.initialLocation = mockLocation;
     component.ngOnInit();
-    
+
     expect(component.currentLocation).toEqual(mockLocation);
   });
 
@@ -108,18 +108,18 @@ describe('LocationMapComponent', () => {
   it('should set location programmatically', () => {
     // Mock the map being initialized
     (component as any).map = mockLeaflet.map();
-    
+
     component.setLocation(mockLocation);
-    
+
     expect(component.currentLocation).toEqual(mockLocation);
   });
 
   it('should clear location', () => {
     component.currentLocation = mockLocation;
     spyOn(component.locationSelected, 'emit');
-    
+
     component.clearLocation();
-    
+
     expect(component.currentLocation).toBeUndefined();
     expect(component.searchText).toBe('');
     expect(component.locationSelected.emit).toHaveBeenCalled();
@@ -127,12 +127,12 @@ describe('LocationMapComponent', () => {
 
   it('should handle readonly mode', () => {
     component.readonly = true;
-    
+
     // Should not allow clearing in readonly mode
     component.currentLocation = mockLocation;
     component.clearLocation();
     expect(component.currentLocation).toEqual(mockLocation);
-    
+
     // Should not allow getting current location in readonly mode
     component.getCurrentLocation();
     expect(component.isLoadingLocation).toBe(false);
@@ -141,7 +141,7 @@ describe('LocationMapComponent', () => {
   it('should handle search text input', () => {
     const searchText = 'Belgrade';
     component.searchText = searchText;
-    
+
     expect(component.searchText).toBe(searchText);
   });
 
@@ -164,7 +164,7 @@ describe('LocationMapComponent', () => {
       text: 'Text Only Location',
       source: 'manual'
     };
-    
+
     component.setLocation(textOnlyLocation);
     expect(component.currentLocation?.text).toBe('Text Only Location');
     expect(component.currentLocation?.coordinates).toBeUndefined();
@@ -210,9 +210,9 @@ describe('LocationMapComponent', () => {
     });
 
     spyOn(console, 'error');
-    
+
     component.getCurrentLocation();
-    
+
     expect(component.isLoadingLocation).toBe(false);
     expect(console.error).toHaveBeenCalled();
   });
@@ -241,9 +241,88 @@ describe('LocationMapComponent', () => {
   it('should cleanup map on destroy', () => {
     const mockMap = { remove: jasmine.createSpy('remove') };
     (component as any).map = mockMap;
-    
+
     component.ngOnDestroy();
-    
+
     expect(mockMap.remove).toHaveBeenCalled();
   });
+
+  describe('loadLeaflet and searchLocation', () => {
+    afterEach(() => {
+      // Restore global L after tests
+      (window as any).L = mockLeaflet;
+    });
+
+    it('should load Leaflet and initialize map when view is ready', async () => {
+      (window as any).L = undefined; // Force dynamic load path
+      const loadScriptSpy = spyOn<any>(component, 'loadScript').and.returnValue(Promise.resolve());
+      const initSpy = spyOn<any>(component, 'initializeMap');
+
+      await (component as any).loadLeaflet();
+
+      expect(loadScriptSpy).toHaveBeenCalled();
+      expect((component as any).leafletLoaded).toBeTrue();
+      expect(initSpy).toHaveBeenCalled();
+    });
+
+    it('should set mapError when Leaflet fails to load', async () => {
+      (window as any).L = undefined; // Force dynamic load path
+      spyOn<any>(component, 'loadScript').and.returnValue(Promise.reject(new Error('boom')));
+
+      await (component as any).loadLeaflet();
+
+      expect(component['mapError']).toBe('Failed to load map library');
+    });
+
+    it('should search location and update map and emit events', async () => {
+      component.enableLocationSearch = true;
+      component.searchText = 'Belgrade';
+      (component as any).map = mockMap; // So setView path is executed
+      spyOn(component.locationSelected, 'emit');
+
+      const response = { json: () => Promise.resolve([{ lat: '44.0165', lon: '21.0059', display_name: 'Belgrade, Serbia' }]) } as any;
+      spyOn(window as any, 'fetch').and.returnValue(Promise.resolve(response));
+
+      component.searchLocation();
+      await new Promise(r => setTimeout(r, 0)); // flush microtasks
+
+      expect(mockMap.setView).toHaveBeenCalled();
+      expect(component.locationSelected.emit).toHaveBeenCalled();
+      expect(component.currentLocation?.text).toContain('Belgrade');
+    });
+
+    it('should handle search errors gracefully', async () => {
+      component.enableLocationSearch = true;
+      component.searchText = 'Nowhere';
+      spyOn(window as any, 'fetch').and.returnValue(Promise.reject(new Error('network')));
+      spyOn(console, 'error');
+
+      component.searchLocation();
+      await new Promise(r => setTimeout(r, 0));
+
+      expect(console.error).toHaveBeenCalled();
+    });
+
+    it('should ignore map clicks in readonly mode', () => {
+      component.readonly = true;
+      const emitCoordsSpy = spyOn(component.coordinatesChanged, 'emit');
+      (component as any).onMapClick({ lat: 1, lng: 2 });
+      expect(emitCoordsSpy).not.toHaveBeenCalled();
+    });
+
+    it('should emit coordinates on marker dragend', () => {
+      component.readonly = false;
+      (component as any).map = mockMap;
+      spyOn(component.coordinatesChanged, 'emit');
+
+      // Call addMarker which should register dragend handler
+      (component as any).addMarker({ latitude: 10, longitude: 20 });
+      const dragHandler = mockMarker.on.calls.mostRecent().args[1];
+      const event = { target: { getLatLng: () => ({ lat: 11.111111, lng: 22.222222 }) } };
+      dragHandler(event);
+
+      expect(component.coordinatesChanged.emit).toHaveBeenCalledWith({ latitude: 11.111111, longitude: 22.222222 });
+    });
+  });
+
 });

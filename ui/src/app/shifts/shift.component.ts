@@ -11,6 +11,7 @@ import { NgxSpinnerService } from "ngx-spinner";
 import { BaseTranslatableComponent } from "../base-translatable.component";
 import { format } from 'date-fns';
 import { enUS, sr, srLatn, ru } from 'date-fns/locale';
+import { formatISODateLocal } from '../shared/utils/date-time';
 
 @Component({
   selector: 'shift',
@@ -126,7 +127,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   // Handles the mismatch between date-only keys and full ISO timestamp keys.
   private getDayData(date: Date) {
     const availableKeys = Object.keys(this.shiftAvailability?.days || {});
-    const targetDateStr = date.toISOString().split('T')[0]; // e.g., "2025-08-17"
+    const targetDateStr = formatISODateLocal(date); // e.g., "2025-08-17"
 
     // Find the key that matches our target date (could be "2025-08-17T00:00:00Z" format)
     const key = availableKeys.find(k => k.startsWith(targetDateStr));
@@ -138,7 +139,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     if (!id) { return undefined; }
     const shifts = this.selectedEmployeeShifts.get(id);
     if (!shifts) { return undefined; }
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatISODateLocal(date);
     return shifts.find(s => s.shiftDate === dateStr && s.shiftType === shiftType);
   }
 
@@ -256,7 +257,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     const day = this.getDayData(date);
 
     if (!day) {
-      const targetDateStr = date.toISOString().split('T')[0];
+      const targetDateStr = formatISODateLocal(date);
       const availableKeys = Object.keys(this.shiftAvailability?.days || {});
       console.warn(`No day data found for date: ${targetDateStr}. Available keys:`, availableKeys);
       return 0;
@@ -283,7 +284,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     const day = this.getDayData(date);
 
     if (!day) {
-      const targetDateStr = date.toISOString().split('T')[0];
+      const targetDateStr = formatISODateLocal(date);
       const availableKeys = Object.keys(this.shiftAvailability?.days || {});
       console.warn(`No day data found for date: ${targetDateStr}. Available keys:`, availableKeys);
       return 0;
@@ -333,7 +334,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       return false; // No shifts loaded for this employee yet
     }
 
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatISODateLocal(date);
     return employeeShifts.some(shift =>
       shift.shiftDate === dateStr && shift.shiftType === shiftType
     );

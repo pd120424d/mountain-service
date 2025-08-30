@@ -747,7 +747,7 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 		}
 	}
 
-	employeeResponses, err := h.shiftService.GetOnCallEmployees(time.Now(), shiftBuffer)
+	employeeResponses, err := h.shiftService.GetOnCallEmployees(time.Now().UTC(), shiftBuffer)
 	if err != nil {
 		h.log.Errorf("Failed to get on-call employees: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve on-call employees"})

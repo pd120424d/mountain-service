@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { Employee, ShiftAvailabilityResponse, AssignShiftRequest, AssignShiftResponse, RemoveShiftRequest, ShiftResponse } from '../shared/models';
+import { formatISODateLocal } from '../shared/utils/date-time';
 
 @Injectable({
   providedIn: 'root',
@@ -40,16 +41,17 @@ export class ShiftManagementService {
   }
 
   assignEmployeeToShift(shiftType: number, employeeId: string, date: Date): Observable<AssignShiftResponse> {
-    const req = <AssignShiftRequest>{ shiftDate: date.toISOString().split('T')[0], shiftType: shiftType };
+    const req = <AssignShiftRequest>{ shiftDate: formatISODateLocal(date), shiftType: shiftType };
     console.log('Assigning employee to shift:', { employeeId, req });
     return this.http.post<AssignShiftResponse>(`/api/v1/employees/${employeeId}/shifts`, req).pipe(
       tap(response => console.log('Assignment response:', response)),
       catchError(this.handleError)
     );
   }
+  
   removeEmployeeFromShiftByDetails(employeeId: string, shiftType: number, date: Date): Observable<any> {
     const req: RemoveShiftRequest = {
-      shiftDate: date.toISOString().split('T')[0],
+      shiftDate: formatISODateLocal(date),
       shiftType: shiftType
     };
     console.log('Removing employee from shift by details:', { employeeId, req });

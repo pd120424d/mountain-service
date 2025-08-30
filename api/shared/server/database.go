@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"gorm.io/driver/postgres"
@@ -65,6 +66,8 @@ func InitDb(log utils.Logger, serviceName string, dbConfig DatabaseConfig) *gorm
 	log.Infof("Connecting to database at %s:%s as user %s (sslmode=%s)", dbConfig.Host, dbConfig.Port, dbUser, sslMode)
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		dbConfig.Host, dbConfig.Port, dbUser, dbPassword, dbConfig.Name, sslMode)
+	// Enforce UTC at the session level
+	connectionString = connectionString + " TimeZone=UTC"
 
 	// Create the database connection
 	db := getDbConnection(log, connectionString)
@@ -81,7 +84,7 @@ func InitDb(log utils.Logger, serviceName string, dbConfig DatabaseConfig) *gorm
 }
 
 func getDbConnection(log utils.Logger, connString string) *gorm.DB {
-	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{NowFunc: func() time.Time { return time.Now().UTC() }})
 	if err != nil {
 		log.Fatalf("failed to connect to '%v': %v", connString, err)
 	}

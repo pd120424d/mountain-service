@@ -60,7 +60,7 @@
               {{ 'URGENCY_STATUS.' + (urgency.status?.toUpperCase()?.replace(' ', '_') || 'UNKNOWN') | translate }}
             </span>
           </td>
-          <td>{{ formatDate(urgency.createdAt!) }}</td>
+          <td>{{ urgency.createdAt | localDate }}</td>
           <td class="actions">
             <button class="btn btn-sm btn-info" (click)="viewUrgency(urgency.id!)"
               [title]="'URGENCY_LIST.VIEW' | translate">

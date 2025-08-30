@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { DateTimeModule } from '../../shared/utils/date-time.module';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
@@ -9,7 +10,7 @@ import { Urgency, UrgencyLevel, UrgencyStatus, UrgencyStatus as GeneratedUrgency
 @Component({
   selector: 'app-urgency-list',
   standalone: true,
-  imports: [RouterModule, TranslateModule, CommonModule],
+  imports: [RouterModule, TranslateModule, CommonModule, DateTimeModule],
   templateUrl: './urgency-list.component.html',
   styleUrls: ['./urgency-list.component.css']
 })
