@@ -7,6 +7,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/swag"
 )
 
 type RouteConfig struct {
@@ -39,11 +40,20 @@ func SetupSwaggerEndpoints(log utils.Logger, r *gin.Engine, config RouteConfig) 
 		)(c)
 	})
 
-	// Setup swagger.json endpoint - serve from the docs directory in the container
+	// Setup swagger.json endpoint - serve dynamically generated swagger spec with correct host
 	r.GET("/swagger.json", func(c *gin.Context) {
 		log.Infof("Serving swagger.json for %s", config.ServiceName)
 		c.Header("Content-Type", "application/json")
-		c.File("/docs/swagger.json")
+
+		// Get the swagger spec from swag registry (this includes runtime host override)
+		spec := swag.GetSwagger("swagger")
+		if spec != nil {
+			// ReadDoc() returns a JSON string, so we need to send it as raw data
+			c.Data(200, "application/json", []byte(spec.ReadDoc()))
+		} else {
+			// Fallback to static file if spec not found
+			c.File("/docs/swagger.json")
+		}
 	})
 }
 

@@ -63,6 +63,8 @@ spec:
               value: "true"
             - name: GCP_LOGGING_CREDENTIALS_PATH
               value: "/var/secrets/gcp-logging/key.json"
+            - name: SWAGGER_HOST
+              value: "mountain-service.duckdns.org"
 
             # External Services
             - name: EMPLOYEE_SERVICE_URL
