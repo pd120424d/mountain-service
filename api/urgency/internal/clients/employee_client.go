@@ -132,7 +132,8 @@ func (c *employeeClient) GetAllEmployees(ctx context.Context) ([]employeeV1.Empl
 func (c *employeeClient) GetEmployeeByID(ctx context.Context, employeeID uint) (*employeeV1.EmployeeResponse, error) {
 	c.logger.Info("Getting employee by ID", zap.Uint("employeeID", employeeID))
 
-	endpoint := fmt.Sprintf("/api/v1/employees/%d", employeeID)
+	// Use service-auth protected endpoint to avoid user JWT requirements
+	endpoint := fmt.Sprintf("/api/v1/service/employees/%d", employeeID)
 	resp, err := c.httpClient.Get(ctx, endpoint)
 	if err != nil {
 		c.logger.Error("Failed to get employee by ID", zap.Uint("employeeID", employeeID), zap.Error(err))

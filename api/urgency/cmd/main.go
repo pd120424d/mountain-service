@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	globConf "github.com/pd120424d/mountain-service/api/shared/config"
@@ -79,12 +78,8 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	urgencyRepo := repositories.NewUrgencyRepository(log, db)
 	notificationRepo := repositories.NewNotificationRepository(log, db)
 
-	// Initialize service clients
-	serviceConfig := internalConfig.ServiceConfig{
-		EmployeeServiceURL: os.Getenv("EMPLOYEE_SERVICE_URL"),
-		ServiceAuthSecret:  os.Getenv("SERVICE_AUTH_SECRET"),
-		ServiceName:        "urgency-service",
-	}
+	// Initialize service clients using defaults-aware loader (env vars override)
+	serviceConfig := internalConfig.LoadServiceConfig()
 
 	serviceClients, err := internalConfig.InitializeServiceClients(serviceConfig, log)
 	if err != nil {

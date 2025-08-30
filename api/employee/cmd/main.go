@@ -171,6 +171,8 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 
 		serviceRoutes := r.Group("/api/v1").Use(serviceAuthMiddleware)
 		{
+			// Service-to-service: expose minimal read endpoints needed by other services
+			serviceRoutes.GET("/service/employees/:id", employeeHandler.GetEmployee)
 			serviceRoutes.GET("/employees/on-call", employeeHandler.GetOnCallEmployees)
 			serviceRoutes.GET("/employees/:id/active-emergencies", employeeHandler.CheckActiveEmergencies)
 		}

@@ -354,7 +354,7 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 		}
 
 		mockHTTPClient := NewMockHTTPClient(ctrl)
-		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/1").Return(createMockResponse(http.StatusOK, mockResponse), nil)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/service/employees/1").Return(createMockResponse(http.StatusOK, mockResponse), nil)
 
 		client := &employeeClient{
 			httpClient: mockHTTPClient,
@@ -376,7 +376,7 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockHTTPClient := NewMockHTTPClient(ctrl)
-		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/1").Return(nil, fmt.Errorf("network error"))
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/service/employees/1").Return(nil, fmt.Errorf("network error"))
 
 		client := &employeeClient{
 			httpClient: mockHTTPClient,
@@ -396,7 +396,7 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockHTTPClient := NewMockHTTPClient(ctrl)
-		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/999").Return(createMockResponse(http.StatusInternalServerError, nil), nil)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/service/employees/999").Return(createMockResponse(http.StatusInternalServerError, nil), nil)
 
 		client := &employeeClient{
 			httpClient: mockHTTPClient,
@@ -415,7 +415,7 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockHTTPClient := NewMockHTTPClient(ctrl)
-		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/999").Return(createMockResponse(http.StatusNotFound, nil), nil)
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/service/employees/999").Return(createMockResponse(http.StatusNotFound, nil), nil)
 
 		client := &employeeClient{
 			httpClient: mockHTTPClient,
@@ -434,7 +434,7 @@ func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockHTTPClient := NewMockHTTPClient(ctrl)
-		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/employees/1").Return(&http.Response{
+		mockHTTPClient.EXPECT().Get(gomock.Any(), "/api/v1/service/employees/1").Return(&http.Response{
 			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(bytes.NewReader([]byte("invalid json"))),
 		}, nil)
