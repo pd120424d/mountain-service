@@ -190,3 +190,107 @@ func TestShiftRepository_RemoveEmployeeFromShiftByDetails(t *testing.T) {
 		assert.Contains(t, err.Error(), "employee is not assigned to this shift")
 	})
 }
+
+func TestShiftRepository_GetShiftsByEmployeeIDInDateRange(t *testing.T) {
+	log := utils.NewTestLogger()
+
+	t.Run("it correctly handles date range boundaries", func(t *testing.T) {
+		gormDB := setupSQLiteTestDB(t)
+		repo := NewShiftRepository(log, gormDB)
+
+		employee := &model.Employee{
+			ID: 7, Username: "test-employee", FirstName: "Test", LastName: "Employee",
+			Email: "test@example.com", ProfileType: model.Medic,
+		}
+		require.NoError(t, gormDB.Create(employee).Error)
+
+		// Define test dates to simulate the buggy scenario
+		baseDate := time.Date(2025, 8, 30, 0, 0, 0, 0, time.UTC) // Today
+		startDate := baseDate                                    // Start of today
+		endDate := startDate.AddDate(0, 0, 14)                   // Start of day +14 (exclusive)
+
+		// Create shifts: some before range, some in range, some at boundary, some after range
+		testShifts := []struct {
+			date        time.Time
+			shiftType   int
+			shouldMatch bool
+			description string
+		}{
+			{baseDate.AddDate(0, 0, -1), 2, false, "yesterday (before range)"},                    // 2025-08-29
+			{baseDate.AddDate(0, 0, 0), 1, true, "today (start boundary - inclusive)"},            // 2025-08-30
+			{baseDate.AddDate(0, 0, 1), 2, true, "tomorrow (in range)"},                           // 2025-08-31
+			{baseDate.AddDate(0, 0, 5), 1, true, "5 days from now (in range)"},                    // 2025-09-04
+			{baseDate.AddDate(0, 0, 13), 1, true, "13 days from now (last day in range)"},         // 2025-09-12
+			{baseDate.AddDate(0, 0, 14), 1, false, "14 days from now (end boundary - exclusive)"}, // 2025-09-13
+			{baseDate.AddDate(0, 0, 15), 2, false, "15 days from now (after range)"},              // 2025-09-14
+		}
+
+		for i, ts := range testShifts {
+			shift := &model.Shift{
+				ID:        uint(i + 1),
+				ShiftDate: ts.date,
+				ShiftType: ts.shiftType,
+			}
+			require.NoError(t, gormDB.Create(shift).Error)
+
+			assignment := &model.EmployeeShift{
+				EmployeeID: employee.ID,
+				ShiftID:    shift.ID,
+			}
+			require.NoError(t, gormDB.Create(assignment).Error)
+		}
+
+		var result []model.Shift
+		err := repo.GetShiftsByEmployeeIDInDateRange(employee.ID, startDate, endDate, &result)
+		require.NoError(t, err)
+
+		expectedCount := 0
+		for _, ts := range testShifts {
+			if ts.shouldMatch {
+				expectedCount++
+			}
+		}
+
+		assert.Equal(t, expectedCount, len(result), "Should return exactly %d shifts in the 14-day range", expectedCount)
+
+		for _, shift := range result {
+			assert.True(t, shift.ShiftDate.Equal(startDate) || shift.ShiftDate.After(startDate),
+				"Shift date %v should be >= start date %v", shift.ShiftDate, startDate)
+			assert.True(t, shift.ShiftDate.Before(endDate),
+				"Shift date %v should be < end date %v (exclusive)", shift.ShiftDate, endDate)
+		}
+
+		expectedDates := []time.Time{}
+		for _, ts := range testShifts {
+			if ts.shouldMatch {
+				expectedDates = append(expectedDates, ts.date)
+			}
+		}
+
+		actualDates := make([]time.Time, len(result))
+		for i, shift := range result {
+			actualDates[i] = shift.ShiftDate
+		}
+
+		assert.ElementsMatch(t, expectedDates, actualDates, "Returned shift dates should match expected dates")
+	})
+
+	t.Run("it returns empty result when no shifts in range", func(t *testing.T) {
+		gormDB := setupSQLiteTestDB(t)
+		repo := NewShiftRepository(log, gormDB)
+
+		employee := &model.Employee{
+			ID: 8, Username: "test-employee-2", FirstName: "Test", LastName: "Employee2",
+			Email: "test2@example.com", ProfileType: model.Technical,
+		}
+		require.NoError(t, gormDB.Create(employee).Error)
+
+		futureStart := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+		futureEnd := futureStart.AddDate(0, 0, 14)
+
+		var result []model.Shift
+		err := repo.GetShiftsByEmployeeIDInDateRange(employee.ID, futureStart, futureEnd, &result)
+		require.NoError(t, err)
+		assert.Empty(t, result, "Should return empty result when no shifts in range")
+	})
+}

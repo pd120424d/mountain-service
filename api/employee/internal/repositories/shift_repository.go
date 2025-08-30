@@ -119,7 +119,7 @@ func (r *shiftRepository) GetShiftsByEmployeeIDInDateRange(employeeID uint, star
 	return r.db.Table("employee_shifts").
 		Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
 		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
-		Where("employee_shifts.employee_id = ? AND shifts.shift_date >= ? AND shifts.shift_date <= ?", employeeID, startDate, endDate).
+		Where("employee_shifts.employee_id = ? AND shifts.shift_date >= ? AND shifts.shift_date < ?", employeeID, startDate, endDate).
 		Order("shifts.shift_date ASC, shifts.shift_type ASC").
 		Scan(result).Error
 }
