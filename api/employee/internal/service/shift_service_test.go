@@ -27,7 +27,7 @@ func TestShiftService_GetShifts(t *testing.T) {
 
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeID(uint(1), gomock.Any()).Return(assert.AnError)
+		shiftRepoMock.EXPECT().GetEmployeeShiftRowsByEmployeeID(uint(1)).Return(nil, assert.AnError)
 
 		response, err := service.GetShifts(1)
 
@@ -46,25 +46,26 @@ func TestShiftService_GetShifts(t *testing.T) {
 
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
-		shifts := []model.Shift{
+		rows := []repositories.EmployeeShiftRow{
 			{
-				ID:        1,
-				ShiftDate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				ShiftType: 1,
-				CreatedAt: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+				AssignmentID:   111,
+				AssignedAt:     time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
+				ShiftID:        1,
+				ShiftDate:      time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+				ShiftType:      1,
+				ShiftCreatedAt: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 			{
-				ID:        2,
-				ShiftDate: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
-				ShiftType: 2,
-				CreatedAt: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
+				AssignmentID:   222,
+				AssignedAt:     time.Date(2024, 1, 2, 10, 0, 0, 0, time.UTC),
+				ShiftID:        2,
+				ShiftDate:      time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
+				ShiftType:      2,
+				ShiftCreatedAt: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
 			},
 		}
 
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeID(uint(1), gomock.Any()).DoAndReturn(func(employeeID uint, result *[]model.Shift) error {
-			*result = shifts
-			return nil
-		})
+		shiftRepoMock.EXPECT().GetEmployeeShiftRowsByEmployeeID(uint(1)).Return(rows, nil)
 
 		response, err := service.GetShifts(1)
 
@@ -73,8 +74,10 @@ func TestShiftService_GetShifts(t *testing.T) {
 		assert.Equal(t, 2, len(response))
 		assert.Equal(t, uint(1), response[0].ID)
 		assert.Equal(t, 1, response[0].ShiftType)
+		assert.Equal(t, rows[0].AssignedAt, response[0].AssignedAt)
 		assert.Equal(t, uint(2), response[1].ID)
 		assert.Equal(t, 2, response[1].ShiftType)
+		assert.Equal(t, rows[1].AssignedAt, response[1].AssignedAt)
 	})
 }
 
@@ -330,7 +333,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 		assert.Equal(t, D2.Format("2006-01-02"), resp.ShiftDate)
 	})
 
-	t.Run("2+3 cross-midnight: rest day is D+2; block assignments on D+2", func(t *testing.T) {
+	t.Run("2+3 cross-midnight: rest day is D+1; D+2 is allowed", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -356,10 +359,18 @@ func TestShiftService_AssignShift(t *testing.T) {
 		})
 
 		req := employeeV1.AssignShiftRequest{ShiftDate: D2.Format("2006-01-02"), ShiftType: 1}
+		shift := &model.Shift{ID: 42, ShiftDate: D2, ShiftType: 1}
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(42)).Return(false, nil)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(42), model.Medic).Return(int64(0), nil)
+		shiftRepoMock.EXPECT().CreateAssignment(uint(1), uint(42)).Return(uint(99), nil)
+
 		resp, err := service.AssignShift(1, req)
-		assert.Error(t, err)
-		assert.Nil(t, resp)
-		assert.Equal(t, "SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT|3", err.Error())
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, uint(99), resp.ID)
+		assert.Equal(t, 1, resp.ShiftType)
+		assert.Equal(t, D2.Format("2006-01-02"), resp.ShiftDate)
 	})
 
 	t.Run("2+3 cross-midnight: first allowed is D+3 shift 1", func(t *testing.T) {

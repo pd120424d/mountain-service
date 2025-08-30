@@ -112,22 +112,22 @@ func (s *shiftService) AssignShift(employeeID uint, req employeeV1.AssignShiftRe
 func (s *shiftService) GetShifts(employeeID uint) ([]employeeV1.ShiftResponse, error) {
 	s.log.Infof("Getting shifts for employee ID %d", employeeID)
 
-	var shifts []model.Shift
-	err := s.shiftsRepo.GetShiftsByEmployeeID(employeeID, &shifts)
+	rows, err := s.shiftsRepo.GetEmployeeShiftRowsByEmployeeID(employeeID)
 	if err != nil {
 		s.log.Errorf("failed to get shifts for employee ID %d: %v", employeeID, err)
 		return nil, fmt.Errorf("failed to retrieve shifts")
 	}
 
-	s.log.Infof("Successfully retrieved %d shifts for employee ID %d", len(shifts), employeeID)
+	s.log.Infof("Successfully retrieved %d shifts for employee ID %d", len(rows), employeeID)
 
-	response := make([]employeeV1.ShiftResponse, 0, len(shifts))
-	for _, shift := range shifts {
+	response := make([]employeeV1.ShiftResponse, 0, len(rows))
+	for _, r := range rows {
 		response = append(response, employeeV1.ShiftResponse{
-			ID:        shift.ID,
-			ShiftDate: shift.ShiftDate,
-			ShiftType: shift.ShiftType,
-			CreatedAt: shift.CreatedAt,
+			ID:         r.ShiftID,
+			ShiftDate:  r.ShiftDate,
+			ShiftType:  r.ShiftType,
+			CreatedAt:  r.ShiftCreatedAt,
+			AssignedAt: r.AssignedAt,
 		})
 	}
 
@@ -256,8 +256,8 @@ func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
 
 	var warnings []string
 
-	// Get next two weeks date range (start of today to start of day +14)
-	start := time.Now().Truncate(24 * time.Hour)
+	// Get next two weeks date range in UTC (start of today to start +14 days)
+	start := time.Now().UTC().Truncate(24 * time.Hour)
 	end := start.AddDate(0, 0, 14)
 
 	// Check coverage for the employee's role in the next two weeks
@@ -390,7 +390,17 @@ func (s *shiftService) validateConsecutiveShifts(employeeID uint, shiftDate time
 	for _, sh := range shifts {
 		pd, pt := prevSlot(sh.ShiftDate, sh.ShiftType)
 		if assigned[slotKey(pd, pt)] {
-			rest := endDayOfShift(sh.ShiftDate, sh.ShiftType).AddDate(0, 0, 1)
+			restBase := endDayOfShift(sh.ShiftDate, sh.ShiftType)
+			// In case that employee has double shifts where last one is 3rd shift
+			// we need to only skip the next day which includes that shift and not the day after
+			// Example:
+			// assigned shifts: 2025-09-15 14:00 - 2025-09-16 06:00 (shift 2 and 3)
+			// rest day: 2025-09-17 - no shift can be assigned on this date
+			// candidate shift:  2025-09-17 06:00 - 2025-09-17 14:00 (shift 1) - can be assigned
+			rest := restBase
+			if sh.ShiftType != 3 {
+				rest = restBase.AddDate(0, 0, 1)
+			}
 			if dayKey(rest) == candDay {
 				return commonv1.NewAppError(
 					model.ErrorConsecutiveShiftsLimit,
@@ -426,7 +436,11 @@ func (s *shiftService) validateConsecutiveShifts(employeeID uint, shiftDate time
 
 	// 3) If candidate forms a new double, enforce calendar-day rest for that double
 	if leftRun == 1 {
-		rest := endDayOfShift(shiftDate, shiftType).AddDate(0, 0, 1)
+		restBase := endDayOfShift(shiftDate, shiftType)
+		rest := restBase
+		if shiftType != 3 {
+			rest = restBase.AddDate(0, 0, 1)
+		}
 		if dayHasAny(rest) {
 			return commonv1.NewAppError(
 				model.ErrorConsecutiveShiftsLimit,
@@ -437,7 +451,11 @@ func (s *shiftService) validateConsecutiveShifts(employeeID uint, shiftDate time
 	}
 	if rightRun == 1 {
 		nd, nt := nextSlot(shiftDate, shiftType)
-		rest := endDayOfShift(nd, nt).AddDate(0, 0, 1)
+		restBase := endDayOfShift(nd, nt)
+		rest := restBase
+		if nt != 3 {
+			rest = restBase.AddDate(0, 0, 1)
+		}
 		if dayHasAny(rest) {
 			return commonv1.NewAppError(
 				model.ErrorConsecutiveShiftsLimit,

@@ -196,6 +196,14 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		authorized.DELETE("/activities/:id", activityHandler.DeleteActivity)
 	}
 
+	// Service-to-service internal routes (hidden from Swagger)
+	serviceAuth := auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: os.Getenv("SERVICE_AUTH_SECRET"), ServiceName: "activity-service", TokenTTL: time.Hour})
+	serviceGroup := r.Group("/api/v1/service").Use(auth.NewServiceAuthMiddleware(serviceAuth))
+	{
+		serviceGroup.POST("/activities", activityHandler.CreateActivity)
+		serviceGroup.GET("/activities", activityHandler.ListActivities)
+	}
+
 	// Admin-only routes
 	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log, nil))
 	{

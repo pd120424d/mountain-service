@@ -114,7 +114,7 @@ describe('ShiftManagementComponent', () => {
   it('should load shifts', () => {
     // Reset the spy and set new return value
     (component['shiftService'].getShiftAvailability as jasmine.Spy).and.returnValue(of({ days: {} }));
-    component.loadShifts();
+    component.loadShiftAvailability();
     expect(component['shiftService'].getShiftAvailability).toHaveBeenCalled();
   });
 
@@ -427,23 +427,23 @@ describe('ShiftManagementComponent', () => {
     });
 
     it('should change time span and reload shifts', () => {
-      spyOn(component, 'loadShifts');
+      spyOn(component, 'loadShiftAvailability');
       component.selectedTimeSpan = 7;
 
       component.changeTimeSpan(14);
 
       expect(component.selectedTimeSpan).toBe(14);
-      expect(component.loadShifts).toHaveBeenCalled();
+      expect(component.loadShiftAvailability).toHaveBeenCalled();
     });
 
     it('should not reload shifts if time span is the same', () => {
-      spyOn(component, 'loadShifts');
+      spyOn(component, 'loadShiftAvailability');
       component.selectedTimeSpan = 7;
 
       component.changeTimeSpan(7);
 
       expect(component.selectedTimeSpan).toBe(7);
-      expect(component.loadShifts).not.toHaveBeenCalled();
+      expect(component.loadShiftAvailability).not.toHaveBeenCalled();
     });
   });
 

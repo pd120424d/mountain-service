@@ -44,14 +44,17 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   ngOnInit() {
     this.userRole = this.auth.getRole();
     this.userId = this.auth.getUserId();
-    this.loadShifts();
+    this.loadShiftAvailability();
     this.loadShiftWarnings();
+    if (this.userId) {
+      this.loadEmployeeShifts(this.userId);
+    }
     if (this.userRole === AdministratorRole) {
       this.loadAllEmployees();
     }
   }
 
-  loadShifts() {
+  loadShiftAvailability() {
     this.isLoading = true;
     const obs = (this.userRole === AdministratorRole)
       ? this.shiftService.getAdminShiftAvailability(this.selectedTimeSpan)
@@ -74,7 +77,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   changeTimeSpan(days: number) {
     if (this.selectedTimeSpan !== days) {
       this.selectedTimeSpan = days;
-      this.loadShifts();
+      this.loadShiftAvailability();
     }
   }
 
@@ -130,6 +133,29 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     return key ? this.shiftAvailability?.days?.[key] : null;
   }
 
+  private getAssignmentFor(shiftType: number, date: Date, employeeId?: string): ShiftResponse | undefined {
+    const id = (this.canModifyOthers() && employeeId) ? employeeId : this.userId;
+    if (!id) { return undefined; }
+    const shifts = this.selectedEmployeeShifts.get(id);
+    if (!shifts) { return undefined; }
+    const dateStr = date.toISOString().split('T')[0];
+    return shifts.find(s => s.shiftDate === dateStr && s.shiftType === shiftType);
+  }
+
+  getAssignmentTime(shiftType: number, date: Date, employeeId?: string): string | null {
+    const assignment: any = this.getAssignmentFor(shiftType, date, employeeId);
+    const iso = assignment?.assignedAt || assignment?.createdAt;
+    if (!iso) { return null; }
+    try {
+      const dt = new Date(iso);
+      const lang = this.translate.currentLang;
+      const locale = (lang === 'sr-cyr') ? sr : (lang === 'sr-lat') ? srLatn : (lang === 'ru') ? ru : enUS;
+      return format(dt, 'PPpp', { locale });
+    } catch {
+      return iso as string;
+    }
+  }
+
   canModifyOthers(): boolean {
     return this.userRole === AdministratorRole;
   }
@@ -157,7 +183,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       next: (response) => {
         console.log('Assignment successful:', response);
         // Reload data to reflect the assignment
-        this.loadShifts();
+        this.loadShiftAvailability();
         this.loadShiftWarnings();
         this.isAssigning = false;
         this.spinner.hide();
@@ -206,7 +232,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       next: (response) => {
         console.log('Removal successful:', response);
         // Reload data to reflect the removal
-        this.loadShifts();
+        this.loadShiftAvailability();
         this.loadShiftWarnings();
         this.isRemoving = false;
         this.spinner.hide();
@@ -243,9 +269,15 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       case 3: result = day.thirdShift?.medicSlotsAvailable || 0; break;
       default: result = 0;
     }
-
     return result;
   }
+
+  getAssignedMedics(shiftType: number, date: Date): number {
+    const available = this.getAvailableMedics(shiftType, date);
+    const assigned = 2 - (available ?? 0);
+    return Math.max(0, Math.min(2, assigned));
+  }
+
 
   getAvailableTechnicals(shiftType: number, date: Date): number {
     const day = this.getDayData(date);
@@ -266,6 +298,12 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     }
 
     return result;
+  }
+
+  getAssignedTechnicals(shiftType: number, date: Date): number {
+    const available = this.getAvailableTechnicals(shiftType, date);
+    const assigned = 4 - (available ?? 0);
+    return Math.max(0, Math.min(4, assigned));
   }
 
   isAssignedToShift(shiftType: number, date: Date, employeeId?: string): boolean {

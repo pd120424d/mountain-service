@@ -55,7 +55,7 @@ func NewActivityClient(config ActivityClientConfig) ActivityClient {
 func (c *activityClient) CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error) {
 	c.logger.Infof("Creating activity for urgency %d by employee %d", req.UrgencyID, req.EmployeeID)
 
-	resp, err := c.httpClient.Post(ctx, "/activities", req)
+	resp, err := c.httpClient.Post(ctx, "/api/v1/service/activities", req)
 	if err != nil {
 		c.logger.Errorf("Failed to create activity: %v", err)
 		return nil, fmt.Errorf("failed to create activity: %w", err)
@@ -81,7 +81,7 @@ func (c *activityClient) CreateActivity(ctx context.Context, req *activityV1.Act
 func (c *activityClient) GetActivitiesByUrgency(ctx context.Context, urgencyID uint) ([]activityV1.ActivityResponse, error) {
 	c.logger.Infof("Getting activities for urgency %d", urgencyID)
 
-	endpoint := fmt.Sprintf("/activities?urgencyId=%d", urgencyID)
+	endpoint := fmt.Sprintf("/api/v1/service/activities?urgencyId=%d", urgencyID)
 	resp, err := c.httpClient.Get(ctx, endpoint)
 	if err != nil {
 		c.logger.Errorf("Failed to get activities: %v", err)

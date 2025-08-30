@@ -88,7 +88,7 @@
             {{ getShiftLabel(shiftType) }}
           </span>
           {{ 'SHIFT_MANAGEMENT.SHIFT' | translate }} {{ shiftType }}
-          <span *ngIf="isAssignedToShift(shiftType, day)" class="assigned-indicator">
+          <span *ngIf="isAssignedToShift(shiftType, day)" class="assigned-indicator" [title]="getAssignmentTime(shiftType, day) || ''">
             <i class="fas fa-check-circle" style="color: #28a745; margin-left: 0.5rem;"></i>
           </span>
           <span *ngIf="isShiftFullyBooked(shiftType, day)" class="fully-booked-indicator">
@@ -101,11 +101,11 @@
             <span class="capacity-label">{{ 'SHIFT_MANAGEMENT.MEDICS' | translate }}:</span>
             <div class="capacity-indicator">
               <span class="capacity-available" [ngClass]="{'low-capacity': getAvailableMedics(shiftType, day) <= 1, 'no-capacity': getAvailableMedics(shiftType, day) === 0}">
-                {{ getAvailableMedics(shiftType, day) }}
+                {{ getAssignedMedics(shiftType, day) }}
               </span>
               <span class="capacity-total">/ 2</span>
               <div class="capacity-bar">
-                <div class="capacity-fill medic-fill" [style.width.%]="(2 - getAvailableMedics(shiftType, day)) * 50"></div>
+                <div class="capacity-fill medic-fill" [style.width.%]="(getAssignedMedics(shiftType, day)) * 50"></div>
               </div>
             </div>
           </div>
@@ -113,11 +113,11 @@
             <span class="capacity-label">{{ 'SHIFT_MANAGEMENT.TECHNICALS' | translate }}:</span>
             <div class="capacity-indicator">
               <span class="capacity-available" [ngClass]="{'low-capacity': getAvailableTechnicals(shiftType, day) <= 1, 'no-capacity': getAvailableTechnicals(shiftType, day) === 0}">
-                {{ getAvailableTechnicals(shiftType, day) }}
+                {{ getAssignedTechnicals(shiftType, day) }}
               </span>
               <span class="capacity-total">/ 4</span>
               <div class="capacity-bar">
-                <div class="capacity-fill technical-fill" [style.width.%]="(4 - getAvailableTechnicals(shiftType, day)) * 25"></div>
+                <div class="capacity-fill technical-fill" [style.width.%]="(getAssignedTechnicals(shiftType, day)) * 25"></div>
               </div>
             </div>
           </div>

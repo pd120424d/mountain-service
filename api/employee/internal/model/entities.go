@@ -32,16 +32,17 @@ type Employee struct {
 
 type Shift struct {
 	ID        uint      `gorm:"primaryKey"`
-	ShiftDate time.Time `gorm:"not null"`
-	ShiftType int       `gorm:"not null"` // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid
+	ShiftDate time.Time `gorm:"not null;index:ux_shifts_date_type,unique"`
+	ShiftType int       `gorm:"not null;index:ux_shifts_date_type,unique"` // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid
 	CreatedAt time.Time
 	Employees []Employee `gorm:"many2many:employee_shifts;"`
 }
 
 type EmployeeShift struct {
-	ID         uint `gorm:"primaryKey"`
-	EmployeeID uint `gorm:"not null"`
-	ShiftID    uint `gorm:"not null"`
+	ID         uint      `gorm:"primaryKey"`
+	EmployeeID uint      `gorm:"not null;index:ux_employee_shift,unique;index:ix_es_employee_created"`
+	ShiftID    uint      `gorm:"not null;index:ux_employee_shift,unique"`
+	CreatedAt  time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"`
 }
 
 type ShiftsAvailabilityRange struct {

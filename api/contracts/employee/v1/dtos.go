@@ -125,10 +125,11 @@ type EmployeeUpdateRequest struct {
 // ShiftResponse DTO for returning shift data for a certain employee
 // swagger:model
 type ShiftResponse struct {
-	ID        uint      `json:"id"`
-	ShiftDate time.Time `json:"shiftDate"`
-	ShiftType int       `json:"shiftType"` // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid
-	CreatedAt time.Time `json:"createdAt"`
+	ID         uint      `json:"id"`
+	ShiftDate  time.Time `json:"shiftDate"`
+	ShiftType  int       `json:"shiftType"` // 1: 6am-2pm, 2: 2pm-10pm, 3: 10pm-6am, < 1 or > 3: invalid
+	CreatedAt  time.Time `json:"createdAt"`
+	AssignedAt time.Time `json:"assignedAt"`
 }
 
 // AssignShiftRequest DTO for assigning a shift to an employee

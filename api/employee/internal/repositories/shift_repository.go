@@ -24,6 +24,17 @@ type ShiftRepository interface {
 	GetShiftAvailabilityWithEmployeeStatus(employeeID uint, start, end time.Time) (*model.ShiftsAvailabilityWithEmployeeStatus, error)
 	RemoveEmployeeFromShiftByDetails(employeeID uint, shiftDate time.Time, shiftType int) error
 	GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]model.Employee, error)
+	GetEmployeeShiftRowsByEmployeeID(employeeID uint) ([]EmployeeShiftRow, error)
+}
+
+// EmployeeShiftRow is a projection combining shift and assignment metadata
+type EmployeeShiftRow struct {
+	AssignmentID   uint
+	AssignedAt     time.Time
+	ShiftID        uint
+	ShiftDate      time.Time
+	ShiftType      int
+	ShiftCreatedAt time.Time
 }
 
 type shiftRepository struct {
@@ -84,11 +95,24 @@ func (r *shiftRepository) CreateAssignment(employeeID, shiftID uint) (uint, erro
 
 func (r *shiftRepository) GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error {
 	return r.db.Table("employee_shifts").
-		Select("employee_shifts.id, shifts.shift_date, shifts.shift_type").
+		Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
 		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
 		Where("employee_shifts.employee_id = ?", employeeID).
-		Order("shifts.shift_date ASC, shifts.shift_type ASC").
+		Order("employee_shifts.created_at ASC").
 		Scan(result).Error
+}
+
+func (r *shiftRepository) GetEmployeeShiftRowsByEmployeeID(employeeID uint) ([]EmployeeShiftRow, error) {
+	var rows []EmployeeShiftRow
+	if err := r.db.Table("employee_shifts").
+		Select("employee_shifts.id as assignment_id, employee_shifts.created_at as assigned_at, shifts.id as shift_id, shifts.shift_date, shifts.shift_type, shifts.created_at as shift_created_at").
+		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
+		Where("employee_shifts.employee_id = ?", employeeID).
+		Order("employee_shifts.created_at ASC").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }
 
 func (r *shiftRepository) GetShiftsByEmployeeIDInDateRange(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
