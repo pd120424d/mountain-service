@@ -4,21 +4,15 @@ metadata:
   name: mountain-service-ingress
   namespace: mountain-service
   annotations:
-    # Use nginx ingress controller
-    kubernetes.io/ingress.class: "nginx"
-    # Enable SSL redirect (currently disabled)
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    # Increase proxy body size for file uploads
-    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    # Set proxy timeouts
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    # Use Traefik ingress controller (default in k3s)
+    traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   rules:
-    - host: mountain-service.duckdns.org  
+    - host: mountain-service.duckdns.org
       http:
         paths:
+          # All traffic goes to frontend service
+          # Nginx inside frontend container handles routing to backend services
           - path: /
             pathType: Prefix
             backend:
