@@ -130,7 +130,7 @@ func main() {
 			c.JSON(http.StatusOK, resp)
 		})
 
-		docs.GET("/specs/:service.json", func(c *gin.Context) {
+		docs.GET("/specs/:service", func(c *gin.Context) {
 			name := c.Param("service")
 
 			// Make sure to trim any blank spaces and .json extension if present
@@ -152,6 +152,16 @@ func main() {
 				if strings.EqualFold(cfg.Services[i].Name, name) {
 					svc = &cfg.Services[i]
 					break
+				}
+			}
+
+			// Fallback, try to match by BaseURL (e.g., employee-service)
+			if svc == nil {
+				for i := range cfg.Services {
+					if strings.Contains(strings.ToLower(cfg.Services[i].BaseURL), name) {
+						svc = &cfg.Services[i]
+						break
+					}
 				}
 			}
 			if svc == nil {
