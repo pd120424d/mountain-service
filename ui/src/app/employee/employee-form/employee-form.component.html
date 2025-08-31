@@ -5,10 +5,26 @@
   <!-- Password fields are only shown if not in edit mode -->
   <div *ngIf="!isEditMode">
     <label for="password">{{ 'EMPLOYEE_FORM.PASSWORD' | translate }}:</label>
-    <input id="password" formControlName="password" type="password">
+    <div class="password-wrapper">
+      <input id="password" formControlName="password" [type]="showPassword ? 'text' : 'password'">
+      <button type="button" class="eye-toggle" (click)="showPassword = !showPassword" aria-label="Toggle password visibility">
+        <i class="fas" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+      </button>
+    </div>
+    <div class="error-message" *ngIf="employeeForm.get('password')?.invalid && (employeeForm.get('password')?.dirty || employeeForm.get('password')?.touched)">
+      {{ getPasswordErrorKey() | translate }}
+    </div>
 
     <label for="confirmPassword">{{ 'EMPLOYEE_FORM.CONFIRM_PASSWORD' | translate }}:</label>
-    <input id="confirmPassword" formControlName="confirmPassword" type="password">
+    <div class="password-wrapper">
+      <input id="confirmPassword" formControlName="confirmPassword" [type]="showConfirmPassword ? 'text' : 'password'">
+      <button type="button" class="eye-toggle" (click)="showConfirmPassword = !showConfirmPassword" aria-label="Toggle confirm password visibility">
+        <i class="fas" [ngClass]="showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+      </button>
+    </div>
+    <div class="error-message" *ngIf="confirmPasswordMismatch && (employeeForm.get('confirmPassword')?.dirty || employeeForm.get('confirmPassword')?.touched)">
+      {{ 'EMPLOYEE_FORM.CONFIRM_PASSWORD_MISMATCH' | translate }}
+    </div>
   </div>
 
   <label for="firstName">{{ 'EMPLOYEE_FORM.FIRST_NAME' | translate }}:</label>

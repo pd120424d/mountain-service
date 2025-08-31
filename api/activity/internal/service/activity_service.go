@@ -11,6 +11,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
+	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
@@ -27,16 +28,22 @@ type ActivityService interface {
 }
 
 type activityService struct {
-	log  utils.Logger
-	repo repositories.ActivityRepository
+	log           utils.Logger
+	repo          repositories.ActivityRepository
+	urgencyClient interface {
+		GetUrgencyByID(ctx context.Context, id uint) (*urgencyV1.UrgencyResponse, error)
+	}
 }
 
-func NewActivityService(log utils.Logger, repo repositories.ActivityRepository) ActivityService {
-	return &activityService{log: log.WithName("activityService"), repo: repo}
+func NewActivityService(log utils.Logger, repo repositories.ActivityRepository, urgencyClient interface {
+	GetUrgencyByID(ctx context.Context, id uint) (*urgencyV1.UrgencyResponse, error)
+}) ActivityService {
+	return &activityService{log: log.WithName("activityService"), repo: repo, urgencyClient: urgencyClient}
 }
 
 func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error) {
 	log := s.log.WithContext(ctx)
+
 	if req == nil {
 		log.Error("Activity create request is nil")
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "request cannot be nil", nil)
@@ -47,6 +54,22 @@ func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.Ac
 	if err := req.Validate(); err != nil {
 		log.Errorf("Activity validation failed: %v", err)
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", fmt.Sprintf("validation failed: %v", err), nil)
+	}
+
+	if s.urgencyClient != nil {
+		urg, err := s.urgencyClient.GetUrgencyByID(ctx, req.UrgencyID)
+		if err != nil {
+			log.Errorf("Failed to fetch urgency %d: %v", req.UrgencyID, err)
+			return nil, commonv1.NewAppError("ACTIVITY_ERRORS.URGENCY_FETCH_FAILED", "failed to validate urgency", map[string]interface{}{"cause": err.Error()})
+		}
+		if urg == nil || urg.Status != urgencyV1.InProgress {
+			return nil, commonv1.NewAppError("ACTIVITY_ERRORS.INVALID_URGENCY_STATE", "activities can be added only to in_progress urgencies", map[string]interface{}{"urgencyId": req.UrgencyID, "status": func() string {
+				if urg != nil {
+					return string(urg.Status)
+				}
+				return ""
+			}()})
+		}
 	}
 
 	activity := model.FromCreateRequest(req)
@@ -78,6 +101,8 @@ func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.Ac
 
 func (s *activityService) GetActivityByID(ctx context.Context, id uint) (*activityV1.ActivityResponse, error) {
 	log := s.log.WithContext(ctx)
+	log.Infof("Getting activity by ID: %d", id)
+
 	if id == 0 {
 		log.Error("Invalid activity ID: 0")
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_ID", "invalid activity ID: cannot be zero", nil)
@@ -91,12 +116,15 @@ func (s *activityService) GetActivityByID(ctx context.Context, id uint) (*activi
 		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.NOT_FOUND", "failed to get activity", map[string]interface{}{"cause": err.Error()})
 	}
 
+	log.Infof("Activity retrieved successfully with ID: %d", id)
 	response := activity.ToResponse()
 	return &response, nil
 }
 
 func (s *activityService) DeleteActivity(ctx context.Context, id uint) error {
 	log := s.log.WithContext(ctx)
+	log.Infof("Deleting activity with ID: %d", id)
+
 	if id == 0 {
 		log.Error("Invalid activity ID: 0")
 		return commonv1.NewAppError("VALIDATION.INVALID_ID", "invalid activity ID: cannot be zero", nil)
@@ -117,7 +145,6 @@ func (s *activityService) ListActivities(ctx context.Context, req *activityV1.Ac
 	log := s.log.WithContext(ctx)
 	log.Infof("Listing activities with filters: %+v", req)
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		log.Errorf("Activity list validation failed: %v", err)
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", fmt.Sprintf("validation failed: %v", err), nil)
@@ -130,8 +157,6 @@ func (s *activityService) ListActivities(ctx context.Context, req *activityV1.Ac
 		Page:       req.Page,
 		PageSize:   req.PageSize,
 	}
-
-	// No additional filters needed for simplified model
 
 	// Handle date parsing
 	if req.StartDate != "" {
@@ -157,7 +182,6 @@ func (s *activityService) ListActivities(ctx context.Context, req *activityV1.Ac
 		activityResponses[i] = activity.ToResponse()
 	}
 
-	// Calculate total pages
 	totalPages := 0
 	if req.PageSize > 0 {
 		totalPages = int((total + int64(req.PageSize) - 1) / int64(req.PageSize)) // Ceiling division
@@ -185,6 +209,7 @@ func (s *activityService) GetActivityStats(ctx context.Context) (*activityV1.Act
 		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.STATS_FAILED", "failed to get activity stats", map[string]interface{}{"cause": err.Error()})
 	}
 
+	log.Info("Activity statistics retrieved successfully")
 	response := stats.ToResponse()
 	return &response, nil
 }

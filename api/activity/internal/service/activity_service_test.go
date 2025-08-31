@@ -24,7 +24,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityCreateRequest{
 			Description: "User completed onboarding process",
@@ -60,7 +60,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityCreateRequest{
 			Description: "", // Empty description
@@ -80,7 +80,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityCreateRequest{
 			Description: "Test activity",
@@ -100,7 +100,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityCreateRequest{
 			Description: "Test activity",
@@ -120,7 +120,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityCreateRequest{
 			Description: "Test activity",
@@ -142,7 +142,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		response, err := service.CreateActivity(context.Background(), nil)
 		assert.Error(t, err)
@@ -156,7 +156,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityCreateRequest{
 			Description: "New employee was created",
@@ -186,7 +186,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityCreateRequest{
 			Description: "", // Invalid - empty description
@@ -206,7 +206,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityCreateRequest{
 			Description: "Test",
@@ -232,7 +232,7 @@ func TestActivityService_GetActivityByID(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		expectedActivity := &model.Activity{
 			ID:          42,
@@ -262,7 +262,7 @@ func TestActivityService_GetActivityByID(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().GetByID(gomock.Any(), uint(999)).Return(nil, fmt.Errorf("activity not found"))
 
@@ -278,7 +278,7 @@ func TestActivityService_GetActivityByID(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		response, err := service.GetActivityByID(context.Background(), 0)
 		assert.Error(t, err)
@@ -292,7 +292,7 @@ func TestActivityService_GetActivityByID(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		activity := &model.Activity{
 			ID:          1,
@@ -320,7 +320,7 @@ func TestActivityService_GetActivityByID(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().GetByID(gomock.Any(), uint(999)).Return(nil, fmt.Errorf("activity not found"))
 
@@ -340,7 +340,7 @@ func TestActivityService_ListActivities(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		employeeID := uint(10)
 		urgencyID := uint(20)
@@ -400,7 +400,7 @@ func TestActivityService_ListActivities(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityListRequest{
 			Page:     1,
@@ -423,7 +423,7 @@ func TestActivityService_ListActivities(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityListRequest{
 			Page:     1,
@@ -444,7 +444,7 @@ func TestActivityService_ListActivities(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityListRequest{
 			Page:      1,
@@ -466,7 +466,7 @@ func TestActivityService_ListActivities(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityListRequest{
 			Page:     1,
@@ -495,7 +495,7 @@ func TestActivityService_GetActivityStats(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().GetStats(gomock.Any()).Return(nil, fmt.Errorf("database timeout"))
 
@@ -511,7 +511,7 @@ func TestActivityService_GetActivityStats(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		expectedStats := &model.ActivityStats{
 			TotalActivities: 100,
@@ -561,7 +561,7 @@ func TestActivityService_DeleteActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		err := service.DeleteActivity(context.Background(), 0)
 		assert.Error(t, err)
@@ -574,7 +574,7 @@ func TestActivityService_DeleteActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().Delete(gomock.Any(), uint(1)).Return(nil)
 
@@ -588,7 +588,7 @@ func TestActivityService_DeleteActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().Delete(gomock.Any(), uint(999)).Return(fmt.Errorf("activity not found"))
 
@@ -607,7 +607,7 @@ func TestActivityService_ResetAllData(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().ResetAllData(gomock.Any()).Return(nil)
 
@@ -621,7 +621,7 @@ func TestActivityService_ResetAllData(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().ResetAllData(gomock.Any()).Return(fmt.Errorf("database error"))
 
@@ -640,7 +640,7 @@ func TestActivityService_LogActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, activity *model.Activity, _ any) error {
 			assert.Equal(t, "User logged in successfully", activity.Description)
@@ -659,7 +659,7 @@ func TestActivityService_LogActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		err := service.LogActivity(context.Background(), "", 1, 2)
 		assert.Error(t, err)
@@ -672,7 +672,7 @@ func TestActivityService_LogActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		service := NewActivityService(log, mockRepo)
+		service := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("disk full"))
 
@@ -687,7 +687,7 @@ func TestActivityService_LogActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		svc := NewActivityService(log, mockRepo)
+		svc := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, a *model.Activity, _ any) error {
 			// Ensure inputs are mapped correctly
@@ -707,7 +707,7 @@ func TestActivityService_LogActivity(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
-		svc := NewActivityService(log, mockRepo)
+		svc := NewActivityService(log, mockRepo, nil)
 
 		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).Return(assert.AnError)
 

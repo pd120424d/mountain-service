@@ -54,24 +54,27 @@ func New(log utils.Logger, repo repositories.OutboxRepository, pubsubClient *pub
 }
 
 func (p *Publisher) Start(ctx context.Context) {
+	ctx, reqID := utils.EnsureRequestID(ctx)
 	p.log.Infof("Starting outbox publisher: topic=%s interval=%s", p.config.TopicName, p.config.Interval)
 	ticker := time.NewTicker(p.config.Interval)
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
-				p.log.Info("Stopping outbox publisher")
+				p.log.WithContext(ctx).Info("Stopping outbox publisher")
 				return
 			case <-ticker.C:
 				if err := p.processOnce(ctx); err != nil {
-					p.log.Errorf("publisher cycle error: %v", err)
+					p.log.WithContext(ctx).Errorf("publisher cycle error: %v", err)
 				}
 			}
 		}
 	}()
+	_ = reqID // reserved for future correlation across cycles
 }
 
 func (p *Publisher) processOnce(ctx context.Context) error {
+	ctx, _ = utils.EnsureRequestID(ctx)
 	log := p.log.WithContext(ctx)
 	log.Info("Processing outbox events")
 	events, err := p.repo.GetUnpublishedEvents(ctx, 100)

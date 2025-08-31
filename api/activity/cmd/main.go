@@ -19,6 +19,9 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/firestorex/googleadapter"
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/server"
+
+	"github.com/pd120424d/mountain-service/api/activity/internal/clients"
+
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"google.golang.org/api/option"
 
@@ -129,7 +132,15 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 
 	// Initialize repositories and services
 	activityRepo := repositories.NewActivityRepository(log, db)
-	activitySvc := service.NewActivityService(log, activityRepo)
+
+	urgencyBaseURL := os.Getenv("URGENCY_SERVICE_URL")
+	if urgencyBaseURL == "" {
+		urgencyBaseURL = "http://urgency-service:8083"
+	}
+	serviceAuth := auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: os.Getenv("SERVICE_AUTH_SECRET"), ServiceName: "activity-service", TokenTTL: time.Hour})
+	urgencyClient := clients.NewUrgencyClient(clients.UrgencyClientConfig{BaseURL: urgencyBaseURL, ServiceAuth: serviceAuth, Logger: log, Timeout: 30 * time.Second})
+
+	activitySvc := service.NewActivityService(log, activityRepo, urgencyClient)
 
 	// Initialize Firestore service if env vars present
 	var readModel service.FirestoreService
@@ -192,8 +203,8 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	}
 
 	// Service-to-service internal routes (hidden from Swagger)
-	serviceAuth := auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: os.Getenv("SERVICE_AUTH_SECRET"), ServiceName: "activity-service", TokenTTL: time.Hour})
-	serviceGroup := r.Group("/api/v1/service").Use(auth.NewServiceAuthMiddleware(serviceAuth))
+	serviceAuth2 := auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: os.Getenv("SERVICE_AUTH_SECRET"), ServiceName: "activity-service", TokenTTL: time.Hour})
+	serviceGroup := r.Group("/api/v1/service").Use(auth.NewServiceAuthMiddleware(serviceAuth2))
 	{
 		serviceGroup.POST("/activities", activityHandler.CreateActivity)
 		serviceGroup.GET("/activities", activityHandler.ListActivities)

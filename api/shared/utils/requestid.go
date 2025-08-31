@@ -17,7 +17,11 @@ const (
 )
 
 // RequestIDFromContext extracts the request ID from the context, if present.
+// It is nil-safe and returns an empty string if ctx is nil or no request_id is set.
 func RequestIDFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
 	if v := ctx.Value(RequestIDKey); v != nil {
 		if id, ok := v.(string); ok {
 			return id
@@ -66,4 +70,20 @@ func SetRequestIDHeader(req *http.Request, id string) {
 		return
 	}
 	req.Header.Set(HeaderRequestID, id)
+}
+
+// EnsureRequestID guarantees a request ID exists in the provided context.
+// - Returns a context (never nil) that contains a request_id
+// - Returns the request_id value
+// Useful for background jobs or call sites that may pass nil/empty contexts.
+func EnsureRequestID(ctx context.Context) (context.Context, string) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	id := RequestIDFromContext(ctx)
+	if id == "" {
+		id = generateRequestID()
+		ctx = ContextWithRequestID(ctx, id)
+	}
+	return ctx, id
 }

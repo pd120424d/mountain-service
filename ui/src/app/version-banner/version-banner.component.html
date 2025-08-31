@@ -2,7 +2,7 @@
   <ng-container>
     <span *ngIf="v.gitTag && v.gitSHA; else noTag">{{ v.gitTag }} ({{ v.gitSHA }})</span>
     <ng-template #noTag>
-      <span *ngIf="v.version && v.gitSHA; else versionOnly">{{ v.version }} ({{ v.gitSHA }})</span>
+      <span *ngIf="v.version && v.gitSHA && v.version !== v.gitSHA; else versionOnly">{{ v.version }} ({{ v.gitSHA }})</span>
       <ng-template #versionOnly>
         <span>{{ v.version }}</span>
       </ng-template>

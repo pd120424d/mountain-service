@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { EmployeeFormComponent } from './employee-form.component';
 import { sharedTestingProviders } from '../../test-utils/shared-test-imports';
@@ -129,8 +129,8 @@ describe('EmployeeFormComponent', () => {
 
     component.employeeForm.setValue({
       username: 'johndoe',
-      password: 'password',
-      confirmPassword: 'password',
+      password: 'Abcde1!',
+      confirmPassword: 'Abcde1!',
       firstName: 'John',
       lastName: 'Doe',
       gender: 'Male',
@@ -148,7 +148,7 @@ describe('EmployeeFormComponent', () => {
       email: 'john.doe@example.com',
       phone: '+1234567890',
       username: 'johndoe',
-      password: 'password',
+      password: 'Abcde1!',
       profileType: MedicRole as any,
       gender: 'Male'
     };
@@ -274,8 +274,8 @@ describe('EmployeeFormComponent', () => {
       // Set valid form values (password fields can be empty in edit mode)
       component.employeeForm.setValue({
         username: 'johndoe',
-        password: 'validpassword', // Need valid password for form validation
-        confirmPassword: 'validpassword', // Need valid password for form validation
+        password: 'Abcde1!',
+        confirmPassword: 'Abcde1!',
         firstName: 'John Updated',
         lastName: 'Doe',
         gender: 'Male',
@@ -313,8 +313,8 @@ describe('EmployeeFormComponent', () => {
 
       component.employeeForm.setValue({
         username: 'johndoe',
-        password: 'password',
-        confirmPassword: 'password',
+        password: 'Abcde1!',
+        confirmPassword: 'Abcde1!',
         firstName: 'John',
         lastName: 'Doe',
         gender: 'Male',
@@ -331,7 +331,7 @@ describe('EmployeeFormComponent', () => {
       expect(component.isSubmitting).toBe(false);
     });
 
-    it('should handle update employee error', () => {
+    it('should handle update employee error', fakeAsync(() => {
       component.isEditMode = true;
       component.employeeId = 1;
 
@@ -341,8 +341,8 @@ describe('EmployeeFormComponent', () => {
 
       component.employeeForm.setValue({
         username: 'johndoe',
-        password: 'validpassword', // Need valid password for form validation
-        confirmPassword: 'validpassword', // Need valid password for form validation
+        password: 'Abcde1!', // strong password to satisfy policy
+        confirmPassword: 'Abcde1!', // match password
         firstName: 'John',
         lastName: 'Doe',
         gender: 'Male',
@@ -353,11 +353,12 @@ describe('EmployeeFormComponent', () => {
       });
 
       component.onSubmit();
+      tick();
 
       expect(mockSpinnerService.hide).toHaveBeenCalled();
       expect(mockToastrService.error).toHaveBeenCalled();
       expect(component.isSubmitting).toBe(false);
-    });
+    }));
   });
 
   describe('Component State', () => {
@@ -378,8 +379,8 @@ describe('EmployeeFormComponent', () => {
 
       component.employeeForm.setValue({
         username: 'johndoe',
-        password: 'password',
-        confirmPassword: 'password',
+        password: 'Abcde1!',
+        confirmPassword: 'Abcde1!',
         firstName: 'John',
         lastName: 'Doe',
         gender: 'Male',

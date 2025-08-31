@@ -156,20 +156,37 @@ th {
   background-color: #f8f9fa;
 }
 
-/* Highlight for unassigned urgencies - light red */
-.urgency-unassigned {
-  background: linear-gradient(90deg, rgba(255,235,238,0.8), rgba(255,245,247,0.6));
+/* Row color rules per requirements */
+/* Open and unassigned -> red */
+.urgency-row-open-unassigned {
+  background: linear-gradient(90deg, rgba(255, 205, 210, 0.7), rgba(255, 235, 238, 0.7));
 }
-.urgency-unassigned td {
-  border-bottom-color: #f5c6cb; /* subtle red-ish divider */
+.urgency-row-open-unassigned td {
+  border-bottom-color: #f5c6cb;
 }
 
-/* Highlight for assigned urgencies - light green */
-.urgency-assigned {
-  background: linear-gradient(90deg, rgba(212,237,218,0.8), rgba(240,248,242,0.6));
+/* InProgress assigned to me -> green */
+.urgency-row-assigned-me {
+  background: linear-gradient(90deg, rgba(212, 237, 218, 0.7), rgba(240, 248, 242, 0.7));
 }
-.urgency-assigned td {
-  border-bottom-color: #c3e6cb; /* subtle green-ish divider */
+.urgency-row-assigned-me td {
+  border-bottom-color: #c3e6cb;
+}
+
+/* InProgress assigned to someone else -> blue */
+.urgency-row-assigned-other {
+  background: linear-gradient(90deg, rgba(204, 229, 255, 0.7), rgba(232, 241, 250, 0.7));
+}
+.urgency-row-assigned-other td {
+  border-bottom-color: #b8daff;
+}
+
+/* Closed/Resolved -> grayish */
+.urgency-row-closed {
+  background: linear-gradient(90deg, rgba(226, 227, 229, 0.6), rgba(248, 249, 250, 0.6));
+}
+.urgency-row-closed td {
+  border-bottom-color: #ced4da;
 }
 
 .level-badge,

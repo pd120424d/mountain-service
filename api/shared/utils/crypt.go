@@ -2,8 +2,9 @@ package utils
 
 import (
 	"errors"
-	"golang.org/x/crypto/bcrypt"
 	"unicode"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -30,8 +31,14 @@ func HashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
+// ValidatePassword checks if the given password meets the following criteria:
+// 1. The password must be between 6 and 20 characters long.
+// 2. The password must contain at least one uppercase letter.
+// 3. The password must contain at least three lowercase letters.
+// 4. The password must contain at least one digit.
+// 5. The password must contain at least one special character.
 func ValidatePassword(password string) error {
-	if len(password) < 6 || len(password) > 10 {
+	if len(password) < 6 || len(password) > 20 {
 		return ErrInvalidPasswordLength
 	}
 

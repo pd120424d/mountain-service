@@ -52,7 +52,7 @@ describe('UrgencyDetailComponent', () => {
     const urgencyServiceSpy = jasmine.createSpyObj('UrgencyService', ['getUrgencyById']);
     const activityServiceSpy = jasmine.createSpyObj('ActivityService', ['getActivitiesByUrgency', 'createActivity']);
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['getUserId']);
-    const toastrServiceSpy = jasmine.createSpyObj('ToastrService', ['success', 'error']);
+    const toastrServiceSpy = jasmine.createSpyObj('ToastrService', ['success', 'error', 'warning']);
     const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
       params: of({ id: '1' })
     });
@@ -118,7 +118,8 @@ describe('UrgencyDetailComponent', () => {
     };
 
     // Set up the mocks before calling ngOnInit
-    urgencyService.getUrgencyById.and.returnValue(of(mockUrgency));
+    const assignedInProgress = { ...mockUrgency, status: UrgencyStatus.InProgress, assignedEmployeeId: 1 } as Urgency;
+    urgencyService.getUrgencyById.and.returnValue(of(assignedInProgress));
     activityService.getActivitiesByUrgency.and.returnValue(of(mockActivities));
 
     component.urgencyId = 1;

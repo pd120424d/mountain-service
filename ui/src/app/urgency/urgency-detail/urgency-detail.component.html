@@ -97,8 +97,8 @@
     <div class="activities-section">
       <h3>{{ 'URGENCY_DETAIL.ACTIVITIES' | translate }}</h3>
 
-      <!-- Add Activity Form -->
-      <div class="add-activity-form">
+      <!-- Add Activity Form (only when InProgress and assigned) -->
+      <div class="add-activity-form" *ngIf="canAddActivity(); else activityDisabled">
         <h4>{{ 'URGENCY_DETAIL.ADD_ACTIVITY' | translate }}</h4>
         <form [formGroup]="activityForm" (ngSubmit)="onSubmitActivity()">
           <div class="form-group">
@@ -126,6 +126,12 @@
           </div>
         </form>
       </div>
+      <ng-template #activityDisabled>
+        <div class="add-activity-disabled">
+          <i class="fas fa-info-circle"></i>
+          <span>{{ 'URGENCY_DETAIL.ADD_ACTIVITY_DISABLED' | translate }}</span>
+        </div>
+      </ng-template>
 
       <!-- Activities List -->
       <div class="activities-list">

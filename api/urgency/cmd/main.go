@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pd120424d/mountain-service/api/shared/auth"
 	globConf "github.com/pd120424d/mountain-service/api/shared/config"
@@ -111,8 +112,10 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		admin.DELETE("/urgencies/reset", urgencyHandler.ResetAllData)
 	}
 
-	// Custom swagger route (if using custom SwaggerURL)
-	// r.GET("/urgency-swagger.json", func(c *gin.Context) {
-	//     c.File("/docs/swagger.json")
-	// })
+	serviceAuth := auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: internalConfig.LoadServiceConfig().ServiceAuthSecret, ServiceName: "urgency-service", TokenTTL: time.Hour})
+	serviceGroup := r.Group("/api/v1/service").Use(auth.NewServiceAuthMiddleware(serviceAuth))
+	{
+		serviceGroup.GET("/urgency/:id", urgencyHandler.GetUrgency)
+	}
+
 }

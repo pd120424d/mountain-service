@@ -124,6 +124,11 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   }
 
   onSubmitActivity(): void {
+    if (!this.canAddActivity()) {
+      this.toastr.warning('Activities can only be added when the urgency is assigned and in progress.');
+      return;
+    }
+
     if (this.activityForm.valid && !this.isSubmittingActivity && this.urgencyId) {
       this.isSubmittingActivity = true;
 
@@ -154,6 +159,12 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
     } else {
       this.markFormGroupTouched();
     }
+  }
+
+  canAddActivity(): boolean {
+    if (!this.urgency) return false;
+    const assigned = hasAcceptedAssignment(this.urgency);
+    return assigned && this.urgency.status === UrgencyStatus.InProgress;
   }
 
   goBack(): void {

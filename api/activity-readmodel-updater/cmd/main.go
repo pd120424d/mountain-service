@@ -139,10 +139,15 @@ func main() {
 		// Use event handler service
 		h := events.NewHandler(firebaseService, logger)
 		err := subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+			ctx, reqID := utils.EnsureRequestID(ctx)
+			reqLog := logger.WithContext(ctx)
+			reqLog.Infof("Handling activity event: message_id=%s", msg.ID)
+
 			if err := h.Handle(ctx, msg); err != nil {
-				logger.Errorf("Failed to handle activity event: error=%v, message_id=%s", err, msg.ID)
+				reqLog.Errorf("Failed to handle activity event: error=%v, message_id=%s, request_id=%s", err, msg.ID, reqID)
 				msg.Nack()
 			} else {
+				reqLog.Infof("Successfully handled activity event: message_id=%s", msg.ID)
 				msg.Ack()
 			}
 		})

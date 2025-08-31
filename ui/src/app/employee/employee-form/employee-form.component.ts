@@ -1,6 +1,6 @@
 // src/app/employee/employee-form/employee-form.component.ts
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { EmployeeService } from '../employee.service';
 import { Employee, EmployeeCreateRequest, EmployeeUpdateRequest } from '../../shared/models';
@@ -30,6 +30,10 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
   selectedImageFile: File | null = null;
   currentProfilePictureUrl: string | undefined = undefined;
 
+  // UI state for password visibility
+  showPassword = false;
+  showConfirmPassword = false;
+
   constructor(
     private fb: FormBuilder,
     private employeeService: EmployeeService,
@@ -40,7 +44,7 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
     private imageUploadService: ImageUploadService
   ) {
     super(translate);
-    
+
     this.employeeForm = this.fb.group({
       username: ['', Validators.required],
       password: ['', Validators.required], // Only relevant in create mode
@@ -65,7 +69,81 @@ export class EmployeeFormComponent extends BaseTranslatableComponent implements 
     }
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Apply backend-consistent password validation only in create mode
+    if (!this.isEditMode) {
+      const pwdCtrl = this.employeeForm.get('password');
+      const confirmCtrl = this.employeeForm.get('confirmPassword');
+      pwdCtrl?.setValidators([Validators.required, this.passwordPolicyValidator()]);
+      confirmCtrl?.setValidators([Validators.required]);
+      // Re-run validation after setting validators
+      pwdCtrl?.updateValueAndValidity();
+      confirmCtrl?.updateValueAndValidity();
+    }
+  }
+
+  // Validator mirroring api/shared/utils/crypt.go ValidatePassword
+  private passwordPolicyValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value: string = control.value || '';
+      if (value.length === 0) return null; // let required handle empties
+
+      // Length 6..20
+      if (value.length < 6 || value.length > 20) {
+        return { passwordPolicy: { code: 'ErrPasswordLength' } };
+      }
+      // Must start with a letter
+      if (!/^[A-Za-z].*$/.test(value)) {
+        return { passwordPolicy: { code: 'ErrPasswordStartWithLetter' } };
+      }
+      // At least 1 uppercase
+      if (!/[A-Z]/.test(value)) {
+        return { passwordPolicy: { code: 'ErrPasswordUppercase' } };
+      }
+      // At least 3 lowercase letters
+      const lowerCount = (value.match(/[a-z]/g) || []).length;
+      if (lowerCount < 3) {
+        return { passwordPolicy: { code: 'ErrPasswordLowercase' } };
+      }
+      // At least 1 digit
+      if (!/[0-9]/.test(value)) {
+        return { passwordPolicy: { code: 'ErrPasswordDigit' } };
+      }
+      // At least 1 special (punctuation or symbol)
+      if (!/[\p{P}\p{S}]/u.test(value)) {
+        return { passwordPolicy: { code: 'ErrPasswordSpecial' } };
+      }
+
+      return null;
+    };
+  }
+
+  // Helper to get a translated error message for password
+  getPasswordErrorKey(): string {
+    const ctrl = this.employeeForm.get('password');
+    if (!ctrl || !ctrl.errors) return '';
+
+    if (ctrl.errors['required']) return 'EMPLOYEE_FORM.PASSWORD_REQUIRED';
+    if (ctrl.errors['passwordPolicy']) {
+      const code = ctrl.errors['passwordPolicy'].code as string;
+      switch (code) {
+        case 'ErrPasswordLength': return 'EMPLOYEE_FORM.PASSWORD_ERR_LENGTH';
+        case 'ErrPasswordUppercase': return 'EMPLOYEE_FORM.PASSWORD_ERR_UPPER';
+        case 'ErrPasswordLowercase': return 'EMPLOYEE_FORM.PASSWORD_ERR_LOWER';
+        case 'ErrPasswordDigit': return 'EMPLOYEE_FORM.PASSWORD_ERR_DIGIT';
+        case 'ErrPasswordSpecial': return 'EMPLOYEE_FORM.PASSWORD_ERR_SPECIAL';
+        case 'ErrPasswordStartWithLetter': return 'EMPLOYEE_FORM.PASSWORD_ERR_START_LETTER';
+      }
+    }
+    return 'EMPLOYEE_FORM.PASSWORD_INVALID';
+  }
+
+  // Confirm password simple equality check for UX
+  get confirmPasswordMismatch(): boolean {
+    const pwd = this.employeeForm.get('password')?.value;
+    const c = this.employeeForm.get('confirmPassword')?.value;
+    return !!(pwd && c && pwd !== c);
+  }
 
   populateForm(employee: Employee): void {
     this.employeeForm.patchValue({

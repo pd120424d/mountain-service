@@ -32,12 +32,15 @@ func NewFirebaseReadService(client firestorex.Client, logger utils.Logger) Fires
 }
 
 func (s *firestoreService) ListByUrgency(ctx context.Context, urgencyID uint, limit int) ([]sharedModels.Activity, error) {
+	log := s.logger.WithContext(ctx)
+	log.Infof("Listing activities by urgency: %d", urgencyID)
+
 	if s.client == nil {
 		return nil, fmt.Errorf("firestore client is nil")
 	}
 
 	q := s.client.Collection(s.collection).
-		Where("urgency_id", "==", urgencyID).
+		Where("urgency_id", "==", int64(urgencyID)).
 		OrderBy("created_at", firestorex.Desc)
 	if limit > 0 {
 		q = q.Limit(limit)
@@ -53,38 +56,41 @@ func (s *firestoreService) ListByUrgency(ctx context.Context, urgencyID uint, li
 			break
 		}
 		if err != nil {
-			log := s.logger.WithContext(ctx)
 			log.Errorf("failed to iterate firestore docs: %v", err)
 			return nil, err
 		}
 
 		var a struct {
-			ID          uint   `firestore:"id"`
+			ID          int64  `firestore:"id"`
 			Description string `firestore:"description"`
-			EmployeeID  uint   `firestore:"employee_id"`
-			UrgencyID   uint   `firestore:"urgency_id"`
+			EmployeeID  int64  `firestore:"employee_id"`
+			UrgencyID   int64  `firestore:"urgency_id"`
 			CreatedAt   string `firestore:"created_at"`
 			UpdatedAt   string `firestore:"updated_at"`
 		}
 		if err := doc.DataTo(&a); err != nil {
-			log := s.logger.WithContext(ctx)
 			log.Errorf("failed to unmarshal firestore doc: %v", err)
 			continue
 		}
 		item := sharedModels.Activity{
-			ID:          a.ID,
+			ID:          uint(a.ID),
 			Description: a.Description,
-			EmployeeID:  a.EmployeeID,
-			UrgencyID:   a.UrgencyID,
+			EmployeeID:  uint(a.EmployeeID),
+			UrgencyID:   uint(a.UrgencyID),
 			CreatedAt:   s.parseTime(a.CreatedAt),
 			UpdatedAt:   s.parseTime(a.UpdatedAt),
 		}
 		items = append(items, item)
 	}
+
+	log.Infof("Successfully listed %d activities by urgency %d", len(items), urgencyID)
 	return items, nil
 }
 
 func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedModels.Activity, error) {
+	log := s.logger.WithContext(ctx)
+	log.Infof("Listing all activities with limit: %d", limit)
+
 	if s.client == nil {
 		return nil, fmt.Errorf("firestore client is nil")
 	}
@@ -104,33 +110,33 @@ func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedMode
 			break
 		}
 		if err != nil {
-			log := s.logger.WithContext(ctx)
 			log.Errorf("failed to iterate firestore docs: %v", err)
 			return nil, err
 		}
 		var a struct {
-			ID          uint   `firestore:"id"`
+			ID          int64  `firestore:"id"`
 			Description string `firestore:"description"`
-			EmployeeID  uint   `firestore:"employee_id"`
-			UrgencyID   uint   `firestore:"urgency_id"`
+			EmployeeID  int64  `firestore:"employee_id"`
+			UrgencyID   int64  `firestore:"urgency_id"`
 			CreatedAt   string `firestore:"created_at"`
 			UpdatedAt   string `firestore:"updated_at"`
 		}
 		if err := doc.DataTo(&a); err != nil {
-			log := s.logger.WithContext(ctx)
 			log.Errorf("failed to unmarshal firestore doc: %v", err)
 			continue
 		}
 		item := sharedModels.Activity{
-			ID:          a.ID,
+			ID:          uint(a.ID),
 			Description: a.Description,
-			EmployeeID:  a.EmployeeID,
-			UrgencyID:   a.UrgencyID,
+			EmployeeID:  uint(a.EmployeeID),
+			UrgencyID:   uint(a.UrgencyID),
 			CreatedAt:   s.parseTime(a.CreatedAt),
 			UpdatedAt:   s.parseTime(a.UpdatedAt),
 		}
 		items = append(items, item)
 	}
+
+	log.Infof("Successfully listed %d activities", len(items))
 	return items, nil
 }
 
