@@ -132,9 +132,24 @@ func main() {
 
 		docs.GET("/specs/:service.json", func(c *gin.Context) {
 			name := c.Param("service")
+
+			// Make sure to trim any blank spaces and .json extension if present
+			name = strings.TrimSpace(strings.ToLower(name))
+			name = strings.TrimSuffix(name, ".json")
+
+			// Optional aliases
+			switch name {
+			case "employees":
+				name = "employee"
+			case "urgencies":
+				name = "urgency"
+			case "activities":
+				name = "activity"
+			}
+
 			var svc *Service
 			for i := range cfg.Services {
-				if cfg.Services[i].Name == name {
+				if strings.EqualFold(cfg.Services[i].Name, name) {
 					svc = &cfg.Services[i]
 					break
 				}
@@ -167,6 +182,12 @@ func main() {
 				rewritten = b
 			}
 			c.Data(http.StatusOK, "application/json", rewritten)
+		})
+
+		// Also support requests without .json suffix just in case
+		docs.GET("/specs/:service", func(c *gin.Context) {
+			c.Request.URL.Path = "/docs/specs/" + c.Param("service") + ".json"
+			r.HandleContext(c)
 		})
 	}
 

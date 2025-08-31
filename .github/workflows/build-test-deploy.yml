@@ -134,6 +134,7 @@ jobs:
       activity-changed: ${{ steps.changes.outputs.activity }}
       activity-updater-changed: ${{ steps.changes.outputs.activity-updater }}
       version-changed: ${{ steps.changes.outputs.version }}
+      docs-aggregator-changed: ${{ steps.changes.outputs.docs-aggregator }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -148,6 +149,7 @@ jobs:
           echo "activity=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "activity-updater=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity-readmodel-updater/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "version=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/version-service/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "docs-aggregator=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/docs-aggregator/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -232,6 +234,16 @@ jobs:
                        --no-cache .
           docker push ghcr.io/pd120424d/version-service:latest
           docker push ghcr.io/pd120424d/version-service:${{ github.sha }}
+
+      - name: Build and push Docs Aggregator
+        if: steps.changes.outputs.docs-aggregator == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        run: |
+          cd api
+          docker build -f docs-aggregator/Dockerfile -t ghcr.io/pd120424d/docs-aggregator:latest \
+                       -t ghcr.io/pd120424d/docs-aggregator:${{ github.sha }} \
+                       --no-cache .
+          docker push ghcr.io/pd120424d/docs-aggregator:latest
+          docker push ghcr.io/pd120424d/docs-aggregator:${{ github.sha }}
 
   deploy-k8s:
     runs-on: self-hosted
@@ -491,7 +503,7 @@ jobs:
           echo "\nRecent events (last 200 lines):"
           kubectl -n mountain-service get events --sort-by=.lastTimestamp | tail -n 200 || true
           echo "\nDescribe deployments (images + imagePullSecrets):"
-          for d in employee-service urgency-service activity-service activity-readmodel-updater version-service; do
+          for d in employee-service urgency-service activity-service activity-readmodel-updater version-service docs-aggregator docs-ui; do
             echo "\n--- DESCRIBE DEPLOYMENT: $d ---"
             kubectl -n mountain-service describe deploy "$d" | sed -n '/Image:/,/Environment:/p' || true
             echo "\nImagePullSecrets:"
