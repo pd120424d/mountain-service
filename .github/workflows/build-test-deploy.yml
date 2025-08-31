@@ -474,6 +474,12 @@ jobs:
             version=ghcr.io/pd120424d/version-service:${{ github.sha }}
           kubectl -n mountain-service rollout status deploy/version-service --timeout=180s
 
+      - name: Roll out Docs Aggregator image
+        if: ${{ needs.build-and-push-images.outputs.docs-aggregator-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
+        run: |
+          kubectl -n mountain-service set image deploy/docs-aggregator \
+            docs-aggregator=ghcr.io/pd120424d/docs-aggregator:${{ github.sha }}
+          kubectl -n mountain-service rollout status deploy/docs-aggregator --timeout=180s
 
       - name: Wait for pods to be ready
         run: |
@@ -483,13 +489,15 @@ jobs:
           kubectl -n mountain-service wait --for=condition=ready pod -l app=ui --timeout=120s || echo "UI not ready yet"
           kubectl -n mountain-service wait --for=condition=ready pod -l app=redis --timeout=120s || echo "Redis not ready yet"
 
-          # Wait for backend services with more lenient timeout
+          # Wait for backend services with a bigger timeout
           echo "Waiting for backend services to be ready..."
           kubectl -n mountain-service wait --for=condition=ready pod -l app=employee-service --timeout=180s || echo "Employee service not ready yet"
           kubectl -n mountain-service wait --for=condition=ready pod -l app=urgency-service --timeout=180s || echo "Urgency service not ready yet"
           kubectl -n mountain-service wait --for=condition=ready pod -l app=activity-service --timeout=180s || echo "Activity service not ready yet"
           kubectl -n mountain-service wait --for=condition=ready pod -l app=activity-readmodel-updater --timeout=180s || echo "Activity read model updater not ready yet"
           kubectl -n mountain-service wait --for=condition=ready pod -l app=version-service --timeout=180s || echo "Version service not ready yet"
+          kubectl -n mountain-service wait --for=condition=ready pod -l app=docs-aggregator --timeout=180s || echo "Docs-aggregator not ready yet"
+          kubectl -n mountain-service wait --for=condition=ready pod -l app=docs-ui --timeout=180s || echo "Docs-ui not ready yet"
 
           # Show final status
           echo "Final pod status:"

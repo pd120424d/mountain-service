@@ -184,11 +184,6 @@ func main() {
 			c.Data(http.StatusOK, "application/json", rewritten)
 		})
 
-		// Also support requests without .json suffix just in case
-		docs.GET("/specs/:service", func(c *gin.Context) {
-			c.Request.URL.Path = "/docs/specs/" + c.Param("service") + ".json"
-			r.HandleContext(c)
-		})
 	}
 
 	addr := ":8080"
