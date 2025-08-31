@@ -35,6 +35,8 @@ func InitializeServer(log utils.Logger, config ServerConfig) error {
 	db := InitDb(log, config.ServiceName, config.DatabaseConfig)
 
 	r := gin.Default()
+	// Ensure every request carries a request ID and echo it back in the response
+	r.Use(utils.RequestIDMiddleware())
 	r.Use(log.RequestLogger())
 
 	SetupHealthEndpoint(log, r, config.ServiceName)

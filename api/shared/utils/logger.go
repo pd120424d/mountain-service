@@ -269,8 +269,26 @@ func (l *zapLogger) RequestLogger() gin.HandlerFunc {
 		method := c.Request.Method
 		path := c.Request.URL.Path
 		clientIP := c.ClientIP()
+		requestID := RequestIDFromContext(c.Request.Context())
 
-		l.Infof("[%d] %s %s from %s (%s)", status, method, path, clientIP, duration)
+		if requestID != "" {
+			l.Info("http_request",
+				zap.Int("status", status),
+				zap.String("method", method),
+				zap.String("path", path),
+				zap.String("client_ip", clientIP),
+				zap.Duration("duration", duration),
+				zap.String("request_id", requestID),
+			)
+		} else {
+			l.Info("http_request",
+				zap.Int("status", status),
+				zap.String("method", method),
+				zap.String("path", path),
+				zap.String("client_ip", clientIP),
+				zap.Duration("duration", duration),
+			)
+		}
 	}
 }
 

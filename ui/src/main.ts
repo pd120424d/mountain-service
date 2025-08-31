@@ -10,10 +10,12 @@ import { ToastrModule } from 'ngx-toastr';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { importProvidersFrom } from '@angular/core';
 
+import { requestIdInterceptor } from './app/request-id.interceptor';
+
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([requestIdInterceptor, authInterceptor])),
     provideAnimations(),
     provideTranslate(),
     importProvidersFrom(

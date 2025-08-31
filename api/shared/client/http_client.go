@@ -80,6 +80,11 @@ func (c *HTTPClient) doRequest(ctx context.Context, method, endpoint string, bod
 		req.Header.Set("Content-Type", "application/json")
 	}
 
+	// Propagate X-Request-ID from context if present
+	if rid := utils.RequestIDFromContext(ctx); rid != "" {
+		utils.SetRequestIDHeader(req, rid)
+	}
+
 	if c.serviceAuth != nil {
 		authHeader, err := c.serviceAuth.GetAuthHeader()
 		if err != nil {

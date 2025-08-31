@@ -24,8 +24,8 @@ func DefaultCORSConfig() CORSConfig {
 	return CORSConfig{
 		AllowedOrigins:     getCORSOrigins(),
 		AllowedMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
-		AllowedHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With"},
-		ExposeHeaders:      []string{"Content-Length"},
+		AllowedHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "X-Request-ID"},
+		ExposeHeaders:      []string{"Content-Length", "X-Request-ID"},
 		AllowCredentials:   true,
 		UseGorillaHandlers: false,
 	}

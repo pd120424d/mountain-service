@@ -32,6 +32,7 @@ import (
 
 // @title API Сервис за Активности
 // @version 1.0
+// @description Сервис за праћење активности и ревизију у систему за управљање ургентним ситуацијама
 
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
