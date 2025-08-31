@@ -10,6 +10,7 @@
 package repositories
 
 import (
+	context "context"
 	reflect "reflect"
 
 	model "github.com/pd120424d/mountain-service/api/activity/internal/model"
@@ -42,81 +43,81 @@ func (m *MockActivityRepository) EXPECT() *MockActivityRepositoryMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockActivityRepository) Create(activity *model.Activity) error {
+func (m *MockActivityRepository) Create(ctx context.Context, activity *model.Activity) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", activity)
+	ret := m.ctrl.Call(m, "Create", ctx, activity)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockActivityRepositoryMockRecorder) Create(activity any) *gomock.Call {
+func (mr *MockActivityRepositoryMockRecorder) Create(ctx, activity any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockActivityRepository)(nil).Create), activity)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockActivityRepository)(nil).Create), ctx, activity)
 }
 
 // CreateWithOutbox mocks base method.
-func (m *MockActivityRepository) CreateWithOutbox(activity *model.Activity, event *models.OutboxEvent) error {
+func (m *MockActivityRepository) CreateWithOutbox(ctx context.Context, activity *model.Activity, event *models.OutboxEvent) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateWithOutbox", activity, event)
+	ret := m.ctrl.Call(m, "CreateWithOutbox", ctx, activity, event)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateWithOutbox indicates an expected call of CreateWithOutbox.
-func (mr *MockActivityRepositoryMockRecorder) CreateWithOutbox(activity, event any) *gomock.Call {
+func (mr *MockActivityRepositoryMockRecorder) CreateWithOutbox(ctx, activity, event any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWithOutbox", reflect.TypeOf((*MockActivityRepository)(nil).CreateWithOutbox), activity, event)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWithOutbox", reflect.TypeOf((*MockActivityRepository)(nil).CreateWithOutbox), ctx, activity, event)
 }
 
 // Delete mocks base method.
-func (m *MockActivityRepository) Delete(id uint) error {
+func (m *MockActivityRepository) Delete(ctx context.Context, id uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockActivityRepositoryMockRecorder) Delete(id any) *gomock.Call {
+func (mr *MockActivityRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockActivityRepository)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockActivityRepository)(nil).Delete), ctx, id)
 }
 
 // GetByID mocks base method.
-func (m *MockActivityRepository) GetByID(id uint) (*model.Activity, error) {
+func (m *MockActivityRepository) GetByID(ctx context.Context, id uint) (*model.Activity, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByID", id)
+	ret := m.ctrl.Call(m, "GetByID", ctx, id)
 	ret0, _ := ret[0].(*model.Activity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByID indicates an expected call of GetByID.
-func (mr *MockActivityRepositoryMockRecorder) GetByID(id any) *gomock.Call {
+func (mr *MockActivityRepositoryMockRecorder) GetByID(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockActivityRepository)(nil).GetByID), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockActivityRepository)(nil).GetByID), ctx, id)
 }
 
 // GetStats mocks base method.
-func (m *MockActivityRepository) GetStats() (*model.ActivityStats, error) {
+func (m *MockActivityRepository) GetStats(ctx context.Context) (*model.ActivityStats, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStats")
+	ret := m.ctrl.Call(m, "GetStats", ctx)
 	ret0, _ := ret[0].(*model.ActivityStats)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetStats indicates an expected call of GetStats.
-func (mr *MockActivityRepositoryMockRecorder) GetStats() *gomock.Call {
+func (mr *MockActivityRepositoryMockRecorder) GetStats(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStats", reflect.TypeOf((*MockActivityRepository)(nil).GetStats))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStats", reflect.TypeOf((*MockActivityRepository)(nil).GetStats), ctx)
 }
 
 // List mocks base method.
-func (m *MockActivityRepository) List(filter *model.ActivityFilter) ([]model.Activity, int64, error) {
+func (m *MockActivityRepository) List(ctx context.Context, filter *model.ActivityFilter) ([]model.Activity, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List", filter)
+	ret := m.ctrl.Call(m, "List", ctx, filter)
 	ret0, _ := ret[0].([]model.Activity)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -124,21 +125,21 @@ func (m *MockActivityRepository) List(filter *model.ActivityFilter) ([]model.Act
 }
 
 // List indicates an expected call of List.
-func (mr *MockActivityRepositoryMockRecorder) List(filter any) *gomock.Call {
+func (mr *MockActivityRepositoryMockRecorder) List(ctx, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockActivityRepository)(nil).List), filter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockActivityRepository)(nil).List), ctx, filter)
 }
 
 // ResetAllData mocks base method.
-func (m *MockActivityRepository) ResetAllData() error {
+func (m *MockActivityRepository) ResetAllData(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetAllData")
+	ret := m.ctrl.Call(m, "ResetAllData", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ResetAllData indicates an expected call of ResetAllData.
-func (mr *MockActivityRepositoryMockRecorder) ResetAllData() *gomock.Call {
+func (mr *MockActivityRepositoryMockRecorder) ResetAllData(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockActivityRepository)(nil).ResetAllData))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockActivityRepository)(nil).ResetAllData), ctx)
 }

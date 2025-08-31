@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"database/sql"
 	"regexp"
 	"testing"
@@ -47,7 +48,7 @@ func TestActivityRepository_Create(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		err := repo.Create(activity)
+		err := repo.Create(context.Background(), activity)
 		assert.Error(t, err)
 	})
 
@@ -62,7 +63,7 @@ func TestActivityRepository_Create(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		err := repo.Create(activity)
+		err := repo.Create(context.Background(), activity)
 		assert.NoError(t, err)
 		assert.NotZero(t, activity.ID)
 
@@ -85,7 +86,7 @@ func TestActivityRepository_Create(t *testing.T) {
 			UrgencyID:   4,
 		}
 
-		err := repo.Create(activity)
+		err := repo.Create(context.Background(), activity)
 		assert.NoError(t, err)
 		assert.NotZero(t, activity.ID)
 
@@ -119,7 +120,7 @@ func TestActivityRepository_CreateWithOutbox(t *testing.T) {
 			EventData:   `{"x":1}`,
 		}
 
-		err := repo.CreateWithOutbox(activity, event)
+		err := repo.CreateWithOutbox(context.Background(), activity, event)
 		assert.Error(t, err)
 	})
 
@@ -140,7 +141,7 @@ func TestActivityRepository_CreateWithOutbox(t *testing.T) {
 			EventData:   `{"x":1}`,
 		}
 
-		err := repo.CreateWithOutbox(activity, event)
+		err := repo.CreateWithOutbox(context.Background(), activity, event)
 		assert.NoError(t, err)
 	})
 
@@ -161,7 +162,7 @@ func TestActivityRepository_CreateWithOutbox(t *testing.T) {
 			EventData:   `{"x":1}`,
 		}
 
-		err := repo.CreateWithOutbox(activity, event)
+		err := repo.CreateWithOutbox(context.Background(), activity, event)
 		assert.NoError(t, err)
 		assert.NotZero(t, activity.ID)
 		assert.NotZero(t, event.ID)
@@ -177,7 +178,7 @@ func TestActivityRepository_GetByID(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		retrievedActivity, err := repo.GetByID(999)
+		retrievedActivity, err := repo.GetByID(context.Background(), 999)
 		assert.Error(t, err)
 		assert.Nil(t, retrievedActivity)
 		assert.Contains(t, err.Error(), "activity not found")
@@ -192,7 +193,7 @@ func TestActivityRepository_GetByID(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		retrievedActivity, err := repo.GetByID(1)
+		retrievedActivity, err := repo.GetByID(context.Background(), 1)
 		assert.Error(t, err)
 		assert.Nil(t, retrievedActivity)
 	})
@@ -210,7 +211,7 @@ func TestActivityRepository_GetByID(t *testing.T) {
 		err := db.Create(activity).Error
 		require.NoError(t, err)
 
-		retrievedActivity, err := repo.GetByID(activity.ID)
+		retrievedActivity, err := repo.GetByID(context.Background(), activity.ID)
 		assert.NoError(t, err)
 		require.NotNil(t, retrievedActivity)
 		assert.Equal(t, activity.ID, retrievedActivity.ID)
@@ -234,7 +235,7 @@ func TestActivityRepository_List(t *testing.T) {
 		sqlDB.Close()
 
 		filter := model.NewActivityFilter()
-		result, total, err := repo.List(filter)
+		result, total, err := repo.List(context.Background(), filter)
 		assert.Error(t, err)
 		assert.Nil(t, result)
 		assert.Equal(t, int64(0), total)
@@ -264,7 +265,7 @@ func TestActivityRepository_List(t *testing.T) {
 		}
 
 		filter := model.NewActivityFilter()
-		result, total, err := repo.List(filter)
+		result, total, err := repo.List(context.Background(), filter)
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
 		assert.Equal(t, int64(2), total)
@@ -284,7 +285,7 @@ func TestActivityRepository_List(t *testing.T) {
 			EmployeeID: &employeeID,
 			UrgencyID:  &urgencyID,
 		}
-		result, total, err := repo.List(filter)
+		result, total, err := repo.List(context.Background(), filter)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), total)
 		assert.Len(t, result, 0)
@@ -305,7 +306,7 @@ func TestActivityRepository_GetStats(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		stats, err := repo.GetStats()
+		stats, err := repo.GetStats(context.Background())
 		assert.Error(t, err)
 		assert.Nil(t, stats)
 	})
@@ -323,7 +324,7 @@ func TestActivityRepository_GetStats(t *testing.T) {
 			WithArgs(10).
 			WillReturnError(sqlmock.ErrCancelled)
 
-		stats, err := repo.GetStats()
+		stats, err := repo.GetStats(context.Background())
 		assert.Error(t, err)
 		assert.Nil(t, stats)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -351,7 +352,7 @@ func TestActivityRepository_GetStats(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		stats, err := repo.GetStats()
+		stats, err := repo.GetStats(context.Background())
 		assert.NoError(t, err)
 		require.NotNil(t, stats)
 
@@ -364,7 +365,7 @@ func TestActivityRepository_GetStats(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		stats, err := repo.GetStats()
+		stats, err := repo.GetStats(context.Background())
 		assert.NoError(t, err)
 		require.NotNil(t, stats)
 
@@ -388,7 +389,7 @@ func TestActivityRepository_Delete(t *testing.T) {
 		err := db.Create(activity).Error
 		require.NoError(t, err)
 
-		err = repo.Delete(activity.ID)
+		err = repo.Delete(context.Background(), activity.ID)
 		assert.NoError(t, err)
 
 		var deletedActivity model.Activity
@@ -402,7 +403,7 @@ func TestActivityRepository_Delete(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		err := repo.Delete(999)
+		err := repo.Delete(context.Background(), 999)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "activity not found")
 	})
@@ -439,7 +440,7 @@ func TestActivityRepository_ResetAllData(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), count)
 
-		err = repo.ResetAllData()
+		err = repo.ResetAllData(context.Background())
 		assert.NoError(t, err)
 
 		err = db.Model(&model.Activity{}).Count(&count).Error
@@ -461,7 +462,7 @@ func TestActivityRepository_DatabaseConnection(t *testing.T) {
 			Description: "Test",
 		}
 
-		err := repo.Create(activity)
+		err := repo.Create(context.Background(), activity)
 		assert.NoError(t, err)
 		assert.NotZero(t, activity.ID)
 	})
@@ -489,9 +490,9 @@ func TestActivityRepository_QueryBuilding(t *testing.T) {
 			UrgencyID:   urgencyID,
 		}
 
-		err := repo.Create(activity1)
+		err := repo.Create(context.Background(), activity1)
 		assert.NoError(t, err)
-		err = repo.Create(activity2)
+		err = repo.Create(context.Background(), activity2)
 		assert.NoError(t, err)
 
 		// Test complex filter with multiple criteria
@@ -502,7 +503,7 @@ func TestActivityRepository_QueryBuilding(t *testing.T) {
 			PageSize:   10,
 		}
 
-		activities, total, err := repo.List(filter)
+		activities, total, err := repo.List(context.Background(), filter)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), total)
 		assert.Len(t, activities, 1)

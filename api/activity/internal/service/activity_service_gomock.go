@@ -10,6 +10,7 @@
 package service
 
 import (
+	context "context"
 	reflect "reflect"
 
 	v1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
@@ -41,103 +42,103 @@ func (m *MockActivityService) EXPECT() *MockActivityServiceMockRecorder {
 }
 
 // CreateActivity mocks base method.
-func (m *MockActivityService) CreateActivity(req *v1.ActivityCreateRequest) (*v1.ActivityResponse, error) {
+func (m *MockActivityService) CreateActivity(ctx context.Context, req *v1.ActivityCreateRequest) (*v1.ActivityResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateActivity", req)
+	ret := m.ctrl.Call(m, "CreateActivity", ctx, req)
 	ret0, _ := ret[0].(*v1.ActivityResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateActivity indicates an expected call of CreateActivity.
-func (mr *MockActivityServiceMockRecorder) CreateActivity(req any) *gomock.Call {
+func (mr *MockActivityServiceMockRecorder) CreateActivity(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateActivity", reflect.TypeOf((*MockActivityService)(nil).CreateActivity), req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateActivity", reflect.TypeOf((*MockActivityService)(nil).CreateActivity), ctx, req)
 }
 
 // DeleteActivity mocks base method.
-func (m *MockActivityService) DeleteActivity(id uint) error {
+func (m *MockActivityService) DeleteActivity(ctx context.Context, id uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteActivity", id)
+	ret := m.ctrl.Call(m, "DeleteActivity", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteActivity indicates an expected call of DeleteActivity.
-func (mr *MockActivityServiceMockRecorder) DeleteActivity(id any) *gomock.Call {
+func (mr *MockActivityServiceMockRecorder) DeleteActivity(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteActivity", reflect.TypeOf((*MockActivityService)(nil).DeleteActivity), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteActivity", reflect.TypeOf((*MockActivityService)(nil).DeleteActivity), ctx, id)
 }
 
 // GetActivityByID mocks base method.
-func (m *MockActivityService) GetActivityByID(id uint) (*v1.ActivityResponse, error) {
+func (m *MockActivityService) GetActivityByID(ctx context.Context, id uint) (*v1.ActivityResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetActivityByID", id)
+	ret := m.ctrl.Call(m, "GetActivityByID", ctx, id)
 	ret0, _ := ret[0].(*v1.ActivityResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetActivityByID indicates an expected call of GetActivityByID.
-func (mr *MockActivityServiceMockRecorder) GetActivityByID(id any) *gomock.Call {
+func (mr *MockActivityServiceMockRecorder) GetActivityByID(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivityByID", reflect.TypeOf((*MockActivityService)(nil).GetActivityByID), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivityByID", reflect.TypeOf((*MockActivityService)(nil).GetActivityByID), ctx, id)
 }
 
 // GetActivityStats mocks base method.
-func (m *MockActivityService) GetActivityStats() (*v1.ActivityStatsResponse, error) {
+func (m *MockActivityService) GetActivityStats(ctx context.Context) (*v1.ActivityStatsResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetActivityStats")
+	ret := m.ctrl.Call(m, "GetActivityStats", ctx)
 	ret0, _ := ret[0].(*v1.ActivityStatsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetActivityStats indicates an expected call of GetActivityStats.
-func (mr *MockActivityServiceMockRecorder) GetActivityStats() *gomock.Call {
+func (mr *MockActivityServiceMockRecorder) GetActivityStats(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivityStats", reflect.TypeOf((*MockActivityService)(nil).GetActivityStats))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivityStats", reflect.TypeOf((*MockActivityService)(nil).GetActivityStats), ctx)
 }
 
 // ListActivities mocks base method.
-func (m *MockActivityService) ListActivities(req *v1.ActivityListRequest) (*v1.ActivityListResponse, error) {
+func (m *MockActivityService) ListActivities(ctx context.Context, req *v1.ActivityListRequest) (*v1.ActivityListResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListActivities", req)
+	ret := m.ctrl.Call(m, "ListActivities", ctx, req)
 	ret0, _ := ret[0].(*v1.ActivityListResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListActivities indicates an expected call of ListActivities.
-func (mr *MockActivityServiceMockRecorder) ListActivities(req any) *gomock.Call {
+func (mr *MockActivityServiceMockRecorder) ListActivities(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListActivities", reflect.TypeOf((*MockActivityService)(nil).ListActivities), req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListActivities", reflect.TypeOf((*MockActivityService)(nil).ListActivities), ctx, req)
 }
 
 // LogActivity mocks base method.
-func (m *MockActivityService) LogActivity(description string, employeeID, urgencyID uint) error {
+func (m *MockActivityService) LogActivity(ctx context.Context, description string, employeeID, urgencyID uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LogActivity", description, employeeID, urgencyID)
+	ret := m.ctrl.Call(m, "LogActivity", ctx, description, employeeID, urgencyID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // LogActivity indicates an expected call of LogActivity.
-func (mr *MockActivityServiceMockRecorder) LogActivity(description, employeeID, urgencyID any) *gomock.Call {
+func (mr *MockActivityServiceMockRecorder) LogActivity(ctx, description, employeeID, urgencyID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogActivity", reflect.TypeOf((*MockActivityService)(nil).LogActivity), description, employeeID, urgencyID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogActivity", reflect.TypeOf((*MockActivityService)(nil).LogActivity), ctx, description, employeeID, urgencyID)
 }
 
 // ResetAllData mocks base method.
-func (m *MockActivityService) ResetAllData() error {
+func (m *MockActivityService) ResetAllData(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetAllData")
+	ret := m.ctrl.Call(m, "ResetAllData", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ResetAllData indicates an expected call of ResetAllData.
-func (mr *MockActivityServiceMockRecorder) ResetAllData() *gomock.Call {
+func (mr *MockActivityServiceMockRecorder) ResetAllData(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockActivityService)(nil).ResetAllData))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockActivityService)(nil).ResetAllData), ctx)
 }

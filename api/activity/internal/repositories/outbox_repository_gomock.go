@@ -10,6 +10,7 @@
 package repositories
 
 import (
+	context "context"
 	reflect "reflect"
 
 	models "github.com/pd120424d/mountain-service/api/shared/models"
@@ -41,44 +42,44 @@ func (m *MockOutboxRepository) EXPECT() *MockOutboxRepositoryMockRecorder {
 }
 
 // GetUnpublishedEvents mocks base method.
-func (m *MockOutboxRepository) GetUnpublishedEvents(limit int) ([]*models.OutboxEvent, error) {
+func (m *MockOutboxRepository) GetUnpublishedEvents(ctx context.Context, limit int) ([]*models.OutboxEvent, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUnpublishedEvents", limit)
+	ret := m.ctrl.Call(m, "GetUnpublishedEvents", ctx, limit)
 	ret0, _ := ret[0].([]*models.OutboxEvent)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUnpublishedEvents indicates an expected call of GetUnpublishedEvents.
-func (mr *MockOutboxRepositoryMockRecorder) GetUnpublishedEvents(limit any) *gomock.Call {
+func (mr *MockOutboxRepositoryMockRecorder) GetUnpublishedEvents(ctx, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnpublishedEvents", reflect.TypeOf((*MockOutboxRepository)(nil).GetUnpublishedEvents), limit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnpublishedEvents", reflect.TypeOf((*MockOutboxRepository)(nil).GetUnpublishedEvents), ctx, limit)
 }
 
 // MarkAsPublished mocks base method.
-func (m *MockOutboxRepository) MarkAsPublished(eventID uint) error {
+func (m *MockOutboxRepository) MarkAsPublished(ctx context.Context, eventID uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkAsPublished", eventID)
+	ret := m.ctrl.Call(m, "MarkAsPublished", ctx, eventID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MarkAsPublished indicates an expected call of MarkAsPublished.
-func (mr *MockOutboxRepositoryMockRecorder) MarkAsPublished(eventID any) *gomock.Call {
+func (mr *MockOutboxRepositoryMockRecorder) MarkAsPublished(ctx, eventID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsPublished", reflect.TypeOf((*MockOutboxRepository)(nil).MarkAsPublished), eventID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsPublished", reflect.TypeOf((*MockOutboxRepository)(nil).MarkAsPublished), ctx, eventID)
 }
 
 // MarkOutboxEventAsPublished mocks base method.
-func (m *MockOutboxRepository) MarkOutboxEventAsPublished(event *models.OutboxEvent) error {
+func (m *MockOutboxRepository) MarkOutboxEventAsPublished(ctx context.Context, event *models.OutboxEvent) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkOutboxEventAsPublished", event)
+	ret := m.ctrl.Call(m, "MarkOutboxEventAsPublished", ctx, event)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MarkOutboxEventAsPublished indicates an expected call of MarkOutboxEventAsPublished.
-func (mr *MockOutboxRepositoryMockRecorder) MarkOutboxEventAsPublished(event any) *gomock.Call {
+func (mr *MockOutboxRepositoryMockRecorder) MarkOutboxEventAsPublished(ctx, event any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkOutboxEventAsPublished", reflect.TypeOf((*MockOutboxRepository)(nil).MarkOutboxEventAsPublished), event)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkOutboxEventAsPublished", reflect.TypeOf((*MockOutboxRepository)(nil).MarkOutboxEventAsPublished), ctx, event)
 }

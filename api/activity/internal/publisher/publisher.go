@@ -72,13 +72,14 @@ func (p *Publisher) Start(ctx context.Context) {
 }
 
 func (p *Publisher) processOnce(ctx context.Context) error {
-	p.log.Info("Processing outbox events")
-	events, err := p.repo.GetUnpublishedEvents(100)
+	log := p.log.WithContext(ctx)
+	log.Info("Processing outbox events")
+	events, err := p.repo.GetUnpublishedEvents(ctx, 100)
 	if err != nil {
 		return fmt.Errorf("get unpublished: %w", err)
 	}
 	if len(events) == 0 {
-		p.log.Info("No unpublished events")
+		log.Info("No unpublished events")
 		return nil
 	}
 
@@ -108,15 +109,15 @@ func (p *Publisher) processOnce(ctx context.Context) error {
 			Attributes: map[string]string{"eventType": e.EventType, "aggregateId": e.AggregateID},
 		})
 		if _, err := res.Get(ctx); err != nil {
-			p.log.Errorf("failed to publish event id=%d: %v", e.ID, err)
+			log.Errorf("failed to publish event id=%d: %v", e.ID, err)
 			continue
 		}
-		if err := p.repo.MarkAsPublished(e.ID); err != nil {
-			p.log.Errorf("failed to mark published id=%d: %v", e.ID, err)
+		if err := p.repo.MarkAsPublished(ctx, e.ID); err != nil {
+			log.Errorf("failed to mark published id=%d: %v", e.ID, err)
 			continue
 		}
 		sent++
 	}
-	p.log.Infof("Published %d/%d events", sent, len(events))
+	log.Infof("Published %d/%d events", sent, len(events))
 	return nil
 }

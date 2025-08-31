@@ -33,8 +33,8 @@ func TestPublisher_processOnce(t *testing.T) {
 		mockRepo := repo.NewMockOutboxRepository(ctrl)
 
 		events := []*models.OutboxEvent{{ID: 1, EventType: "activity.created", AggregateID: "activity-1", EventData: `{"x":1}`}}
-		mockRepo.EXPECT().GetUnpublishedEvents(100).Return(events, nil)
-		mockRepo.EXPECT().MarkAsPublished(uint(1)).Return(nil)
+		mockRepo.EXPECT().GetUnpublishedEvents(gomock.Any(), 100).Return(events, nil)
+		mockRepo.EXPECT().MarkAsPublished(gomock.Any(), uint(1)).Return(nil)
 
 		// Inject a fake topic to avoid real Pub/Sub calls
 		topic := &fakeTopic{res: &fakePublishResult{err: nil}}
@@ -42,7 +42,7 @@ func TestPublisher_processOnce(t *testing.T) {
 		// Minimal reproduction of processOnce using fake topic
 		publish := func(ctx context.Context) error {
 			log.Info("Processing outbox events")
-			events, err := mockRepo.GetUnpublishedEvents(100)
+			events, err := mockRepo.GetUnpublishedEvents(ctx, 100)
 			if err != nil {
 				return err
 			}
@@ -55,7 +55,7 @@ func TestPublisher_processOnce(t *testing.T) {
 				if _, err := res.Get(ctx); err != nil {
 					continue
 				}
-				_ = mockRepo.MarkAsPublished(e.ID)
+				_ = mockRepo.MarkAsPublished(ctx, e.ID)
 			}
 			return nil
 		}
@@ -70,7 +70,7 @@ func TestPublisher_processOnce(t *testing.T) {
 
 		log := utils.NewTestLogger()
 		mockRepo := repo.NewMockOutboxRepository(ctrl)
-		mockRepo.EXPECT().GetUnpublishedEvents(100).Return(nil, errors.New("boom"))
+		mockRepo.EXPECT().GetUnpublishedEvents(gomock.Any(), 100).Return(nil, errors.New("boom"))
 
 		p := &Publisher{log: log, repo: mockRepo, config: Config{TopicName: "activity-events"}}
 		err := p.processOnce(context.Background())

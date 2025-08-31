@@ -28,6 +28,8 @@ type Logger interface {
 	Fatalf(format string, args ...interface{})
 	Sync() error
 	WithName(name string) Logger
+	// Enrich the logger with request-scoped fields from ctx (request_id)
+	WithContext(ctx context.Context) Logger
 	RequestLogger() gin.HandlerFunc
 }
 
@@ -230,6 +232,24 @@ func (z *zapLogger) WithName(name string) Logger {
 	named := z.logger.Named(name)
 	return &zapLogger{
 		logger:      named,
+		file:        z.file,
+		svcName:     z.svcName,
+		currentDate: z.currentDate,
+		gcpClient:   z.gcpClient,
+	}
+}
+
+func (z *zapLogger) WithContext(ctx context.Context) Logger {
+	_ = z.rotate()
+	// Extract request ID if present
+	requestID := RequestIDFromContext(ctx)
+	if requestID == "" {
+		return z
+	}
+	// Attach request_id as a field to the logger via a named child with pre-bound field
+	child := z.logger.With(zap.String("request_id", requestID))
+	return &zapLogger{
+		logger:      child,
 		file:        z.file,
 		svcName:     z.svcName,
 		currentDate: z.currentDate,

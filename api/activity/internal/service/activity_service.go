@@ -3,6 +3,7 @@ package service
 //go:generate mockgen -source=activity_service.go -destination=activity_service_gomock.go -package=service mountain_service/activity/internal/service -imports=gomock=go.uber.org/mock/gomock -typed
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -15,14 +16,14 @@ import (
 )
 
 type ActivityService interface {
-	CreateActivity(req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error)
-	GetActivityByID(id uint) (*activityV1.ActivityResponse, error)
-	ListActivities(req *activityV1.ActivityListRequest) (*activityV1.ActivityListResponse, error)
-	GetActivityStats() (*activityV1.ActivityStatsResponse, error)
-	DeleteActivity(id uint) error
-	ResetAllData() error
+	CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error)
+	GetActivityByID(ctx context.Context, id uint) (*activityV1.ActivityResponse, error)
+	ListActivities(ctx context.Context, req *activityV1.ActivityListRequest) (*activityV1.ActivityListResponse, error)
+	GetActivityStats(ctx context.Context) (*activityV1.ActivityStatsResponse, error)
+	DeleteActivity(ctx context.Context, id uint) error
+	ResetAllData(ctx context.Context) error
 
-	LogActivity(description string, employeeID, urgencyID uint) error
+	LogActivity(ctx context.Context, description string, employeeID, urgencyID uint) error
 }
 
 type activityService struct {
@@ -34,16 +35,17 @@ func NewActivityService(log utils.Logger, repo repositories.ActivityRepository) 
 	return &activityService{log: log.WithName("activityService"), repo: repo}
 }
 
-func (s *activityService) CreateActivity(req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error) {
+func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error) {
+	log := s.log.WithContext(ctx)
 	if req == nil {
-		s.log.Error("Activity create request is nil")
+		log.Error("Activity create request is nil")
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "request cannot be nil", nil)
 	}
 
-	s.log.Infof("Creating activity: %s", req.ToString())
+	log.Infof("Creating activity: %s", req.ToString())
 
 	if err := req.Validate(); err != nil {
-		s.log.Errorf("Activity validation failed: %v", err)
+		log.Errorf("Activity validation failed: %v", err)
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", fmt.Sprintf("validation failed: %v", err), nil)
 	}
 
@@ -63,28 +65,29 @@ func (s *activityService) CreateActivity(req *activityV1.ActivityCreateRequest) 
 		},
 	)
 
-	if err := s.repo.CreateWithOutbox(activity, (*models.OutboxEvent)(event)); err != nil {
-		s.log.Errorf("Failed to create activity with outbox: %v", err)
+	if err := s.repo.CreateWithOutbox(ctx, activity, (*models.OutboxEvent)(event)); err != nil {
+		log.Errorf("Failed to create activity with outbox: %v", err)
 		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.CREATE_FAILED", "failed to create activity", map[string]interface{}{"cause": err.Error()})
 	}
 
 	response := activity.ToResponse()
 
-	s.log.Infof("Activity created successfully with ID: %d", activity.ID)
+	log.Infof("Activity created successfully with ID: %d", activity.ID)
 	return &response, nil
 }
 
-func (s *activityService) GetActivityByID(id uint) (*activityV1.ActivityResponse, error) {
+func (s *activityService) GetActivityByID(ctx context.Context, id uint) (*activityV1.ActivityResponse, error) {
+	log := s.log.WithContext(ctx)
 	if id == 0 {
-		s.log.Error("Invalid activity ID: 0")
+		log.Error("Invalid activity ID: 0")
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_ID", "invalid activity ID: cannot be zero", nil)
 	}
 
-	s.log.Infof("Getting activity by ID: %d", id)
+	log.Infof("Getting activity by ID: %d", id)
 
-	activity, err := s.repo.GetByID(id)
+	activity, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		s.log.Errorf("Failed to get activity: %v", err)
+		log.Errorf("Failed to get activity: %v", err)
 		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.NOT_FOUND", "failed to get activity", map[string]interface{}{"cause": err.Error()})
 	}
 
@@ -92,29 +95,31 @@ func (s *activityService) GetActivityByID(id uint) (*activityV1.ActivityResponse
 	return &response, nil
 }
 
-func (s *activityService) DeleteActivity(id uint) error {
+func (s *activityService) DeleteActivity(ctx context.Context, id uint) error {
+	log := s.log.WithContext(ctx)
 	if id == 0 {
-		s.log.Error("Invalid activity ID: 0")
+		log.Error("Invalid activity ID: 0")
 		return commonv1.NewAppError("VALIDATION.INVALID_ID", "invalid activity ID: cannot be zero", nil)
 	}
 
-	s.log.Infof("Deleting activity with ID: %d", id)
+	log.Infof("Deleting activity with ID: %d", id)
 
-	if err := s.repo.Delete(id); err != nil {
-		s.log.Errorf("Failed to delete activity: %v", err)
+	if err := s.repo.Delete(ctx, id); err != nil {
+		log.Errorf("Failed to delete activity: %v", err)
 		return commonv1.NewAppError("ACTIVITY_ERRORS.DELETE_FAILED", "failed to delete activity", map[string]interface{}{"cause": err.Error()})
 	}
 
-	s.log.Infof("Activity deleted successfully with ID: %d", id)
+	log.Infof("Activity deleted successfully with ID: %d", id)
 	return nil
 }
 
-func (s *activityService) ListActivities(req *activityV1.ActivityListRequest) (*activityV1.ActivityListResponse, error) {
-	s.log.Infof("Listing activities with filters: %+v", req)
+func (s *activityService) ListActivities(ctx context.Context, req *activityV1.ActivityListRequest) (*activityV1.ActivityListResponse, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Listing activities with filters: %+v", req)
 
 	// Validate request
 	if err := req.Validate(); err != nil {
-		s.log.Errorf("Activity list validation failed: %v", err)
+		log.Errorf("Activity list validation failed: %v", err)
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", fmt.Sprintf("validation failed: %v", err), nil)
 	}
 
@@ -140,9 +145,9 @@ func (s *activityService) ListActivities(req *activityV1.ActivityListRequest) (*
 		}
 	}
 
-	activities, total, err := s.repo.List(filter)
+	activities, total, err := s.repo.List(ctx, filter)
 	if err != nil {
-		s.log.Errorf("Failed to list activities: %v", err)
+		log.Errorf("Failed to list activities: %v", err)
 		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.LIST_FAILED", "failed to list activities", map[string]interface{}{"cause": err.Error()})
 	}
 
@@ -166,16 +171,17 @@ func (s *activityService) ListActivities(req *activityV1.ActivityListRequest) (*
 		TotalPages: totalPages,
 	}
 
-	s.log.Infof("Listed %d activities out of %d total", len(activities), total)
+	log.Infof("Listed %d activities out of %d total", len(activities), total)
 	return response, nil
 }
 
-func (s *activityService) GetActivityStats() (*activityV1.ActivityStatsResponse, error) {
-	s.log.Info("Getting activity statistics")
+func (s *activityService) GetActivityStats(ctx context.Context) (*activityV1.ActivityStatsResponse, error) {
+	log := s.log.WithContext(ctx)
+	log.Info("Getting activity statistics")
 
-	stats, err := s.repo.GetStats()
+	stats, err := s.repo.GetStats(ctx)
 	if err != nil {
-		s.log.Errorf("Failed to get activity stats: %v", err)
+		log.Errorf("Failed to get activity stats: %v", err)
 		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.STATS_FAILED", "failed to get activity stats", map[string]interface{}{"cause": err.Error()})
 	}
 
@@ -183,25 +189,26 @@ func (s *activityService) GetActivityStats() (*activityV1.ActivityStatsResponse,
 	return &response, nil
 }
 
-func (s *activityService) ResetAllData() error {
-	s.log.Info("Resetting all activity data")
+func (s *activityService) ResetAllData(ctx context.Context) error {
+	log := s.log.WithContext(ctx)
+	log.Info("Resetting all activity data")
 
-	if err := s.repo.ResetAllData(); err != nil {
-		s.log.Errorf("Failed to reset activity data: %v", err)
+	if err := s.repo.ResetAllData(ctx); err != nil {
+		log.Errorf("Failed to reset activity data: %v", err)
 		return commonv1.NewAppError("ACTIVITY_ERRORS.RESET_FAILED", "failed to reset activity data", map[string]interface{}{"cause": err.Error()})
 	}
 
-	s.log.Info("All activity data reset successfully")
+	log.Info("All activity data reset successfully")
 	return nil
 }
 
-func (s *activityService) LogActivity(description string, employeeID, urgencyID uint) error {
+func (s *activityService) LogActivity(ctx context.Context, description string, employeeID, urgencyID uint) error {
 	req := &activityV1.ActivityCreateRequest{
 		Description: description,
 		EmployeeID:  employeeID,
 		UrgencyID:   urgencyID,
 	}
 
-	_, err := s.CreateActivity(req)
+	_, err := s.CreateActivity(ctx, req)
 	return err
 }

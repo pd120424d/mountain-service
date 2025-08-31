@@ -53,7 +53,8 @@ func (s *firestoreService) ListByUrgency(ctx context.Context, urgencyID uint, li
 			break
 		}
 		if err != nil {
-			s.logger.Errorf("failed to iterate firestore docs: %v", err)
+			log := s.logger.WithContext(ctx)
+			log.Errorf("failed to iterate firestore docs: %v", err)
 			return nil, err
 		}
 
@@ -66,7 +67,8 @@ func (s *firestoreService) ListByUrgency(ctx context.Context, urgencyID uint, li
 			UpdatedAt   string `firestore:"updated_at"`
 		}
 		if err := doc.DataTo(&a); err != nil {
-			s.logger.Errorf("failed to unmarshal firestore doc: %v", err)
+			log := s.logger.WithContext(ctx)
+			log.Errorf("failed to unmarshal firestore doc: %v", err)
 			continue
 		}
 		item := sharedModels.Activity{
@@ -102,7 +104,8 @@ func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedMode
 			break
 		}
 		if err != nil {
-			s.logger.Errorf("failed to iterate firestore docs: %v", err)
+			log := s.logger.WithContext(ctx)
+			log.Errorf("failed to iterate firestore docs: %v", err)
 			return nil, err
 		}
 		var a struct {
@@ -114,7 +117,8 @@ func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedMode
 			UpdatedAt   string `firestore:"updated_at"`
 		}
 		if err := doc.DataTo(&a); err != nil {
-			s.logger.Errorf("failed to unmarshal firestore doc: %v", err)
+			log := s.logger.WithContext(ctx)
+			log.Errorf("failed to unmarshal firestore doc: %v", err)
 			continue
 		}
 		item := sharedModels.Activity{

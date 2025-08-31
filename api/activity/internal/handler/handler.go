@@ -43,29 +43,33 @@ func NewActivityHandler(log utils.Logger, svc service.ActivityService, readModel
 // @Failure 500 {object} activityV1.ErrorResponse
 // @Router /activities [post]
 func (h *activityHandler) CreateActivity(ctx *gin.Context) {
-	h.log.Info("Received Create Activity request")
+	reqLog := h.log
+	if ctx.Request != nil {
+		reqLog = h.log.WithContext(ctx.Request.Context())
+	}
+	reqLog.Info("Received Create Activity request")
 
 	var req activityV1.ActivityCreateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		h.log.Errorf("Failed to bind request: %v", err)
+		reqLog.Errorf("Failed to bind request: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
 		return
 	}
 
 	if err := req.Validate(); err != nil {
-		h.log.Errorf("validation failed: %v", err)
+		reqLog.Errorf("validation failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	response, err := h.svc.CreateActivity(&req)
+	response, err := h.svc.CreateActivity(ctx.Request.Context(), &req)
 	if err != nil {
-		h.log.Errorf("Failed to create activity: %v", err)
+		reqLog.Errorf("Failed to create activity: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create activity", "details": err.Error()})
 		return
 	}
 
-	h.log.Infof("Successfully created activity with ID: %d", response.ID)
+	reqLog.Infof("Successfully created activity with ID: %d", response.ID)
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -81,24 +85,28 @@ func (h *activityHandler) CreateActivity(ctx *gin.Context) {
 // @Failure 500 {object} map[string]interface{}
 // @Router /activities/{id} [get]
 func (h *activityHandler) GetActivity(ctx *gin.Context) {
-	h.log.Info("Received Get Activity request")
+	reqLog := h.log
+	if ctx.Request != nil {
+		reqLog = h.log.WithContext(ctx.Request.Context())
+	}
+	reqLog.Info("Received Get Activity request")
 
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		h.log.Errorf("Invalid activity ID: %s", idStr)
+		reqLog.Errorf("Invalid activity ID: %s", idStr)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid activity ID"})
 		return
 	}
 
-	response, err := h.svc.GetActivityByID(uint(id))
+	response, err := h.svc.GetActivityByID(ctx.Request.Context(), uint(id))
 	if err != nil {
-		h.log.Errorf("Failed to get activity: %v", err)
+		reqLog.Errorf("Failed to get activity: %v", err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Activity not found"})
 		return
 	}
 
-	h.log.Infof("Successfully retrieved activity with ID %d", id)
+	reqLog.Infof("Successfully retrieved activity with ID %d", id)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -117,7 +125,11 @@ func (h *activityHandler) GetActivity(ctx *gin.Context) {
 // @Router /activities [get]
 func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	var req activityV1.ActivityListRequest
-	h.log.Info("Received List Activities request")
+	reqLog := h.log
+	if ctx.Request != nil {
+		reqLog = h.log.WithContext(ctx.Request.Context())
+	}
+	reqLog.Info("Received List Activities request")
 
 	// Parse query parameters
 	if pageStr := ctx.Query("page"); pageStr != "" {
@@ -150,27 +162,27 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	if h.readModel != nil && req.UrgencyID != nil && (req.Page == 0 && req.PageSize == 0) {
 		activities, err := h.readModel.ListByUrgency(ctx, *req.UrgencyID, 0)
 		if err != nil {
-			h.log.Warnf("Read-model fetch failed, falling back to DB: %v", err)
+			reqLog.Warnf("Read-model fetch failed, falling back to DB: %v", err)
 		} else {
 			resp := &activityV1.ActivityListResponse{Activities: make([]activityV1.ActivityResponse, 0, len(activities)), Total: int64(len(activities)), Page: 1, PageSize: len(activities), TotalPages: 1}
 			for _, a := range activities {
 				ar := a.ToResponse()
 				resp.Activities = append(resp.Activities, *ar)
 			}
-			h.log.Infof("Listed %d activities out of %d total. Used Firestore read model.", len(resp.Activities), resp.Total)
+			reqLog.Infof("Listed %d activities out of %d total. Used Firestore read model.", len(resp.Activities), resp.Total)
 			ctx.JSON(http.StatusOK, resp)
 			return
 		}
 	}
 
-	response, err := h.svc.ListActivities(&req)
+	response, err := h.svc.ListActivities(ctx.Request.Context(), &req)
 	if err != nil {
-		h.log.Errorf("Failed to list activities: %v", err)
+		reqLog.Errorf("Failed to list activities: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list activities", "details": err.Error()})
 		return
 	}
 
-	h.log.Infof("Listed %d activities out of %d total. Used PostgreSQL write model.", len(response.Activities), response.Total)
+	reqLog.Infof("Listed %d activities out of %d total. Used PostgreSQL write model.", len(response.Activities), response.Total)
 
 	ctx.JSON(http.StatusOK, response)
 }
@@ -184,16 +196,20 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 // @Failure 500 {object} map[string]interface{}
 // @Router /activities/stats [get]
 func (h *activityHandler) GetActivityStats(ctx *gin.Context) {
-	h.log.Info("Received Get Activity Stats request")
+	reqLog := h.log
+	if ctx.Request != nil {
+		reqLog = h.log.WithContext(ctx.Request.Context())
+	}
+	reqLog.Info("Received Get Activity Stats request")
 
-	response, err := h.svc.GetActivityStats()
+	response, err := h.svc.GetActivityStats(ctx.Request.Context())
 	if err != nil {
-		h.log.Errorf("Failed to get activity stats: %v", err)
+		reqLog.Errorf("Failed to get activity stats: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get activity stats", "details": err.Error()})
 		return
 	}
 
-	h.log.Info("Successfully retrieved activity stats")
+	reqLog.Info("Successfully retrieved activity stats")
 
 	ctx.JSON(http.StatusOK, response)
 }
@@ -209,19 +225,23 @@ func (h *activityHandler) GetActivityStats(ctx *gin.Context) {
 // @Failure 500 {object} map[string]interface{}
 // @Router /activities/{id} [delete]
 func (h *activityHandler) DeleteActivity(ctx *gin.Context) {
-	h.log.Info("Received Delete Activity request")
+	reqLog := h.log
+	if ctx.Request != nil {
+		reqLog = h.log.WithContext(ctx.Request.Context())
+	}
+	reqLog.Info("Received Delete Activity request")
 
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		h.log.Errorf("Invalid activity ID: %s", idStr)
+		reqLog.Errorf("Invalid activity ID: %s", idStr)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid activity ID"})
 		return
 	}
 
-	err = h.svc.DeleteActivity(uint(id))
+	err = h.svc.DeleteActivity(ctx.Request.Context(), uint(id))
 	if err != nil {
-		h.log.Errorf("Failed to delete activity: %v", err)
+		reqLog.Errorf("Failed to delete activity: %v", err)
 		if strings.Contains(strings.ToLower(err.Error()), "not found") {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Activity not found"})
 			return
@@ -230,7 +250,7 @@ func (h *activityHandler) DeleteActivity(ctx *gin.Context) {
 		return
 	}
 
-	h.log.Infof("Successfully deleted activity with ID: %d", id)
+	reqLog.Infof("Successfully deleted activity with ID: %d", id)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Activity deleted successfully"})
 }
 
@@ -242,15 +262,19 @@ func (h *activityHandler) DeleteActivity(ctx *gin.Context) {
 // @Failure 500 {object} map[string]interface{}
 // @Router /activities/reset [delete]
 func (h *activityHandler) ResetAllData(ctx *gin.Context) {
-	h.log.Info("Received Reset All Data request")
+	reqLog := h.log
+	if ctx.Request != nil {
+		reqLog = h.log.WithContext(ctx.Request.Context())
+	}
+	reqLog.Info("Received Reset All Data request")
 
-	err := h.svc.ResetAllData()
+	err := h.svc.ResetAllData(ctx.Request.Context())
 	if err != nil {
-		h.log.Errorf("Failed to reset activity data: %v", err)
+		reqLog.Errorf("Failed to reset activity data: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset activity data", "details": err.Error()})
 		return
 	}
 
-	h.log.Info("Successfully reset all activity data")
+	reqLog.Info("Successfully reset all activity data")
 	ctx.JSON(http.StatusOK, gin.H{"message": "All activity data reset successfully"})
 }

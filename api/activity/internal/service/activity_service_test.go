@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -31,7 +32,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 			UrgencyID:   456,
 		}
 
-		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).DoAndReturn(func(activity *model.Activity, _ any) error {
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, activity *model.Activity, _ any) error {
 			assert.Equal(t, "User completed onboarding process", activity.Description)
 			assert.Equal(t, uint(123), activity.EmployeeID)
 			assert.Equal(t, uint(456), activity.UrgencyID)
@@ -42,7 +43,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 			return nil
 		})
 
-		response, err := service.CreateActivity(req)
+		response, err := service.CreateActivity(context.Background(), req)
 		assert.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, uint(1), response.ID)
@@ -67,7 +68,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		response, err := service.CreateActivity(req)
+		response, err := service.CreateActivity(context.Background(), req)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "validation failed")
@@ -87,7 +88,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		response, err := service.CreateActivity(req)
+		response, err := service.CreateActivity(context.Background(), req)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "validation failed")
@@ -107,7 +108,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 			UrgencyID:   0, // Zero urgency ID
 		}
 
-		response, err := service.CreateActivity(req)
+		response, err := service.CreateActivity(context.Background(), req)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "validation failed")
@@ -127,9 +128,9 @@ func TestActivityService_CreateActivity(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).Return(fmt.Errorf("database connection failed"))
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("database connection failed"))
 
-		response, err := service.CreateActivity(req)
+		response, err := service.CreateActivity(context.Background(), req)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "failed to create activity")
@@ -143,7 +144,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		response, err := service.CreateActivity(nil)
+		response, err := service.CreateActivity(context.Background(), nil)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "request cannot be nil")
@@ -163,14 +164,14 @@ func TestActivityService_CreateActivity(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).DoAndReturn(func(activity *model.Activity, _ any) error {
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, activity *model.Activity, _ any) error {
 			activity.ID = 1
 			activity.CreatedAt = time.Now()
 			activity.UpdatedAt = time.Now()
 			return nil
 		})
 
-		response, err := service.CreateActivity(req)
+		response, err := service.CreateActivity(context.Background(), req)
 		assert.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, uint(1), response.ID)
@@ -193,7 +194,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		response, err := service.CreateActivity(req)
+		response, err := service.CreateActivity(context.Background(), req)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "validation failed")
@@ -213,9 +214,9 @@ func TestActivityService_CreateActivity(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).Return(fmt.Errorf("database error"))
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("database error"))
 
-		response, err := service.CreateActivity(req)
+		response, err := service.CreateActivity(context.Background(), req)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "failed to create activity")
@@ -242,9 +243,9 @@ func TestActivityService_GetActivityByID(t *testing.T) {
 			UpdatedAt:   time.Now(),
 		}
 
-		mockRepo.EXPECT().GetByID(uint(42)).Return(expectedActivity, nil)
+		mockRepo.EXPECT().GetByID(gomock.Any(), uint(42)).Return(expectedActivity, nil)
 
-		response, err := service.GetActivityByID(42)
+		response, err := service.GetActivityByID(context.Background(), 42)
 		assert.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, uint(42), response.ID)
@@ -263,9 +264,9 @@ func TestActivityService_GetActivityByID(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().GetByID(uint(999)).Return(nil, fmt.Errorf("activity not found"))
+		mockRepo.EXPECT().GetByID(gomock.Any(), uint(999)).Return(nil, fmt.Errorf("activity not found"))
 
-		response, err := service.GetActivityByID(999)
+		response, err := service.GetActivityByID(context.Background(), 999)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "failed to get activity")
@@ -279,7 +280,7 @@ func TestActivityService_GetActivityByID(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		response, err := service.GetActivityByID(0)
+		response, err := service.GetActivityByID(context.Background(), 0)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "invalid activity ID")
@@ -302,9 +303,9 @@ func TestActivityService_GetActivityByID(t *testing.T) {
 			UpdatedAt:   time.Now(),
 		}
 
-		mockRepo.EXPECT().GetByID(uint(1)).Return(activity, nil)
+		mockRepo.EXPECT().GetByID(gomock.Any(), uint(1)).Return(activity, nil)
 
-		response, err := service.GetActivityByID(1)
+		response, err := service.GetActivityByID(context.Background(), 1)
 		assert.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, uint(1), response.ID)
@@ -321,9 +322,9 @@ func TestActivityService_GetActivityByID(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().GetByID(uint(999)).Return(nil, fmt.Errorf("activity not found"))
+		mockRepo.EXPECT().GetByID(gomock.Any(), uint(999)).Return(nil, fmt.Errorf("activity not found"))
 
-		response, err := service.GetActivityByID(999)
+		response, err := service.GetActivityByID(context.Background(), 999)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "failed to get activity")
@@ -371,7 +372,7 @@ func TestActivityService_ListActivities(t *testing.T) {
 			},
 		}
 
-		mockRepo.EXPECT().List(gomock.Any()).DoAndReturn(func(filter *model.ActivityFilter) ([]model.Activity, int64, error) {
+		mockRepo.EXPECT().List(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, filter *model.ActivityFilter) ([]model.Activity, int64, error) {
 			assert.Equal(t, &employeeID, filter.EmployeeID)
 			assert.Equal(t, &urgencyID, filter.UrgencyID)
 			assert.Equal(t, 1, filter.Page)
@@ -381,7 +382,7 @@ func TestActivityService_ListActivities(t *testing.T) {
 			return expectedActivities, 2, nil
 		})
 
-		response, err := service.ListActivities(req)
+		response, err := service.ListActivities(context.Background(), req)
 		assert.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Len(t, response.Activities, 2)
@@ -406,9 +407,9 @@ func TestActivityService_ListActivities(t *testing.T) {
 			PageSize: 10,
 		}
 
-		mockRepo.EXPECT().List(gomock.Any()).Return([]model.Activity{}, int64(0), nil)
+		mockRepo.EXPECT().List(gomock.Any(), gomock.Any()).Return([]model.Activity{}, int64(0), nil)
 
-		response, err := service.ListActivities(req)
+		response, err := service.ListActivities(context.Background(), req)
 		assert.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Empty(t, response.Activities)
@@ -429,9 +430,9 @@ func TestActivityService_ListActivities(t *testing.T) {
 			PageSize: 10,
 		}
 
-		mockRepo.EXPECT().List(gomock.Any()).Return(nil, int64(0), fmt.Errorf("database timeout"))
+		mockRepo.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, int64(0), fmt.Errorf("database timeout"))
 
-		response, err := service.ListActivities(req)
+		response, err := service.ListActivities(context.Background(), req)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "failed to list activities")
@@ -453,7 +454,7 @@ func TestActivityService_ListActivities(t *testing.T) {
 		}
 
 		// Service should return validation error for invalid dates
-		response, err := service.ListActivities(req)
+		response, err := service.ListActivities(context.Background(), req)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "validation failed")
@@ -472,14 +473,14 @@ func TestActivityService_ListActivities(t *testing.T) {
 			PageSize: 10,
 		}
 
-		mockRepo.EXPECT().List(gomock.Any()).DoAndReturn(func(filter *model.ActivityFilter) ([]model.Activity, int64, error) {
+		mockRepo.EXPECT().List(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, filter *model.ActivityFilter) ([]model.Activity, int64, error) {
 			// Validate that request validation was called
 			assert.Equal(t, 1, filter.Page)
 			assert.Equal(t, 10, filter.PageSize)
 			return []model.Activity{}, 0, nil
 		})
 
-		response, err := service.ListActivities(req)
+		response, err := service.ListActivities(context.Background(), req)
 		assert.NoError(t, err)
 		require.NotNil(t, response)
 	})
@@ -496,9 +497,9 @@ func TestActivityService_GetActivityStats(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().GetStats().Return(nil, fmt.Errorf("database timeout"))
+		mockRepo.EXPECT().GetStats(gomock.Any()).Return(nil, fmt.Errorf("database timeout"))
 
-		response, err := service.GetActivityStats()
+		response, err := service.GetActivityStats(context.Background())
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "failed to get activity stats")
@@ -537,9 +538,9 @@ func TestActivityService_GetActivityStats(t *testing.T) {
 			ActivitiesLast30Days: 100,
 		}
 
-		mockRepo.EXPECT().GetStats().Return(expectedStats, nil)
+		mockRepo.EXPECT().GetStats(gomock.Any()).Return(expectedStats, nil)
 
-		response, err := service.GetActivityStats()
+		response, err := service.GetActivityStats(context.Background())
 		assert.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, int64(100), response.TotalActivities)
@@ -562,7 +563,7 @@ func TestActivityService_DeleteActivity(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		err := service.DeleteActivity(0)
+		err := service.DeleteActivity(context.Background(), 0)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid activity ID")
 	})
@@ -575,9 +576,9 @@ func TestActivityService_DeleteActivity(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().Delete(uint(1)).Return(nil)
+		mockRepo.EXPECT().Delete(gomock.Any(), uint(1)).Return(nil)
 
-		err := service.DeleteActivity(1)
+		err := service.DeleteActivity(context.Background(), 1)
 		assert.NoError(t, err)
 	})
 
@@ -589,9 +590,9 @@ func TestActivityService_DeleteActivity(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().Delete(uint(999)).Return(fmt.Errorf("activity not found"))
+		mockRepo.EXPECT().Delete(gomock.Any(), uint(999)).Return(fmt.Errorf("activity not found"))
 
-		err := service.DeleteActivity(999)
+		err := service.DeleteActivity(context.Background(), 999)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to delete activity")
 	})
@@ -608,9 +609,9 @@ func TestActivityService_ResetAllData(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().ResetAllData().Return(nil)
+		mockRepo.EXPECT().ResetAllData(gomock.Any()).Return(nil)
 
-		err := service.ResetAllData()
+		err := service.ResetAllData(context.Background())
 		assert.NoError(t, err)
 	})
 
@@ -622,9 +623,9 @@ func TestActivityService_ResetAllData(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().ResetAllData().Return(fmt.Errorf("database error"))
+		mockRepo.EXPECT().ResetAllData(gomock.Any()).Return(fmt.Errorf("database error"))
 
-		err := service.ResetAllData()
+		err := service.ResetAllData(context.Background())
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to reset activity data")
 	})
@@ -641,14 +642,14 @@ func TestActivityService_LogActivity(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).DoAndReturn(func(activity *model.Activity, _ any) error {
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, activity *model.Activity, _ any) error {
 			assert.Equal(t, "User logged in successfully", activity.Description)
 			assert.Equal(t, uint(50), activity.EmployeeID)
 			assert.Equal(t, uint(75), activity.UrgencyID)
 			return nil
 		})
 
-		err := service.LogActivity("User logged in successfully", 50, 75)
+		err := service.LogActivity(context.Background(), "User logged in successfully", 50, 75)
 		assert.NoError(t, err)
 	})
 
@@ -660,7 +661,7 @@ func TestActivityService_LogActivity(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		err := service.LogActivity("", 1, 2)
+		err := service.LogActivity(context.Background(), "", 1, 2)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 	})
@@ -673,9 +674,9 @@ func TestActivityService_LogActivity(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		service := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).Return(fmt.Errorf("disk full"))
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("disk full"))
 
-		err := service.LogActivity("Test activity", 1, 2)
+		err := service.LogActivity(context.Background(), "Test activity", 1, 2)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create activity")
 	})
@@ -688,7 +689,7 @@ func TestActivityService_LogActivity(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		svc := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).DoAndReturn(func(a *model.Activity, _ any) error {
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, a *model.Activity, _ any) error {
 			// Ensure inputs are mapped correctly
 			assert.Equal(t, "Quick note", a.Description)
 			assert.Equal(t, uint(11), a.EmployeeID)
@@ -696,7 +697,7 @@ func TestActivityService_LogActivity(t *testing.T) {
 			return nil
 		})
 
-		err := svc.LogActivity("Quick note", 11, 22)
+		err := svc.LogActivity(context.Background(), "Quick note", 11, 22)
 		assert.NoError(t, err)
 	})
 
@@ -708,9 +709,9 @@ func TestActivityService_LogActivity(t *testing.T) {
 		mockRepo := repositories.NewMockActivityRepository(ctrl)
 		svc := NewActivityService(log, mockRepo)
 
-		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any()).Return(assert.AnError)
+		mockRepo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).Return(assert.AnError)
 
-		err := svc.LogActivity("Something happened", 1, 2)
+		err := svc.LogActivity(context.Background(), "Something happened", 1, 2)
 		assert.Error(t, err)
 	})
 }
