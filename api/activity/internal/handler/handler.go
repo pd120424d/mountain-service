@@ -151,7 +151,7 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 
 	// If a Firestore read model is configured, use it for simple list-by-urgency reads
 	if h.readModel != nil && req.UrgencyID != nil && (req.Page == 0 && req.PageSize == 0) {
-		activities, err := h.readModel.ListByUrgency(ctx, *req.UrgencyID, 0)
+		activities, err := h.readModel.ListByUrgency(ctx.Request.Context(), *req.UrgencyID, 0)
 		if err != nil {
 			log.Warnf("Read-model fetch failed, falling back to DB: %v", err)
 		} else {
