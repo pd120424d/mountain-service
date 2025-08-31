@@ -153,6 +153,14 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	if h.readModel != nil && req.UrgencyID != nil && (req.Page == 0 && req.PageSize == 0) {
 		activities, err := h.readModel.ListByUrgency(ctx.Request.Context(), *req.UrgencyID, 0)
 		if err != nil {
+			// If Firestore has no data we don't want to fail
+			// but just return empty result
+			if strings.Contains(strings.ToLower(err.Error()), "no more items") {
+				resp := &activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{}, Total: 0, Page: 1, PageSize: 0, TotalPages: 1}
+				log.Infof("No Firestore items for urgency %d; returning empty list from read model", *req.UrgencyID)
+				ctx.JSON(http.StatusOK, resp)
+				return
+			}
 			log.Warnf("Read-model fetch failed, falling back to DB: %v", err)
 		} else {
 			resp := &activityV1.ActivityListResponse{Activities: make([]activityV1.ActivityResponse, 0, len(activities)), Total: int64(len(activities)), Page: 1, PageSize: len(activities), TotalPages: 1}

@@ -278,8 +278,7 @@ func TestActivityHandler_ListActivities_ReadModelPreference(t *testing.T) {
 		items: []sharedModels.Activity{{ID: 42, Description: "rm", UrgencyID: 7, EmployeeID: 3}},
 	}
 
-	// success via read-model
-	{
+	t.Run("it successfully retrieves activities via read-model", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=7", nil)
@@ -288,10 +287,21 @@ func TestActivityHandler_ListActivities_ReadModelPreference(t *testing.T) {
 		h.ListActivities(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":42")
-	}
+	})
 
-	// fall back to service on read-model error
-	{
+	t.Run("it successfully retrieves empty list via read-model", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=7", nil)
+		readModel.items = []sharedModels.Activity{}
+
+		h := NewActivityHandler(log, svcMock, readModel)
+		h.ListActivities(ctx)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "\"activities\":[]")
+	})
+
+	t.Run("it falls back to service on read-model error", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=8", nil)
@@ -303,7 +313,7 @@ func TestActivityHandler_ListActivities_ReadModelPreference(t *testing.T) {
 		h.ListActivities(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":77")
-	}
+	})
 }
 func TestActivityHandler_GetActivity_EdgeCases(t *testing.T) {
 	t.Parallel()

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/firestore"
+	"google.golang.org/api/iterator"
 
 	"github.com/pd120424d/mountain-service/api/shared/firestorex"
 )
@@ -73,7 +74,7 @@ func (a *queryAdapter) Documents(ctx context.Context) firestorex.DocumentIterato
 func (a *iteratorAdapter) Next() (firestorex.DocumentSnapshot, error) {
 	ds, err := a.it.Next()
 	if err != nil {
-		if err == iteratorDone() {
+		if err == iterator.Done {
 			return nil, firestorex.Done
 		}
 		return nil, err

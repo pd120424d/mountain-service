@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/shared/auth"
@@ -44,6 +45,10 @@ func NewHTTPClient(config HTTPClientConfig) *HTTPClient {
 }
 
 func (c *HTTPClient) Get(ctx context.Context, endpoint string) (*http.Response, error) {
+	log := c.logger.WithContext(ctx)
+	if strings.Contains(c.baseURL, "/api/v1") && strings.HasPrefix(endpoint, "/api/v1/") {
+		log.Warnf("HTTPClient: baseURL already contains /api/v1 and endpoint starts with /api/v1; resulting URL may be double-prefixed: %s + %s", c.baseURL, endpoint)
+	}
 	return c.doRequest(ctx, "GET", endpoint, nil)
 }
 
@@ -60,6 +65,7 @@ func (c *HTTPClient) Delete(ctx context.Context, endpoint string) (*http.Respons
 }
 
 func (c *HTTPClient) doRequest(ctx context.Context, method, endpoint string, body interface{}) (*http.Response, error) {
+	log := c.logger.WithContext(ctx)
 	url := c.baseURL + endpoint
 
 	var reqBody io.Reader
@@ -93,15 +99,15 @@ func (c *HTTPClient) doRequest(ctx context.Context, method, endpoint string, bod
 		req.Header.Set("Authorization", authHeader)
 	}
 
-	c.logger.Info("Making HTTP request", zap.String("method", method), zap.String("url", url))
+	log.Info("Making HTTP request", zap.String("method", method), zap.String("url", url))
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		c.logger.Error("HTTP request failed", zap.Error(err), zap.String("method", method), zap.String("url", url))
+		log.Error("HTTP request failed", zap.Error(err), zap.String("method", method), zap.String("url", url))
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
 
-	c.logger.Info("HTTP request completed", zap.String("method", method), zap.String("url", url), zap.Int("status", resp.StatusCode))
+	log.Info("HTTP request completed", zap.String("method", method), zap.String("url", url), zap.Int("status", resp.StatusCode))
 
 	return resp, nil
 }
