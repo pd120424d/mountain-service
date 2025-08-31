@@ -56,7 +56,8 @@ func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID 
 		return nil, fmt.Errorf("Firestore client is nil")
 	}
 
-	s.logger.Infof("Getting activities from Firebase for urgency: %d", urgencyID)
+	log := s.logger.WithContext(ctx)
+	log.Infof("Getting activities from Firebase for urgency: %d", urgencyID)
 
 	iter := s.client.Collection(s.collection).
 		Where("urgency_id", "==", int64(urgencyID)).
@@ -77,7 +78,7 @@ func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID 
 
 		var fbDoc FirebaseActivityDoc
 		if err := doc.DataTo(&fbDoc); err != nil {
-			s.logger.Errorf("Failed to unmarshal Firebase document: %v", err)
+			log.Errorf("Failed to unmarshal Firebase document: %v", err)
 			continue
 		}
 
@@ -89,7 +90,7 @@ func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID 
 		activities = append(activities, activity)
 	}
 
-	s.logger.Infof("Retrieved %d activities from Firebase for urgency %d", len(activities), urgencyID)
+	log.Infof("Retrieved %d activities from Firebase for urgency %d", len(activities), urgencyID)
 	return activities, nil
 }
 
@@ -98,7 +99,8 @@ func (s *firebaseService) GetAllActivities(ctx context.Context, limit int) ([]*m
 		return nil, fmt.Errorf("Firestore client is nil")
 	}
 
-	s.logger.Infof("Getting all activities from Firebase with limit: %d", limit)
+	log := s.logger.WithContext(ctx)
+	log.Infof("Getting all activities from Firebase with limit: %d", limit)
 
 	query := s.client.Collection(s.collection).OrderBy("created_at", firestorex.Desc)
 	if limit > 0 {
@@ -120,7 +122,7 @@ func (s *firebaseService) GetAllActivities(ctx context.Context, limit int) ([]*m
 
 		var fbDoc FirebaseActivityDoc
 		if err := doc.DataTo(&fbDoc); err != nil {
-			s.logger.Errorf("Failed to unmarshal Firebase document: %v", err)
+			log.Errorf("Failed to unmarshal Firebase document: %v", err)
 			continue
 		}
 
@@ -134,7 +136,7 @@ func (s *firebaseService) GetAllActivities(ctx context.Context, limit int) ([]*m
 		activities = append(activities, activity)
 	}
 
-	s.logger.Infof("Retrieved %d activities from Firebase", len(activities))
+	log.Infof("Retrieved %d activities from Firebase", len(activities))
 	return activities, nil
 }
 
@@ -146,7 +148,8 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 		return fmt.Errorf("invalid activity id: 0")
 	}
 
-	s.logger.Infof("Syncing activity to Firebase: activity_id=%d, type=%s", eventData.ActivityID, eventData.Type)
+	log := s.logger.WithContext(ctx)
+	log.Infof("Syncing activity to Firebase: activity_id=%d, type=%s", eventData.ActivityID, eventData.Type)
 
 	docID := strconv.Itoa(int(eventData.ActivityID))
 	docRef := s.client.Collection(s.collection).Doc(docID)
@@ -199,7 +202,7 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 		return fmt.Errorf("unknown event type: %s", eventData.Type)
 	}
 
-	s.logger.Infof("Activity synced to Firebase successfully: activity_id=%d, type=%s", eventData.ActivityID, eventData.Type)
+	log.Infof("Activity synced to Firebase successfully: activity_id=%d, type=%s", eventData.ActivityID, eventData.Type)
 	return nil
 }
 
@@ -211,11 +214,12 @@ func (s *firebaseService) HealthCheck(ctx context.Context) error {
 	// Try to read a single document to test connectivity
 	iter := s.client.Collection(s.collection).Limit(1).Documents(ctx)
 	_, err := iter.Next()
+	log := s.logger.WithContext(ctx)
 	if err != nil && !isDone(err) {
-		s.logger.Errorf("Firebase health check failed: %v", err)
+		log.Errorf("Firebase health check failed: %v", err)
 		return fmt.Errorf("failed to check health: %w", err)
 	}
 
-	s.logger.Debug("Firebase health check passed")
+	log.Debug("Firebase health check passed")
 	return nil
 }

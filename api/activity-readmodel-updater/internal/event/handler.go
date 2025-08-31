@@ -27,14 +27,15 @@ func NewHandler(fb service.FirebaseService, logger utils.Logger) *Handler {
 }
 
 func (h *Handler) Handle(ctx context.Context, msg *pubsub.Message) error {
-	h.logger.Infof("Received activity event: message_id=%s, publish_time=%v", msg.ID, msg.PublishTime)
+	reqLog := h.logger.WithContext(ctx)
+	reqLog.Infof("Received activity event: message_id=%s, publish_time=%v", msg.ID, msg.PublishTime)
 
 	ev, strat, err := Parse(msg.Data, msg.Attributes)
 	if err != nil {
-		h.logger.Errorf("Unrecognized event payload format, cannot parse message_id=%s", msg.ID)
+		reqLog.Errorf("Unrecognized event payload format, cannot parse message_id=%s", msg.ID)
 		return fmt.Errorf("unrecognized event payload format")
 	}
-	h.logger.Infof("Parsed activity event via strategy=%s", strat)
+	reqLog.Infof("Parsed activity event via strategy=%s", strat)
 
 	// Normalize type and process
 	normalizeType(&ev)

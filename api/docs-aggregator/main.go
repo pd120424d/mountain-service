@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -101,10 +101,16 @@ func rewriteSpecBytes(spec []byte, scheme, host, basePath string) ([]byte, error
 func main() {
 	cfg, err := loadConfig()
 	if err != nil {
-		log.Fatalf("docs-aggregator config error: %v", err)
+		panic(fmt.Errorf("docs-aggregator config error: %w", err))
+	}
+
+	logger, err := utils.NewLogger("docs-aggregator")
+	if err != nil {
+		panic("failed to create logger")
 	}
 
 	r := gin.Default()
+	r.Use(logger.RequestLogger())
 
 	r.GET("/health", func(c *gin.Context) {
 		c.String(http.StatusOK, "healthy")
@@ -114,9 +120,11 @@ func main() {
 	{
 		docs.GET("/swagger-config.json", func(c *gin.Context) {
 			c.Header("Cache-Control", "public, max-age=60")
+			reqLog := logger.WithContext(c.Request.Context())
 			urls := make([]map[string]string, 0, len(cfg.Services))
 			for _, s := range cfg.Services {
 				if checkHealth(s.BaseURL, s.HealthPath) {
+					reqLog.Debugf("service %s healthy for docs", s.Name)
 					urls = append(urls, map[string]string{
 						"name": cases.Title(language.English, cases.NoLower).String(s.Name) + " API",
 						"url":  fmt.Sprintf("/docs/specs/%s.json", s.Name),
@@ -132,6 +140,7 @@ func main() {
 		})
 
 		docs.GET("/specs/:service", func(c *gin.Context) {
+			reqLog := logger.WithContext(c.Request.Context())
 			name := c.Param("service")
 
 			// Make sure to trim any blank spaces and .json extension if present
@@ -166,24 +175,29 @@ func main() {
 				}
 			}
 			if svc == nil {
+				reqLog.Errorf("unknown service for docs: %s", name)
 				c.JSON(http.StatusNotFound, gin.H{"error": "unknown service"})
 				return
 			}
 
 			client := &http.Client{Timeout: 5 * time.Second}
 			upstream := strings.TrimRight(svc.BaseURL, "/") + svc.SpecPath
-			resp, err := client.Get(upstream)
+			req, _ := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, upstream, nil)
+			resp, err := client.Do(req)
 			if err != nil {
+				reqLog.Errorf("failed to fetch upstream spec: %v", err)
 				c.JSON(http.StatusBadGateway, gin.H{"error": "failed to fetch upstream spec"})
 				return
 			}
 			defer resp.Body.Close()
 			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+				reqLog.Errorf("upstream status %d for %s", resp.StatusCode, upstream)
 				c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("upstream status %d", resp.StatusCode)})
 				return
 			}
 			b, err := io.ReadAll(resp.Body)
 			if err != nil {
+				reqLog.Errorf("failed to read upstream spec: %v", err)
 				c.JSON(http.StatusBadGateway, gin.H{"error": "failed to read upstream spec"})
 				return
 			}
@@ -202,8 +216,8 @@ func main() {
 	if v := os.Getenv("PORT"); v != "" {
 		addr = ":" + v
 	}
-	log.Printf("docs-aggregator listening on %s", addr)
+	logger.Infof("docs-aggregator listening on %s", addr)
 	if err := r.Run(addr); err != nil {
-		log.Fatalf("server error: %v", err)
+		logger.Fatalf("server error: %v", err)
 	}
 }

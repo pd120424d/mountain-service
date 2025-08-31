@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -45,7 +46,8 @@ func NewUrgencyHandler(log utils.Logger, svc UrgencyService) UrgencyHandler {
 // @Success 201 {object} urgencyV1.UrgencyResponse
 // @Router /urgencies [post]
 func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
-	h.log.Info("Received Create Urgency request")
+	log := h.log.WithContext(requestContext(ctx))
+	log.Info("Received Create Urgency request")
 
 	var req urgencyV1.UrgencyCreateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -72,14 +74,15 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 	}
 
 	if err := h.svc.CreateUrgency(&urgency); err != nil {
-		h.log.Errorf("failed to create urgency: %v", err)
+		log.Errorf("failed to create urgency: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.CREATE_FAILED", "details": err.Error()})
 		return
 	}
 
 	response := urgency.ToResponse()
-	h.log.Infof("Successfully created urgency with ID %d", urgency.ID)
 	ctx.JSON(http.StatusCreated, response)
+
+	log.Infof("Successfully created urgency with ID %d", urgency.ID)
 }
 
 // ListUrgencies Извлачење листе ургентних ситуација
@@ -91,11 +94,12 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 // @Success 200 {array} []urgencyV1.UrgencyResponse
 // @Router /urgencies [get]
 func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
-	h.log.Info("Received List Urgencies request")
+	reqLog := h.log.WithContext(requestContext(ctx))
+	reqLog.Info("Received List Urgencies request")
 
 	urgencies, err := h.svc.GetAllUrgencies()
 	if err != nil {
-		h.log.Errorf("failed to retrieve urgencies: %v", err)
+		reqLog.Errorf("failed to retrieve urgencies: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.LIST_FAILED", "details": err.Error()})
 		return
 	}
@@ -105,7 +109,7 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 		response = append(response, urgency.ToResponse())
 	}
 
-	h.log.Infof("Successfully retrieved %d urgencies", len(response))
+	reqLog.Infof("Successfully retrieved %d urgencies", len(response))
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -119,25 +123,26 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 // @Success 200 {object} urgencyV1.UrgencyResponse
 // @Router /urgencies/{id} [get]
 func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
-	h.log.Info("Received Get Urgency request")
+	reqLog := h.log.WithContext(requestContext(ctx))
+	reqLog.Info("Received Get Urgency request")
 
 	idParam := ctx.Param("id")
 	urgencyID, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
-		h.log.Errorf("invalid urgency ID: %v", err)
+		reqLog.Errorf("invalid urgency ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
 		return
 	}
 
 	urgency, err := h.svc.GetUrgencyByID(uint(urgencyID))
 	if err != nil {
-		h.log.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
+		reqLog.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
 		return
 	}
 
 	response := urgency.ToResponse()
-	h.log.Infof("Successfully retrieved urgency with ID %d", urgencyID)
+	reqLog.Infof("Successfully retrieved urgency with ID %d", urgencyID)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -153,32 +158,33 @@ func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 // @Success 200 {object} urgencyV1.UrgencyResponse
 // @Router /urgencies/{id} [put]
 func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
-	h.log.Info("Received Update Urgency request")
+	reqLog := h.log.WithContext(requestContext(ctx))
+	reqLog.Info("Received Update Urgency request")
 
 	idParam := ctx.Param("id")
 	urgencyID, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
-		h.log.Errorf("invalid urgency ID: %v", err)
+		reqLog.Errorf("invalid urgency ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
 		return
 	}
 
 	var req urgencyV1.UrgencyUpdateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		h.log.Errorf("failed to bind JSON: %v", err)
+		reqLog.Errorf("failed to bind JSON: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := req.Validate(); err != nil {
-		h.log.Errorf("validation failed: %v", err)
+		reqLog.Errorf("validation failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	urgency, err := h.svc.GetUrgencyByID(uint(urgencyID))
 	if err != nil {
-		h.log.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
+		reqLog.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
 		return
 	}
@@ -186,13 +192,13 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 	urgency.UpdateWithRequest(&req)
 
 	if err := h.svc.UpdateUrgency(urgency); err != nil {
-		h.log.Errorf("failed to update urgency: %v", err)
+		reqLog.Errorf("failed to update urgency: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.UPDATE_FAILED", "details": err.Error()})
 		return
 	}
 
 	response := urgency.ToResponse()
-	h.log.Infof("Successfully updated urgency with ID %d", urgencyID)
+	reqLog.Infof("Successfully updated urgency with ID %d", urgencyID)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -205,23 +211,24 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 // @Success 204
 // @Router /urgencies/{id} [delete]
 func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
-	h.log.Info("Received Delete Urgency request")
+	reqLog := h.log.WithContext(requestContext(ctx))
+	reqLog.Info("Received Delete Urgency request")
 
 	idParam := ctx.Param("id")
 	urgencyID, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
-		h.log.Errorf("invalid urgency ID: %v", err)
+		reqLog.Errorf("invalid urgency ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
 		return
 	}
 
 	if err := h.svc.DeleteUrgency(uint(urgencyID)); err != nil {
-		h.log.Errorf("failed to delete urgency with ID %d: %v", urgencyID, err)
+		reqLog.Errorf("failed to delete urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.DELETE_FAILED", "details": err.Error()})
 		return
 	}
 
-	h.log.Infof("Successfully deleted urgency with ID %d", urgencyID)
+	reqLog.Infof("Successfully deleted urgency with ID %d", urgencyID)
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
@@ -233,15 +240,16 @@ func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
 // @Success 204
 // @Router /admin/urgencies/reset [delete]
 func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
-	h.log.Info("Received Reset All Data request")
+	log := h.log.WithContext(requestContext(ctx))
+	log.Info("Received Reset All Data request")
 
 	if err := h.svc.ResetAllData(); err != nil {
-		h.log.Errorf("failed to reset all data: %v", err)
+		log.Errorf("failed to reset all data: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.RESET_FAILED", "details": err.Error()})
 		return
 	}
 
-	h.log.Info("Successfully reset all urgency data")
+	log.Info("Successfully reset all urgency data")
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
@@ -257,21 +265,24 @@ func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
 // @Failure 404 {object} map[string]interface{}
 // @Router /urgencies/{id}/assign [post]
 func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
+	log := h.log.WithContext(requestContext(ctx))
+	log.Info("Received Assign Urgency request")
+
 	idParam := ctx.Param("id")
 	urgencyID64, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil || urgencyID64 == 0 {
-		h.log.Errorf("invalid urgency ID: %v", err)
+		log.Errorf("invalid urgency ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
 		return
 	}
 	var req urgencyV1.AssignmentCreateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		h.log.Errorf("failed to bind json: %v", err)
+		log.Errorf("failed to bind json: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 	if appErr := h.svc.AssignUrgency(uint(urgencyID64), req.EmployeeID); appErr != nil {
-		h.log.Errorf("assign failed: %v", appErr)
+		log.Errorf("assign failed: %v", appErr)
 		if aerr, ok := appErr.(*commonv1.AppError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": aerr.Code, "details": aerr.Error()})
 			return
@@ -280,6 +291,8 @@ func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"status": "assigned"})
+
+	log.Info("Successfully assigned urgency")
 }
 
 // UnassignUrgency Уклањање доделе ургентне ситуације (админ)
@@ -292,10 +305,13 @@ func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
 // @Failure 400 {object} map[string]interface{}
 // @Router /urgencies/{id}/assign [delete]
 func (h *urgencyHandler) UnassignUrgency(ctx *gin.Context) {
+	log := h.log.WithContext(requestContext(ctx))
+	log.Info("Received Unassign Urgency request")
+
 	idParam := ctx.Param("id")
 	urgencyID64, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil || urgencyID64 == 0 {
-		h.log.Errorf("invalid urgency ID: %v", err)
+		log.Errorf("invalid urgency ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
 		return
 	}
@@ -304,11 +320,13 @@ func (h *urgencyHandler) UnassignUrgency(ctx *gin.Context) {
 	actorID, _ := actorIDVal.(uint)
 	isAdmin := roleVal == "Administrator"
 	if err := h.svc.UnassignUrgency(uint(urgencyID64), actorID, isAdmin); err != nil {
-		h.log.Errorf("unassign failed: %v", err)
+		log.Errorf("unassign failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusNoContent, nil)
+
+	log.Info("Successfully unassigned urgency")
 }
 
 // CloseUrgency Затварање ургентне ситуације (админ)
@@ -321,10 +339,13 @@ func (h *urgencyHandler) UnassignUrgency(ctx *gin.Context) {
 // @Failure 400 {object} map[string]interface{}
 // @Router /urgencies/{id}/close [put]
 func (h *urgencyHandler) CloseUrgency(ctx *gin.Context) {
+	log := h.log.WithContext(requestContext(ctx))
+	log.Info("Received Close Urgency request")
+
 	idParam := ctx.Param("id")
 	urgencyID64, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil || urgencyID64 == 0 {
-		h.log.Errorf("invalid urgency ID: %v", err)
+		log.Errorf("invalid urgency ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
 		return
 	}
@@ -333,7 +354,7 @@ func (h *urgencyHandler) CloseUrgency(ctx *gin.Context) {
 	actorID, _ := actorIDVal.(uint)
 	isAdmin := roleVal == "Administrator"
 	if err := h.svc.CloseUrgency(uint(urgencyID64), actorID, isAdmin); err != nil {
-		h.log.Errorf("close failed: %v", err)
+		log.Errorf("close failed: %v", err)
 		if aerr, ok := err.(*commonv1.AppError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": aerr.Code, "details": aerr.Error()})
 			return
@@ -342,4 +363,13 @@ func (h *urgencyHandler) CloseUrgency(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusNoContent, nil)
+
+	log.Info("Successfully closed urgency")
+}
+
+func requestContext(ctx *gin.Context) context.Context {
+	if ctx != nil && ctx.Request != nil {
+		return ctx.Request.Context()
+	}
+	return context.Background()
 }

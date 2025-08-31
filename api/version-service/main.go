@@ -36,7 +36,7 @@ func main() {
 	r.GET("/api/v1/version", versionHandler)
 
 	r.GET("/api/v1/health", func(c *gin.Context) {
-		log.Info("Health endpoint hit")
+		log.WithContext(c.Request.Context()).Info("Health endpoint hit")
 		c.JSON(200, gin.H{"message": "Service is healthy", "service": "version"})
 	})
 
@@ -69,6 +69,8 @@ func main() {
 }
 
 func versionHandler(c *gin.Context) {
+	log, _ := utils.NewLogger("version-service")
+	log = log.WithContext(c.Request.Context())
 	response := map[string]string{
 		"version": Version,
 		"gitSHA":  GitSHA,
