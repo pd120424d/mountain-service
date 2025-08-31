@@ -113,6 +113,7 @@ func main() {
 	docs := r.Group("/docs")
 	{
 		docs.GET("/swagger-config.json", func(c *gin.Context) {
+			c.Header("Cache-Control", "public, max-age=60")
 			urls := make([]map[string]string, 0, len(cfg.Services))
 			for _, s := range cfg.Services {
 				if checkHealth(s.BaseURL, s.HealthPath) {
@@ -191,6 +192,7 @@ func main() {
 				// Fallback to original if rewrite fails
 				rewritten = b
 			}
+			c.Header("Cache-Control", "public, max-age=60")
 			c.Data(http.StatusOK, "application/json", rewritten)
 		})
 

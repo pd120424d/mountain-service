@@ -16,8 +16,6 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/stretchr/testify v1.10.0
-	github.com/swaggo/files v1.0.1
-	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.5
 	go.uber.org/mock v0.4.0
 	go.uber.org/zap v1.27.0

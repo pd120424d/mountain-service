@@ -5,8 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/swag"
 )
 
@@ -31,14 +29,6 @@ func SetupHealthEndpoint(log utils.Logger, r *gin.Engine, serviceName string) {
 
 func SetupSwaggerEndpoints(log utils.Logger, r *gin.Engine, config RouteConfig) {
 	log.Info("Setting up swagger endpoints")
-
-	// Standard swagger setup for all services
-	r.GET("/swagger/*any", func(c *gin.Context) {
-		log.Infof("Swagger request: %s %s from %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
-		ginSwagger.WrapHandler(swaggerFiles.Handler,
-			ginSwagger.URL("swagger.json"),
-		)(c)
-	})
 
 	// Setup swagger.json endpoint - serve dynamically generated swagger spec with correct host
 	r.GET("/swagger.json", func(c *gin.Context) {
