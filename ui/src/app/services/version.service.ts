@@ -4,8 +4,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface VersionInfo {
-    version: string;
-    gitSHA: string;
+    version: string;       
+    gitSHA: string;        
+    gitFullSHA?: string;  
+    gitTag?: string;       
     uptime: string;
 }
 
