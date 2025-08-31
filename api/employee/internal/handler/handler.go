@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -76,6 +77,14 @@ func NewEmployeeHandler(log utils.Logger, employeeService service.EmployeeServic
 	}
 }
 
+// requestContext safely extracts a context from gin.Context; falls back to Background.
+func requestContext(ctx *gin.Context) context.Context {
+	if ctx != nil && ctx.Request != nil {
+		return ctx.Request.Context()
+	}
+	return context.Background()
+}
+
 // RegisterEmployee Креирање новог запосленог
 // @Summary Креирање новог запосленог
 // @Description Креирање новог запосленог у систему
@@ -88,7 +97,8 @@ func NewEmployeeHandler(log utils.Logger, employeeService service.EmployeeServic
 // @Failure 400 {object} ErrorResponse
 // @Router /employees [post]
 func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
-	h.log.Info("Received Register Employee request")
+	reqLog := h.log.WithContext(requestContext(ctx))
+	reqLog.Info("Received Register Employee request")
 
 	req := &employeeV1.EmployeeCreateRequest{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -97,14 +107,14 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	}
 
 	if err := req.Validate(); err != nil {
-		h.log.Errorf("validation failed: %v", err)
+		reqLog.Errorf("validation failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	response, err := h.emplService.RegisterEmployee(*req)
+	response, err := h.emplService.RegisterEmployee(requestContext(ctx), *req)
 	if err != nil {
-		h.log.Errorf("failed to register employee: %v", err)
+		reqLog.Errorf("failed to register employee: %v", err)
 
 		// Handle specific error types
 		switch err.Error() {
@@ -131,6 +141,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 		return
 	}
 
+	reqLog.Infof("Successfully registered employee with username %s", response.Username)
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -146,9 +157,11 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 // @Router /login [post]
 func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	var req employeeV1.EmployeeLogin
-	h.log.Info("Received Login Employee request")
+	reqLog := h.log.WithContext(requestContext(ctx))
+	reqLog.Info("Received Login Employee request")
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		reqLog.Errorf("Failed to bind login request: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
 		return
 	}
@@ -180,7 +193,7 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		return
 	}
 
-	token, err := h.emplService.LoginEmployee(req)
+	token, err := h.emplService.LoginEmployee(requestContext(ctx), req)
 	if err != nil {
 		h.log.Errorf("failed to login employee: %v", err)
 
@@ -207,11 +220,12 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 // @Failure 500 {object} ErrorResponse
 // @Router /logout [post]
 func (h *employeeHandler) LogoutEmployee(ctx *gin.Context) {
-	h.log.Info("Received Logout Employee request")
+	reqLog := h.log.WithContext(requestContext(ctx))
+	reqLog.Info("Received Logout Employee request")
 
 	tokenID, exists := ctx.Get("tokenID")
 	if !exists {
-		h.log.Error("Token ID not found in context")
+		reqLog.Error("Token ID not found in context")
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
@@ -238,7 +252,7 @@ func (h *employeeHandler) LogoutEmployee(ctx *gin.Context) {
 		expiresAny = claims.ExpiresAt.Time
 	}
 	expiresAt, _ := expiresAny.(time.Time)
-	if err := h.emplService.LogoutEmployee(tokenIDStr, expiresAt); err != nil {
+	if err := h.emplService.LogoutEmployee(requestContext(ctx), tokenIDStr, expiresAt); err != nil {
 		h.log.Errorf("failed to logout employee: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to logout"})
 		return
@@ -303,7 +317,7 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 		return
 	}
 
-	token, err := h.emplService.LoginEmployee(req)
+	token, err := h.emplService.LoginEmployee(requestContext(ctx), req)
 	if err != nil {
 		h.log.Errorf("failed to login employee: %v", err)
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
@@ -329,7 +343,7 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 	h.log.Info("Received List Employees request")
 
-	employees, err := h.emplService.ListEmployees()
+	employees, err := h.emplService.ListEmployees(requestContext(ctx))
 	if err != nil {
 		h.log.Errorf("failed to retrieve employees: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve employees"})
@@ -362,7 +376,7 @@ func (h *employeeHandler) GetEmployee(ctx *gin.Context) {
 		return
 	}
 
-	employee, err := h.emplService.GetEmployeeByID(uint(employeeID))
+	employee, err := h.emplService.GetEmployeeByID(requestContext(ctx), uint(employeeID))
 	if err != nil {
 		h.log.Errorf("failed to retrieve employee: %v", err)
 		if strings.Contains(err.Error(), "not found") {
@@ -425,7 +439,7 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 		return
 	}
 
-	response, err := h.emplService.UpdateEmployee(uint(employeeID), req)
+	response, err := h.emplService.UpdateEmployee(requestContext(ctx), uint(employeeID), req)
 	if err != nil {
 		h.log.Errorf("failed to update employee: %v", err)
 
@@ -466,7 +480,7 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 		return
 	}
 
-	err = h.emplService.DeleteEmployee(uint(employeeID))
+	err = h.emplService.DeleteEmployee(requestContext(ctx), uint(employeeID))
 	if err != nil {
 		h.log.Errorf("failed to delete employee: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete employee"})
@@ -672,7 +686,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 	h.log.Warn("Admin data reset request received")
 
-	err := h.emplService.ResetAllData()
+	err := h.emplService.ResetAllData(requestContext(ctx))
 	if err != nil {
 		h.log.Errorf("Failed to reset all data: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset data"})
@@ -787,7 +801,7 @@ func (h *employeeHandler) CheckActiveEmergencies(ctx *gin.Context) {
 	h.log.Infof("Checking active emergencies for employee %d", employeeID)
 
 	// Check if employee exists
-	_, err = h.emplService.GetEmployeeByID(uint(employeeID))
+	_, err = h.emplService.GetEmployeeByID(requestContext(ctx), uint(employeeID))
 	if err != nil {
 		h.log.Errorf("Employee not found: %v", err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})

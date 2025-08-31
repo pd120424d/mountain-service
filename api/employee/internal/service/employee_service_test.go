@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -36,7 +37,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 			ProfileType: "InvalidType",
 		}
 
-		response, err := service.RegisterEmployee(req)
+		response, err := service.RegisterEmployee(context.Background(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -67,7 +68,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		}
 		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return(existingEmployees, nil)
 
-		response, err := service.RegisterEmployee(req)
+		response, err := service.RegisterEmployee(context.Background(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -101,7 +102,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		}
 		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return(existingEmployees, nil)
 
-		response, err := service.RegisterEmployee(req)
+		response, err := service.RegisterEmployee(context.Background(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -131,7 +132,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		// Mock email check (no existing users)
 		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{}, nil)
 
-		response, err := service.RegisterEmployee(req)
+		response, err := service.RegisterEmployee(context.Background(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -163,7 +164,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		// Mock database creation failure
 		emplRepoMock.EXPECT().Create(gomock.Any()).Return(assert.AnError)
 
-		response, err := service.RegisterEmployee(req)
+		response, err := service.RegisterEmployee(context.Background(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -201,7 +202,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 			return nil
 		})
 
-		response, err := service.RegisterEmployee(req)
+		response, err := service.RegisterEmployee(context.Background(), req)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -235,7 +236,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().GetEmployeeByUsername("nonexistent").Return(nil, assert.AnError)
 
-		token, err := service.LoginEmployee(req)
+		token, err := service.LoginEmployee(context.Background(), req)
 
 		assert.Error(t, err)
 		assert.Empty(t, token)
@@ -265,7 +266,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().GetEmployeeByUsername("testuser").Return(employee, nil)
 
-		token, err := service.LoginEmployee(req)
+		token, err := service.LoginEmployee(context.Background(), req)
 
 		assert.Error(t, err)
 		assert.Empty(t, token)
@@ -288,7 +289,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().GetEmployeeByUsername("testuser").Return(nil, assert.AnError)
 
-		token, err := service.LoginEmployee(req)
+		token, err := service.LoginEmployee(context.Background(), req)
 
 		assert.Error(t, err)
 		assert.Empty(t, token)
@@ -318,7 +319,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().GetEmployeeByUsername("testuser").Return(employee, nil)
 
-		token, err := service.LoginEmployee(req)
+		token, err := service.LoginEmployee(context.Background(), req)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, token)
@@ -342,7 +343,7 @@ func TestEmployeeService_LogoutEmployee(t *testing.T) {
 		mockBlacklist.EXPECT().BlacklistToken(gomock.Any(), tokenID, expiresAt).Return(nil)
 		service := NewEmployeeService(log, emplRepoMock, mockBlacklist)
 
-		err := service.LogoutEmployee(tokenID, expiresAt)
+		err := service.LogoutEmployee(context.Background(), tokenID, expiresAt)
 
 		assert.NoError(t, err)
 	})
@@ -360,7 +361,7 @@ func TestEmployeeService_LogoutEmployee(t *testing.T) {
 		tokenID := "test-token-123"
 		expiresAt := time.Now().Add(time.Hour)
 
-		err := service.LogoutEmployee(tokenID, expiresAt)
+		err := service.LogoutEmployee(context.Background(), tokenID, expiresAt)
 
 		assert.NoError(t, err) // Should not error even without blacklist
 	})
@@ -382,7 +383,7 @@ func TestEmployeeService_LogoutEmployee(t *testing.T) {
 		tokenID := "test-token-123"
 		expiresAt := time.Now().Add(time.Hour)
 
-		err := service.LogoutEmployee(tokenID, expiresAt)
+		err := service.LogoutEmployee(context.Background(), tokenID, expiresAt)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to logout")
@@ -403,7 +404,7 @@ func TestEmployeeService_ListEmployees(t *testing.T) {
 
 		emplRepoMock.EXPECT().GetAll().Return(nil, assert.AnError)
 
-		employees, err := service.ListEmployees()
+		employees, err := service.ListEmployees(context.Background())
 
 		assert.Error(t, err)
 		assert.Nil(t, employees)
@@ -440,7 +441,7 @@ func TestEmployeeService_ListEmployees(t *testing.T) {
 
 		emplRepoMock.EXPECT().GetAll().Return(employees, nil)
 
-		response, err := service.ListEmployees()
+		response, err := service.ListEmployees(context.Background())
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -472,7 +473,7 @@ func TestEmployeeService_UpdateEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(assert.AnError)
 
-		response, err := service.UpdateEmployee(1, req)
+		response, err := service.UpdateEmployee(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -507,7 +508,7 @@ func TestEmployeeService_UpdateEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().UpdateEmployee(gomock.Any()).Return(assert.AnError)
 
-		response, err := service.UpdateEmployee(1, req)
+		response, err := service.UpdateEmployee(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -542,7 +543,7 @@ func TestEmployeeService_UpdateEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().UpdateEmployee(gomock.Any()).Return(nil)
 
-		response, err := service.UpdateEmployee(1, req)
+		response, err := service.UpdateEmployee(context.Background(), 1, req)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -565,7 +566,7 @@ func TestEmployeeService_DeleteEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().Delete(uint(1)).Return(assert.AnError)
 
-		err := service.DeleteEmployee(1)
+		err := service.DeleteEmployee(context.Background(), 1)
 
 		assert.Error(t, err)
 		assert.Equal(t, "failed to delete employee", err.Error())
@@ -582,7 +583,7 @@ func TestEmployeeService_DeleteEmployee(t *testing.T) {
 
 		emplRepoMock.EXPECT().Delete(uint(1)).Return(nil)
 
-		err := service.DeleteEmployee(1)
+		err := service.DeleteEmployee(context.Background(), 1)
 
 		assert.NoError(t, err)
 	})
@@ -602,7 +603,7 @@ func TestEmployeeService_GetEmployeeByID(t *testing.T) {
 
 		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(assert.AnError)
 
-		employee, err := service.GetEmployeeByID(1)
+		employee, err := service.GetEmployeeByID(context.Background(), 1)
 
 		assert.Error(t, err)
 		assert.Nil(t, employee)
@@ -630,7 +631,7 @@ func TestEmployeeService_GetEmployeeByID(t *testing.T) {
 			return nil
 		})
 
-		employee, err := service.GetEmployeeByID(1)
+		employee, err := service.GetEmployeeByID(context.Background(), 1)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, employee)
@@ -653,7 +654,7 @@ func TestEmployeeService_GetEmployeeByUsername(t *testing.T) {
 
 		emplRepoMock.EXPECT().GetEmployeeByUsername("nonexistent").Return(nil, assert.AnError)
 
-		employee, err := service.GetEmployeeByUsername("nonexistent")
+		employee, err := service.GetEmployeeByUsername(context.Background(), "nonexistent")
 
 		assert.Error(t, err)
 		assert.Nil(t, employee)
@@ -678,7 +679,7 @@ func TestEmployeeService_GetEmployeeByUsername(t *testing.T) {
 
 		emplRepoMock.EXPECT().GetEmployeeByUsername("testuser").Return(expectedEmployee, nil)
 
-		employee, err := service.GetEmployeeByUsername("testuser")
+		employee, err := service.GetEmployeeByUsername(context.Background(), "testuser")
 
 		assert.NoError(t, err)
 		assert.NotNil(t, employee)
@@ -701,7 +702,7 @@ func TestEmployeeService_ResetAllData(t *testing.T) {
 
 		emplRepoMock.EXPECT().ResetAllData().Return(assert.AnError)
 
-		err := service.ResetAllData()
+		err := service.ResetAllData(context.Background())
 
 		assert.Error(t, err)
 		assert.Equal(t, "failed to reset data", err.Error())
@@ -718,7 +719,7 @@ func TestEmployeeService_ResetAllData(t *testing.T) {
 
 		emplRepoMock.EXPECT().ResetAllData().Return(nil)
 
-		err := service.ResetAllData()
+		err := service.ResetAllData(context.Background())
 
 		assert.NoError(t, err)
 	})

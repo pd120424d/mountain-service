@@ -86,7 +86,7 @@ func TestFileHandler_UploadProfilePicture(t *testing.T) {
 
 				// Expect employee service to be called to update profile picture URL
 				mockEmployee.EXPECT().
-					UpdateEmployee(uint(123), gomock.Any()).
+					UpdateEmployee(gomock.Any(), uint(123), gomock.Any()).
 					Return(&employeeV1.EmployeeResponse{ID: 123}, nil)
 			},
 			setupRequest: func() *http.Request {

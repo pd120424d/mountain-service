@@ -27,12 +27,13 @@ func NewEmployeeService(log utils.Logger, emplRepo repositories.EmployeeReposito
 	}
 }
 
-func (s *employeeService) RegisterEmployee(req employeeV1.EmployeeCreateRequest) (*employeeV1.EmployeeResponse, error) {
-	s.log.Infof("Creating new employee with data: %s", req.ToString())
+func (s *employeeService) RegisterEmployee(ctx context.Context, req employeeV1.EmployeeCreateRequest) (*employeeV1.EmployeeResponse, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Creating new employee with data: %s", req.ToString())
 
 	profileType := model.ProfileTypeFromString(req.ProfileType)
 	if !profileType.Valid() {
-		s.log.Errorf("invalid profile type: %s", req.ProfileType)
+		log.Errorf("invalid profile type: %s", req.ProfileType)
 		return nil, fmt.Errorf("invalid profile type")
 	}
 
@@ -54,11 +55,11 @@ func (s *employeeService) RegisterEmployee(req employeeV1.EmployeeCreateRequest)
 	}
 	existingEmployees, err := s.emplRepo.ListEmployees(usernameFilter)
 	if err != nil {
-		s.log.Errorf("failed to register employee, checking for employee with username failed: %v", err)
+		log.Errorf("failed to register employee, checking for employee with username failed: %v", err)
 		return nil, fmt.Errorf("failed to check for existing username")
 	}
 	if len(existingEmployees) > 0 {
-		s.log.Errorf("failed to register employee: username %s already exists", employee.Username)
+		log.Errorf("failed to register employee: username %s already exists", employee.Username)
 		return nil, fmt.Errorf("username already exists")
 	}
 
@@ -68,23 +69,23 @@ func (s *employeeService) RegisterEmployee(req employeeV1.EmployeeCreateRequest)
 	}
 	existingEmployees, err = s.emplRepo.ListEmployees(emailFilter)
 	if err != nil {
-		s.log.Errorf("failed to register employee, checking for employee with email failed: %v", err)
+		log.Errorf("failed to register employee, checking for employee with email failed: %v", err)
 		return nil, fmt.Errorf("failed to check for existing email")
 	}
 	if len(existingEmployees) > 0 {
-		s.log.Errorf("failed to register employee: email %s already exists", employee.Email)
+		log.Errorf("failed to register employee: email %s already exists", employee.Email)
 		return nil, fmt.Errorf("email already exists")
 	}
 
 	// Validate password
 	if err := utils.ValidatePassword(employee.Password); err != nil {
-		s.log.Errorf("failed to validate password: %v", err)
+		log.Errorf("failed to validate password: %v", err)
 		return nil, err
 	}
 
 	// Create employee
 	if err := s.emplRepo.Create(&employee); err != nil {
-		s.log.Errorf("failed to create employee: %v", err)
+		log.Errorf("failed to create employee: %v", err)
 		// Propagate specific database errors
 		if strings.Contains(err.Error(), "invalid db") {
 			return nil, fmt.Errorf("invalid db")
@@ -104,58 +105,60 @@ func (s *employeeService) RegisterEmployee(req employeeV1.EmployeeCreateRequest)
 		ProfileType:    employee.ProfileType.String(),
 	}
 
-	s.log.Infof("Successfully created employee with ID %d", employee.ID)
+	log.Infof("Successfully created employee with ID %d", employee.ID)
 	return response, nil
 }
 
-func (s *employeeService) LoginEmployee(req employeeV1.EmployeeLogin) (string, error) {
-	s.log.Info("Processing employee login")
+func (s *employeeService) LoginEmployee(ctx context.Context, req employeeV1.EmployeeLogin) (string, error) {
+	log := s.log.WithContext(ctx)
+	log.Info("Processing employee login")
 
 	employee, err := s.emplRepo.GetEmployeeByUsername(req.Username)
 	if err != nil {
-		s.log.Errorf("failed to retrieve employee: %v", err)
+		log.Errorf("failed to retrieve employee: %v", err)
 		return "", fmt.Errorf("invalid credentials")
 	}
 
 	if !sharedAuth.CheckPassword(employee.Password, req.Password) {
-		s.log.Error("failed to verify password")
+		log.Error("failed to verify password")
 		return "", fmt.Errorf("invalid credentials")
 	}
 
 	token, err := sharedAuth.GenerateJWT(employee.ID, employee.Role())
 	if err != nil {
-		s.log.Errorf("failed to generate token: %v", err)
+		log.Errorf("failed to generate token: %v", err)
 		return "", fmt.Errorf("failed to generate token")
 	}
 
-	s.log.Info("Successfully validated employee and generated JWT token")
+	log.Info("Successfully validated employee and generated JWT token")
 	return token, nil
 }
 
-func (s *employeeService) LogoutEmployee(tokenID string, expiresAt time.Time) error {
-	s.log.Info("Processing employee logout")
+func (s *employeeService) LogoutEmployee(ctx context.Context, tokenID string, expiresAt time.Time) error {
+	log := s.log.WithContext(ctx)
+	log.Info("Processing employee logout")
 
 	if s.blacklist == nil {
 		s.log.Warn("Token blacklist not available, logout will not invalidate token")
 		return nil
 	}
 
-	ctx := context.Background()
 	if err := s.blacklist.BlacklistToken(ctx, tokenID, expiresAt); err != nil {
-		s.log.Errorf("failed to blacklist token: %v", err)
+		log.Errorf("failed to blacklist token: %v", err)
 		return fmt.Errorf("failed to logout: %w", err)
 	}
 
-	s.log.Info("Successfully logged out employee and blacklisted token")
+	log.Info("Successfully logged out employee and blacklisted token")
 	return nil
 }
 
-func (s *employeeService) ListEmployees() ([]employeeV1.EmployeeResponse, error) {
-	s.log.Info("Retrieving list of employees")
+func (s *employeeService) ListEmployees(ctx context.Context) ([]employeeV1.EmployeeResponse, error) {
+	log := s.log.WithContext(ctx)
+	log.Info("Retrieving list of employees")
 
 	employees, err := s.emplRepo.GetAll()
 	if err != nil {
-		s.log.Errorf("failed to retrieve employees: %v", err)
+		log.Errorf("failed to retrieve employees: %v", err)
 		// Propagate specific database errors
 		if strings.Contains(err.Error(), "record not found") {
 			return nil, fmt.Errorf("record not found")
@@ -178,76 +181,81 @@ func (s *employeeService) ListEmployees() ([]employeeV1.EmployeeResponse, error)
 		})
 	}
 
-	s.log.Infof("Successfully retrieved %d employees", len(response))
+	log.Infof("Successfully retrieved %d employees", len(response))
 	return response, nil
 }
 
-func (s *employeeService) UpdateEmployee(employeeID uint, req employeeV1.EmployeeUpdateRequest) (*employeeV1.EmployeeResponse, error) {
-	s.log.Infof("Updating employee with ID %d", employeeID)
+func (s *employeeService) UpdateEmployee(ctx context.Context, employeeID uint, req employeeV1.EmployeeUpdateRequest) (*employeeV1.EmployeeResponse, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Updating employee with ID %d", employeeID)
 
 	var employee model.Employee
 	if err := s.emplRepo.GetEmployeeByID(employeeID, &employee); err != nil {
-		s.log.Errorf("failed to get employee: %v", err)
+		log.Errorf("failed to get employee: %v", err)
 		return nil, fmt.Errorf("employee not found")
 	}
 
 	model.MapUpdateRequestToEmployee(&req, &employee)
 
 	if err := s.emplRepo.UpdateEmployee(&employee); err != nil {
-		s.log.Errorf("failed to update employee: %v", err)
+		log.Errorf("failed to update employee: %v", err)
 		return nil, fmt.Errorf("failed to update employee")
 	}
 
 	response := employee.UpdateResponseFromEmployee()
-	s.log.Infof("Successfully updated employee with ID %d", employeeID)
+	log.Infof("Successfully updated employee with ID %d", employeeID)
 	return &response, nil
 }
 
-func (s *employeeService) DeleteEmployee(employeeID uint) error {
-	s.log.Infof("Deleting employee with ID %d", employeeID)
+func (s *employeeService) DeleteEmployee(ctx context.Context, employeeID uint) error {
+	log := s.log.WithContext(ctx)
+	log.Infof("Deleting employee with ID %d", employeeID)
 
 	if err := s.emplRepo.Delete(employeeID); err != nil {
-		s.log.Errorf("failed to delete employee: %v", err)
+		log.Errorf("failed to delete employee: %v", err)
 		return fmt.Errorf("failed to delete employee")
 	}
 
-	s.log.Infof("Employee with ID %d was deleted", employeeID)
+	log.Infof("Employee with ID %d was deleted", employeeID)
 	return nil
 }
 
-func (s *employeeService) GetEmployeeByID(employeeID uint) (*model.Employee, error) {
-	s.log.Infof("Getting employee by ID %d", employeeID)
+func (s *employeeService) GetEmployeeByID(ctx context.Context, employeeID uint) (*model.Employee, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Getting employee by ID %d", employeeID)
 
 	var employee model.Employee
 	if err := s.emplRepo.GetEmployeeByID(employeeID, &employee); err != nil {
-		s.log.Errorf("failed to get employee: %v", err)
+		log.Errorf("failed to get employee: %v", err)
 		return nil, fmt.Errorf("employee not found")
 	}
 
 	return &employee, nil
 }
 
-func (s *employeeService) GetEmployeeByUsername(username string) (*model.Employee, error) {
-	s.log.Infof("Getting employee by username %s", username)
+func (s *employeeService) GetEmployeeByUsername(ctx context.Context, username string) (*model.Employee, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Getting employee by username %s", username)
 
 	employee, err := s.emplRepo.GetEmployeeByUsername(username)
 	if err != nil {
-		s.log.Errorf("failed to get employee: %v", err)
+		log.Errorf("failed to get employee: %v", err)
 		return nil, fmt.Errorf("employee not found")
 	}
 
 	return employee, nil
 }
 
-func (s *employeeService) ResetAllData() error {
-	s.log.Warn("Resetting all employee data")
+func (s *employeeService) ResetAllData(ctx context.Context) error {
+	log := s.log.WithContext(ctx)
+	log.Warn("Resetting all employee data")
 
 	err := s.emplRepo.ResetAllData()
 	if err != nil {
-		s.log.Errorf("Failed to reset all data: %v", err)
+		log.Errorf("Failed to reset all data: %v", err)
 		return fmt.Errorf("failed to reset data")
 	}
 
-	s.log.Info("Successfully reset all employee data")
+	log.Info("Successfully reset all employee data")
 	return nil
 }

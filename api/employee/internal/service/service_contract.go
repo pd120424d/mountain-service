@@ -3,6 +3,7 @@ package service
 //go:generate mockgen -source=service.go -destination=service_gomock.go -package=service -imports=gomock=go.uber.org/mock/gomock
 
 import (
+	"context"
 	"time"
 
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
@@ -23,13 +24,13 @@ type ShiftService interface {
 
 // EmployeeService handles employee CRUD operations
 type EmployeeService interface {
-	RegisterEmployee(req employeeV1.EmployeeCreateRequest) (*employeeV1.EmployeeResponse, error)
-	LoginEmployee(req employeeV1.EmployeeLogin) (string, error)
-	LogoutEmployee(tokenID string, expiresAt time.Time) error
-	ListEmployees() ([]employeeV1.EmployeeResponse, error)
-	UpdateEmployee(employeeID uint, req employeeV1.EmployeeUpdateRequest) (*employeeV1.EmployeeResponse, error)
-	DeleteEmployee(employeeID uint) error
-	GetEmployeeByID(employeeID uint) (*model.Employee, error)
-	GetEmployeeByUsername(username string) (*model.Employee, error)
-	ResetAllData() error
+	RegisterEmployee(ctx context.Context, req employeeV1.EmployeeCreateRequest) (*employeeV1.EmployeeResponse, error)
+	LoginEmployee(ctx context.Context, req employeeV1.EmployeeLogin) (string, error)
+	LogoutEmployee(ctx context.Context, tokenID string, expiresAt time.Time) error
+	ListEmployees(ctx context.Context) ([]employeeV1.EmployeeResponse, error)
+	UpdateEmployee(ctx context.Context, employeeID uint, req employeeV1.EmployeeUpdateRequest) (*employeeV1.EmployeeResponse, error)
+	DeleteEmployee(ctx context.Context, employeeID uint) error
+	GetEmployeeByID(ctx context.Context, employeeID uint) (*model.Employee, error)
+	GetEmployeeByUsername(ctx context.Context, username string) (*model.Employee, error)
+	ResetAllData(ctx context.Context) error
 }

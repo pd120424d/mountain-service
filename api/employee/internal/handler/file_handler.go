@@ -92,7 +92,7 @@ func (h *fileHandler) UploadProfilePicture(ctx *gin.Context) {
 		ProfilePicture: result.BlobURL,
 	}
 
-	_, err = h.employeeService.UpdateEmployee(uint(employeeID), updateRequest)
+	_, err = h.employeeService.UpdateEmployee(ctx.Request.Context(), uint(employeeID), updateRequest)
 	if err != nil {
 		h.log.Errorf("Failed to update employee profile picture URL: %v", err)
 		// Note: We don't return an error here because the upload was successful

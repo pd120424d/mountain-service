@@ -132,7 +132,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 			ctx.Request = httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(payload))
 			ctx.Request.Header.Set("Content-Type", "application/json")
 
-			mockEmplSvc.EXPECT().RegisterEmployee(req).Return(nil, test.err)
+			mockEmplSvc.EXPECT().RegisterEmployee(gomock.Any(), req).Return(nil, test.err)
 
 			handler.RegisterEmployee(ctx)
 
@@ -176,7 +176,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 			Email:     "test@example.com",
 		}
 
-		mockEmplSvc.EXPECT().RegisterEmployee(req).Return(response, nil)
+		mockEmplSvc.EXPECT().RegisterEmployee(gomock.Any(), req).Return(response, nil)
 
 		handler.RegisterEmployee(ctx)
 
@@ -302,7 +302,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		mockEmplSvc.EXPECT().LoginEmployee(req).Return("", fmt.Errorf("invalid credentials"))
+		mockEmplSvc.EXPECT().LoginEmployee(gomock.Any(), req).Return("", fmt.Errorf("invalid credentials"))
 
 		handler.LoginEmployee(ctx)
 
@@ -331,7 +331,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		mockEmplSvc.EXPECT().LoginEmployee(req).Return("", fmt.Errorf("any other error"))
+		mockEmplSvc.EXPECT().LoginEmployee(gomock.Any(), req).Return("", fmt.Errorf("any other error"))
 
 		handler.LoginEmployee(ctx)
 
@@ -360,7 +360,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		mockEmplSvc.EXPECT().LoginEmployee(req).Return("jwt-token", nil)
+		mockEmplSvc.EXPECT().LoginEmployee(gomock.Any(), req).Return("jwt-token", nil)
 
 		handler.LoginEmployee(ctx)
 
@@ -386,12 +386,13 @@ func TestEmployeeHandler_LogoutEmployee(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/logout", nil)
 		expiresAt := time.Now().Add(time.Hour)
 		ctx.Set("tokenID", "token-123")
 		ctx.Set("expiresAt", expiresAt)
 
 		emplServiceMock.EXPECT().
-			LogoutEmployee("token-123", expiresAt).
+			LogoutEmployee(gomock.Any(), "token-123", expiresAt).
 			Return(nil)
 
 		h.LogoutEmployee(ctx)
@@ -491,11 +492,12 @@ func TestEmployeeHandler_LogoutEmployee(t *testing.T) {
 		handler := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
 
 		emplServiceMock.EXPECT().
-			LogoutEmployee("token-123", gomock.AssignableToTypeOf(time.Time{})).
+			LogoutEmployee(gomock.Any(), "token-123", gomock.AssignableToTypeOf(time.Time{})).
 			Return(assert.AnError)
 
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/logout", nil)
 		expiresAt := time.Now().Add(time.Hour)
 		ctx.Set("tokenID", "token-123")
 		ctx.Set("expiresAt", expiresAt)
@@ -638,7 +640,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/oauth2/token", strings.NewReader(formData))
 		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-		mockEmplSvc.EXPECT().LoginEmployee(employeeV1.EmployeeLogin{
+		mockEmplSvc.EXPECT().LoginEmployee(gomock.Any(), employeeV1.EmployeeLogin{
 			Username: "testuser",
 			Password: "Pass123!",
 		}).Return("", fmt.Errorf("invalid credentials provided"))
@@ -667,7 +669,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/oauth2/token", strings.NewReader(formData))
 		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-		mockEmplSvc.EXPECT().LoginEmployee(employeeV1.EmployeeLogin{
+		mockEmplSvc.EXPECT().LoginEmployee(gomock.Any(), employeeV1.EmployeeLogin{
 			Username: "testuser",
 			Password: "Pass123!",
 		}).Return("jwt-token", nil)
@@ -697,7 +699,7 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
-		mockEmplSvc.EXPECT().ListEmployees().Return(nil, fmt.Errorf("any other error"))
+		mockEmplSvc.EXPECT().ListEmployees(gomock.Any()).Return(nil, fmt.Errorf("any other error"))
 
 		handler.ListEmployees(ctx)
 
@@ -728,7 +730,7 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 			},
 		}
 
-		mockEmplSvc.EXPECT().ListEmployees().Return(employees, nil)
+		mockEmplSvc.EXPECT().ListEmployees(gomock.Any()).Return(employees, nil)
 
 		handler.ListEmployees(ctx)
 
@@ -842,7 +844,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 			ctx.Request = httptest.NewRequest(http.MethodPut, "/employees/1", bytes.NewReader(payload))
 			ctx.Request.Header.Set("Content-Type", "application/json")
 
-			mockEmplSvc.EXPECT().UpdateEmployee(uint(1), req).Return(nil, test.err)
+			mockEmplSvc.EXPECT().UpdateEmployee(gomock.Any(), uint(1), req).Return(nil, test.err)
 
 			handler.UpdateEmployee(ctx)
 
@@ -882,7 +884,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 			Email:     "updated@example.com",
 		}
 
-		mockEmplSvc.EXPECT().UpdateEmployee(uint(1), req).Return(response, nil)
+		mockEmplSvc.EXPECT().UpdateEmployee(gomock.Any(), uint(1), req).Return(response, nil)
 
 		handler.UpdateEmployee(ctx)
 
@@ -933,7 +935,7 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1", nil)
 
-		mockEmplSvc.EXPECT().DeleteEmployee(uint(1)).Return(fmt.Errorf("database error"))
+		mockEmplSvc.EXPECT().DeleteEmployee(gomock.Any(), uint(1)).Return(fmt.Errorf("database error"))
 
 		handler.DeleteEmployee(ctx)
 
@@ -957,7 +959,7 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1", nil)
 
-		mockEmplSvc.EXPECT().DeleteEmployee(uint(1)).Return(nil)
+		mockEmplSvc.EXPECT().DeleteEmployee(gomock.Any(), uint(1)).Return(nil)
 
 		handler.DeleteEmployee(ctx)
 
@@ -1582,7 +1584,7 @@ func TestEmployeeHandler_ResetAllData(t *testing.T) {
 
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/admin/reset", nil)
 
-		mockEmplSvc.EXPECT().ResetAllData().Return(fmt.Errorf("database error"))
+		mockEmplSvc.EXPECT().ResetAllData(gomock.Any()).Return(fmt.Errorf("database error"))
 
 		handler.ResetAllData(ctx)
 
@@ -1605,7 +1607,7 @@ func TestEmployeeHandler_ResetAllData(t *testing.T) {
 
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/admin/reset", nil)
 
-		mockEmplSvc.EXPECT().ResetAllData().Return(nil)
+		mockEmplSvc.EXPECT().ResetAllData(gomock.Any()).Return(nil)
 
 		handler.ResetAllData(ctx)
 
@@ -1767,7 +1769,7 @@ func TestEmployeeHandler_CheckActiveEmergencies(t *testing.T) {
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/emergencies", nil)
 
-		mockEmplSvc.EXPECT().GetEmployeeByID(uint(1)).Return(nil, fmt.Errorf("employee not found"))
+		mockEmplSvc.EXPECT().GetEmployeeByID(gomock.Any(), uint(1)).Return(nil, fmt.Errorf("employee not found"))
 
 		handler.CheckActiveEmergencies(ctx)
 
@@ -1797,7 +1799,7 @@ func TestEmployeeHandler_CheckActiveEmergencies(t *testing.T) {
 			Username: "testuser",
 		}
 
-		mockEmplSvc.EXPECT().GetEmployeeByID(uint(1)).Return(employee, nil)
+		mockEmplSvc.EXPECT().GetEmployeeByID(gomock.Any(), uint(1)).Return(employee, nil)
 
 		handler.CheckActiveEmergencies(ctx)
 
@@ -2165,7 +2167,7 @@ func TestEmployeeHandler_GetEmployee(t *testing.T) {
 			ProfileType:    model.Medic,
 		}
 
-		mockEmplSvc.EXPECT().GetEmployeeByID(uint(1)).Return(expectedEmployee, nil)
+		mockEmplSvc.EXPECT().GetEmployeeByID(gomock.Any(), uint(1)).Return(expectedEmployee, nil)
 
 		handler.GetEmployee(ctx)
 
@@ -2216,7 +2218,7 @@ func TestEmployeeHandler_GetEmployee(t *testing.T) {
 		ctx.Params = gin.Params{{Key: "id", Value: "999"}}
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/999", nil)
 
-		mockEmplSvc.EXPECT().GetEmployeeByID(uint(999)).Return(nil, fmt.Errorf("employee not found"))
+		mockEmplSvc.EXPECT().GetEmployeeByID(gomock.Any(), uint(999)).Return(nil, fmt.Errorf("employee not found"))
 
 		handler.GetEmployee(ctx)
 
