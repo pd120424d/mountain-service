@@ -16,9 +16,11 @@ import (
 )
 
 var (
-	Version   = "dev"
-	GitSHA    = "unknown"
-	startTime = time.Now()
+	Version    = "dev"
+	GitSHA     = "unknown"
+	FullGitSHA = "unknown"
+	GitTag     = ""
+	startTime  = time.Now()
 )
 
 func main() {
@@ -71,10 +73,22 @@ func main() {
 func versionHandler(c *gin.Context) {
 	log, _ := utils.NewLogger("version-service")
 	log = log.WithContext(c.Request.Context())
-	response := map[string]string{
-		"version": Version,
-		"gitSHA":  GitSHA,
-		"uptime":  time.Since(startTime).String(),
+
+	// Prefer provided short SHA; if it looks long/unknown, derive from full SHA if available
+	shortSHA := GitSHA
+	if (shortSHA == "" || shortSHA == "unknown") && len(FullGitSHA) >= 8 {
+		shortSHA = FullGitSHA[:8]
+	}
+	if len(shortSHA) > 8 {
+		shortSHA = shortSHA[:8]
+	}
+
+	response := gin.H{
+		"version":    Version,
+		"gitSHA":     shortSHA,
+		"gitFullSHA": FullGitSHA,
+		"gitTag":     GitTag,
+		"uptime":     time.Since(startTime).String(),
 	}
 	c.JSON(http.StatusOK, response)
 }

@@ -227,8 +227,14 @@ jobs:
         if: steps.changes.outputs.version == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd api
+          GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          SHORT_SHA=$(git rev-parse --short=8 HEAD)
+          VERSION_ARG=${GIT_TAG:-$SHORT_SHA}
           docker build -f version-service/Dockerfile -t ghcr.io/pd120424d/version-service:latest \
                        -t ghcr.io/pd120424d/version-service:${{ github.sha }} \
+                       --build-arg VERSION=${VERSION_ARG} \
+                       --build-arg GIT_SHA=${SHORT_SHA} \
+                       --build-arg GIT_TAG=${GIT_TAG} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
                        --no-cache .

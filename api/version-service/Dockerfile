@@ -2,6 +2,7 @@ FROM golang:1.24 AS builder
 
 ARG VERSION
 ARG GIT_SHA
+ARG GIT_TAG
 ARG BUILD_TIMESTAMP
 ARG GIT_COMMIT_SHA
 
@@ -15,7 +16,9 @@ COPY version-service/ ./version-service/
 COPY shared/ ./shared/
 COPY employee/ ./employee/
 
-RUN go build -ldflags "-X main.Version=${VERSION} -X main.GitSHA=${GIT_SHA}" \
+RUN GIT_SHA_FINAL="${GIT_SHA:-$GIT_COMMIT_SHA}"; \
+  GIT_FULL_SHA_FINAL="${GIT_COMMIT_SHA}"; \
+  go build -ldflags "-X main.Version=${VERSION} -X main.GitSHA=${GIT_SHA_FINAL} -X main.FullGitSHA=${GIT_FULL_SHA_FINAL} -X main.GitTag=${GIT_TAG}" \
   -v -o /version-service ./version-service/main.go
 
 FROM debian:bookworm-slim
