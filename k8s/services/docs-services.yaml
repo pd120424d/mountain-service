@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: docs-aggregator
+  namespace: mountain-service
+spec:
+  selector:
+    app: docs-aggregator
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docs-ui
+  namespace: mountain-service
+spec:
+  selector:
+    app: docs-ui
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+

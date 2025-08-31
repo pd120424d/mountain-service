@@ -1,0 +1,181 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+)
+
+type Service struct {
+	Name       string `json:"name"`
+	BaseURL    string `json:"baseURL"`
+	HealthPath string `json:"healthPath"`
+	SpecPath   string `json:"specPath"`
+}
+
+type Config struct {
+	ExternalScheme   string
+	ExternalHost     string
+	ExternalBasePath string
+	Services         []Service
+}
+
+func getenv(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
+
+func loadConfig() (*Config, error) {
+	extScheme := getenv("EXTERNAL_SCHEME", "https")
+	extHost := getenv("EXTERNAL_HOST", "mountain-service.duckdns.org")
+	extBase := getenv("EXTERNAL_BASE_PATH", "/api/v1")
+
+	var services []Service
+	if raw := os.Getenv("SERVICES_JSON"); strings.TrimSpace(raw) != "" {
+		if err := json.Unmarshal([]byte(raw), &services); err != nil {
+			return nil, fmt.Errorf("failed to parse SERVICES_JSON: %w", err)
+		}
+	} else {
+		services = []Service{
+			{Name: "employee", BaseURL: "http://employee-service:8082", HealthPath: "/api/v1/health", SpecPath: "/swagger.json"},
+			{Name: "urgency", BaseURL: "http://urgency-service:8083", HealthPath: "/api/v1/health", SpecPath: "/swagger.json"},
+			{Name: "activity", BaseURL: "http://activity-service:8084", HealthPath: "/api/v1/health", SpecPath: "/swagger.json"},
+		}
+	}
+
+	return &Config{
+		ExternalScheme:   extScheme,
+		ExternalHost:     extHost,
+		ExternalBasePath: extBase,
+		Services:         services,
+	}, nil
+}
+
+func checkHealth(basedURL, healthPath string) bool {
+	client := &http.Client{Timeout: 1500 * time.Millisecond}
+	req, _ := http.NewRequest("GET", strings.TrimRight(basedURL, "/")+healthPath, nil)
+	resp, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode >= 200 && resp.StatusCode < 300
+}
+
+func rewriteSpecBytes(spec []byte, scheme, host, basePath string) ([]byte, error) {
+	var m map[string]interface{}
+	if err := json.Unmarshal(spec, &m); err != nil {
+		return nil, fmt.Errorf("invalid JSON spec: %w", err)
+	}
+	if v, ok := m["swagger"]; ok {
+		// Swagger 2.0
+		_ = v
+		m["host"] = host
+		m["schemes"] = []string{scheme}
+		if basePath != "" {
+			m["basePath"] = basePath
+		}
+		return json.MarshalIndent(m, "", "  ")
+	}
+	if _, ok := m["openapi"]; ok {
+		// OpenAPI 3.x
+		url := fmt.Sprintf("%s://%s%s", scheme, host, basePath)
+		m["servers"] = []map[string]string{{"url": url}}
+		return json.MarshalIndent(m, "", "  ")
+	}
+	// Unknown, return as-is
+	return spec, nil
+}
+
+func main() {
+	cfg, err := loadConfig()
+	if err != nil {
+		log.Fatalf("docs-aggregator config error: %v", err)
+	}
+
+	r := gin.Default()
+
+	r.GET("/health", func(c *gin.Context) {
+		c.String(http.StatusOK, "healthy")
+	})
+
+	docs := r.Group("/docs")
+	{
+		docs.GET("/swagger-config.json", func(c *gin.Context) {
+			urls := make([]map[string]string, 0, len(cfg.Services))
+			for _, s := range cfg.Services {
+				if checkHealth(s.BaseURL, s.HealthPath) {
+					urls = append(urls, map[string]string{
+						"name": cases.Title(language.English, cases.NoLower).String(s.Name) + " API",
+						"url":  fmt.Sprintf("/docs/specs/%s.json", s.Name),
+					})
+				}
+			}
+			resp := map[string]interface{}{
+				"urls":        urls,
+				"deepLinking": true,
+				"layout":      "BaseLayout",
+			}
+			c.JSON(http.StatusOK, resp)
+		})
+
+		docs.GET("/specs/:service.json", func(c *gin.Context) {
+			name := c.Param("service")
+			var svc *Service
+			for i := range cfg.Services {
+				if cfg.Services[i].Name == name {
+					svc = &cfg.Services[i]
+					break
+				}
+			}
+			if svc == nil {
+				c.JSON(http.StatusNotFound, gin.H{"error": "unknown service"})
+				return
+			}
+
+			client := &http.Client{Timeout: 5 * time.Second}
+			upstream := strings.TrimRight(svc.BaseURL, "/") + svc.SpecPath
+			resp, err := client.Get(upstream)
+			if err != nil {
+				c.JSON(http.StatusBadGateway, gin.H{"error": "failed to fetch upstream spec"})
+				return
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+				c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("upstream status %d", resp.StatusCode)})
+				return
+			}
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				c.JSON(http.StatusBadGateway, gin.H{"error": "failed to read upstream spec"})
+				return
+			}
+			rewritten, err := rewriteSpecBytes(b, cfg.ExternalScheme, cfg.ExternalHost, cfg.ExternalBasePath)
+			if err != nil {
+				// Fallback to original if rewrite fails
+				rewritten = b
+			}
+			c.Data(http.StatusOK, "application/json", rewritten)
+		})
+	}
+
+	addr := ":8080"
+	if v := os.Getenv("PORT"); v != "" {
+		addr = ":" + v
+	}
+	log.Printf("docs-aggregator listening on %s", addr)
+	if err := r.Run(addr); err != nil {
+		log.Fatalf("server error: %v", err)
+	}
+}

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docs-aggregator
+  namespace: mountain-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docs-aggregator
+  template:
+    metadata:
+      labels:
+        app: docs-aggregator
+    spec:
+      imagePullSecrets:
+        - name: ghcr-auth
+      containers:
+        - name: docs-aggregator
+          image: ghcr.io/pd120424d/docs-aggregator:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: EXTERNAL_SCHEME
+              value: "http"
+            - name: EXTERNAL_HOST
+              value: "mountain-service.duckdns.org"
+            - name: EXTERNAL_BASE_PATH
+              value: "/api/v1"
+            - name: SERVICES_JSON
+              value: |
+                [
+                  {"name":"employee","baseURL":"http://employee-service:8082","healthPath":"/api/v1/health","specPath":"/swagger.json"},
+                  {"name":"urgency","baseURL":"http://urgency-service:8083","healthPath":"/api/v1/health","specPath":"/swagger.json"},
+                  {"name":"activity","baseURL":"http://activity-service:8084","healthPath":"/api/v1/health","specPath":"/swagger.json"}
+                ]
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+

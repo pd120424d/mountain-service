@@ -11,52 +11,30 @@ spec:
     - host: mountain-service.duckdns.org
       http:
         paths:
-          # === SWAGGER ENDPOINTS ===
-          # Swagger UI endpoints (must come before / catch-all)
-          - path: /employee-swagger
+          # === DOCS SERVICE (CENTRALIZED) ===
+          # Swagger UI under /docs served by docs-ui
+          - path: /docs
             pathType: Prefix
             backend:
               service:
-                name: frontend
+                name: docs-ui
                 port:
-                  number: 80
-          - path: /urgency-swagger
+                  number: 8080
+          # Swagger UI config and proxied specs served by docs-aggregator
+          - path: /docs/swagger-config.json
+            pathType: Exact
+            backend:
+              service:
+                name: docs-aggregator
+                port:
+                  number: 8080
+          - path: /docs/specs
             pathType: Prefix
             backend:
               service:
-                name: frontend
+                name: docs-aggregator
                 port:
-                  number: 80
-          - path: /activity-swagger
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
-
-          # Swagger JSON endpoints
-          - path: /employee-swagger.json
-            pathType: Exact
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
-          - path: /urgency-swagger.json
-            pathType: Exact
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
-          - path: /activity-swagger.json
-            pathType: Exact
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
+                  number: 8080
 
           # === API ENDPOINTS ===
           # API endpoints (must come before / catch-all)

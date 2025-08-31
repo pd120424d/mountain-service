@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docs-ui
+  namespace: mountain-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docs-ui
+  template:
+    metadata:
+      labels:
+        app: docs-ui
+    spec:
+      containers:
+        - name: swagger-ui
+          image: swaggerapi/swagger-ui:latest
+          ports:
+            - containerPort: 8080
+          env:
+            # Serve under /docs path and use the aggregator's dynamic config
+            - name: BASE_URL
+              value: /docs
+            - name: CONFIG_URL
+              value: /docs/swagger-config.json
+          # Swagger UI listens on 8080 in this image
+
