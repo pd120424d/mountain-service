@@ -63,6 +63,12 @@ func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.Ac
 			return nil, commonv1.NewAppError("ACTIVITY_ERRORS.URGENCY_FETCH_FAILED", "failed to validate urgency", map[string]interface{}{"cause": err.Error()})
 		}
 		if urg == nil || urg.Status != urgencyV1.InProgress {
+			log.Warnf("CreateActivity denied: urgency invalid state. urgencyId=%d status=%v", req.UrgencyID, func() string {
+				if urg != nil {
+					return string(urg.Status)
+				}
+				return ""
+			}())
 			return nil, commonv1.NewAppError("ACTIVITY_ERRORS.INVALID_URGENCY_STATE", "activities can be added only to in_progress urgencies", map[string]interface{}{"urgencyId": req.UrgencyID, "status": func() string {
 				if urg != nil {
 					return string(urg.Status)
@@ -70,6 +76,35 @@ func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.Ac
 				return ""
 			}()})
 		}
+
+		actorID := ctx.Value("employeeID")
+		role := ctx.Value("role")
+		roleStr, _ := role.(string)
+
+		// Validation: urgency must have assignee for non-admins
+		if urg.AssignedEmployeeId == nil && roleStr != "Administrator" {
+			log.Warnf("CreateActivity denied: missing assignee. urgencyId=%d actorId=%v role=%s", req.UrgencyID, actorID, roleStr)
+			return nil, commonv1.NewAppError("VALIDATION.MISSING_ASSIGNEE", "urgency must have an assigned employee before adding activities", map[string]interface{}{"urgencyId": req.UrgencyID})
+		}
+
+		// Enforce assignee-only unless admin
+		if actorID != nil && roleStr != "Administrator" && urg.AssignedEmployeeId != nil {
+			if actID, ok := actorID.(uint); ok {
+				if *urg.AssignedEmployeeId != actID {
+					log.Warnf("CreateActivity denied: actor is not assignee. urgencyId=%d assignedEmployeeId=%d actorId=%d role=%s", req.UrgencyID, *urg.AssignedEmployeeId, actID, roleStr)
+					return nil, commonv1.NewAppError("AUTH_ERRORS.FORBIDDEN", "only assignee or admin can add activities", map[string]interface{}{"urgencyId": req.UrgencyID, "actorId": actID, "assignedEmployeeId": *urg.AssignedEmployeeId})
+				}
+			}
+		}
+
+		// Override payload employeeId with actorId when present, to prevent spoofing (non-admin only)
+		if roleStr != "Administrator" {
+			if actID, ok := actorID.(uint); ok {
+				req.EmployeeID = actID
+			}
+		}
+
+		log.Infof("CreateActivity allowed: urgencyId=%d status=%s assignedEmployeeId=%v actorId=%v role=%s", req.UrgencyID, urg.Status, urg.AssignedEmployeeId, actorID, roleStr)
 	}
 
 	activity := model.FromCreateRequest(req)

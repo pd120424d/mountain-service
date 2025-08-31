@@ -68,9 +68,9 @@ spec:
 
             # External Services
             - name: EMPLOYEE_SERVICE_URL
-              value: "http://employee-service.mountain-service.svc.cluster.local:8082/api/v1"
+              value: "http://employee-service.mountain-service.svc.cluster.local:8082"
             - name: URGENCY_SERVICE_URL
-              value: "http://urgency-service.mountain-service.svc.cluster.local:8083/api/v1"
+              value: "http://urgency-service.mountain-service.svc.cluster.local:8083"
           volumeMounts:
             - name: gcp-activity-api-key
               mountPath: /var/secrets/gcp

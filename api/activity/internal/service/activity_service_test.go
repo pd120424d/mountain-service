@@ -6,9 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pd120424d/mountain-service/api/activity/internal/clients"
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
+	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
+	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +21,7 @@ import (
 func TestActivityService_CreateActivity(t *testing.T) {
 	t.Parallel()
 
-	t.Run("successfully creates activity with all fields", func(t *testing.T) {
+	t.Run("it successfully creates activity with all fields", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -54,7 +57,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		assert.NotEmpty(t, response.UpdatedAt)
 	})
 
-	t.Run("returns error when description is empty", func(t *testing.T) {
+	t.Run("it returns error when description is empty", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -63,7 +66,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityCreateRequest{
-			Description: "", // Empty description
+			Description: "",
 			EmployeeID:  1,
 			UrgencyID:   2,
 		}
@@ -74,7 +77,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		assert.Contains(t, err.Error(), "validation failed")
 	})
 
-	t.Run("returns error when employee ID is zero", func(t *testing.T) {
+	t.Run("it returns error when employee ID is zero", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -84,7 +87,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 		req := &activityV1.ActivityCreateRequest{
 			Description: "Test activity",
-			EmployeeID:  0, // Zero employee ID
+			EmployeeID:  0,
 			UrgencyID:   2,
 		}
 
@@ -94,7 +97,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		assert.Contains(t, err.Error(), "validation failed")
 	})
 
-	t.Run("returns error when urgency ID is zero", func(t *testing.T) {
+	t.Run("it returns error when urgency ID is zero", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -105,7 +108,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		req := &activityV1.ActivityCreateRequest{
 			Description: "Test activity",
 			EmployeeID:  1,
-			UrgencyID:   0, // Zero urgency ID
+			UrgencyID:   0,
 		}
 
 		response, err := service.CreateActivity(context.Background(), req)
@@ -114,7 +117,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		assert.Contains(t, err.Error(), "validation failed")
 	})
 
-	t.Run("returns error when repository fails", func(t *testing.T) {
+	t.Run("it returns error when repository fails", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -136,7 +139,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to create activity")
 	})
 
-	t.Run("handles nil request gracefully", func(t *testing.T) {
+	t.Run("it handles nil request gracefully", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -150,7 +153,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		assert.Contains(t, err.Error(), "request cannot be nil")
 	})
 
-	t.Run("successfully creates activity", func(t *testing.T) {
+	t.Run("it successfully creates activity", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -180,7 +183,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		assert.Equal(t, uint(2), response.UrgencyID)
 	})
 
-	t.Run("returns error when validation fails", func(t *testing.T) {
+	t.Run("it returns error when validation fails", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -189,7 +192,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		service := NewActivityService(log, mockRepo, nil)
 
 		req := &activityV1.ActivityCreateRequest{
-			Description: "", // Invalid - empty description
+			Description: "",
 			EmployeeID:  1,
 			UrgencyID:   2,
 		}
@@ -200,7 +203,7 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		assert.Contains(t, err.Error(), "validation failed")
 	})
 
-	t.Run("returns error when repository fails", func(t *testing.T) {
+	t.Run("it returns error when repository fails", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -220,6 +223,99 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Contains(t, err.Error(), "failed to create activity")
+	})
+
+	t.Run("it denies when urgency has no assignee and actor is not admin", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(7)).Return(&urgencyV1.UrgencyResponse{ID: 7, Status: urgencyV1.InProgress}, nil)
+		svc := NewActivityService(log, repo, mockUrg)
+
+		req := &activityV1.ActivityCreateRequest{Description: "x", EmployeeID: 999, UrgencyID: 7}
+		ctx := context.WithValue(context.Background(), "employeeID", uint(1))
+		ctx = context.WithValue(ctx, "role", "Medic")
+
+		resp, err := svc.CreateActivity(ctx, req)
+		assert.Nil(t, resp)
+		if appErr, ok := err.(*commonv1.AppError); ok {
+			assert.Equal(t, "VALIDATION.MISSING_ASSIGNEE", appErr.Code)
+		} else {
+			t.Fatalf("expected AppError, got %T", err)
+		}
+	})
+
+	// Simulate context with non-admin actor id 1
+	t.Run("denies when actor is not the assignee", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		assigned := uint(42)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(7)).Return(&urgencyV1.UrgencyResponse{ID: 7, Status: urgencyV1.InProgress, AssignedEmployeeId: &assigned}, nil)
+		svc := NewActivityService(log, repo, mockUrg)
+
+		req := &activityV1.ActivityCreateRequest{Description: "x", EmployeeID: 999, UrgencyID: 7}
+		ctx := context.WithValue(context.Background(), "employeeID", uint(1))
+		ctx = context.WithValue(ctx, "role", "Medic")
+
+		resp, err := svc.CreateActivity(ctx, req)
+		assert.Nil(t, resp)
+		if appErr, ok := err.(*commonv1.AppError); ok {
+			assert.Equal(t, "AUTH_ERRORS.FORBIDDEN", appErr.Code)
+		} else {
+			t.Fatalf("expected AppError, got %T", err)
+		}
+	})
+
+	t.Run("allows when actor is the assignee (and overrides employeeID)", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		assigned := uint(7)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(9)).Return(&urgencyV1.UrgencyResponse{ID: 9, Status: urgencyV1.InProgress, AssignedEmployeeId: &assigned}, nil)
+		svc := NewActivityService(log, repo, mockUrg)
+
+		repo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+		req := &activityV1.ActivityCreateRequest{Description: "x", EmployeeID: 999, UrgencyID: 9}
+		ctx := context.WithValue(context.Background(), "employeeID", uint(7))
+		ctx = context.WithValue(ctx, "role", "Medic")
+
+		resp, err := svc.CreateActivity(ctx, req)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, uint(7), resp.EmployeeID)
+		assert.Equal(t, uint(9), resp.UrgencyID)
+	})
+
+	t.Run("it allows admin regardless of assignee and does not override employeeID", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		// No assignee set
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(11)).Return(&urgencyV1.UrgencyResponse{ID: 11, Status: urgencyV1.InProgress}, nil)
+		svc := NewActivityService(log, repo, mockUrg)
+
+		repo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+		req := &activityV1.ActivityCreateRequest{Description: "x", EmployeeID: 123, UrgencyID: 11}
+		ctx := context.WithValue(context.Background(), "employeeID", uint(999))
+		ctx = context.WithValue(ctx, "role", "Administrator")
+
+		resp, err := svc.CreateActivity(ctx, req)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		// For admin we keep the request's EmployeeID (actor may be a system user)
+		assert.Equal(t, uint(123), resp.EmployeeID)
+		assert.Equal(t, uint(11), resp.UrgencyID)
 	})
 }
 

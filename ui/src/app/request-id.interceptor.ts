@@ -9,11 +9,10 @@ function generateRequestId(): string {
 }
 
 export const requestIdInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
-  // Reuse existing header if present (e.g., server-to-server or retries)
-  let requestId = req.headers.get(HEADER) || sessionStorage.getItem(HEADER);
+  // Ensure a unique request ID per request unless one is already set
+  let requestId = req.headers.get(HEADER);
   if (!requestId) {
     requestId = generateRequestId();
-    sessionStorage.setItem(HEADER, requestId);
   }
 
   const cloned = req.clone({ setHeaders: { [HEADER]: requestId } });

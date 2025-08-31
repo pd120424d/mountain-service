@@ -203,8 +203,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	}
 
 	// Service-to-service internal routes (hidden from Swagger)
-	serviceAuth2 := auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: os.Getenv("SERVICE_AUTH_SECRET"), ServiceName: "activity-service", TokenTTL: time.Hour})
-	serviceGroup := r.Group("/api/v1/service").Use(auth.NewServiceAuthMiddleware(serviceAuth2))
+	serviceGroup := r.Group("/api/v1/service").Use(auth.NewServiceAuthMiddleware(serviceAuth))
 	{
 		serviceGroup.POST("/activities", activityHandler.CreateActivity)
 		serviceGroup.GET("/activities", activityHandler.ListActivities)
