@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 
@@ -44,7 +45,7 @@ func TestUrgencyRepository_Create(t *testing.T) {
 		Status:       urgencyV1.Open,
 	}
 
-	err := repo.Create(urgency)
+	err := repo.Create(context.Background(), urgency)
 	assert.NoError(t, err)
 	assert.NotZero(t, urgency.ID)
 }
@@ -73,12 +74,12 @@ func TestUrgencyRepository_GetAll(t *testing.T) {
 		Status:       urgencyV1.InProgress,
 	}
 
-	err := repo.Create(urgency1)
+	err := repo.Create(context.Background(), urgency1)
 	require.NoError(t, err)
-	err = repo.Create(urgency2)
+	err = repo.Create(context.Background(), urgency2)
 	require.NoError(t, err)
 
-	urgencies, err := repo.GetAll()
+	urgencies, err := repo.GetAll(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, urgencies, 2)
 }
@@ -98,11 +99,11 @@ func TestUrgencyRepository_GetByID(t *testing.T) {
 		Status:       urgencyV1.Open,
 	}
 
-	err := repo.Create(urgency)
+	err := repo.Create(context.Background(), urgency)
 	require.NoError(t, err)
 
 	var retrieved model.Urgency
-	err = repo.GetByID(urgency.ID, &retrieved)
+	err = repo.GetByID(context.Background(), urgency.ID, &retrieved)
 	assert.NoError(t, err)
 	assert.Equal(t, urgency.FirstName, retrieved.FirstName)
 	assert.Equal(t, urgency.LastName, retrieved.LastName)
@@ -124,18 +125,18 @@ func TestUrgencyRepository_Update(t *testing.T) {
 		Status:       urgencyV1.Open,
 	}
 
-	err := repo.Create(urgency)
+	err := repo.Create(context.Background(), urgency)
 	require.NoError(t, err)
 
 	urgency.FirstName = "Marko"
 	urgency.LastName = "Markovic"
 	urgency.Status = urgencyV1.InProgress
 
-	err = repo.Update(urgency)
+	err = repo.Update(context.Background(), urgency)
 	assert.NoError(t, err)
 
 	var updated model.Urgency
-	err = repo.GetByID(urgency.ID, &updated)
+	err = repo.GetByID(context.Background(), urgency.ID, &updated)
 	require.NoError(t, err)
 	assert.Equal(t, "Marko", updated.FirstName)
 	assert.Equal(t, "Markovic", updated.LastName)
@@ -157,14 +158,14 @@ func TestUrgencyRepository_Delete(t *testing.T) {
 		Status:       urgencyV1.Open,
 	}
 
-	err := repo.Create(urgency)
+	err := repo.Create(context.Background(), urgency)
 	require.NoError(t, err)
 
-	err = repo.Delete(urgency.ID)
+	err = repo.Delete(context.Background(), urgency.ID)
 	assert.NoError(t, err)
 
 	var deleted model.Urgency
-	err = repo.GetByID(urgency.ID, &deleted)
+	err = repo.GetByID(context.Background(), urgency.ID, &deleted)
 	assert.Error(t, err) // Should not find deleted record
 }
 
@@ -203,12 +204,12 @@ func TestUrgencyRepository_List(t *testing.T) {
 		Status:       urgencyV1.Resolved,
 	}
 
-	require.NoError(t, repo.Create(urgency1))
-	require.NoError(t, repo.Create(urgency2))
-	require.NoError(t, repo.Create(urgency3))
+	require.NoError(t, repo.Create(context.Background(), urgency1))
+	require.NoError(t, repo.Create(context.Background(), urgency2))
+	require.NoError(t, repo.Create(context.Background(), urgency3))
 
 	t.Run("it returns all urgencies when no filters are provided", func(t *testing.T) {
-		urgencies, err := repo.List(map[string]interface{}{})
+		urgencies, err := repo.List(context.Background(), map[string]interface{}{})
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 3)
 	})
@@ -217,7 +218,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 		filters := map[string]interface{}{
 			"level": "High",
 		}
-		urgencies, err := repo.List(filters)
+		urgencies, err := repo.List(context.Background(), filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
 		assert.Equal(t, "Medical", urgencies[0].FirstName)
@@ -228,7 +229,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 		filters := map[string]interface{}{
 			"status": "Open",
 		}
-		urgencies, err := repo.List(filters)
+		urgencies, err := repo.List(context.Background(), filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
 		assert.Equal(t, "Emergency", urgencies[0].FirstName)
@@ -239,7 +240,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 		filters := map[string]interface{}{
 			"first_name": "Medical",
 		}
-		urgencies, err := repo.List(filters)
+		urgencies, err := repo.List(context.Background(), filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
 		assert.Equal(t, "Medical", urgencies[0].FirstName)
@@ -250,7 +251,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 		filters := map[string]interface{}{
 			"email": "rescue",
 		}
-		urgencies, err := repo.List(filters)
+		urgencies, err := repo.List(context.Background(), filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
 		assert.Equal(t, "Emergency", urgencies[0].FirstName)
@@ -262,7 +263,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 			"level":  "Medium",
 			"status": "Resolved",
 		}
-		urgencies, err := repo.List(filters)
+		urgencies, err := repo.List(context.Background(), filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 1)
 		assert.Equal(t, "Equipment", urgencies[0].FirstName)
@@ -273,7 +274,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 		filters := map[string]interface{}{
 			"invalid_field": "value",
 		}
-		urgencies, err := repo.List(filters)
+		urgencies, err := repo.List(context.Background(), filters)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid filter key: invalid_field")
 		assert.Nil(t, urgencies)
@@ -283,7 +284,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 		filters := map[string]interface{}{
 			"first_name": []string{"test"},
 		}
-		urgencies, err := repo.List(filters)
+		urgencies, err := repo.List(context.Background(), filters)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unsupported type for filter key: first_name")
 		assert.Nil(t, urgencies)
@@ -293,7 +294,7 @@ func TestUrgencyRepository_List(t *testing.T) {
 		filters := map[string]interface{}{
 			"first_name": "NonExistent",
 		}
-		urgencies, err := repo.List(filters)
+		urgencies, err := repo.List(context.Background(), filters)
 		assert.NoError(t, err)
 		assert.Len(t, urgencies, 0)
 	})
@@ -323,24 +324,24 @@ func TestUrgencyRepository_ResetAllData(t *testing.T) {
 		Status:       urgencyV1.InProgress,
 	}
 
-	require.NoError(t, repo.Create(urgency1))
-	require.NoError(t, repo.Create(urgency2))
+	require.NoError(t, repo.Create(context.Background(), urgency1))
+	require.NoError(t, repo.Create(context.Background(), urgency2))
 
-	urgencies, err := repo.GetAll()
+	urgencies, err := repo.GetAll(context.Background())
 	require.NoError(t, err)
 	assert.Len(t, urgencies, 2)
 
-	err = repo.Delete(urgency1.ID)
+	err = repo.Delete(context.Background(), urgency1.ID)
 	require.NoError(t, err)
 
-	urgencies, err = repo.GetAll()
+	urgencies, err = repo.GetAll(context.Background())
 	require.NoError(t, err)
 	assert.Len(t, urgencies, 1)
 
-	err = repo.ResetAllData()
+	err = repo.ResetAllData(context.Background())
 	assert.NoError(t, err)
 
-	urgencies, err = repo.GetAll()
+	urgencies, err = repo.GetAll(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, urgencies, 0)
 

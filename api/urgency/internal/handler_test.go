@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -196,7 +197,7 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().CreateUrgency(gomock.Any()).Return(errors.New("database error")).Times(1)
+		mockService.EXPECT().CreateUrgency(gomock.Any(), gomock.Any()).Return(errors.New("database error")).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.CreateUrgency(ctx)
@@ -225,7 +226,7 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().CreateUrgency(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
+		mockService.EXPECT().CreateUrgency(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, urgency *model.Urgency) error {
 			urgency.ID = 1
 			urgency.CreatedAt = time.Now()
 			urgency.UpdatedAt = time.Now()
@@ -256,7 +257,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetAllUrgencies().Return(nil, errors.New("database error")).Times(1)
+		mockService.EXPECT().GetAllUrgencies(gomock.Any()).Return(nil, errors.New("database error")).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ListUrgencies(ctx)
@@ -273,7 +274,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetAllUrgencies().Return([]model.Urgency{}, nil).Times(1)
+		mockService.EXPECT().GetAllUrgencies(gomock.Any()).Return([]model.Urgency{}, nil).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ListUrgencies(ctx)
@@ -315,7 +316,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		}
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetAllUrgencies().Return(urgencies, nil).Times(1)
+		mockService.EXPECT().GetAllUrgencies(gomock.Any()).Return(urgencies, nil).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ListUrgencies(ctx)
@@ -358,7 +359,7 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		mockService.EXPECT().GetUrgencyByID(gomock.Any(), uint(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.GetUrgency(ctx)
@@ -377,7 +378,7 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(nil, errors.New("database error")).Times(1)
+		mockService.EXPECT().GetUrgencyByID(gomock.Any(), uint(1)).Return(nil, errors.New("database error")).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.GetUrgency(ctx)
@@ -408,7 +409,7 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 		}
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(urgency, nil).Times(1)
+		mockService.EXPECT().GetUrgencyByID(gomock.Any(), uint(1)).Return(urgency, nil).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.GetUrgency(ctx)
@@ -532,7 +533,7 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		mockService.EXPECT().GetUrgencyByID(gomock.Any(), uint(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.UpdateUrgency(ctx)
@@ -569,8 +570,8 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 		}
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(existingUrgency, nil).Times(1)
-		mockService.EXPECT().UpdateUrgency(gomock.Any()).Return(errors.New("database error")).Times(1)
+		mockService.EXPECT().GetUrgencyByID(gomock.Any(), uint(1)).Return(existingUrgency, nil).Times(1)
+		mockService.EXPECT().UpdateUrgency(gomock.Any(), gomock.Any()).Return(errors.New("database error")).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.UpdateUrgency(ctx)
@@ -610,8 +611,8 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 		}
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetUrgencyByID(uint(1)).Return(existingUrgency, nil).Times(1)
-		mockService.EXPECT().UpdateUrgency(gomock.Any()).Return(nil).Times(1)
+		mockService.EXPECT().GetUrgencyByID(gomock.Any(), uint(1)).Return(existingUrgency, nil).Times(1)
+		mockService.EXPECT().UpdateUrgency(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.UpdateUrgency(ctx)
@@ -652,7 +653,7 @@ func TestUrgencyHandler_DeleteUrgency(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().DeleteUrgency(uint(1)).Return(errors.New("database error")).Times(1)
+		mockService.EXPECT().DeleteUrgency(gomock.Any(), uint(1)).Return(errors.New("database error")).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.DeleteUrgency(ctx)
@@ -671,7 +672,7 @@ func TestUrgencyHandler_DeleteUrgency(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().DeleteUrgency(uint(1)).Return(nil).Times(1)
+		mockService.EXPECT().DeleteUrgency(gomock.Any(), uint(1)).Return(nil).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.DeleteUrgency(ctx)
@@ -693,7 +694,7 @@ func TestUrgencyHandler_ResetAllData(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().ResetAllData().Return(errors.New("database error")).Times(1)
+		mockService.EXPECT().ResetAllData(gomock.Any()).Return(errors.New("database error")).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ResetAllData(ctx)
@@ -710,7 +711,7 @@ func TestUrgencyHandler_ResetAllData(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().ResetAllData().Return(nil).Times(1)
+		mockService.EXPECT().ResetAllData(gomock.Any()).Return(nil).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ResetAllData(ctx)
@@ -752,7 +753,7 @@ func TestUrgencyHandler_AssignUrgency(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies/1/assign", strings.NewReader(`{"employeeId":2}`))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 		svc := NewMockUrgencyService(ctrl)
-		svc.EXPECT().AssignUrgency(uint(1), uint(2)).Return(errors.New("fail"))
+		svc.EXPECT().AssignUrgency(gomock.Any(), uint(1), uint(2)).Return(errors.New("fail"))
 		handler := NewUrgencyHandler(log, svc)
 		handler.AssignUrgency(ctx)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -767,7 +768,7 @@ func TestUrgencyHandler_AssignUrgency(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies/1/assign", strings.NewReader(`{"employeeId":999}`))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 		svc := NewMockUrgencyService(ctrl)
-		svc.EXPECT().AssignUrgency(uint(1), uint(999)).Return(commonv1.NewAppError("URGENCY_ERRORS.INVALID_ASSIGNEE", "employee does not exist or is not accessible", nil))
+		svc.EXPECT().AssignUrgency(gomock.Any(), uint(1), uint(999)).Return(commonv1.NewAppError("URGENCY_ERRORS.INVALID_ASSIGNEE", "employee does not exist or is not accessible", nil))
 		handler := NewUrgencyHandler(log, svc)
 		handler.AssignUrgency(ctx)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -783,7 +784,7 @@ func TestUrgencyHandler_AssignUrgency(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/urgencies/1/assign", strings.NewReader(`{"employeeId":2}`))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 		svc := NewMockUrgencyService(ctrl)
-		svc.EXPECT().AssignUrgency(uint(1), uint(2)).Return(nil)
+		svc.EXPECT().AssignUrgency(gomock.Any(), uint(1), uint(2)).Return(nil)
 		handler := NewUrgencyHandler(log, svc)
 		handler.AssignUrgency(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -813,7 +814,7 @@ func TestUrgencyHandler_UnassignUrgency(t *testing.T) {
 		ctx.Set("employeeID", uint(10))
 		ctx.Set("role", "Medic")
 		svc := NewMockUrgencyService(ctrl)
-		svc.EXPECT().UnassignUrgency(uint(1), uint(10), false).Return(errors.New("cannot"))
+		svc.EXPECT().UnassignUrgency(gomock.Any(), uint(1), uint(10), false).Return(errors.New("cannot"))
 		handler := NewUrgencyHandler(log, svc)
 		handler.UnassignUrgency(ctx)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -828,7 +829,7 @@ func TestUrgencyHandler_UnassignUrgency(t *testing.T) {
 		ctx.Set("employeeID", uint(10))
 		ctx.Set("role", "Administrator")
 		svc := NewMockUrgencyService(ctrl)
-		svc.EXPECT().UnassignUrgency(uint(1), uint(10), true).Return(nil)
+		svc.EXPECT().UnassignUrgency(gomock.Any(), uint(1), uint(10), true).Return(nil)
 		handler := NewUrgencyHandler(log, svc)
 		handler.UnassignUrgency(ctx)
 		assert.Equal(t, http.StatusNoContent, w.Code)
@@ -877,7 +878,7 @@ func TestUrgencyHandler_CreateUrgency_LevelMapping(t *testing.T) {
 			ctx.Request.Header.Set("Content-Type", "application/json")
 
 			var capturedUrgency *model.Urgency
-			mockService.EXPECT().CreateUrgency(gomock.Any()).DoAndReturn(func(urgency *model.Urgency) error {
+			mockService.EXPECT().CreateUrgency(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, urgency *model.Urgency) error {
 				capturedUrgency = urgency
 				urgency.ID = 1
 				urgency.CreatedAt = time.Now()

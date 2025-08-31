@@ -5,6 +5,7 @@
 package repositories
 
 import (
+	context "context"
 	reflect "reflect"
 
 	model "github.com/pd120424d/mountain-service/api/urgency/internal/model"
@@ -35,101 +36,101 @@ func (m *MockUrgencyRepository) EXPECT() *MockUrgencyRepositoryMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockUrgencyRepository) Create(urgency *model.Urgency) error {
+func (m *MockUrgencyRepository) Create(ctx context.Context, urgency *model.Urgency) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", urgency)
+	ret := m.ctrl.Call(m, "Create", ctx, urgency)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockUrgencyRepositoryMockRecorder) Create(urgency interface{}) *gomock.Call {
+func (mr *MockUrgencyRepositoryMockRecorder) Create(ctx, urgency interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUrgencyRepository)(nil).Create), urgency)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUrgencyRepository)(nil).Create), ctx, urgency)
 }
 
 // Delete mocks base method.
-func (m *MockUrgencyRepository) Delete(urgencyID uint) error {
+func (m *MockUrgencyRepository) Delete(ctx context.Context, urgencyID uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", urgencyID)
+	ret := m.ctrl.Call(m, "Delete", ctx, urgencyID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockUrgencyRepositoryMockRecorder) Delete(urgencyID interface{}) *gomock.Call {
+func (mr *MockUrgencyRepositoryMockRecorder) Delete(ctx, urgencyID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockUrgencyRepository)(nil).Delete), urgencyID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockUrgencyRepository)(nil).Delete), ctx, urgencyID)
 }
 
 // GetAll mocks base method.
-func (m *MockUrgencyRepository) GetAll() ([]model.Urgency, error) {
+func (m *MockUrgencyRepository) GetAll(ctx context.Context) ([]model.Urgency, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll")
+	ret := m.ctrl.Call(m, "GetAll", ctx)
 	ret0, _ := ret[0].([]model.Urgency)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockUrgencyRepositoryMockRecorder) GetAll() *gomock.Call {
+func (mr *MockUrgencyRepositoryMockRecorder) GetAll(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockUrgencyRepository)(nil).GetAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockUrgencyRepository)(nil).GetAll), ctx)
 }
 
 // GetByID mocks base method.
-func (m *MockUrgencyRepository) GetByID(id uint, urgency *model.Urgency) error {
+func (m *MockUrgencyRepository) GetByID(ctx context.Context, id uint, urgency *model.Urgency) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByID", id, urgency)
+	ret := m.ctrl.Call(m, "GetByID", ctx, id, urgency)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // GetByID indicates an expected call of GetByID.
-func (mr *MockUrgencyRepositoryMockRecorder) GetByID(id, urgency interface{}) *gomock.Call {
+func (mr *MockUrgencyRepositoryMockRecorder) GetByID(ctx, id, urgency interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockUrgencyRepository)(nil).GetByID), id, urgency)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockUrgencyRepository)(nil).GetByID), ctx, id, urgency)
 }
 
 // List mocks base method.
-func (m *MockUrgencyRepository) List(filters map[string]interface{}) ([]model.Urgency, error) {
+func (m *MockUrgencyRepository) List(ctx context.Context, filters map[string]interface{}) ([]model.Urgency, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List", filters)
+	ret := m.ctrl.Call(m, "List", ctx, filters)
 	ret0, _ := ret[0].([]model.Urgency)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // List indicates an expected call of List.
-func (mr *MockUrgencyRepositoryMockRecorder) List(filters interface{}) *gomock.Call {
+func (mr *MockUrgencyRepositoryMockRecorder) List(ctx, filters interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockUrgencyRepository)(nil).List), filters)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockUrgencyRepository)(nil).List), ctx, filters)
 }
 
 // ResetAllData mocks base method.
-func (m *MockUrgencyRepository) ResetAllData() error {
+func (m *MockUrgencyRepository) ResetAllData(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetAllData")
+	ret := m.ctrl.Call(m, "ResetAllData", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ResetAllData indicates an expected call of ResetAllData.
-func (mr *MockUrgencyRepositoryMockRecorder) ResetAllData() *gomock.Call {
+func (mr *MockUrgencyRepositoryMockRecorder) ResetAllData(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockUrgencyRepository)(nil).ResetAllData))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockUrgencyRepository)(nil).ResetAllData), ctx)
 }
 
 // Update mocks base method.
-func (m *MockUrgencyRepository) Update(urgency *model.Urgency) error {
+func (m *MockUrgencyRepository) Update(ctx context.Context, urgency *model.Urgency) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", urgency)
+	ret := m.ctrl.Call(m, "Update", ctx, urgency)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockUrgencyRepositoryMockRecorder) Update(urgency interface{}) *gomock.Call {
+func (mr *MockUrgencyRepositoryMockRecorder) Update(ctx, urgency interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockUrgencyRepository)(nil).Update), urgency)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockUrgencyRepository)(nil).Update), ctx, urgency)
 }

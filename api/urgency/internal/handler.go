@@ -73,7 +73,7 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 		Status:       urgencyV1.Open,
 	}
 
-	if err := h.svc.CreateUrgency(&urgency); err != nil {
+	if err := h.svc.CreateUrgency(requestContext(ctx), &urgency); err != nil {
 		log.Errorf("failed to create urgency: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.CREATE_FAILED", "details": err.Error()})
 		return
@@ -97,7 +97,7 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 	reqLog := h.log.WithContext(requestContext(ctx))
 	reqLog.Info("Received List Urgencies request")
 
-	urgencies, err := h.svc.GetAllUrgencies()
+	urgencies, err := h.svc.GetAllUrgencies(requestContext(ctx))
 	if err != nil {
 		reqLog.Errorf("failed to retrieve urgencies: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.LIST_FAILED", "details": err.Error()})
@@ -134,7 +134,7 @@ func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 		return
 	}
 
-	urgency, err := h.svc.GetUrgencyByID(uint(urgencyID))
+	urgency, err := h.svc.GetUrgencyByID(requestContext(ctx), uint(urgencyID))
 	if err != nil {
 		reqLog.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
@@ -182,7 +182,7 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 		return
 	}
 
-	urgency, err := h.svc.GetUrgencyByID(uint(urgencyID))
+	urgency, err := h.svc.GetUrgencyByID(requestContext(ctx), uint(urgencyID))
 	if err != nil {
 		reqLog.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
@@ -191,7 +191,7 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 
 	urgency.UpdateWithRequest(&req)
 
-	if err := h.svc.UpdateUrgency(urgency); err != nil {
+	if err := h.svc.UpdateUrgency(requestContext(ctx), urgency); err != nil {
 		reqLog.Errorf("failed to update urgency: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.UPDATE_FAILED", "details": err.Error()})
 		return
@@ -222,7 +222,7 @@ func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.svc.DeleteUrgency(uint(urgencyID)); err != nil {
+	if err := h.svc.DeleteUrgency(requestContext(ctx), uint(urgencyID)); err != nil {
 		reqLog.Errorf("failed to delete urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.DELETE_FAILED", "details": err.Error()})
 		return
@@ -243,7 +243,7 @@ func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
 	log.Info("Received Reset All Data request")
 
-	if err := h.svc.ResetAllData(); err != nil {
+	if err := h.svc.ResetAllData(requestContext(ctx)); err != nil {
 		log.Errorf("failed to reset all data: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.RESET_FAILED", "details": err.Error()})
 		return
@@ -281,7 +281,7 @@ func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	if appErr := h.svc.AssignUrgency(uint(urgencyID64), req.EmployeeID); appErr != nil {
+	if appErr := h.svc.AssignUrgency(requestContext(ctx), uint(urgencyID64), req.EmployeeID); appErr != nil {
 		log.Errorf("assign failed: %v", appErr)
 		if aerr, ok := appErr.(*commonv1.AppError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": aerr.Code, "details": aerr.Error()})
@@ -319,7 +319,7 @@ func (h *urgencyHandler) UnassignUrgency(ctx *gin.Context) {
 	roleVal, _ := ctx.Get("role")
 	actorID, _ := actorIDVal.(uint)
 	isAdmin := roleVal == "Administrator"
-	if err := h.svc.UnassignUrgency(uint(urgencyID64), actorID, isAdmin); err != nil {
+	if err := h.svc.UnassignUrgency(requestContext(ctx), uint(urgencyID64), actorID, isAdmin); err != nil {
 		log.Errorf("unassign failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -353,7 +353,7 @@ func (h *urgencyHandler) CloseUrgency(ctx *gin.Context) {
 	roleVal, _ := ctx.Get("role")
 	actorID, _ := actorIDVal.(uint)
 	isAdmin := roleVal == "Administrator"
-	if err := h.svc.CloseUrgency(uint(urgencyID64), actorID, isAdmin); err != nil {
+	if err := h.svc.CloseUrgency(requestContext(ctx), uint(urgencyID64), actorID, isAdmin); err != nil {
 		log.Errorf("close failed: %v", err)
 		if aerr, ok := err.(*commonv1.AppError); ok {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": aerr.Code, "details": aerr.Error()})

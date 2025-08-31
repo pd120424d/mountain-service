@@ -17,17 +17,17 @@ import (
 )
 
 type UrgencyService interface {
-	CreateUrgency(urgency *model.Urgency) error
-	GetAllUrgencies() ([]model.Urgency, error)
-	GetUrgencyByID(id uint) (*model.Urgency, error)
-	UpdateUrgency(urgency *model.Urgency) error
-	DeleteUrgency(id uint) error
-	ResetAllData() error
+	CreateUrgency(ctx context.Context, urgency *model.Urgency) error
+	GetAllUrgencies(ctx context.Context) ([]model.Urgency, error)
+	GetUrgencyByID(ctx context.Context, id uint) (*model.Urgency, error)
+	UpdateUrgency(ctx context.Context, urgency *model.Urgency) error
+	DeleteUrgency(ctx context.Context, id uint) error
+	ResetAllData(ctx context.Context) error
 
-	AssignUrgency(urgencyID, employeeID uint) error
-	UnassignUrgency(urgencyID uint, actorID uint, isAdmin bool) error
-	CloseUrgency(urgencyID uint, actorID uint, isAdmin bool) error
-	GetAssignment(urgencyID uint) (*urgencyV1.AssignmentResponse, error)
+	AssignUrgency(ctx context.Context, urgencyID, employeeID uint) error
+	UnassignUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error
+	CloseUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error
+	GetAssignment(ctx context.Context, urgencyID uint) (*urgencyV1.AssignmentResponse, error)
 }
 
 type urgencyService struct {
@@ -51,28 +51,28 @@ func NewUrgencyService(
 	}
 }
 
-func (s *urgencyService) CreateUrgency(urgency *model.Urgency) error {
-	s.log.Infof("Creating urgency: %s %s", urgency.FirstName, urgency.LastName)
-	err := s.repo.Create(urgency)
+func (s *urgencyService) CreateUrgency(ctx context.Context, urgency *model.Urgency) error {
+	log := s.log.WithContext(ctx)
+	log.Infof("Creating urgency: %s %s", urgency.FirstName, urgency.LastName)
+	err := s.repo.Create(ctx, urgency)
 
 	if err != nil {
-		s.log.Errorf("Failed to create urgency: %v", err)
+		log.Errorf("Failed to create urgency: %v", err)
 		return commonv1.NewAppError("URGENCY_ERRORS.CREATE_FAILED", "failed to create urgency", map[string]interface{}{"cause": err.Error()})
 	}
 
-	ctx := context.Background()
 	shiftBuffer := 1 * time.Hour // Include employees from next shift if current shift ends within 1 hour
 	onCallEmployees, err := s.employeeClient.GetOnCallEmployees(ctx, shiftBuffer)
 	if err != nil {
-		s.log.Errorf("Failed to fetch on-call employees: %v", err)
+		log.Errorf("Failed to fetch on-call employees: %v", err)
 		return commonv1.NewAppError("URGENCY_ERRORS.ON_CALL_FETCH_FAILED", "failed to fetch on-call employees", map[string]interface{}{"cause": err.Error()})
 	}
 
-	s.log.Infof("Found %d on-call employees for urgency %d", len(onCallEmployees), urgency.ID)
+	log.Infof("Found %d on-call employees for urgency %d", len(onCallEmployees), urgency.ID)
 
 	for _, employee := range onCallEmployees {
 		if err := s.createAssignmentAndNotification(urgency, employee); err != nil {
-			s.log.Errorf("Failed to create assignment/notification for employee %d: %v", employee.ID, err)
+			log.Errorf("Failed to create assignment/notification for employee %d: %v", employee.ID, err)
 			// Continue with other employees even if one fails
 		}
 	}
@@ -80,54 +80,59 @@ func (s *urgencyService) CreateUrgency(urgency *model.Urgency) error {
 	return nil
 }
 
-func (s *urgencyService) GetAllUrgencies() ([]model.Urgency, error) {
-	urgencies, err := s.repo.GetAll()
+func (s *urgencyService) GetAllUrgencies(ctx context.Context) ([]model.Urgency, error) {
+	log := s.log.WithContext(ctx)
+	urgencies, err := s.repo.GetAll(ctx)
 	if err != nil {
-		s.log.Errorf("Failed to get urgencies: %v", err)
+		log.Errorf("Failed to get urgencies: %v", err)
 		return nil, commonv1.NewAppError("URGENCY_ERRORS.LIST_FAILED", "failed to list urgencies", map[string]interface{}{"cause": err.Error()})
 	}
 	return urgencies, nil
 }
 
-func (s *urgencyService) GetUrgencyByID(id uint) (*model.Urgency, error) {
+func (s *urgencyService) GetUrgencyByID(ctx context.Context, id uint) (*model.Urgency, error) {
+	log := s.log.WithContext(ctx)
 	var urgency model.Urgency
-	if err := s.repo.GetByID(id, &urgency); err != nil {
-		s.log.Errorf("Failed to get urgency: %v", err)
+	if err := s.repo.GetByID(ctx, id, &urgency); err != nil {
+		log.Errorf("Failed to get urgency: %v", err)
 		return nil, commonv1.NewAppError("URGENCY_ERRORS.NOT_FOUND", "urgency not found", nil)
 	}
 	return &urgency, nil
 }
 
-func (s *urgencyService) UpdateUrgency(urgency *model.Urgency) error {
-	if err := s.repo.Update(urgency); err != nil {
-		s.log.Errorf("Failed to update urgency: %v", err)
+func (s *urgencyService) UpdateUrgency(ctx context.Context, urgency *model.Urgency) error {
+	log := s.log.WithContext(ctx)
+	if err := s.repo.Update(ctx, urgency); err != nil {
+		log.Errorf("Failed to update urgency: %v", err)
 		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to update urgency", map[string]interface{}{"cause": err.Error()})
 	}
 	return nil
 }
 
-func (s *urgencyService) DeleteUrgency(id uint) error {
-	if err := s.repo.Delete(id); err != nil {
-		s.log.Errorf("Failed to delete urgency: %v", err)
+func (s *urgencyService) DeleteUrgency(ctx context.Context, id uint) error {
+	log := s.log.WithContext(ctx)
+	if err := s.repo.Delete(ctx, id); err != nil {
+		log.Errorf("Failed to delete urgency: %v", err)
 		return commonv1.NewAppError("URGENCY_ERRORS.DELETE_FAILED", "failed to delete urgency", map[string]interface{}{"cause": err.Error()})
 	}
 	return nil
 }
 
-func (s *urgencyService) ResetAllData() error {
-	if err := s.repo.ResetAllData(); err != nil {
-		s.log.Errorf("Failed to reset all data: %v", err)
+func (s *urgencyService) ResetAllData(ctx context.Context) error {
+	log := s.log.WithContext(ctx)
+	if err := s.repo.ResetAllData(ctx); err != nil {
+		log.Errorf("Failed to reset all data: %v", err)
 		return commonv1.NewAppError("URGENCY_ERRORS.RESET_FAILED", "failed to reset all data", map[string]interface{}{"cause": err.Error()})
 	}
 	return nil
 }
 
-func (s *urgencyService) AssignUrgency(urgencyID, employeeID uint) error {
+func (s *urgencyService) AssignUrgency(ctx context.Context, urgencyID, employeeID uint) error {
 	if urgencyID == 0 || employeeID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId and employeeId are required", nil)
 	}
 
-	urg, err := s.GetUrgencyByID(urgencyID)
+	urg, err := s.GetUrgencyByID(ctx, urgencyID)
 	if err != nil {
 		return err
 	}
@@ -135,7 +140,6 @@ func (s *urgencyService) AssignUrgency(urgencyID, employeeID uint) error {
 		return commonv1.NewAppError("URGENCY_ERRORS.ALREADY_ASSIGNED", "urgency already assigned", nil)
 	}
 
-	ctx := context.Background()
 	if _, err := s.employeeClient.GetEmployeeByID(ctx, employeeID); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.INVALID_ASSIGNEE", "employee does not exist or is not accessible", map[string]interface{}{"cause": err.Error(), "employeeId": employeeID})
 	}
@@ -143,17 +147,17 @@ func (s *urgencyService) AssignUrgency(urgencyID, employeeID uint) error {
 	urg.AssignedEmployeeID = &employeeID
 	urg.AssignedAt = &now
 	urg.Status = urgencyV1.InProgress
-	if err := s.repo.Update(urg); err != nil {
+	if err := s.repo.Update(ctx, urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to update urgency with assignment", map[string]interface{}{"cause": err.Error()})
 	}
 	return nil
 }
 
-func (s *urgencyService) UnassignUrgency(urgencyID uint, actorID uint, isAdmin bool) error {
+func (s *urgencyService) UnassignUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error {
 	if urgencyID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
 	}
-	urg, err := s.GetUrgencyByID(urgencyID)
+	urg, err := s.GetUrgencyByID(ctx, urgencyID)
 	if err != nil {
 		return err
 	}
@@ -165,17 +169,17 @@ func (s *urgencyService) UnassignUrgency(urgencyID uint, actorID uint, isAdmin b
 	}
 	urg.AssignedEmployeeID = nil
 	urg.AssignedAt = nil
-	if err := s.repo.Update(urg); err != nil {
+	if err := s.repo.Update(ctx, urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UNASSIGN_FAILED", "failed to unassign", map[string]interface{}{"cause": err.Error()})
 	}
 	return nil
 }
 
-func (s *urgencyService) CloseUrgency(urgencyID uint, actorID uint, isAdmin bool) error {
+func (s *urgencyService) CloseUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error {
 	if urgencyID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
 	}
-	urg, err := s.GetUrgencyByID(urgencyID)
+	urg, err := s.GetUrgencyByID(ctx, urgencyID)
 	if err != nil {
 		return err
 	}
@@ -190,22 +194,21 @@ func (s *urgencyService) CloseUrgency(urgencyID uint, actorID uint, isAdmin bool
 		return commonv1.NewAppError("AUTH_ERRORS.FORBIDDEN", "only assignee or admin can close", map[string]interface{}{"assignee": *urg.AssignedEmployeeID})
 	}
 	// Validate that assigned employee still exists
-	ctx := context.Background()
 	if _, err := s.employeeClient.GetEmployeeByID(ctx, *urg.AssignedEmployeeID); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.INVALID_ASSIGNEE", "assigned employee does not exist or is not accessible", map[string]interface{}{"cause": err.Error(), "employeeId": *urg.AssignedEmployeeID})
 	}
 	urg.Status = urgencyV1.Closed
-	if err := s.repo.Update(urg); err != nil {
+	if err := s.repo.Update(ctx, urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to close urgency", map[string]interface{}{"cause": err.Error()})
 	}
 	return nil
 }
 
-func (s *urgencyService) GetAssignment(urgencyID uint) (*urgencyV1.AssignmentResponse, error) {
+func (s *urgencyService) GetAssignment(ctx context.Context, urgencyID uint) (*urgencyV1.AssignmentResponse, error) {
 	if urgencyID == 0 {
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
 	}
-	urg, err := s.GetUrgencyByID(urgencyID)
+	urg, err := s.GetUrgencyByID(ctx, urgencyID)
 	if err != nil {
 		return nil, err
 	}

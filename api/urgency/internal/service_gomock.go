@@ -5,6 +5,7 @@
 package internal
 
 import (
+	context "context"
 	reflect "reflect"
 
 	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
@@ -36,144 +37,144 @@ func (m *MockUrgencyService) EXPECT() *MockUrgencyServiceMockRecorder {
 }
 
 // CreateUrgency mocks base method.
-func (m *MockUrgencyService) CreateUrgency(urgency *model.Urgency) error {
+func (m *MockUrgencyService) CreateUrgency(ctx context.Context, urgency *model.Urgency) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUrgency", urgency)
+	ret := m.ctrl.Call(m, "CreateUrgency", ctx, urgency)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateUrgency indicates an expected call of CreateUrgency.
-func (mr *MockUrgencyServiceMockRecorder) CreateUrgency(urgency interface{}) *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) CreateUrgency(ctx, urgency interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUrgency", reflect.TypeOf((*MockUrgencyService)(nil).CreateUrgency), urgency)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUrgency", reflect.TypeOf((*MockUrgencyService)(nil).CreateUrgency), ctx, urgency)
 }
 
 // DeleteUrgency mocks base method.
-func (m *MockUrgencyService) DeleteUrgency(id uint) error {
+func (m *MockUrgencyService) DeleteUrgency(ctx context.Context, id uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteUrgency", id)
+	ret := m.ctrl.Call(m, "DeleteUrgency", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteUrgency indicates an expected call of DeleteUrgency.
-func (mr *MockUrgencyServiceMockRecorder) DeleteUrgency(id interface{}) *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) DeleteUrgency(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUrgency", reflect.TypeOf((*MockUrgencyService)(nil).DeleteUrgency), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUrgency", reflect.TypeOf((*MockUrgencyService)(nil).DeleteUrgency), ctx, id)
 }
 
 // GetAllUrgencies mocks base method.
-func (m *MockUrgencyService) GetAllUrgencies() ([]model.Urgency, error) {
+func (m *MockUrgencyService) GetAllUrgencies(ctx context.Context) ([]model.Urgency, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllUrgencies")
+	ret := m.ctrl.Call(m, "GetAllUrgencies", ctx)
 	ret0, _ := ret[0].([]model.Urgency)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllUrgencies indicates an expected call of GetAllUrgencies.
-func (mr *MockUrgencyServiceMockRecorder) GetAllUrgencies() *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) GetAllUrgencies(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUrgencies", reflect.TypeOf((*MockUrgencyService)(nil).GetAllUrgencies))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUrgencies", reflect.TypeOf((*MockUrgencyService)(nil).GetAllUrgencies), ctx)
 }
 
 // GetUrgencyByID mocks base method.
-func (m *MockUrgencyService) GetUrgencyByID(id uint) (*model.Urgency, error) {
+func (m *MockUrgencyService) GetUrgencyByID(ctx context.Context, id uint) (*model.Urgency, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUrgencyByID", id)
+	ret := m.ctrl.Call(m, "GetUrgencyByID", ctx, id)
 	ret0, _ := ret[0].(*model.Urgency)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUrgencyByID indicates an expected call of GetUrgencyByID.
-func (mr *MockUrgencyServiceMockRecorder) GetUrgencyByID(id interface{}) *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) GetUrgencyByID(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUrgencyByID", reflect.TypeOf((*MockUrgencyService)(nil).GetUrgencyByID), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUrgencyByID", reflect.TypeOf((*MockUrgencyService)(nil).GetUrgencyByID), ctx, id)
 }
 
 // ResetAllData mocks base method.
-func (m *MockUrgencyService) ResetAllData() error {
+func (m *MockUrgencyService) ResetAllData(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetAllData")
+	ret := m.ctrl.Call(m, "ResetAllData", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ResetAllData indicates an expected call of ResetAllData.
-func (mr *MockUrgencyServiceMockRecorder) ResetAllData() *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) ResetAllData(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockUrgencyService)(nil).ResetAllData))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockUrgencyService)(nil).ResetAllData), ctx)
 }
 
 // UpdateUrgency mocks base method.
-func (m *MockUrgencyService) UpdateUrgency(urgency *model.Urgency) error {
+func (m *MockUrgencyService) UpdateUrgency(ctx context.Context, urgency *model.Urgency) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUrgency", urgency)
+	ret := m.ctrl.Call(m, "UpdateUrgency", ctx, urgency)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateUrgency indicates an expected call of UpdateUrgency.
-func (mr *MockUrgencyServiceMockRecorder) UpdateUrgency(urgency interface{}) *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) UpdateUrgency(ctx, urgency interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUrgency", reflect.TypeOf((*MockUrgencyService)(nil).UpdateUrgency), urgency)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUrgency", reflect.TypeOf((*MockUrgencyService)(nil).UpdateUrgency), ctx, urgency)
 }
 
 // AssignUrgency mocks base method.
-func (m *MockUrgencyService) AssignUrgency(urgencyID, employeeID uint) error {
+func (m *MockUrgencyService) AssignUrgency(ctx context.Context, urgencyID, employeeID uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AssignUrgency", urgencyID, employeeID)
+	ret := m.ctrl.Call(m, "AssignUrgency", ctx, urgencyID, employeeID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AssignUrgency indicates an expected call of AssignUrgency.
-func (mr *MockUrgencyServiceMockRecorder) AssignUrgency(urgencyID, employeeID interface{}) *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) AssignUrgency(ctx, urgencyID, employeeID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignUrgency", reflect.TypeOf((*MockUrgencyService)(nil).AssignUrgency), urgencyID, employeeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignUrgency", reflect.TypeOf((*MockUrgencyService)(nil).AssignUrgency), ctx, urgencyID, employeeID)
 }
 
 // UnassignUrgency mocks base method.
-func (m *MockUrgencyService) UnassignUrgency(urgencyID uint, actorID uint, isAdmin bool) error {
+func (m *MockUrgencyService) UnassignUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnassignUrgency", urgencyID, actorID, isAdmin)
+	ret := m.ctrl.Call(m, "UnassignUrgency", ctx, urgencyID, actorID, isAdmin)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UnassignUrgency indicates an expected call of UnassignUrgency.
-func (mr *MockUrgencyServiceMockRecorder) UnassignUrgency(urgencyID, actorID, isAdmin interface{}) *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) UnassignUrgency(ctx, urgencyID, actorID, isAdmin interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnassignUrgency", reflect.TypeOf((*MockUrgencyService)(nil).UnassignUrgency), urgencyID, actorID, isAdmin)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnassignUrgency", reflect.TypeOf((*MockUrgencyService)(nil).UnassignUrgency), ctx, urgencyID, actorID, isAdmin)
 }
 
 // CloseUrgency mocks base method.
-func (m *MockUrgencyService) CloseUrgency(urgencyID uint, actorID uint, isAdmin bool) error {
+func (m *MockUrgencyService) CloseUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseUrgency", urgencyID, actorID, isAdmin)
+	ret := m.ctrl.Call(m, "CloseUrgency", ctx, urgencyID, actorID, isAdmin)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CloseUrgency indicates an expected call of CloseUrgency.
-func (mr *MockUrgencyServiceMockRecorder) CloseUrgency(urgencyID, actorID, isAdmin interface{}) *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) CloseUrgency(ctx, urgencyID, actorID, isAdmin interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseUrgency", reflect.TypeOf((*MockUrgencyService)(nil).CloseUrgency), urgencyID, actorID, isAdmin)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseUrgency", reflect.TypeOf((*MockUrgencyService)(nil).CloseUrgency), ctx, urgencyID, actorID, isAdmin)
 }
 
 // GetAssignment mocks base method.
-func (m *MockUrgencyService) GetAssignment(urgencyID uint) (*urgencyV1.AssignmentResponse, error) {
+func (m *MockUrgencyService) GetAssignment(ctx context.Context, urgencyID uint) (*urgencyV1.AssignmentResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAssignment", urgencyID)
+	ret := m.ctrl.Call(m, "GetAssignment", ctx, urgencyID)
 	ret0, _ := ret[0].(*urgencyV1.AssignmentResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAssignment indicates an expected call of GetAssignment.
-func (mr *MockUrgencyServiceMockRecorder) GetAssignment(urgencyID interface{}) *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) GetAssignment(ctx, urgencyID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignment", reflect.TypeOf((*MockUrgencyService)(nil).GetAssignment), urgencyID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignment", reflect.TypeOf((*MockUrgencyService)(nil).GetAssignment), ctx, urgencyID)
 }
