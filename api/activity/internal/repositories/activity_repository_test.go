@@ -115,7 +115,6 @@ func TestActivityRepository_CreateWithOutbox(t *testing.T) {
 		}
 
 		event := &models.OutboxEvent{
-			EventType:   "activity.created",
 			AggregateID: "activity-1",
 			EventData:   `{"x":1}`,
 		}
@@ -136,7 +135,6 @@ func TestActivityRepository_CreateWithOutbox(t *testing.T) {
 		}
 
 		event := &models.OutboxEvent{
-			EventType:   "activity.created",
 			AggregateID: "activity-1",
 			EventData:   `{"x":1}`,
 		}
@@ -157,7 +155,6 @@ func TestActivityRepository_CreateWithOutbox(t *testing.T) {
 		}
 
 		event := &models.OutboxEvent{
-			EventType:   "activity.created",
 			AggregateID: "activity-1",
 			EventData:   `{"x":1}`,
 		}

@@ -111,10 +111,9 @@ func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.Ac
 
 	// Build outbox event payload for CQRS
 	event := activityV1.CreateOutboxEvent(
-		activityV1.ActivityEventCreated,
 		activity.ID,
 		activityV1.ActivityEvent{
-			Type:        string(activityV1.ActivityEventCreated),
+			Type:        "CREATE", // used by Firestore updater to determine action
 			ActivityID:  activity.ID,
 			UrgencyID:   activity.UrgencyID,
 			EmployeeID:  activity.EmployeeID,

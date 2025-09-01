@@ -49,9 +49,9 @@ func TestOutboxRepository_GetUnpublishedEvents(t *testing.T) {
 		repo := NewOutboxRepository(logger, gormDB)
 
 		now := time.Now()
-		rows := sqlmock.NewRows([]string{"id", "event_type", "aggregate_id", "event_data", "published", "created_at", "published_at"}).
-			AddRow(1, "activity_created", "activity-1", `{"id": 1}`, false, now, nil).
-			AddRow(2, "activity_updated", "activity-2", `{"id": 2}`, false, now, nil)
+		rows := sqlmock.NewRows([]string{"id", "aggregate_id", "event_data", "published", "created_at", "published_at"}).
+			AddRow(1, "activity-1", `{"id": 1}`, false, now, nil).
+			AddRow(2, "activity-2", `{"id": 2}`, false, now, nil)
 
 		mock.ExpectQuery(`SELECT \* FROM "outbox_events" WHERE published = \$1 ORDER BY created_at ASC LIMIT \$2`).
 			WithArgs(false, 10).
@@ -61,7 +61,6 @@ func TestOutboxRepository_GetUnpublishedEvents(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, events, 2)
 		assert.Equal(t, uint(1), events[0].ID)
-		assert.Equal(t, "activity_created", events[0].EventType)
 		assert.Equal(t, "activity-1", events[0].AggregateID)
 		assert.False(t, events[0].Published)
 
@@ -106,7 +105,7 @@ func TestOutboxRepository_GetUnpublishedEvents(t *testing.T) {
 		logger := utils.NewTestLogger()
 		repo := NewOutboxRepository(logger, gormDB)
 
-		rows := sqlmock.NewRows([]string{"id", "event_type", "aggregate_id", "event_data", "published", "created_at", "published_at"})
+		rows := sqlmock.NewRows([]string{"id", "aggregate_id", "event_data", "published", "created_at", "published_at"})
 
 		mock.ExpectQuery(`SELECT \* FROM "outbox_events" WHERE published = \$1 ORDER BY created_at ASC LIMIT \$2`).
 			WithArgs(false, 10).
@@ -193,13 +192,12 @@ func TestOutboxRepository_MarkOutboxEventAsPublished(t *testing.T) {
 
 		event := &models.OutboxEvent{
 			ID:        1,
-			EventType: "activity_created",
 			Published: false,
 		}
 
 		mock.ExpectBegin()
-		mock.ExpectExec(`UPDATE "outbox_events" SET "event_type"=\$1,"aggregate_id"=\$2,"event_data"=\$3,"published"=\$4,"created_at"=\$5,"published_at"=\$6 WHERE "id" = \$7`).
-			WithArgs(event.EventType, event.AggregateID, event.EventData, true, sqlmock.AnyArg(), sqlmock.AnyArg(), event.ID).
+		mock.ExpectExec(`UPDATE "outbox_events" SET "aggregate_id"=\$1,"event_data"=\$2,"published"=\$3,"created_at"=\$4,"published_at"=\$5 WHERE "id" = \$6`).
+			WithArgs(event.AggregateID, event.EventData, true, sqlmock.AnyArg(), sqlmock.AnyArg(), event.ID).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectCommit()
 
@@ -226,13 +224,12 @@ func TestOutboxRepository_MarkOutboxEventAsPublished(t *testing.T) {
 
 		event := &models.OutboxEvent{
 			ID:        1,
-			EventType: "activity_created",
 			Published: false,
 		}
 
 		mock.ExpectBegin()
-		mock.ExpectExec(`UPDATE "outbox_events" SET "event_type"=\$1,"aggregate_id"=\$2,"event_data"=\$3,"published"=\$4,"created_at"=\$5,"published_at"=\$6 WHERE "id" = \$7`).
-			WithArgs(event.EventType, event.AggregateID, event.EventData, true, sqlmock.AnyArg(), sqlmock.AnyArg(), event.ID).
+		mock.ExpectExec(`UPDATE "outbox_events" SET "aggregate_id"=\$1,"event_data"=\$2,"published"=\$3,"created_at"=\$4,"published_at"=\$5 WHERE "id" = \$6`).
+			WithArgs(event.AggregateID, event.EventData, true, sqlmock.AnyArg(), sqlmock.AnyArg(), event.ID).
 			WillReturnError(assert.AnError)
 		mock.ExpectRollback()
 

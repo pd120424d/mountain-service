@@ -37,8 +37,8 @@ func TestOutboxRepository_GetUnpublishedEvents(t *testing.T) {
 	// success
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "outbox_events" WHERE published = $1 ORDER BY created_at ASC LIMIT $2`)).
 		WithArgs(false, 100).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "event_type", "aggregate_id", "event_data", "published", "created_at", "published_at"}).
-			AddRow(1, "activity.created", "activity-1", `{"x":1}`, false, time.Now(), nil))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "aggregate_id", "event_data", "published", "created_at", "published_at"}).
+			AddRow(1, "activity-1", `{"x":1}`, false, time.Now(), nil))
 
 	events, err := repo.GetUnpublishedEvents(context.Background(), 100)
 	assert.NoError(t, err)
@@ -92,12 +92,12 @@ func TestOutboxRepository_MarkOutboxEventAsPublished(t *testing.T) {
 	defer sqlDB.Close()
 
 	repo := NewOutboxRepository(logger, gormDB)
-	event := &models.OutboxEvent{ID: 5, EventType: "activity.created", AggregateID: "activity-5", EventData: `{"x":5}`}
+	event := &models.OutboxEvent{ID: 5, AggregateID: "activity-5", EventData: `{"x":5}`}
 
 	// success
 	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "outbox_events" SET "event_type"=$1,"aggregate_id"=$2,"event_data"=$3,"published"=$4,"created_at"=$5,"published_at"=$6 WHERE "id" = $7`)).
-		WithArgs(event.EventType, event.AggregateID, event.EventData, true, sqlmock.AnyArg(), sqlmock.AnyArg(), event.ID).
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "outbox_events" SET "aggregate_id"=$1,"event_data"=$2,"published"=$3,"created_at"=$4,"published_at"=$5 WHERE "id" = $6`)).
+		WithArgs(event.AggregateID, event.EventData, true, sqlmock.AnyArg(), sqlmock.AnyArg(), event.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -108,10 +108,10 @@ func TestOutboxRepository_MarkOutboxEventAsPublished(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 
 	// db error
-	event = &models.OutboxEvent{ID: 6, EventType: "activity.created", AggregateID: "activity-6", EventData: `{"x":6}`}
+	event = &models.OutboxEvent{ID: 6, AggregateID: "activity-6", EventData: `{"x":6}`}
 	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "outbox_events" SET "event_type"=$1,"aggregate_id"=$2,"event_data"=$3,"published"=$4,"created_at"=$5,"published_at"=$6 WHERE "id" = $7`)).
-		WithArgs(event.EventType, event.AggregateID, event.EventData, true, sqlmock.AnyArg(), sqlmock.AnyArg(), event.ID).
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "outbox_events" SET "aggregate_id"=$1,"event_data"=$2,"published"=$3,"created_at"=$4,"published_at"=$5 WHERE "id" = $6`)).
+		WithArgs(event.AggregateID, event.EventData, true, sqlmock.AnyArg(), sqlmock.AnyArg(), event.ID).
 		WillReturnError(assert.AnError)
 	mock.ExpectRollback()
 

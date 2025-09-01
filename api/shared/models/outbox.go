@@ -5,9 +5,9 @@ import (
 )
 
 // OutboxEvent represents an event in the outbox pattern for eventual consistency
+// Note: EventType field removed as deprecated/unused.
 type OutboxEvent struct {
 	ID          uint       `gorm:"primaryKey" json:"id"`
-	EventType   string     `gorm:"not null" json:"eventType"`
 	AggregateID string     `gorm:"not null" json:"aggregateId"`
 	EventData   string     `gorm:"type:text" json:"eventData"`
 	Published   bool       `gorm:"default:false" json:"published"`

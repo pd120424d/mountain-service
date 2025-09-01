@@ -159,9 +159,8 @@ func TestCreateOutboxEvent(t *testing.T) {
 			CreatedAt:   time.Now(),
 		}
 
-		outboxEvent := CreateOutboxEvent(ActivityEventCreated, activityID, activityEvent)
+		outboxEvent := CreateOutboxEvent(activityID, activityEvent)
 
-		assert.Equal(t, string(ActivityEventCreated), outboxEvent.EventType)
 		assert.Equal(t, fmt.Sprintf("activity-%d", activityID), outboxEvent.AggregateID)
 		assert.Equal(t, false, outboxEvent.Published)
 		assert.NotZero(t, outboxEvent.CreatedAt)
@@ -184,7 +183,7 @@ func TestOutboxEvent_GetEventData(t *testing.T) {
 			CreatedAt:   createdAt,
 		}
 
-		outboxEvent := CreateOutboxEvent(ActivityEventCreated, activityID, activityEvent)
+		outboxEvent := CreateOutboxEvent(activityID, activityEvent)
 
 		eventData, err := outboxEvent.GetEventData()
 		assert.NoError(t, err)

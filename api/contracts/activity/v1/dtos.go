@@ -139,7 +139,6 @@ func (r *ActivityCreateRequest) ToString() string {
 // OutboxEvent represents an event to be published to Pub/Sub for CQRS
 type OutboxEvent struct {
 	ID          uint       `json:"id" gorm:"primaryKey"`
-	EventType   string     `json:"eventType" gorm:"not null"`
 	AggregateID string     `json:"aggregateId" gorm:"not null"`
 	EventData   string     `json:"eventData" gorm:"type:text"`
 	Published   bool       `json:"published" gorm:"default:false"`
@@ -148,6 +147,7 @@ type OutboxEvent struct {
 }
 
 // ActivityEvent represents the event data for activity operations (CQRS)
+// Note: Type is used by the read-model (Firestore) updater to decide the action (CREATE/UPDATE/DELETE).
 type ActivityEvent struct {
 	Type        string    `json:"type"` // CREATE, UPDATE, DELETE
 	ActivityID  uint      `json:"activityId"`
@@ -161,20 +161,10 @@ type ActivityEvent struct {
 	UrgencyLevel string `json:"urgencyLevel,omitempty"`
 }
 
-// ActivityEventType represents the type of CQRS event
-type ActivityEventType string
-
-const (
-	ActivityEventCreated ActivityEventType = "activity.created"
-	ActivityEventUpdated ActivityEventType = "activity.updated"
-	ActivityEventDeleted ActivityEventType = "activity.deleted"
-)
-
-func CreateOutboxEvent(eventType ActivityEventType, activityID uint, eventData ActivityEvent) *OutboxEvent {
+func CreateOutboxEvent(activityID uint, eventData ActivityEvent) *OutboxEvent {
 	data, _ := json.Marshal(eventData)
 
 	return &OutboxEvent{
-		EventType:   string(eventType),
 		AggregateID: fmt.Sprintf("activity-%d", activityID),
 		EventData:   string(data),
 		Published:   false,

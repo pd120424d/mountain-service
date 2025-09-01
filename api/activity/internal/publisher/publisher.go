@@ -94,7 +94,6 @@ func (p *Publisher) processOnce(ctx context.Context) error {
 		// Build the payload from the contract dto
 		payload := activityV1.OutboxEvent{
 			ID:          e.ID,
-			EventType:   e.EventType,
 			AggregateID: e.AggregateID,
 			EventData:   e.EventData,
 			Published:   e.Published,
@@ -109,7 +108,7 @@ func (p *Publisher) processOnce(ctx context.Context) error {
 
 		res := topic.Publish(ctx, &pubsub.Message{
 			Data:       data,
-			Attributes: map[string]string{"eventType": e.EventType, "aggregateId": e.AggregateID},
+			Attributes: map[string]string{"aggregateId": e.AggregateID},
 		})
 		if _, err := res.Get(ctx); err != nil {
 			log.Errorf("failed to publish event id=%d: %v", e.ID, err)

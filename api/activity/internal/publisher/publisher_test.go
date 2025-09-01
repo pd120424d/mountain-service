@@ -32,7 +32,7 @@ func TestPublisher_processOnce(t *testing.T) {
 		log := utils.NewTestLogger()
 		mockRepo := repo.NewMockOutboxRepository(ctrl)
 
-		events := []*models.OutboxEvent{{ID: 1, EventType: "activity.created", AggregateID: "activity-1", EventData: `{"x":1}`}}
+		events := []*models.OutboxEvent{{ID: 1, AggregateID: "activity-1", EventData: `{"x":1}`}}
 		mockRepo.EXPECT().GetUnpublishedEvents(gomock.Any(), 100).Return(events, nil)
 		mockRepo.EXPECT().MarkAsPublished(gomock.Any(), uint(1)).Return(nil)
 
@@ -51,7 +51,7 @@ func TestPublisher_processOnce(t *testing.T) {
 			}
 			defer topic.Stop()
 			for _, e := range events {
-				res := topic.Publish(ctx, &pubsub.Message{Data: []byte(e.EventData), Attributes: map[string]string{"eventType": e.EventType, "aggregateId": e.AggregateID}})
+				res := topic.Publish(ctx, &pubsub.Message{Data: []byte(e.EventData), Attributes: map[string]string{"aggregateId": e.AggregateID}})
 				if _, err := res.Get(ctx); err != nil {
 					continue
 				}

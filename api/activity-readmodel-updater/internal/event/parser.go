@@ -80,7 +80,7 @@ func Parse(data []byte, attrs map[string]string) (activityV1.ActivityEvent, stri
 
 func tryEnvelope(data []byte, aggAttr string) (*activityV1.ActivityEvent, bool) {
 	var env activityV1.OutboxEvent
-	if err := json.Unmarshal(data, &env); err != nil || (env.EventData == "" && env.EventType == "") {
+	if err := json.Unmarshal(data, &env); err != nil || env.EventData == "" {
 		return nil, false
 	}
 	agg := env.AggregateID
