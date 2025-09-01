@@ -77,3 +77,57 @@ func TestPublisher_processOnce(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestPublisher_processOnce_MoreCases(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns nil when no events", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		mockRepo := repo.NewMockOutboxRepository(ctrl)
+		mockRepo.EXPECT().GetUnpublishedEvents(gomock.Any(), 100).Return([]*models.OutboxEvent{}, nil)
+
+		p := &Publisher{log: log, repo: mockRepo, config: Config{TopicName: "activity-events", Interval: 1}}
+		// Inject a topic that would panic if used
+		p.topicFactory = func(name string) topic { return &fakeTopic{res: &fakePublishResult{err: nil}} }
+		err := p.processOnce(context.Background())
+		assert.NoError(t, err)
+	})
+
+	t.Run("skips event when publish returns error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		mockRepo := repo.NewMockOutboxRepository(ctrl)
+		events := []*models.OutboxEvent{{ID: 10, AggregateID: "activity-10", EventData: `{"x":10}`}}
+		mockRepo.EXPECT().GetUnpublishedEvents(gomock.Any(), 100).Return(events, nil)
+		// Ensure MarkAsPublished is NOT called when publish fails
+		// No expectation set for MarkAsPublished; gomock will fail if it's called
+
+		p := &Publisher{log: log, repo: mockRepo, config: Config{TopicName: "activity-events", Interval: 1}}
+		p.topicFactory = func(name string) topic { return &fakeTopic{res: &fakePublishResult{err: errors.New("pubsub down")}} }
+		err := p.processOnce(context.Background())
+		assert.NoError(t, err)
+	})
+
+	t.Run("continues when mark as published fails and processes others", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		mockRepo := repo.NewMockOutboxRepository(ctrl)
+		events := []*models.OutboxEvent{
+			{ID: 1, AggregateID: "activity-1", EventData: `{"x":1}`},
+			{ID: 2, AggregateID: "activity-2", EventData: `{"x":2}`},
+		}
+		mockRepo.EXPECT().GetUnpublishedEvents(gomock.Any(), 100).Return(events, nil)
+		// First mark fails, second succeeds
+		mockRepo.EXPECT().MarkAsPublished(gomock.Any(), uint(1)).Return(assert.AnError)
+		mockRepo.EXPECT().MarkAsPublished(gomock.Any(), uint(2)).Return(nil)
+
+		p := &Publisher{log: log, repo: mockRepo, config: Config{TopicName: "activity-events", Interval: 1}}
+		p.topicFactory = func(name string) topic { return &fakeTopic{res: &fakePublishResult{err: nil}} }
+		err := p.processOnce(context.Background())
+		assert.NoError(t, err)
+	})
+}

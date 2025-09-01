@@ -1022,3 +1022,137 @@ func TestUrgencyService_GetAssignment(t *testing.T) {
 		}
 	})
 }
+
+func TestUrgencyService_CloseUrgency(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it returns error on invalid urgencyID", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		svc := &urgencyService{log: log}
+		err := svc.CloseUrgency(context.Background(), 0, 10, false)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when GetByID fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		svc := &urgencyService{log: log, repo: repo}
+		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
+		err := svc.CloseUrgency(context.Background(), 1, 99, false)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when urgency has no assignee", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		svc := &urgencyService{log: log, repo: repo}
+		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
+		err := svc.CloseUrgency(context.Background(), 1, 99, false)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when status is not in_progress", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		svc := &urgencyService{log: log, repo: repo}
+		emp := uint(22)
+		repo.EXPECT().GetByID(gomock.Any(), uint(2), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.Open}
+			return nil
+		})
+		err := svc.CloseUrgency(context.Background(), 2, 22, false)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns forbidden when actor is not assignee and not admin", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		svc := &urgencyService{log: log, repo: repo}
+		emp := uint(55)
+		repo.EXPECT().GetByID(gomock.Any(), uint(3), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.InProgress}
+			return nil
+		})
+		err := svc.CloseUrgency(context.Background(), 3, 99, false)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when assigned employee is invalid", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		ecli := clients.NewMockEmployeeClient(ctrl)
+		svc := &urgencyService{log: log, repo: repo, employeeClient: ecli}
+		emp := uint(77)
+		repo.EXPECT().GetByID(gomock.Any(), uint(4), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.InProgress}
+			return nil
+		})
+		ecli.EXPECT().GetEmployeeByID(gomock.Any(), emp).Return(nil, assert.AnError)
+		err := svc.CloseUrgency(context.Background(), 4, emp, true)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns error when repo update fails", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		ecli := clients.NewMockEmployeeClient(ctrl)
+		svc := &urgencyService{log: log, repo: repo, employeeClient: ecli}
+		emp := uint(5)
+		repo.EXPECT().GetByID(gomock.Any(), uint(5), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.InProgress}
+			return nil
+		})
+		ecli.EXPECT().GetEmployeeByID(gomock.Any(), emp).Return(&employeeV1.EmployeeResponse{ID: emp}, nil)
+		repo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(assert.AnError)
+		err := svc.CloseUrgency(context.Background(), 5, emp, true)
+		assert.Error(t, err)
+	})
+
+	t.Run("it succeeds when assignee closes", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		ecli := clients.NewMockEmployeeClient(ctrl)
+		svc := &urgencyService{log: log, repo: repo, employeeClient: ecli}
+		emp := uint(9)
+		repo.EXPECT().GetByID(gomock.Any(), uint(6), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.InProgress}
+			return nil
+		})
+		ecli.EXPECT().GetEmployeeByID(gomock.Any(), emp).Return(&employeeV1.EmployeeResponse{ID: emp}, nil)
+		repo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
+		err := svc.CloseUrgency(context.Background(), 6, emp, false)
+		assert.NoError(t, err)
+	})
+
+	t.Run("it succeeds when admin closes", func(t *testing.T) {
+		log := utils.NewTestLogger()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		repo := repositories.NewMockUrgencyRepository(ctrl)
+		ecli := clients.NewMockEmployeeClient(ctrl)
+		svc := &urgencyService{log: log, repo: repo, employeeClient: ecli}
+		emp := uint(12)
+		repo.EXPECT().GetByID(gomock.Any(), uint(7), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.InProgress}
+			return nil
+		})
+		ecli.EXPECT().GetEmployeeByID(gomock.Any(), emp).Return(&employeeV1.EmployeeResponse{ID: emp}, nil)
+		repo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
+		err := svc.CloseUrgency(context.Background(), 7, 999, true)
+		assert.NoError(t, err)
+	})
+}
