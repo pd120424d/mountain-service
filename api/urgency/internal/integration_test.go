@@ -95,11 +95,13 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var listResponse []urgencyV1.UrgencyResponse
+		var listResponse urgencyV1.UrgencyListResponse
 		err = json.Unmarshal(w.Body.Bytes(), &listResponse)
 		require.NoError(t, err)
-		assert.Len(t, listResponse, 1)
-		assert.Equal(t, urgencyID, listResponse[0].ID)
+		assert.Equal(t, int64(1), listResponse.Total)
+		if assert.Len(t, listResponse.Urgencies, 1) {
+			assert.Equal(t, urgencyID, listResponse.Urgencies[0].ID)
+		}
 
 		w = httptest.NewRecorder()
 		req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/urgencies/%d", urgencyID), nil)
@@ -163,7 +165,8 @@ func TestIntegration_UrgencyLifecycle(t *testing.T) {
 
 		err = json.Unmarshal(w.Body.Bytes(), &listResponse)
 		require.NoError(t, err)
-		assert.Len(t, listResponse, 0)
+		assert.Equal(t, int64(0), listResponse.Total)
+		assert.Len(t, listResponse.Urgencies, 0)
 	})
 }
 
