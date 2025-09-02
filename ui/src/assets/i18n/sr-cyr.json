@@ -302,6 +302,7 @@
     "UPDATED_AT": "Последње ажурирање",
     "ACTIVITIES": "Активности",
     "ADD_ACTIVITY": "Додај активност",
+    "ADD_ACTIVITY_DISABLED": "Додавање активности је доступно само када је ургентна ситуација додељена и у току",
     "ACTIVITY_TITLE": "Назив активности",
     "ACTIVITY_TITLE_PLACEHOLDER": "Унесите назив активности",
     "ACTIVITY_LEVEL": "Ниво активности",

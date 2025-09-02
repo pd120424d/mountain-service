@@ -186,12 +186,18 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	jwtSecret := server.SetupJWTSecret(log)
 	_ = jwtSecret // JWT secret is set up but not used directly here
 
-	// For activity service, we don't have user logout, so no blacklist usage required here.
-	// Pass a no-op blacklist implementation.
-	noopBlacklist := auth.NewTokenBlacklist(auth.TokenBlacklistConfig{RedisAddr: "localhost:6379", RedisDB: 0})
-	_ = noopBlacklist
+	redisAddr := os.Getenv(globConf.REDIS_ADDR)
+	if redisAddr == "" {
+		redisAddr = "redis:6379"
+	}
+	blacklistConfig := auth.TokenBlacklistConfig{RedisAddr: redisAddr, RedisDB: 0}
+	tokenBlacklist := auth.NewTokenBlacklist(blacklistConfig)
+	if err := tokenBlacklist.TestConnection(); err != nil {
+		log.Fatalf("Failed to connect to Redis token blacklist: %v. Redis is required for secure token invalidation.", err)
+	}
+	log.Info("Successfully initialized Redis token blacklist")
 
-	authMiddleware := auth.AuthMiddleware(log, nil)
+	authMiddleware := auth.AuthMiddleware(log, tokenBlacklist)
 
 	authorized := r.Group("/api/v1").Use(authMiddleware)
 	{
@@ -210,7 +216,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	}
 
 	// Admin-only routes
-	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log, nil))
+	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log, tokenBlacklist))
 	{
 		admin.DELETE("/activities/reset", activityHandler.ResetAllData)
 	}

@@ -91,26 +91,47 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 // @Tags urgency
 // @Security OAuth2Password
 // @Produce  json
-// @Success 200 {array} []urgencyV1.UrgencyResponse
+// @Param page query int false "Page number" default(1)
+// @Param pageSize query int false "Page size" default(20)
+// @Success 200 {object} urgencyV1.UrgencyListResponse
 // @Router /urgencies [get]
 func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 	reqLog := h.log.WithContext(requestContext(ctx))
 	reqLog.Info("Received List Urgencies request")
 
-	urgencies, err := h.svc.GetAllUrgencies(requestContext(ctx))
+	// Parse pagination params
+	page := 1
+	pageSize := 20
+	if pageStr := ctx.Query("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	if sizeStr := ctx.Query("pageSize"); sizeStr != "" {
+		if s, err := strconv.Atoi(sizeStr); err == nil && s > 0 {
+			pageSize = s
+		}
+	}
+
+	urgencies, total, err := h.svc.ListUrgencies(requestContext(ctx), page, pageSize)
 	if err != nil {
 		reqLog.Errorf("failed to retrieve urgencies: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.LIST_FAILED", "details": err.Error()})
 		return
 	}
 
-	response := make([]urgencyV1.UrgencyResponse, 0)
-	for _, urgency := range urgencies {
-		response = append(response, urgency.ToResponse())
+	items := make([]urgencyV1.UrgencyResponse, 0, len(urgencies))
+	for _, u := range urgencies {
+		items = append(items, u.ToResponse())
+	}
+	totalPages := 0
+	if pageSize > 0 {
+		totalPages = int((total + int64(pageSize) - 1) / int64(pageSize))
 	}
 
-	reqLog.Infof("Successfully retrieved %d urgencies", len(response))
-	ctx.JSON(http.StatusOK, response)
+	resp := urgencyV1.UrgencyListResponse{Urgencies: items, Total: total, Page: page, PageSize: pageSize, TotalPages: totalPages}
+	reqLog.Infof("Successfully retrieved %d urgencies out of %d total", len(items), total)
+	ctx.JSON(http.StatusOK, resp)
 }
 
 // GetUrgency Извлачење ургентне ситуације по ID

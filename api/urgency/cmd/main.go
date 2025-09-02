@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/shared/auth"
@@ -91,11 +92,22 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	urgencySvc := internal.NewUrgencyService(log, urgencyRepo, notificationRepo, serviceClients.EmployeeClient)
 	urgencyHandler := internal.NewUrgencyHandler(log, urgencySvc)
 
+	redisAddr := os.Getenv(globConf.REDIS_ADDR)
+	if redisAddr == "" {
+		redisAddr = "redis:6379"
+	}
+	blacklistConfig := auth.TokenBlacklistConfig{RedisAddr: redisAddr, RedisDB: 0}
+	tokenBlacklist := auth.NewTokenBlacklist(blacklistConfig)
+	if err := tokenBlacklist.TestConnection(); err != nil {
+		log.Fatalf("Failed to connect to Redis token blacklist: %v. Redis is required for secure token invalidation.", err)
+	}
+	log.Info("Successfully initialized Redis token blacklist")
+
 	// Public routes (no authentication required) - registering a new urgency
 	r.POST("/api/v1/urgencies", urgencyHandler.CreateUrgency)
 
 	// Protected routes (authentication required)
-	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log, nil))
+	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log, tokenBlacklist))
 	{
 		authorized.GET("/urgencies", urgencyHandler.ListUrgencies)
 		authorized.GET("/urgencies/:id", urgencyHandler.GetUrgency)
@@ -107,7 +119,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	}
 
 	// Admin-only routes
-	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log, nil))
+	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log, tokenBlacklist))
 	{
 		admin.DELETE("/urgencies/reset", urgencyHandler.ResetAllData)
 	}

@@ -76,6 +76,23 @@ type UrgencyList struct {
 	Urgencies []UrgencyResponse `json:"urgencies"`
 }
 
+// UrgencyListRequest DTO for listing urgencies with pagination
+// swagger:model
+type UrgencyListRequest struct {
+	Page     int `json:"page,omitempty" form:"page"`
+	PageSize int `json:"pageSize,omitempty" form:"pageSize"`
+}
+
+// UrgencyListResponse DTO for returning paginated urgencies
+// swagger:model
+type UrgencyListResponse struct {
+	Urgencies  []UrgencyResponse `json:"urgencies"`
+	Total      int64             `json:"total"`
+	Page       int               `json:"page"`
+	PageSize   int               `json:"pageSize"`
+	TotalPages int               `json:"totalPages"`
+}
+
 // AssignmentCreateRequest DTO for direct assignment to an urgency
 // swagger:model
 type AssignmentCreateRequest struct {

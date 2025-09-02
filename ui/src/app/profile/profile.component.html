@@ -54,9 +54,10 @@
         <div class="form-group">
           <label for="username">{{ 'PROFILE.USERNAME' | translate }}:</label>
           <input 
-            id="username" 
-            formControlName="username" 
+            id="username"
+            formControlName="username"
             type="text"
+            [disabled]="true"
             [class.error]="profileForm.get('username')?.invalid && profileForm.get('username')?.touched">
           <div *ngIf="profileForm.get('username')?.invalid && profileForm.get('username')?.touched" class="error-message">
             {{ 'PROFILE.USERNAME_REQUIRED' | translate }}
@@ -66,9 +67,10 @@
         <div class="form-group">
           <label for="email">{{ 'PROFILE.EMAIL' | translate }}:</label>
           <input 
-            id="email" 
-            formControlName="email" 
+            id="email"
+            formControlName="email"
             type="email"
+            [disabled]="true"
             [class.error]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched">
           <div *ngIf="profileForm.get('email')?.invalid && profileForm.get('email')?.touched" class="error-message">
             {{ 'PROFILE.EMAIL_REQUIRED' | translate }}

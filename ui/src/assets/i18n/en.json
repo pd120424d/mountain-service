@@ -286,6 +286,7 @@
         "UPDATED_AT": "Last Updated",
         "ACTIVITIES": "Activities",
         "ADD_ACTIVITY": "Add Activity",
+        "ADD_ACTIVITY_DISABLED": "Adding activities is only available when the urgency is assigned and in progress",
         "ACTIVITY_TITLE": "Activity Title",
         "ACTIVITY_TITLE_PLACEHOLDER": "Enter activity title",
         "ACTIVITY_LEVEL": "Activity Level",

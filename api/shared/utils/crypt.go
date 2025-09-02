@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	ErrPasswordLength          = "password must be between 6 and 10 characters long"
+	ErrPasswordLength          = "password must be between 6 and 20 characters long"
 	ErrPasswordUppercase       = "password must contain at least one uppercase letter"
 	ErrPasswordLowercase       = "password must contain at least three lowercase letters"
 	ErrPasswordDigit           = "password must contain at least one digit"

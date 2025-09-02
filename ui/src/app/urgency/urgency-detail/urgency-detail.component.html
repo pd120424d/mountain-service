@@ -163,6 +163,13 @@
               <p>{{ activity.description }}</p>
             </div>
           </div>
+
+        <div *ngIf="!isLoadingActivities && activities.length > 0" class="pagination-controls" style="display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:12px;">
+          <button class="btn btn-secondary" (click)="onPrevActivities()" [disabled]="activitiesPage <= 1">&laquo; {{ 'PREVIOUS' | translate }}</button>
+          <span>{{ 'PAGE' | translate }} {{activitiesPage}} / {{totalActivitiesPages}} ({{totalActivities}} {{ 'TOTAL' | translate }})</span>
+          <button class="btn btn-secondary" (click)="onNextActivities()" [disabled]="activitiesPage >= totalActivitiesPages">{{ 'NEXT' | translate }} &raquo;</button>
+        </div>
+
         </div>
       </div>
     </div>

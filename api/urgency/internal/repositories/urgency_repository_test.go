@@ -349,4 +349,38 @@ func TestUrgencyRepository_ResetAllData(t *testing.T) {
 	err = db.Unscoped().Model(&model.Urgency{}).Count(&count).Error
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), count)
+
+}
+
+func TestUrgencyRepository_ListPaginated(t *testing.T) {
+	db := setupTestDB(t)
+	log := utils.NewTestLogger()
+	repo := NewUrgencyRepository(log, db)
+
+	// Seed 35 rows
+	for i := 0; i < 35; i++ {
+		u := &model.Urgency{
+			FirstName:    "F",
+			LastName:     "L",
+			Email:        "e@x.com",
+			ContactPhone: "1",
+			Description:  "d",
+			Level:        urgencyV1.Medium,
+			Status:       urgencyV1.Open,
+		}
+		require.NoError(t, repo.Create(context.Background(), u))
+	}
+
+	page := 2
+	pageSize := 10
+	items, total, err := repo.ListPaginated(context.Background(), page, pageSize)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(35), total)
+	assert.Len(t, items, 10)
+
+	// Page beyond total pages returns empty slice
+	items, total, err = repo.ListPaginated(context.Background(), 5, 10)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(35), total)
+	assert.Len(t, items, 5)
 }

@@ -35,7 +35,7 @@ describe('UrgencyService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should fetch urgencies', () => {
+  it('should fetch urgencies (legacy array shape)', () => {
     const mockUrgencies: Urgency[] = [
       {
         id: 1,
@@ -74,6 +74,28 @@ describe('UrgencyService', () => {
     const req = httpMock.expectOne(expectedUrgencyUrl);
     expect(req.request.method).toBe('GET');
     req.flush(mockUrgencies);
+
+  });
+  it('should fetch urgencies with pagination', () => {
+    const mockResp = {
+      urgencies: [
+        { id: 1, firstName: 'P', lastName: 'Q', email: 'e', contactPhone: '1', location: 'L', description: 'D', level: GeneratedUrgencyLevel.Medium, status: GeneratedUrgencyStatus.Open, createdAt: '2024-01-15', updatedAt: '2024-01-15', assignedEmployeeId: undefined }
+      ],
+      total: 21,
+      page: 2,
+      pageSize: 20,
+      totalPages: 2
+    };
+
+    service.getUrgenciesPaginated({ page: 2, pageSize: 20 }).subscribe(resp => {
+      expect(resp.total).toBe(21);
+      expect(resp.page).toBe(2);
+      expect(resp.urgencies.length).toBe(1);
+    });
+
+    const req = httpMock.expectOne(`${expectedUrgencyUrl}?page=2&pageSize=20`);
+    expect(req.request.method).toBe('GET');
+    req.flush(mockResp);
   });
 
   it('should fetch urgency by ID', () => {

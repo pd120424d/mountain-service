@@ -46,7 +46,7 @@ describe('UrgencyListComponent', () => {
   ];
 
   beforeEach(async () => {
-    const urgencyServiceSpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies']);
+    const urgencyServiceSpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated']);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -69,23 +69,23 @@ describe('UrgencyListComponent', () => {
   });
 
   it('should create', () => {
-    urgencyService.getUrgencies.and.returnValue(of([]));
+    urgencyService.getUrgenciesPaginated.and.returnValue(of({ urgencies: [], total: 0, page: 1, pageSize: 20, totalPages: 0 }));
     expect(component).toBeTruthy();
   });
 
   it('should load urgencies on init', () => {
-    urgencyService.getUrgencies.and.returnValue(of(mockUrgencies));
+    urgencyService.getUrgenciesPaginated.and.returnValue(of({ urgencies: mockUrgencies, total: mockUrgencies.length, page: 1, pageSize: 20, totalPages: 1 }));
 
     component.ngOnInit();
 
-    expect(urgencyService.getUrgencies).toHaveBeenCalled();
+    expect(urgencyService.getUrgenciesPaginated).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
     expect(component.urgencies).toEqual(mockUrgencies);
     expect(component.isLoading).toBeFalse();
   });
 
   it('should handle error when loading urgencies', () => {
     const errorMessage = 'Failed to load urgencies';
-    urgencyService.getUrgencies.and.returnValue(throwError(() => new Error(errorMessage)));
+    urgencyService.getUrgenciesPaginated.and.returnValue(throwError(() => new Error(errorMessage)));
 
     component.ngOnInit();
 

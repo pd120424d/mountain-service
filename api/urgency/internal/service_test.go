@@ -136,6 +136,21 @@ func TestUrgencyService_GetAllUrgencies(t *testing.T) {
 	})
 }
 
+func TestUrgencyService_ListUrgencies(t *testing.T) {
+	log := utils.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := repositories.NewMockUrgencyRepository(ctrl)
+	repo.EXPECT().ListPaginated(gomock.Any(), 2, 10).Return([]model.Urgency{{ID: 1}}, int64(11), nil)
+
+	svc := &urgencyService{log: log, repo: repo}
+	items, total, err := svc.ListUrgencies(context.Background(), 2, 10)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(11), total)
+	assert.Len(t, items, 1)
+}
+
 func TestUrgencyService_GetUrgencyByID(t *testing.T) {
 	t.Parallel()
 

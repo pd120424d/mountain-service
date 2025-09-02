@@ -71,5 +71,12 @@
         </tr>
       </tbody>
     </table>
+
+  <div *ngIf="!isLoading && !error && urgencies.length > 0" class="pagination-controls" style="display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:12px;">
+    <button class="btn btn-secondary" (click)="onPrev()" [disabled]="page <= 1">&laquo; {{ 'PREVIOUS' | translate }}</button>
+    <span>{{ 'PAGE' | translate }} {{page}} / {{totalPages}} ({{total}} {{ 'TOTAL' | translate }})</span>
+    <button class="btn btn-secondary" (click)="onNext()" [disabled]="page >= totalPages">{{ 'NEXT' | translate }} &raquo;</button>
+  </div>
+
   </div>
 </div>

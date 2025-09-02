@@ -20,6 +20,8 @@ type UrgencyRepository interface {
 	GetByID(ctx context.Context, id uint, urgency *model.Urgency) error
 	Update(ctx context.Context, urgency *model.Urgency) error
 	Delete(ctx context.Context, urgencyID uint) error
+	ListPaginated(ctx context.Context, page int, pageSize int) ([]model.Urgency, int64, error)
+
 	List(ctx context.Context, filters map[string]interface{}) ([]model.Urgency, error)
 	ResetAllData(ctx context.Context) error
 }
@@ -84,6 +86,32 @@ func (r *urgencyRepository) List(ctx context.Context, filters map[string]interfa
 
 	err := query.Find(&urgencies).Error
 	return urgencies, err
+}
+
+func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSize int) ([]model.Urgency, int64, error) {
+	var urgencies []model.Urgency
+	var total int64
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	if pageSize > 1000 {
+		pageSize = 1000
+	}
+
+	offset := (page - 1) * pageSize
+
+	q := r.db.WithContext(ctx).Model(&model.Urgency{}).Where("deleted_at IS NULL")
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if err := q.Order("created_at DESC").Limit(pageSize).Offset(offset).Find(&urgencies).Error; err != nil {
+		return nil, 0, err
+	}
+	return urgencies, total, nil
 }
 
 func (r *urgencyRepository) ResetAllData(ctx context.Context) error {

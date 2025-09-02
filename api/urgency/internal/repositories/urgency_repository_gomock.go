@@ -78,6 +78,22 @@ func (mr *MockUrgencyRepositoryMockRecorder) GetAll(ctx interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockUrgencyRepository)(nil).GetAll), ctx)
 }
 
+// ListPaginated mocks base method.
+func (m *MockUrgencyRepository) ListPaginated(ctx context.Context, page int, pageSize int) ([]model.Urgency, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPaginated", ctx, page, pageSize)
+	ret0, _ := ret[0].([]model.Urgency)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListPaginated indicates an expected call of ListPaginated.
+func (mr *MockUrgencyRepositoryMockRecorder) ListPaginated(ctx, page, pageSize interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPaginated", reflect.TypeOf((*MockUrgencyRepository)(nil).ListPaginated), ctx, page, pageSize)
+}
+
 // GetByID mocks base method.
 func (m *MockUrgencyRepository) GetByID(ctx context.Context, id uint, urgency *model.Urgency) error {
 	m.ctrl.T.Helper()

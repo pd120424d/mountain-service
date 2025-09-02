@@ -39,6 +39,12 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   isLoading = true;
   isLoadingActivities = false;
   isSubmittingActivity = false;
+  // Pagination for activities
+  activitiesPage = 1;
+  activitiesPageSize = 10;
+  totalActivities = 0;
+  totalActivitiesPages = 0;
+
   error: string | null = null;
   urgencyId: number | null = null;
 
@@ -109,11 +115,11 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
 
     this.isLoadingActivities = true;
 
-    this.activityService.getActivitiesByUrgency(this.urgencyId).subscribe({
-      next: (activities) => {
-        this.activities = activities.sort((a, b) =>
-          new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
-        );
+    this.activityService.getActivitiesWithPagination({ urgencyId: this.urgencyId, page: this.activitiesPage, pageSize: this.activitiesPageSize }).subscribe({
+      next: (resp) => {
+        this.activities = (resp.activities || []);
+        this.totalActivities = resp.total || this.activities.length;
+        this.totalActivitiesPages = resp.totalPages || Math.ceil(this.totalActivities / this.activitiesPageSize);
         this.isLoadingActivities = false;
       },
       error: (error) => {
@@ -350,6 +356,21 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
         this.fetchingEmployeeIds.delete(employeeId);
       }
     });
+  }
+
+
+  // Activity pager handlers
+  onPrevActivities(): void {
+    if (this.activitiesPage > 1) {
+      this.activitiesPage--;
+      this.loadActivities();
+    }
+  }
+  onNextActivities(): void {
+    if (this.activitiesPage < this.totalActivitiesPages) {
+      this.activitiesPage++;
+      this.loadActivities();
+    }
   }
 
   private markFormGroupTouched(): void {

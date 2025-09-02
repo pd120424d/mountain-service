@@ -256,8 +256,9 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 
+		// No query params -> defaults page=1,pageSize=20
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetAllUrgencies(gomock.Any()).Return(nil, errors.New("database error")).Times(1)
+		mockService.EXPECT().ListUrgencies(gomock.Any(), 1, 20).Return(nil, int64(0), errors.New("database error")).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ListUrgencies(ctx)
@@ -274,13 +275,14 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetAllUrgencies(gomock.Any()).Return([]model.Urgency{}, nil).Times(1)
+		mockService.EXPECT().ListUrgencies(gomock.Any(), 1, 20).Return([]model.Urgency{}, int64(0), nil).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ListUrgencies(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, "[]", w.Body.String())
+		assert.Contains(t, w.Body.String(), "\"urgencies\":[]")
+		assert.Contains(t, w.Body.String(), "\"total\":0")
 	})
 
 	t.Run("it returns a list of urgencies when urgencies exist", func(t *testing.T) {
@@ -316,7 +318,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		}
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().GetAllUrgencies(gomock.Any()).Return(urgencies, nil).Times(1)
+		mockService.EXPECT().ListUrgencies(gomock.Any(), 1, 20).Return(urgencies, int64(len(urgencies)), nil).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ListUrgencies(ctx)

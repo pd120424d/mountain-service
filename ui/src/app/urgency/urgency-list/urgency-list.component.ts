@@ -19,6 +19,11 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   urgencies: Urgency[] = [];
   isLoading = true;
   error: string | null = null;
+  page = 1;
+  pageSize = 20;
+  total = 0;
+  totalPages = 0;
+
 
   UrgencyLevel = UrgencyLevel;
   Status = UrgencyStatus;
@@ -44,14 +49,14 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
     this.isLoading = true;
     this.error = null;
 
-    this.urgencyService.getUrgencies().subscribe({
-      next: (urgencies) => {
-        // Sort urgencies by createdAt date in descending order
-        this.urgencies = (urgencies || []).sort((a, b) => {
-          const dateA = new Date(a.createdAt || '').getTime();
-          const dateB = new Date(b.createdAt || '').getTime();
-          return dateB - dateA; // Descending order
-        });
+    this.urgencyService.getUrgenciesPaginated({ page: this.page, pageSize: this.pageSize }).subscribe({
+      next: (resp) => {
+        const items = resp?.urgencies || [];
+        this.urgencies = items;
+        this.total = resp?.total ?? items.length;
+        this.page = resp?.page ?? this.page;
+        this.pageSize = resp?.pageSize ?? this.pageSize;
+        this.totalPages = resp?.totalPages ?? Math.ceil(this.total / this.pageSize);
         this.isLoading = false;
       },
       error: (error) => {
@@ -119,11 +124,21 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
     return '';
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString();
+  // Simple pager handlers
+  onPrev(): void {
+    if (this.page > 1) {
+      this.page--;
+      this.loadUrgencies();
+    }
+  }
+  onNext(): void {
+    if (this.page < this.totalPages) {
+      this.page++;
+      this.loadUrgencies();
+    }
   }
 
-  hasAcceptedAssignment(urgency: Urgency): boolean {
-    return hasAcceptedAssignment(urgency);
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString();
   }
 }

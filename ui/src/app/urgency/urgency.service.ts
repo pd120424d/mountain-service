@@ -23,6 +23,17 @@ export class UrgencyService {
     );
   }
 
+  getUrgenciesPaginated(params: { page?: number; pageSize?: number } = {}): Observable<{ urgencies: Urgency[]; total: number; page: number; pageSize: number; totalPages: number }> {
+    const qp = new URLSearchParams();
+    if (params.page) qp.append('page', params.page.toString());
+    if (params.pageSize) qp.append('pageSize', params.pageSize.toString());
+    const url = qp.toString() ? `${this.urgencyApiUrl}?${qp.toString()}` : this.urgencyApiUrl;
+    return this.http.get<any>(url).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+
   getUrgencyById(id: number): Observable<Urgency> {
     return this.http.get<Urgency>(`${this.urgencyApiUrl}/${id}`).pipe(
       catchError(this.handleError)
