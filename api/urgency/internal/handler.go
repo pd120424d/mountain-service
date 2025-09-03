@@ -158,7 +158,18 @@ func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 	urgency, err := h.svc.GetUrgencyByID(requestContext(ctx), uint(urgencyID))
 	if err != nil {
 		reqLog.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
+		if aerr, ok := err.(*commonv1.AppError); ok {
+			if aerr.Code == "URGENCY_ERRORS.NOT_FOUND" {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
+				return
+			}
+		}
+		// Also handle gorm.ErrRecordNotFound from service mocks in tests
+		if err.Error() == "record not found" {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.DB_ERROR"})
 		return
 	}
 

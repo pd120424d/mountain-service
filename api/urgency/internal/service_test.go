@@ -833,7 +833,7 @@ func TestUrgencyService_AssignUrgency(t *testing.T) {
 		nrepo := repositories.NewMockNotificationRepository(ctrl)
 		ecli := clients.NewMockEmployeeClient(ctrl)
 
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
 		svc := NewUrgencyService(log, repo, nrepo, ecli)
 		err := svc.AssignUrgency(context.Background(), 1, 2)
 		assert.Error(t, err)
@@ -848,7 +848,7 @@ func TestUrgencyService_AssignUrgency(t *testing.T) {
 		nrepo := repositories.NewMockNotificationRepository(ctrl)
 		ecli := clients.NewMockEmployeeClient(ctrl)
 
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			emp := uint(5)
 			u.AssignedEmployeeID = &emp
 			u.ID = id
@@ -868,7 +868,7 @@ func TestUrgencyService_AssignUrgency(t *testing.T) {
 		nrepo := repositories.NewMockNotificationRepository(ctrl)
 		ecli := clients.NewMockEmployeeClient(ctrl)
 
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
 		repo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil)
 		ecli.EXPECT().GetEmployeeByID(gomock.Any(), uint(2)).Return(&employeeV1.EmployeeResponse{ID: 2}, nil)
 
@@ -885,7 +885,7 @@ func TestUrgencyService_AssignUrgency(t *testing.T) {
 			nrepo := repositories.NewMockNotificationRepository(ctrl)
 			ecli := clients.NewMockEmployeeClient(ctrl)
 
-			repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
+			repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
 			ecli.EXPECT().GetEmployeeByID(gomock.Any(), uint(2)).Return(nil, assert.AnError)
 
 			svc := NewUrgencyService(log, repo, nrepo, ecli)
@@ -916,7 +916,7 @@ func TestUrgencyService_UnassignUrgency(t *testing.T) {
 
 		repo := repositories.NewMockUrgencyRepository(ctrl)
 		svc := &urgencyService{log: log, repo: repo}
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
 		err := svc.UnassignUrgency(context.Background(), 1, 99, false)
 		assert.Error(t, err)
 	})
@@ -928,7 +928,7 @@ func TestUrgencyService_UnassignUrgency(t *testing.T) {
 
 		repo := repositories.NewMockUrgencyRepository(ctrl)
 		svc := &urgencyService{log: log, repo: repo}
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
 		err := svc.UnassignUrgency(context.Background(), 1, 99, false)
 		assert.Error(t, err)
 	})
@@ -940,7 +940,7 @@ func TestUrgencyService_UnassignUrgency(t *testing.T) {
 
 		repo := repositories.NewMockUrgencyRepository(ctrl)
 		svc := &urgencyService{log: log, repo: repo}
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			emp := uint(55)
 			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp}
 			return nil
@@ -956,7 +956,7 @@ func TestUrgencyService_UnassignUrgency(t *testing.T) {
 
 		repo := repositories.NewMockUrgencyRepository(ctrl)
 		svc := &urgencyService{log: log, repo: repo}
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			emp := uint(55)
 			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp}
 			return nil
@@ -973,7 +973,7 @@ func TestUrgencyService_UnassignUrgency(t *testing.T) {
 
 		repo := repositories.NewMockUrgencyRepository(ctrl)
 		svc := &urgencyService{log: log, repo: repo}
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			emp := uint(55)
 			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp}
 			return nil
@@ -990,7 +990,7 @@ func TestUrgencyService_UnassignUrgency(t *testing.T) {
 
 		repo := repositories.NewMockUrgencyRepository(ctrl)
 		svc := &urgencyService{log: log, repo: repo}
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			emp := uint(55)
 			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp}
 			return nil
@@ -1054,7 +1054,7 @@ func TestUrgencyService_CloseUrgency(t *testing.T) {
 		defer ctrl.Finish()
 		repo := repositories.NewMockUrgencyRepository(ctrl)
 		svc := &urgencyService{log: log, repo: repo}
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
 		err := svc.CloseUrgency(context.Background(), 1, 99, false)
 		assert.Error(t, err)
 	})
@@ -1065,7 +1065,7 @@ func TestUrgencyService_CloseUrgency(t *testing.T) {
 		defer ctrl.Finish()
 		repo := repositories.NewMockUrgencyRepository(ctrl)
 		svc := &urgencyService{log: log, repo: repo}
-		repo.EXPECT().GetByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error { *u = model.Urgency{ID: id}; return nil })
 		err := svc.CloseUrgency(context.Background(), 1, 99, false)
 		assert.Error(t, err)
 	})
@@ -1077,7 +1077,7 @@ func TestUrgencyService_CloseUrgency(t *testing.T) {
 		repo := repositories.NewMockUrgencyRepository(ctrl)
 		svc := &urgencyService{log: log, repo: repo}
 		emp := uint(22)
-		repo.EXPECT().GetByID(gomock.Any(), uint(2), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(2), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.Open}
 			return nil
 		})
@@ -1092,7 +1092,7 @@ func TestUrgencyService_CloseUrgency(t *testing.T) {
 		repo := repositories.NewMockUrgencyRepository(ctrl)
 		svc := &urgencyService{log: log, repo: repo}
 		emp := uint(55)
-		repo.EXPECT().GetByID(gomock.Any(), uint(3), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(3), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.InProgress}
 			return nil
 		})
@@ -1108,7 +1108,7 @@ func TestUrgencyService_CloseUrgency(t *testing.T) {
 		ecli := clients.NewMockEmployeeClient(ctrl)
 		svc := &urgencyService{log: log, repo: repo, employeeClient: ecli}
 		emp := uint(77)
-		repo.EXPECT().GetByID(gomock.Any(), uint(4), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(4), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.InProgress}
 			return nil
 		})
@@ -1125,7 +1125,7 @@ func TestUrgencyService_CloseUrgency(t *testing.T) {
 		ecli := clients.NewMockEmployeeClient(ctrl)
 		svc := &urgencyService{log: log, repo: repo, employeeClient: ecli}
 		emp := uint(5)
-		repo.EXPECT().GetByID(gomock.Any(), uint(5), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(5), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.InProgress}
 			return nil
 		})
@@ -1143,7 +1143,7 @@ func TestUrgencyService_CloseUrgency(t *testing.T) {
 		ecli := clients.NewMockEmployeeClient(ctrl)
 		svc := &urgencyService{log: log, repo: repo, employeeClient: ecli}
 		emp := uint(9)
-		repo.EXPECT().GetByID(gomock.Any(), uint(6), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(6), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.InProgress}
 			return nil
 		})
@@ -1161,7 +1161,7 @@ func TestUrgencyService_CloseUrgency(t *testing.T) {
 		ecli := clients.NewMockEmployeeClient(ctrl)
 		svc := &urgencyService{log: log, repo: repo, employeeClient: ecli}
 		emp := uint(12)
-		repo.EXPECT().GetByID(gomock.Any(), uint(7), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
+		repo.EXPECT().GetByIDPrimary(gomock.Any(), uint(7), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, u *model.Urgency) error {
 			*u = model.Urgency{ID: id, AssignedEmployeeID: &emp, Status: urgencyV1.InProgress}
 			return nil
 		})

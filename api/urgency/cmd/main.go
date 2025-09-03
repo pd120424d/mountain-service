@@ -14,6 +14,7 @@ import (
 	internalConfig "github.com/pd120424d/mountain-service/api/urgency/internal/config"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
+
 	"gorm.io/gorm"
 
 	// Import contracts for Swagger documentation
@@ -64,6 +65,7 @@ func main() {
 		},
 		SetupCustomRoutes: func(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 			setupRoutes(log, r, db)
+
 		},
 	}
 
@@ -77,7 +79,25 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	log.Info("Setting up custom urgency routes")
 
 	// Initialize repositories
-	urgencyRepo := repositories.NewUrgencyRepository(log, db)
+
+	// Dual-DB approach: connect read via PgBouncer replica1 if DB_READ_HOST/PORT present
+	readHost := os.Getenv("DB_READ_HOST")
+	readPort := os.Getenv("DB_READ_PORT")
+	var urgencyRepo repositories.UrgencyRepository
+	if readHost != "" && readPort != "" {
+		// Build a second gorm.DB based on same credentials, but pointing to read endpoint
+		readCfg := server.DatabaseConfig{Host: readHost, Port: readPort, Name: os.Getenv(globConf.UrgencyDBName)}
+		readDB := server.InitDb(log, globConf.UrgencyServiceName+"-read", readCfg)
+		log.Infof("DB write endpoint: %s:%s", os.Getenv("DB_HOST"), os.Getenv("DB_PORT"))
+		log.Infof("DB read endpoint: %s:%s", readHost, readPort)
+		urgencyRepo = repositories.NewUrgencyRepositoryRW(log, db, readDB)
+		log.Info("Urgency repository initialized in RW mode (reads->replica, writes->primary)")
+	} else {
+		log.Infof("DB write endpoint: %s:%s", os.Getenv("DB_HOST"), os.Getenv("DB_PORT"))
+		log.Info("DB read endpoint: disabled (using primary)")
+		urgencyRepo = repositories.NewUrgencyRepository(log, db)
+	}
+
 	notificationRepo := repositories.NewNotificationRepository(log, db)
 
 	// Initialize service clients using defaults-aware loader (env vars override)

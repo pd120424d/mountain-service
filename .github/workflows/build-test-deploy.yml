@@ -432,6 +432,35 @@ jobs:
               --dry-run=client -o yaml | kubectl apply -f -
           fi
 
+
+      - name: (Optional) Create/Update Secrets - Cloud SQL Replica Instance Names
+        env:
+          CLOUDSQL_REPLICAS_URGENCY_1: ${{ secrets.CLOUDSQL_REPLICAS_URGENCY_1 }}
+          CLOUDSQL_REPLICAS_URGENCY_2: ${{ secrets.CLOUDSQL_REPLICAS_URGENCY_2 }}
+          CLOUDSQL_REPLICAS_EMPLOYEE_1: ${{ secrets.CLOUDSQL_REPLICAS_EMPLOYEE_1 }}
+          CLOUDSQL_REPLICAS_EMPLOYEE_2: ${{ secrets.CLOUDSQL_REPLICAS_EMPLOYEE_2 }}
+        run: |
+          if [ -n "$CLOUDSQL_REPLICAS_URGENCY_1" ]; then
+            kubectl -n mountain-service create secret generic cloudsql-urgency-replica1 \
+              --from-literal=INSTANCE_CONNECTION_NAME="$CLOUDSQL_REPLICAS_URGENCY_1" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          fi
+          if [ -n "$CLOUDSQL_REPLICAS_URGENCY_2" ]; then
+            kubectl -n mountain-service create secret generic cloudsql-urgency-replica2 \
+              --from-literal=INSTANCE_CONNECTION_NAME="$CLOUDSQL_REPLICAS_URGENCY_2" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          fi
+          if [ -n "$CLOUDSQL_REPLICAS_EMPLOYEE_1" ]; then
+            kubectl -n mountain-service create secret generic cloudsql-employee-replica1 \
+              --from-literal=INSTANCE_CONNECTION_NAME="$CLOUDSQL_REPLICAS_EMPLOYEE_1" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          fi
+          if [ -n "$CLOUDSQL_REPLICAS_EMPLOYEE_2" ]; then
+            kubectl -n mountain-service create secret generic cloudsql-employee-replica2 \
+              --from-literal=INSTANCE_CONNECTION_NAME="$CLOUDSQL_REPLICAS_EMPLOYEE_2" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          fi
+
       - name: Apply manifests
         run: |
           kubectl apply -f k8s/namespaces.yaml

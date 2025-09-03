@@ -22,6 +22,7 @@ import (
 	_ "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 
 	"github.com/gin-gonic/gin"
+
 	"gorm.io/gorm"
 )
 
@@ -79,9 +80,26 @@ func main() {
 func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	log.Info("Setting up custom employee routes")
 
+	// Dual-DB approach: for shifts repo, optionally use read replica if DB_READ_HOST/PORT are set
+	readHost := os.Getenv("DB_READ_HOST")
+	readPort := os.Getenv("DB_READ_PORT")
+	var shiftsRepo repositories.ShiftRepository
+	if readHost != "" && readPort != "" {
+		log.Infof("DB write endpoint: %s:%s", os.Getenv("DB_HOST"), os.Getenv("DB_PORT"))
+		log.Infof("DB read endpoint: %s:%s", readHost, readPort)
+		readCfg := server.DatabaseConfig{Host: readHost, Port: readPort, Name: os.Getenv(globConf.EmployeeDBName)}
+		readDB := server.InitDb(log, globConf.EmployeeServiceName+"-read", readCfg)
+		shiftsRepo = repositories.NewShiftRepositoryRW(log, db, readDB)
+		log.Info("Shift repository initialized in RW mode (reads->replica, writes->primary)")
+	} else {
+		log.Infof("DB write endpoint: %s:%s", os.Getenv("DB_HOST"), os.Getenv("DB_PORT"))
+		log.Info("DB read endpoint: disabled (using primary)")
+		shiftsRepo = repositories.NewShiftRepository(log, db)
+		log.Info("Shift repository initialized in primary only mode (reads->primary, writes->primary)")
+	}
+
 	// Initialize repositories
 	employeeRepo := repositories.NewEmployeeRepository(log, db)
-	shiftsRepo := repositories.NewShiftRepository(log, db)
 
 	// Initialize Redis token blacklist
 	redisAddr := os.Getenv(globConf.REDIS_ADDR)

@@ -4,6 +4,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/urgency/internal/clients"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/repositories"
+	"gorm.io/gorm"
 )
 
 type UrgencyService interface {
@@ -99,8 +101,26 @@ func (s *urgencyService) GetUrgencyByID(ctx context.Context, id uint) (*model.Ur
 	log := s.log.WithContext(ctx)
 	var urgency model.Urgency
 	if err := s.repo.GetByID(ctx, id, &urgency); err != nil {
-		log.Errorf("Failed to get urgency: %v", err)
-		return nil, commonv1.NewAppError("URGENCY_ERRORS.NOT_FOUND", "urgency not found", nil)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, commonv1.NewAppError("URGENCY_ERRORS.NOT_FOUND", "urgency not found", nil)
+		}
+		log.Errorf("DB error fetching urgency: %v", err)
+		return nil, commonv1.NewAppError("URGENCY_ERRORS.DB_ERROR", "failed to fetch urgency", map[string]interface{}{"cause": err.Error()})
+	}
+	return &urgency, nil
+}
+
+// GetUrgencyByIDPrimary fetches urgency from primary DB or write replica since it is a critical information
+// on which the activitiies creation depends.
+func (s *urgencyService) GetUrgencyByIDPrimary(ctx context.Context, id uint) (*model.Urgency, error) {
+	log := s.log.WithContext(ctx)
+	var urgency model.Urgency
+	if err := s.repo.GetByIDPrimary(ctx, id, &urgency); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, commonv1.NewAppError("URGENCY_ERRORS.NOT_FOUND", "urgency not found", nil)
+		}
+		log.Errorf("DB error fetching urgency (primary): %v", err)
+		return nil, commonv1.NewAppError("URGENCY_ERRORS.DB_ERROR", "failed to fetch urgency", map[string]interface{}{"cause": err.Error()})
 	}
 	return &urgency, nil
 }
@@ -137,7 +157,7 @@ func (s *urgencyService) AssignUrgency(ctx context.Context, urgencyID, employeeI
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId and employeeId are required", nil)
 	}
 
-	urg, err := s.GetUrgencyByID(ctx, urgencyID)
+	urg, err := s.GetUrgencyByIDPrimary(ctx, urgencyID)
 	if err != nil {
 		return err
 	}
@@ -162,7 +182,7 @@ func (s *urgencyService) UnassignUrgency(ctx context.Context, urgencyID uint, ac
 	if urgencyID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
 	}
-	urg, err := s.GetUrgencyByID(ctx, urgencyID)
+	urg, err := s.GetUrgencyByIDPrimary(ctx, urgencyID)
 	if err != nil {
 		return err
 	}
@@ -184,7 +204,7 @@ func (s *urgencyService) CloseUrgency(ctx context.Context, urgencyID uint, actor
 	if urgencyID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
 	}
-	urg, err := s.GetUrgencyByID(ctx, urgencyID)
+	urg, err := s.GetUrgencyByIDPrimary(ctx, urgencyID)
 	if err != nil {
 		return err
 	}

@@ -385,8 +385,8 @@ func TestUrgencyHandler_GetUrgency(t *testing.T) {
 		handler := NewUrgencyHandler(log, mockService)
 		handler.GetUrgency(ctx)
 
-		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "urgency not found")
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "URGENCY_ERRORS.DB_ERROR")
 	})
 
 	t.Run("it successfully returns urgency when it exists", func(t *testing.T) {

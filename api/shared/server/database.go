@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -72,6 +73,23 @@ func InitDb(log utils.Logger, serviceName string, dbConfig DatabaseConfig) *gorm
 	// Create the database connection
 	db := getDbConnection(log, connectionString)
 
+	// Tune connection pool (defaults can be overridden via env)
+	if sqlDB, err := db.DB(); err == nil {
+		maxOpen := getenvInt("DB_MAX_OPEN_CONNS", 20)
+		maxIdle := getenvInt("DB_MAX_IDLE_CONNS", 10)
+		lifeMin := getenvInt("DB_CONN_MAX_LIFETIME_MIN", 45)
+		idleMin := getenvInt("DB_CONN_MAX_IDLE_TIME_MIN", 5)
+
+		sqlDB.SetMaxOpenConns(maxOpen)
+		sqlDB.SetMaxIdleConns(maxIdle)
+		sqlDB.SetConnMaxLifetime(time.Duration(lifeMin) * time.Minute)
+		sqlDB.SetConnMaxIdleTime(time.Duration(idleMin) * time.Minute)
+
+		log.Infof("DB pool configured: maxOpen=%d maxIdle=%d life=%dm idle=%dm", maxOpen, maxIdle, lifeMin, idleMin)
+	} else {
+		log.Warnf("failed to get underlying *sql.DB for pool tuning: %v", err)
+	}
+
 	// Auto migrate the models
 	err := db.AutoMigrate(dbConfig.Models...)
 	if err != nil {
@@ -89,4 +107,13 @@ func getDbConnection(log utils.Logger, connString string) *gorm.DB {
 		log.Fatalf("failed to connect to '%v': %v", connString, err)
 	}
 	return db
+}
+
+func getenvInt(key string, def int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
 }

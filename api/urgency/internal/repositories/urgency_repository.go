@@ -18,6 +18,7 @@ type UrgencyRepository interface {
 	Create(ctx context.Context, urgency *model.Urgency) error
 	GetAll(ctx context.Context) ([]model.Urgency, error)
 	GetByID(ctx context.Context, id uint, urgency *model.Urgency) error
+	GetByIDPrimary(ctx context.Context, id uint, urgency *model.Urgency) error
 	Update(ctx context.Context, urgency *model.Urgency) error
 	Delete(ctx context.Context, urgencyID uint) error
 	ListPaginated(ctx context.Context, page int, pageSize int) ([]model.Urgency, int64, error)
@@ -27,40 +28,52 @@ type UrgencyRepository interface {
 }
 
 type urgencyRepository struct {
-	log utils.Logger
-	db  *gorm.DB
+	log     utils.Logger
+	dbWrite *gorm.DB
+	dbRead  *gorm.DB
 }
 
 func NewUrgencyRepository(log utils.Logger, db *gorm.DB) UrgencyRepository {
-	return &urgencyRepository{log: log.WithName("urgencyRepository"), db: db}
+	return &urgencyRepository{log: log.WithName("urgencyRepository"), dbWrite: db, dbRead: db}
+}
+
+func NewUrgencyRepositoryRW(log utils.Logger, writeDB *gorm.DB, readDB *gorm.DB) UrgencyRepository {
+	if readDB == nil {
+		readDB = writeDB
+	}
+	return &urgencyRepository{log: log.WithName("urgencyRepository"), dbWrite: writeDB, dbRead: readDB}
 }
 
 func (r *urgencyRepository) Create(ctx context.Context, urgency *model.Urgency) error {
-	return r.db.WithContext(ctx).Create(urgency).Error
+	return r.dbWrite.WithContext(ctx).Create(urgency).Error
 }
 
 func (r *urgencyRepository) GetAll(ctx context.Context) ([]model.Urgency, error) {
 	var urgencies []model.Urgency
-	err := r.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&urgencies).Error
+	err := r.dbRead.WithContext(ctx).Where("deleted_at IS NULL").Find(&urgencies).Error
 	return urgencies, err
 }
 
 func (r *urgencyRepository) GetByID(ctx context.Context, id uint, urgency *model.Urgency) error {
-	return r.db.WithContext(ctx).First(urgency, "id = ?", id).Error
+	return r.dbRead.WithContext(ctx).First(urgency, "id = ?", id).Error
+}
+
+func (r *urgencyRepository) GetByIDPrimary(ctx context.Context, id uint, urgency *model.Urgency) error {
+	return r.dbWrite.WithContext(ctx).First(urgency, "id = ?", id).Error
 }
 
 func (r *urgencyRepository) Update(ctx context.Context, urgency *model.Urgency) error {
-	return r.db.WithContext(ctx).Save(urgency).Error
+	return r.dbWrite.WithContext(ctx).Save(urgency).Error
 }
 
 func (r *urgencyRepository) Delete(ctx context.Context, urgencyID uint) error {
-	return r.db.WithContext(ctx).Delete(&model.Urgency{}, urgencyID).Error
+	return r.dbWrite.WithContext(ctx).Delete(&model.Urgency{}, urgencyID).Error
 }
 
 func (r *urgencyRepository) List(ctx context.Context, filters map[string]interface{}) ([]model.Urgency, error) {
 	allowedColumns := r.allowedColumns()
 	var urgencies []model.Urgency
-	query := r.db.WithContext(ctx).Model(&model.Urgency{})
+	query := r.dbRead.WithContext(ctx).Model(&model.Urgency{})
 
 	filterKeys := slices.Collect(maps.Keys(filters))
 	slices.Sort(filterKeys)
@@ -104,7 +117,7 @@ func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSiz
 
 	offset := (page - 1) * pageSize
 
-	q := r.db.WithContext(ctx).Model(&model.Urgency{}).Where("deleted_at IS NULL")
+	q := r.dbRead.WithContext(ctx).Model(&model.Urgency{}).Where("deleted_at IS NULL")
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
@@ -115,7 +128,7 @@ func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSiz
 }
 
 func (r *urgencyRepository) ResetAllData(ctx context.Context) error {
-	return r.db.WithContext(ctx).Unscoped().Delete(&model.Urgency{}, "1 = 1").Error
+	return r.dbWrite.WithContext(ctx).Unscoped().Delete(&model.Urgency{}, "1 = 1").Error
 }
 
 func (r *urgencyRepository) allowedColumns() map[string]bool {

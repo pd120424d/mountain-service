@@ -27,7 +27,20 @@ spec:
             - name: DB_HOST
               value: "127.0.0.1"
             - name: DB_PORT
-              valueFrom: { secretKeyRef: { name: db-common, key: DB_PORT } }
+              value: "6432"
+            - name: DB_MAX_OPEN_CONNS
+              value: "15"
+            - name: DB_MAX_IDLE_CONNS
+              value: "10"
+            - name: DB_CONN_MAX_LIFETIME_MIN
+              value: "45"
+            - name: DB_CONN_MAX_IDLE_TIME_MIN
+            - name: DB_READ_HOST
+              value: "127.0.0.1"
+            - name: DB_READ_PORT
+              value: "6433"
+
+              value: "5"
             - name: DB_USER
               valueFrom: { secretKeyRef: { name: db-common, key: DB_USER } }
             - name: DB_PASSWORD
@@ -72,9 +85,9 @@ spec:
               cpu: "300m"
               memory: "512Mi"
         - name: cloud-sql-proxy
-          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.3
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
           args:
-            - "--port=5432"
+            - "--port=55432"
             - "--address=127.0.0.1"
             - "--credentials-file=/var/secrets/key.json"
             - "$(INSTANCE_CONNECTION_NAME)"
@@ -88,6 +101,112 @@ spec:
             - name: gcp-sa
               mountPath: /var/secrets
               readOnly: true
+        - name: cloud-sql-proxy-replica1
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+          args:
+            - "--port=56432"
+            - "--address=127.0.0.1"
+            - "--credentials-file=/var/secrets/key.json"
+            - "$(INSTANCE_CONNECTION_NAME)"
+          env:
+            - name: INSTANCE_CONNECTION_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql-urgency-replica1
+                  key: INSTANCE_CONNECTION_NAME
+          volumeMounts:
+            - name: gcp-sa
+              mountPath: /var/secrets
+              readOnly: true
+        - name: cloud-sql-proxy-replica2
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+          args:
+            - "--port=57432"
+            - "--address=127.0.0.1"
+            - "--credentials-file=/var/secrets/key.json"
+            - "$(INSTANCE_CONNECTION_NAME)"
+          env:
+            - name: INSTANCE_CONNECTION_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql-urgency-replica2
+                  key: INSTANCE_CONNECTION_NAME
+          volumeMounts:
+            - name: gcp-sa
+              mountPath: /var/secrets
+              readOnly: true
+        - name: pgbouncer-primary
+          image: edoburu/pgbouncer:1.22.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6432
+              name: pgb-primary
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              cat > /etc/pgbouncer/pgbouncer.ini <<'EOF'
+              [databases]
+              default = host=127.0.0.1 port=55432 dbname=urgency_service_db
+              [pgbouncer]
+              listen_addr=127.0.0.1
+              listen_port=6432
+              pool_mode=transaction
+              default_pool_size=20
+              min_pool_size=5
+              reserve_pool_size=5
+              auth_type=trust
+              logfile=/dev/stdout
+              pidfile=/tmp/pgbouncer.pid
+              EOF
+              pgbouncer /etc/pgbouncer/pgbouncer.ini
+        - name: pgbouncer-replica1
+          image: edoburu/pgbouncer:1.22.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6433
+              name: pgb-rep1
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              cat > /etc/pgbouncer/pgbouncer.ini <<'EOF'
+              [databases]
+              default = host=127.0.0.1 port=56432 dbname=urgency_service_db
+              [pgbouncer]
+              listen_addr=127.0.0.1
+              listen_port=6433
+              pool_mode=transaction
+              default_pool_size=20
+              min_pool_size=5
+              reserve_pool_size=5
+              auth_type=trust
+              logfile=/dev/stdout
+              pidfile=/tmp/pgbouncer.pid
+              EOF
+              pgbouncer /etc/pgbouncer/pgbouncer.ini
+        - name: pgbouncer-replica2
+          image: edoburu/pgbouncer:1.22.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6434
+              name: pgb-rep2
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              cat > /etc/pgbouncer/pgbouncer.ini <<'EOF'
+              [databases]
+              default = host=127.0.0.1 port=57432 dbname=urgency_service_db
+              [pgbouncer]
+              listen_addr=127.0.0.1
+              listen_port=6434
+              pool_mode=transaction
+              default_pool_size=20
+              min_pool_size=5
+              reserve_pool_size=5
+              auth_type=trust
+              logfile=/dev/stdout
+              pidfile=/tmp/pgbouncer.pid
+              EOF
+              pgbouncer /etc/pgbouncer/pgbouncer.ini
       volumes:
         - name: gcp-sa
           secret:

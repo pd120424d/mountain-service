@@ -1,0 +1,220 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: urgency-service
+  namespace: mountain-service
+spec:
+  template:
+    spec:
+      volumes:
+        - name: cloudsql-sa
+          secret:
+            secretName: gcp-sa
+      containers:
+        - name: urgency-service
+          env:
+            - name: DB_HOST
+              value: 127.0.0.1
+            - name: DB_PORT
+              value: "6432"
+            - name: DB_SSLMODE
+              value: disable
+            - name: DB_MAX_OPEN_CONNS
+              value: "15"
+            - name: DB_MAX_IDLE_CONNS
+              value: "10"
+            - name: DB_CONN_MAX_LIFETIME_MIN
+              value: "45"
+            - name: DB_CONN_MAX_IDLE_TIME_MIN
+              value: "5"
+            - name: DB_READ_HOST
+              value: 127.0.0.1
+            - name: DB_READ_PORT
+              value: "6433"
+        - name: pgbouncer-primary
+          image: ghcr.io/pd120424d/pgbouncer:1.24.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6432
+              name: pgbouncer-primary
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-common
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: urgency-db
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: urgency-db
+                  key: DB_NAME
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -eu
+              mkdir -p /tmp/pgbouncer
+              printf "\"%s\" \"%s\"\n" "$DB_USER" "$DB_PASSWORD" > /tmp/pgbouncer/userlist.txt
+              cat > /tmp/pgbouncer/pgbouncer.ini <<EOF
+              [databases]
+              ${DB_NAME}= host=127.0.0.1 port=55432 dbname=${DB_NAME}
+              [pgbouncer]
+              listen_addr=127.0.0.1
+              listen_port=6432
+              pool_mode=transaction
+              default_pool_size=20
+              min_pool_size=5
+              reserve_pool_size=5
+              auth_type=plain
+              auth_file=/tmp/pgbouncer/userlist.txt
+              logfile=/dev/stdout
+              pidfile=/tmp/pgbouncer.pid
+              EOF
+              exec pgbouncer /tmp/pgbouncer/pgbouncer.ini
+        - name: pgbouncer-replica1
+          image: ghcr.io/pd120424d/pgbouncer:1.24.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6433
+              name: pgbouncer-replica1
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-common
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: urgency-db
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: urgency-db
+                  key: DB_NAME
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -eu
+              mkdir -p /tmp/pgbouncer
+              printf "\"%s\" \"%s\"\n" "$DB_USER" "$DB_PASSWORD" > /tmp/pgbouncer/userlist.txt
+              cat > /tmp/pgbouncer/pgbouncer.ini <<EOF
+              [databases]
+              ${DB_NAME}= host=127.0.0.1 port=56432 dbname=${DB_NAME}
+              [pgbouncer]
+              listen_addr=127.0.0.1
+              listen_port=6433
+              pool_mode=transaction
+              default_pool_size=20
+              min_pool_size=5
+              reserve_pool_size=5
+              auth_type=plain
+              auth_file=/tmp/pgbouncer/userlist.txt
+              logfile=/dev/stdout
+              pidfile=/tmp/pgbouncer.pid
+              EOF
+              exec pgbouncer /tmp/pgbouncer/pgbouncer.ini
+        - name: pgbouncer-replica2
+          image: ghcr.io/pd120424d/pgbouncer:1.24.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6434
+              name: pgbouncer-replica2
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-common
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: urgency-db
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: urgency-db
+                  key: DB_NAME
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -eu
+              mkdir -p /tmp/pgbouncer
+              printf "\"%s\" \"%s\"\n" "$DB_USER" "$DB_PASSWORD" > /tmp/pgbouncer/userlist.txt
+              cat > /tmp/pgbouncer/pgbouncer.ini <<EOF
+              [databases]
+              ${DB_NAME}= host=127.0.0.1 port=57432 dbname=${DB_NAME}
+              [pgbouncer]
+              listen_addr=127.0.0.1
+              listen_port=6434
+              pool_mode=transaction
+              default_pool_size=20
+              min_pool_size=5
+              reserve_pool_size=5
+              auth_type=plain
+              auth_file=/tmp/pgbouncer/userlist.txt
+              logfile=/dev/stdout
+              pidfile=/tmp/pgbouncer.pid
+              EOF
+              exec pgbouncer /tmp/pgbouncer/pgbouncer.ini
+        - name: cloud-sql-proxy-primary
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+          args:
+            - "--credentials-file=/secrets/key.json"
+            - "--port=55432"
+            - "$(CLOUDSQL_INSTANCE)"
+          env:
+            - name: CLOUDSQL_INSTANCE
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql-instances
+                  key: URGENCY_PRIMARY
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - name: cloudsql-sa
+              mountPath: /secrets
+              readOnly: true
+        - name: cloud-sql-proxy-replica1
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+          args:
+            - "--credentials-file=/secrets/key.json"
+            - "--port=56432"
+            - "$(CLOUDSQL_INSTANCE)"
+          env:
+            - name: CLOUDSQL_INSTANCE
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql-instances
+                  key: URGENCY_REPLICA1
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - name: cloudsql-sa
+              mountPath: /secrets
+              readOnly: true
+        - name: cloud-sql-proxy-replica2
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+          args:
+            - "--credentials-file=/secrets/key.json"
+            - "--port=57432"
+            - "$(CLOUDSQL_INSTANCE)"
+          env:
+            - name: CLOUDSQL_INSTANCE
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql-instances
+                  key: URGENCY_REPLICA2
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - name: cloudsql-sa
+              mountPath: /secrets
+              readOnly: true
+
