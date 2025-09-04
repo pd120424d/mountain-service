@@ -1,0 +1,6 @@
+apiVersion: v2
+name: activity-readmodel-updater
+description: Helm chart for activity read model updater (outbox->Firestore)
+version: 0.1.0
+type: application
+

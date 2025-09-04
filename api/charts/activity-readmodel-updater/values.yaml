@@ -1,0 +1,41 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/pd120424d/activity-readmodel-updater
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8090
+
+resources: {}
+
+secrets:
+  dbCommon: db-common
+  dbService: activity-db
+  cloudSQLSA: gcp-sa
+  cloudSQLSAKey: key.json
+  cloudSQLPrimarySecret: cloudsql-activity
+  cloudSQLPrimaryKey: INSTANCE_CONNECTION_NAME
+  updaterGCPKeySecret: gcp-readmodel-updater-key
+  updaterGCPKeyFile: key.json
+  loggingGCPKeySecret: gcp-logging-writer-key
+  loggingGCPKeyFile: key.json
+
+cloudSQL:
+  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+
+appEnv:
+  DB_HOST: 127.0.0.1
+  DB_PORT: "5432"
+  DB_SSLMODE: disable
+  GOOGLE_CLOUD_PROJECT: reflecting-card-469410-q1
+  FIREBASE_PROJECT_ID: reflecting-card-469410-q1
+  PUBSUB_TOPIC: activity-events
+  PUBSUB_SUBSCRIPTION: activity-events-sub
+  OUTBOX_POLL_INTERVAL_SECONDS: "10"
+  HEALTH_PORT: "8090"
+  LOG_LEVEL: info
+  GCP_LOGGING_ENABLED: "true"
+

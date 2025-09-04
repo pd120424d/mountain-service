@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "activity-readmodel-updater.fullname" . }}
+  labels:
+    {{- include "activity-readmodel-updater.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "activity-readmodel-updater.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "activity-readmodel-updater.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app: activity-readmodel-updater
+    spec:
+      volumes:
+        - name: cloudsql-sa
+          secret:
+            secretName: {{ required "secrets.cloudSQLSA is required" .Values.secrets.cloudSQLSA }}
+        - name: updater-gcp
+          secret:
+            secretName: {{ .Values.secrets.updaterGCPKeySecret }}
+        - name: logging-gcp
+          secret:
+            secretName: {{ .Values.secrets.loggingGCPKeySecret }}
+      containers:
+        - name: activity-readmodel-updater
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: DB_HOST
+              value: {{ .Values.appEnv.DB_HOST | quote }}
+            - name: DB_PORT
+              value: {{ .Values.appEnv.DB_PORT | quote }}
+            - name: DB_USER
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}
+            - name: DB_PASSWORD
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_PASSWORD}}
+            - name: DB_NAME
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
+            - name: DB_SSLMODE
+              value: {{ .Values.appEnv.DB_SSLMODE | quote }}
+            - name: GOOGLE_CLOUD_PROJECT
+              value: {{ .Values.appEnv.GOOGLE_CLOUD_PROJECT | quote }}
+            - name: FIREBASE_PROJECT_ID
+              value: {{ .Values.appEnv.FIREBASE_PROJECT_ID | quote }}
+            - name: PUBSUB_TOPIC
+              value: {{ .Values.appEnv.PUBSUB_TOPIC | quote }}
+            - name: PUBSUB_SUBSCRIPTION
+              value: {{ .Values.appEnv.PUBSUB_SUBSCRIPTION | quote }}
+            - name: OUTBOX_POLL_INTERVAL_SECONDS
+              value: {{ .Values.appEnv.OUTBOX_POLL_INTERVAL_SECONDS | quote }}
+            - name: HEALTH_PORT
+              value: {{ .Values.appEnv.HEALTH_PORT | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.appEnv.LOG_LEVEL | quote }}
+            - name: GCP_LOGGING_ENABLED
+              value: {{ .Values.appEnv.GCP_LOGGING_ENABLED | quote }}
+            - name: GCP_PROJECT_ID
+              value: {{ .Values.appEnv.GOOGLE_CLOUD_PROJECT | quote }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/gcp/key.json
+            - name: FIREBASE_CREDENTIALS_PATH
+              value: /var/secrets/gcp/key.json
+            - name: GCP_LOGGING_CREDENTIALS_PATH
+              value: /var/secrets/gcp-logging/key.json
+          volumeMounts:
+            - name: updater-gcp
+              mountPath: /var/secrets/gcp
+              readOnly: true
+            - name: logging-gcp
+              mountPath: /var/secrets/gcp-logging
+              readOnly: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            httpGet: { path: /health, port: {{ .Values.service.port }} }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health, port: {{ .Values.service.port }} }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        - name: cloud-sql-proxy
+          image: {{ .Values.cloudSQL.image }}
+          args:
+            - "--port={{ .Values.appEnv.DB_PORT }}"
+            - "--address=127.0.0.1"
+            - "--credentials-file=/secrets/{{ .Values.secrets.cloudSQLSAKey }}"
+            - "$(INSTANCE_CONNECTION_NAME)"
+          env:
+            - name: INSTANCE_CONNECTION_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.cloudSQLPrimarySecret }}
+                  key: {{ .Values.secrets.cloudSQLPrimaryKey }}
+          volumeMounts:
+            - name: cloudsql-sa
+              mountPath: /secrets
+              readOnly: true
+
