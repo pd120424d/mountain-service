@@ -1,0 +1,6 @@
+apiVersion: v2
+name: employee-service
+description: Helm chart for employee-service with PgBouncer and Cloud SQL proxy sidecars
+version: 0.1.0
+type: application
+

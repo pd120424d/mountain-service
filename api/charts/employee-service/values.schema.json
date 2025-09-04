@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "secrets": {
+      "type": "object",
+      "properties": {
+        "dbCommon": {"type": "string"},
+        "dbService": {"type": "string"},
+        "cloudSQLSA": {"type": "string"},
+        "cloudSQLSAKey": {"type": "string"},
+        "instances": {"type": "string"}
+      },
+      "required": ["dbCommon", "dbService", "cloudSQLSA", "cloudSQLSAKey", "instances"]
+    },
+    "cloudSQL": {
+      "type": "object",
+      "properties": {
+        "image": {"type": "string"},
+        "primaryKey": {"type": "string"},
+        "replica1Key": {"type": "string"},
+        "replica2Key": {"type": "string"}
+      },
+      "required": ["image", "primaryKey", "replica1Key", "replica2Key"]
+    },
+    "pgbouncer": {
+      "type": "object",
+      "properties": {
+        "image": {"type": "string"}
+      },
+      "required": ["image"]
+    }
+  },
+  "required": ["secrets", "cloudSQL", "pgbouncer"]
+}
+

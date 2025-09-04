@@ -1,0 +1,73 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/pd120424d/employee-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8082
+
+resources: {}
+
+secrets:
+  dbCommon: db-common
+  dbService: employee-db
+  cloudSQLSA: gcp-sa
+  cloudSQLSAKey: sa.json
+  cloudSQLPrimarySecret: cloudsql-employee
+  cloudSQLPrimaryKey: INSTANCE
+  cloudSQLReplica1Secret: cloudsql-employee-replica1
+  cloudSQLReplica1Key: INSTANCE
+  cloudSQLReplica2Secret: cloudsql-employee-replica2
+  cloudSQLReplica2Key: INSTANCE
+
+cloudSQL:
+  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+  # If using aggregated secret (cloudsql-instances), specify the three keys here
+  primaryKey: EMPLOYEE_PRIMARY
+  replica1Key: EMPLOYEE_REPLICA1
+  replica2Key: EMPLOYEE_REPLICA2
+  # Toggle to use aggregated secret vs per-instance secrets
+  useAggregatedSecret: false
+
+pgbouncer:
+  image: ghcr.io/pd120424d/pgbouncer:1.24.1
+  ports:
+    primary: 6432
+    replica1: 6433
+    replica2: 6434
+  proxyPorts:
+    primary: 55432
+    replica1: 56432
+    replica2: 57432
+  pool:
+    pool_mode: transaction
+    default_pool_size: 20
+    min_pool_size: 5
+    reserve_pool_size: 5
+    auth_type: plain
+
+appEnv:
+  DB_HOST: 127.0.0.1
+  DB_PORT: "6432"
+  DB_READ_HOST: 127.0.0.1
+  DB_READ_PORT: "6433"
+  DB_SSLMODE: disable
+  REDIS_ADDR: redis:6379
+
+initWait:
+  enabled: true
+  image: busybox:1.36
+  # Wait for PgBouncer listeners
+  ports: [6432, 6433]
+
+podAnnotations: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
