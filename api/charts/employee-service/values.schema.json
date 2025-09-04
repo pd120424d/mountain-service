@@ -9,9 +9,18 @@
         "dbService": {"type": "string"},
         "cloudSQLSA": {"type": "string"},
         "cloudSQLSAKey": {"type": "string"},
-        "instances": {"type": "string"}
+        "instances": {"type": "string"},
+        "cloudSQLPrimarySecret": {"type": "string"},
+        "cloudSQLPrimaryKey": {"type": "string"},
+        "cloudSQLReplica1Secret": {"type": "string"},
+        "cloudSQLReplica1Key": {"type": "string"},
+        "cloudSQLReplica2Secret": {"type": "string"},
+        "cloudSQLReplica2Key": {"type": "string"}
       },
-      "required": ["dbCommon", "dbService", "cloudSQLSA", "cloudSQLSAKey", "instances"]
+      "allOf": [
+        {"if": {"properties": {"useAggregatedSecret": {"const": true}}}, "then": {"required": ["dbCommon", "dbService", "cloudSQLSA", "cloudSQLSAKey", "instances"]}},
+        {"if": {"properties": {"useAggregatedSecret": {"const": false}}}, "then": {"required": ["dbCommon", "dbService", "cloudSQLSA", "cloudSQLSAKey", "cloudSQLPrimarySecret", "cloudSQLPrimaryKey", "cloudSQLReplica1Secret", "cloudSQLReplica1Key", "cloudSQLReplica2Secret", "cloudSQLReplica2Key"]}}
+      ]
     },
     "cloudSQL": {
       "type": "object",

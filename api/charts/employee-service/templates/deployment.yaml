@@ -15,27 +15,13 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "employee-service.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        app: employee-service
     spec:
-      {{- $sa := required "secrets.cloudSQLSA is required" .Values.secrets.cloudSQLSA -}}
-      {{- $saKey := required "secrets.cloudSQLSAKey is required" .Values.secrets.cloudSQLSAKey -}}
       volumes:
         - name: cloudsql-sa
           secret:
-            secretName: {{ $sa }}
-      {{- if .Values.initWait.enabled }}
-      initContainers:
-        - name: wait-for-pgbouncer
-          image: {{ .Values.initWait.image }}
-          command: ["/bin/sh","-c"]
-          args:
-            - >-
-              set -e;
-              {{- range $i, $p := .Values.initWait.ports }}
-              echo "waiting for pgbouncer on port {{$p}}";
-              until nc -z 127.0.0.1 {{$p}}; do sleep 1; done;
-              {{- end }}
-              echo "pgbouncer ready";
-      {{- end }}
+            secretName: {{ required "secrets.cloudSQLSA is required" .Values.secrets.cloudSQLSA }}
+
       containers:
         # App container
         - name: employee
@@ -61,6 +47,8 @@ spec:
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_PASSWORD}}
             - name: DB_NAME
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
+            - name: employee_service_db
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
           ports:
             - containerPort: {{ .Values.service.port }}
           readinessProbe:
@@ -84,7 +72,7 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.pgbouncer.ports.primary }}
-              name: pgbouncer-primary
+              name: pgb-pri
           env:
             - name: DB_USER
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}
@@ -121,7 +109,7 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.pgbouncer.ports.replica1 }}
-              name: pgbouncer-replica1
+              name: pgb-rep1
           env:
             - name: DB_USER
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}
@@ -158,7 +146,7 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.pgbouncer.ports.replica2 }}
-              name: pgbouncer-replica2
+              name: pgb-rep2
           env:
             - name: DB_USER
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}
@@ -193,7 +181,7 @@ spec:
         - name: cloud-sql-proxy-primary
           image: {{ .Values.cloudSQL.image }}
           args:
-            - "--credentials-file=/secrets/{{ $saKey }}"
+            - "--credentials-file=/secrets/{{ required "secrets.cloudSQLSAKey is required" .Values.secrets.cloudSQLSAKey }}"
             - "--port={{ .Values.pgbouncer.proxyPorts.primary }}"
             - "$(CLOUDSQL_INSTANCE)"
           env:
@@ -218,7 +206,7 @@ spec:
         - name: cloud-sql-proxy-replica1
           image: {{ .Values.cloudSQL.image }}
           args:
-            - "--credentials-file=/secrets/{{ $saKey }}"
+            - "--credentials-file=/secrets/{{ required "secrets.cloudSQLSAKey is required" .Values.secrets.cloudSQLSAKey }}"
             - "--port={{ .Values.pgbouncer.proxyPorts.replica1 }}"
             - "$(CLOUDSQL_INSTANCE)"
           env:
@@ -243,7 +231,7 @@ spec:
         - name: cloud-sql-proxy-replica2
           image: {{ .Values.cloudSQL.image }}
           args:
-            - "--credentials-file=/secrets/{{ $saKey }}"
+            - "--credentials-file=/secrets/{{ required "secrets.cloudSQLSAKey is required" .Values.secrets.cloudSQLSAKey }}"
             - "--port={{ .Values.pgbouncer.proxyPorts.replica2 }}"
             - "$(CLOUDSQL_INSTANCE)"
           env:
