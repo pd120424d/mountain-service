@@ -1,0 +1,6 @@
+apiVersion: v2
+name: version-service
+description: Helm chart for version-service
+version: 0.1.0
+type: application
+
