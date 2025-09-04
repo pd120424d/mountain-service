@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "secrets": {
+      "type": "object",
+      "properties": {
+        "dbCommon": {"type": "string"},
+        "dbService": {"type": "string"},
+        "cloudSQLSA": {"type": "string"},
+        "cloudSQLSAKey": {"type": "string"},
+        "instances": {"type": "string"},
+        "cloudSQLPrimarySecret": {"type": "string"},
+        "cloudSQLPrimaryKey": {"type": "string"},
+        "cloudSQLReplica1Secret": {"type": "string"},
+        "cloudSQLReplica1Key": {"type": "string"},
+        "cloudSQLReplica2Secret": {"type": "string"},
+        "cloudSQLReplica2Key": {"type": "string"}
+      }
+    },
+    "cloudSQL": {
+      "type": "object",
+      "properties": {
+        "useAggregatedSecret": {"type": "boolean"},
+        "primaryKey": {"type": "string"},
+        "replica1Key": {"type": "string"},
+        "replica2Key": {"type": "string"}
+      }
+    }
+  }
+}
+

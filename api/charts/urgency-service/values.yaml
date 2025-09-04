@@ -1,0 +1,57 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/pd120424d/urgency-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8083
+
+resources: {}
+
+secrets:
+  dbCommon: db-common
+  dbService: urgency-db
+  cloudSQLSA: gcp-sa
+  cloudSQLSAKey: key.json
+  cloudSQLPrimarySecret: cloudsql-urgency
+  cloudSQLPrimaryKey: INSTANCE_CONNECTION_NAME
+  cloudSQLReplica1Secret: cloudsql-urgency-replica1
+  cloudSQLReplica1Key: INSTANCE_CONNECTION_NAME
+  cloudSQLReplica2Secret: cloudsql-urgency-replica2
+  cloudSQLReplica2Key: INSTANCE_CONNECTION_NAME
+
+cloudSQL:
+  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+  primaryKey: URGENCY_PRIMARY
+  replica1Key: URGENCY_REPLICA1
+  replica2Key: URGENCY_REPLICA2
+  useAggregatedSecret: false
+
+pgbouncer:
+  image: ghcr.io/pd120424d/pgbouncer:1.24.1
+  ports:
+    primary: 6432
+    replica1: 6433
+    replica2: 6434
+  proxyPorts:
+    primary: 55432
+    replica1: 56432
+    replica2: 57432
+  pool:
+    pool_mode: transaction
+    default_pool_size: 20
+    min_pool_size: 5
+    reserve_pool_size: 5
+    auth_type: plain
+
+appEnv:
+  DB_HOST: 127.0.0.1
+  DB_PORT: "6432"
+  DB_READ_HOST: 127.0.0.1
+  DB_READ_PORT: "6433"
+  DB_SSLMODE: disable
+  REDIS_ADDR: redis:6379
+

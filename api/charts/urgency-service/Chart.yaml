@@ -1,0 +1,6 @@
+apiVersion: v2
+name: urgency-service
+description: Helm chart for urgency-service with PgBouncer and Cloud SQL proxy sidecars
+version: 0.1.0
+type: application
+
