@@ -1,0 +1,6 @@
+apiVersion: v2
+name: docs-aggregator
+description: Helm chart for docs-aggregator
+version: 0.1.0
+type: application
+
