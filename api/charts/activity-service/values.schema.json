@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "secrets": {
+      "type": "object",
+      "properties": {
+        "dbCommon": {"type": "string"},
+        "dbService": {"type": "string"},
+        "cloudSQLSA": {"type": "string"},
+        "cloudSQLSAKey": {"type": "string"},
+        "cloudSQLPrimarySecret": {"type": "string"},
+        "cloudSQLPrimaryKey": {"type": "string"}
+      }
+    }
+  }
+}
+

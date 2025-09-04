@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "activity-service.fullname" . }}
+  labels:
+    {{- include "activity-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "activity-service.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "activity-service.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app: activity-service
+    spec:
+      volumes:
+        - name: cloudsql-sa
+          secret:
+            secretName: {{ required "secrets.cloudSQLSA is required" .Values.secrets.cloudSQLSA }}
+      containers:
+        - name: activity
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: DB_HOST
+              value: {{ .Values.appEnv.DB_HOST | quote }}
+            - name: DB_PORT
+              value: {{ .Values.appEnv.DB_PORT | quote }}
+            - name: DB_SSLMODE
+              value: {{ .Values.appEnv.DB_SSLMODE | quote }}
+            - name: REDIS_ADDR
+              value: {{ .Values.appEnv.REDIS_ADDR | quote }}
+            - name: DB_USER
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}
+            - name: DB_PASSWORD
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_PASSWORD}}
+            - name: DB_NAME
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
+            - name: activity_service_db
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
+            # Optional Firestore/PubSub envs (readable from cluster secrets or direct envs)
+            - name: FIREBASE_PROJECT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: gcp-activity-api-key
+                  key: project_id
+                  optional: true
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /secrets/key.json
+          volumeMounts:
+            - name: cloudsql-sa
+              mountPath: /secrets
+              readOnly: true
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          readinessProbe:
+            httpGet: {path: /api/v1/health, port: {{ .Values.service.port }} }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /api/v1/health, port: {{ .Values.service.port }} }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+        - name: pgbouncer-primary
+          image: {{ .Values.pgbouncer.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.pgbouncer.ports.primary }}
+              name: pgb-pri
+          env:
+            - name: DB_USER
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}
+            - name: DB_PASSWORD
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_PASSWORD}}
+            - name: DB_NAME
+              valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -eu
+              mkdir -p /tmp/pgbouncer
+              printf "\"%s\" \"%s\"\n" "$DB_USER" "$DB_PASSWORD" > /tmp/pgbouncer/userlist.txt
+              cat > /tmp/pgbouncer/pgbouncer.ini <<EOF
+              [databases]
+              ${DB_NAME}= host=127.0.0.1 port={{ .Values.pgbouncer.proxyPorts.primary }} dbname=${DB_NAME}
+              [pgbouncer]
+              listen_addr=127.0.0.1
+              listen_port={{ .Values.pgbouncer.ports.primary }}
+              pool_mode={{ .Values.pgbouncer.pool.pool_mode }}
+              default_pool_size={{ .Values.pgbouncer.pool.default_pool_size }}
+              min_pool_size={{ .Values.pgbouncer.pool.min_pool_size }}
+              reserve_pool_size={{ .Values.pgbouncer.pool.reserve_pool_size }}
+              auth_type={{ .Values.pgbouncer.pool.auth_type }}
+              auth_file=/tmp/pgbouncer/userlist.txt
+              logfile=/dev/stdout
+              pidfile=/tmp/pgbouncer.pid
+              EOF
+              exec pgbouncer /tmp/pgbouncer/pgbouncer.ini
+
+        - name: cloud-sql-proxy-primary
+          image: {{ .Values.cloudSQL.image }}
+          args:
+            - "--credentials-file=/secrets/{{ required \"secrets.cloudSQLSAKey is required\" .Values.secrets.cloudSQLSAKey }}"
+            - "--port={{ .Values.pgbouncer.proxyPorts.primary }}"
+            - "$(CLOUDSQL_INSTANCE)"
+          env:
+            - name: CLOUDSQL_INSTANCE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "secrets.cloudSQLPrimarySecret is required" .Values.secrets.cloudSQLPrimarySecret }}
+                  key: {{ required "secrets.cloudSQLPrimaryKey is required" .Values.secrets.cloudSQLPrimaryKey }}
+          securityContext: { runAsNonRoot: true }
+          volumeMounts:
+            - name: cloudsql-sa
+              mountPath: /secrets
+              readOnly: true
+

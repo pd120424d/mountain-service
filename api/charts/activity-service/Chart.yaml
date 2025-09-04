@@ -1,0 +1,6 @@
+apiVersion: v2
+name: activity-service
+description: Helm chart for activity-service with PgBouncer and Cloud SQL proxy sidecar (no replicas)
+version: 0.1.0
+type: application
+
