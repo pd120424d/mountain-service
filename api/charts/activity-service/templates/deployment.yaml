@@ -34,6 +34,13 @@ spec:
               value: {{ .Values.appEnv.DB_SSLMODE | quote }}
             - name: REDIS_ADDR
               value: {{ .Values.appEnv.REDIS_ADDR | quote }}
+            # Authentication/shared secrets
+            - name: JWT_SECRET
+              valueFrom: {secretKeyRef: {name: app-shared, key: JWT_SECRET}}
+            - name: SERVICE_AUTH_SECRET
+              valueFrom: {secretKeyRef: {name: app-shared, key: SERVICE_AUTH_SECRET}}
+            - name: ADMIN_PASSWORD
+              valueFrom: {secretKeyRef: {name: app-shared, key: ADMIN_PASSWORD}}
             - name: DB_USER
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}
             - name: DB_PASSWORD
@@ -107,7 +114,7 @@ spec:
         - name: cloud-sql-proxy-primary
           image: {{ .Values.cloudSQL.image }}
           args:
-            - "--credentials-file=/secrets/{{ required \"secrets.cloudSQLSAKey is required\" .Values.secrets.cloudSQLSAKey }}"
+            - "--credentials-file=/secrets/{{ required "secrets.cloudSQLSAKey is required" .Values.secrets.cloudSQLSAKey }}"
             - "--port={{ .Values.pgbouncer.proxyPorts.primary }}"
             - "$(CLOUDSQL_INSTANCE)"
           env:
