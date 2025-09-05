@@ -23,6 +23,7 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   pageSize = 20;
   total = 0;
   totalPages = 0;
+  activeTab: 'mine' | 'all' = 'mine';
 
 
   UrgencyLevel = UrgencyLevel;
@@ -49,7 +50,8 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
     this.isLoading = true;
     this.error = null;
 
-    this.urgencyService.getUrgenciesPaginated({ page: this.page, pageSize: this.pageSize }).subscribe({
+    const myUrgencies = this.activeTab === 'mine';
+    this.urgencyService.getUrgenciesPaginated({ page: this.page, pageSize: this.pageSize, myUrgencies }).subscribe({
       next: (resp) => {
         const items = resp?.urgencies || [];
         this.urgencies = items;

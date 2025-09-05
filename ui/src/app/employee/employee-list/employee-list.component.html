@@ -3,7 +3,7 @@
   <table>
     <thead>
       <tr>
-        <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.ID' | translate }}</th>
+        <!-- ID hidden per UI guidelines -->
         <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.FIRST_NAME' | translate }}</th>
         <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.LAST_NAME' | translate }}</th>
         <th>{{ 'EMPLOYEE_LIST.TABLE_HEADERS.GENDER' | translate }}</th>
@@ -17,7 +17,6 @@
     </thead>
     <tbody>
       <tr *ngFor="let employee of employees">
-        <td>{{ employee.id }}</td>
         <td>{{ employee.firstName }}</td>
         <td>{{ employee.lastName }}</td>
         <td>{{ employee.gender === 'M' ? ('EMPLOYEE_LIST.GENDER.MALE' | translate) : ('EMPLOYEE_LIST.GENDER.FEMALE' | translate) }}</td>

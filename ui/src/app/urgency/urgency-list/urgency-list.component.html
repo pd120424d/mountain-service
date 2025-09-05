@@ -7,6 +7,18 @@
     </button>
     <h2>{{ 'URGENCY_LIST.TITLE' | translate }}</h2>
   </div>
+  <!-- Tabs for Mine vs All -->
+  <div class="tabs" *ngIf="!isLoading && !error" style="margin: 8px 0; display:flex; gap:8px;">
+    <button class="btn" [class.btn-primary]="activeTab==='mine'" [class.btn-secondary]="activeTab!=='mine'"
+            (click)="activeTab='mine'; page=1; loadUrgencies();">
+      {{ 'URGENCY_LIST.TABS.MY_URGENCIES' | translate }}
+    </button>
+    <button class="btn" [class.btn-primary]="activeTab==='all'" [class.btn-secondary]="activeTab!=='all'"
+            (click)="activeTab='all'; page=1; loadUrgencies();">
+      {{ 'URGENCY_LIST.TABS.ALL_URGENCIES' | translate }}
+    </button>
+  </div>
+
 
   <div *ngIf="isLoading" class="loading">
     <div class="spinner"></div>
@@ -34,7 +46,7 @@
     <table>
       <thead>
         <tr>
-          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.ID' | translate }}</th>
+          <!-- ID hidden per UI guidelines -->
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.NAME' | translate }}</th>
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.LOCATION' | translate }}</th>
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.LEVEL' | translate }}</th>
@@ -47,8 +59,7 @@
         <tr *ngFor="let urgency of urgencies"
             class="urgency-row"
             [ngClass]="getRowClass(urgency)">
-          <td>{{ urgency.id }}</td>
-          <td>{{ getDisplayName(urgency) }}</td>
+                    <td>{{ getDisplayName(urgency) }}</td>
           <td>{{ urgency.location }}</td>
           <td>
             <span class="level-badge" [ngClass]="getLevelClass(urgency.level!)">
@@ -73,9 +84,9 @@
     </table>
 
   <div *ngIf="!isLoading && !error && urgencies.length > 0" class="pagination-controls" style="display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:12px;">
-    <button class="btn btn-secondary" (click)="onPrev()" [disabled]="page <= 1">&laquo; {{ 'PREVIOUS' | translate }}</button>
-    <span>{{ 'PAGE' | translate }} {{page}} / {{totalPages}} ({{total}} {{ 'TOTAL' | translate }})</span>
-    <button class="btn btn-secondary" (click)="onNext()" [disabled]="page >= totalPages">{{ 'NEXT' | translate }} &raquo;</button>
+    <button class="btn btn-secondary" (click)="onPrev()" [disabled]="page <= 1">&laquo; {{ 'URGENCY_LIST.PAGINATION.PREVIOUS' | translate }}</button>
+    <span>{{ 'URGENCY_LIST.PAGINATION.PAGE' | translate:{ page: page, totalPages: totalPages, total: total } }}</span>
+    <button class="btn btn-secondary" (click)="onNext()" [disabled]="page >= totalPages">{{ 'URGENCY_LIST.PAGINATION.NEXT' | translate }} &raquo;</button>
   </div>
 
   </div>
