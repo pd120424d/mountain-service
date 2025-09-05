@@ -461,151 +461,69 @@ jobs:
               --dry-run=client -o yaml | kubectl apply -f -
           fi
 
-      - name: Apply manifests
+      - name: Remove legacy Ingress objects (first run only; ignore if missing)
         run: |
-          kubectl apply -f k8s/namespaces.yaml
-          kubectl -n mountain-service apply -f k8s/deployments/
-          kubectl -n mountain-service apply -f k8s/services/
-          kubectl -n mountain-service apply -f k8s/frontend/
+          kubectl -n mountain-service delete ingress activity-service version-service docs-aggregator urgency-service || true
 
-
-      - name: Roll out Frontend image
-        if: ${{ needs.build-and-push-images.outputs.ui-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
+      - name: Deploy services via Helm (Ingress + rollout managed by charts)
         run: |
-          kubectl -n mountain-service set image deploy/frontend \
-            frontend=ghcr.io/pd120424d/mountain-ui:${{ github.sha }}
-          kubectl -n mountain-service rollout status deploy/frontend --timeout=180s
+          set -euo pipefail
+          NS=mountain-service
+          HOST=mountain-service.duckdns.org
 
-      - name: Roll out Employee image
-        if: ${{ needs.build-and-push-images.outputs.employee-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
-        run: |
-          kubectl -n mountain-service set image deploy/employee-service \
-            employee=ghcr.io/pd120424d/employee-service:${{ github.sha }}
-          kubectl -n mountain-service rollout status deploy/employee-service --timeout=180s
+          echo "Upgrading Frontend via Helm..."
+          helm upgrade --install frontend ./api/charts/frontend -n "$NS" \
+            --atomic --timeout 5m \
+            --set image.tag=${{ github.sha }}
+          kubectl -n "$NS" rollout status deploy/frontend --timeout=180s
 
-      - name: Roll out Urgency image
-        if: ${{ needs.build-and-push-images.outputs.urgency-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
-        run: |
-          kubectl -n mountain-service set image deploy/urgency-service \
-            urgency=ghcr.io/pd120424d/urgency-service:${{ github.sha }}
-          kubectl -n mountain-service rollout status deploy/urgency-service --timeout=180s
+          echo "Upgrading Employee service via Helm..."
+          helm upgrade --install employee-service ./api/charts/employee-service -n "$NS" \
+            --atomic --timeout 5m \
+            --set image.tag=${{ github.sha }}
+          kubectl -n "$NS" rollout status deploy/employee-service --timeout=180s
 
-      - name: Roll out Activity image
-        if: ${{ needs.build-and-push-images.outputs.activity-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
-        run: |
-          kubectl -n mountain-service set image deploy/activity-service \
-            activity=ghcr.io/pd120424d/activity-service:${{ github.sha }}
-          kubectl -n mountain-service rollout status deploy/activity-service --timeout=180s
+          echo "Upgrading Urgency service via Helm..."
+          helm upgrade --install urgency-service ./api/charts/urgency-service -n "$NS" \
+            --atomic --timeout 5m \
+            --set image.tag=${{ github.sha }}
+          kubectl -n "$NS" rollout status deploy/urgency-service --timeout=180s
 
-      - name: Roll out Activity Readmodel Updater image
-        if: ${{ needs.build-and-push-images.outputs.activity-updater-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
-        run: |
-          kubectl -n mountain-service set image deploy/activity-readmodel-updater \
-            activity-readmodel-updater=ghcr.io/pd120424d/activity-readmodel-updater:${{ github.sha }}
-          kubectl -n mountain-service rollout status deploy/activity-readmodel-updater --timeout=180s
+          echo "Upgrading Activity service via Helm..."
+          helm upgrade --install activity-service ./api/charts/activity-service -n "$NS" \
+            --atomic --timeout 5m \
+            --set image.tag=${{ github.sha }}
+          kubectl -n "$NS" rollout status deploy/activity-service --timeout=180s
 
-      - name: Roll out Version image
-        if: ${{ needs.build-and-push-images.outputs.version-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
-        run: |
-          kubectl -n mountain-service set image deploy/version-service \
-            version=ghcr.io/pd120424d/version-service:${{ github.sha }}
-          kubectl -n mountain-service rollout status deploy/version-service --timeout=180s
+          echo "Upgrading Activity Readmodel Updater via Helm..."
+          helm upgrade --install activity-readmodel-updater ./api/charts/activity-readmodel-updater -n "$NS" \
+            --atomic --timeout 5m \
+            --set image.tag=${{ github.sha }}
+          kubectl -n "$NS" rollout status deploy/activity-readmodel-updater --timeout=180s
 
-      - name: Roll out Docs Aggregator image
-        if: ${{ needs.build-and-push-images.outputs.docs-aggregator-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true') }}
-        run: |
-          kubectl -n mountain-service set image deploy/docs-aggregator \
-            docs-aggregator=ghcr.io/pd120424d/docs-aggregator:${{ github.sha }}
-          kubectl -n mountain-service rollout status deploy/docs-aggregator --timeout=180s
+          echo "Upgrading Version service via Helm..."
+          helm upgrade --install version-service ./api/charts/version-service -n "$NS" \
+            --atomic --timeout 5m \
+            --set image.tag=${{ github.sha }}
+          kubectl -n "$NS" rollout status deploy/version-service --timeout=180s
 
-      - name: Wait for pods to be ready
-        run: |
-          echo "Waiting for pods to be ready (timeout: 300s)..."
-          # Wait for critical services first (ui, redis)
-          echo "Waiting for critical services to be ready..."
-          kubectl -n mountain-service wait --for=condition=ready pod -l app=ui --timeout=120s || echo "UI not ready yet"
-          kubectl -n mountain-service wait --for=condition=ready pod -l app=redis --timeout=120s || echo "Redis not ready yet"
+          echo "Upgrading Docs Aggregator via Helm..."
+          helm upgrade --install docs-aggregator ./api/charts/docs-aggregator -n "$NS" \
+            --atomic --timeout 5m \
+            --set image.tag=${{ github.sha }}
+          kubectl -n "$NS" rollout status deploy/docs-aggregator --timeout=180s
 
-          # Wait for backend services with a bigger timeout
-          echo "Waiting for backend services to be ready..."
-          kubectl -n mountain-service wait --for=condition=ready pod -l app=employee-service --timeout=180s || echo "Employee service not ready yet"
-          kubectl -n mountain-service wait --for=condition=ready pod -l app=urgency-service --timeout=180s || echo "Urgency service not ready yet"
-          kubectl -n mountain-service wait --for=condition=ready pod -l app=activity-service --timeout=180s || echo "Activity service not ready yet"
-          kubectl -n mountain-service wait --for=condition=ready pod -l app=activity-readmodel-updater --timeout=180s || echo "Activity read model updater not ready yet"
-          kubectl -n mountain-service wait --for=condition=ready pod -l app=version-service --timeout=180s || echo "Version service not ready yet"
-          kubectl -n mountain-service wait --for=condition=ready pod -l app=docs-aggregator --timeout=180s || echo "Docs-aggregator not ready yet"
-          kubectl -n mountain-service wait --for=condition=ready pod -l app=docs-ui --timeout=180s || echo "Docs-ui not ready yet"
-
-          # Show final status
-          echo "Final pod status:"
-          kubectl -n mountain-service get pods -o wide
-          echo "SUCCESS: All pods are ready"
-
-      - name: "Post-apply: show pods and imagePullSecrets"
+      - name: Show status and recent events
         run: |
           echo "Pods (wide):"
           kubectl -n mountain-service get pods -o wide || true
           echo "\nRecent events (last 200 lines):"
           kubectl -n mountain-service get events --sort-by=.lastTimestamp | tail -n 200 || true
-          echo "\nDescribe deployments (images + imagePullSecrets):"
-          for d in employee-service urgency-service activity-service activity-readmodel-updater version-service docs-aggregator docs-ui; do
-            echo "\n--- DESCRIBE DEPLOYMENT: $d ---"
-            kubectl -n mountain-service describe deploy "$d" | sed -n '/Image:/,/Environment:/p' || true
-            echo "\nImagePullSecrets:"
-            kubectl -n mountain-service get deploy "$d" -o jsonpath='{.spec.template.spec.imagePullSecrets}' || true
-            echo "\nImages:"
-            kubectl -n mountain-service get deploy "$d" -o jsonpath='{range .spec.template.spec.containers[*]}{.name}:{.image}{"\n"}{end}' || true
-            echo "\n---\n"
-          done
-          echo "\nIf any pods are in ImagePullBackOff, try:\n  kubectl -n mountain-service describe pod <pod-name>\n"
 
-      - name: Health check endpoints
+      - name: Ingress smoke checks
         run: |
-          echo "Checking service health endpoints..."
-          sleep 10  # Give services a moment to start
-
-          # Get service IPs
-          EMPLOYEE_IP=$(kubectl -n mountain-service get svc employee-service -o jsonpath='{.spec.clusterIP}')
-          URGENCY_IP=$(kubectl -n mountain-service get svc urgency-service -o jsonpath='{.spec.clusterIP}')
-          ACTIVITY_IP=$(kubectl -n mountain-service get svc activity-service -o jsonpath='{.spec.clusterIP}')
-          ACTIVITY_UPDATER_IP=$(kubectl -n mountain-service get svc activity-readmodel-updater -o jsonpath='{.spec.clusterIP}')
-          VERSION_IP=$(kubectl -n mountain-service get svc version-service -o jsonpath='{.spec.clusterIP}')
-
-          echo "Service IPs: Employee=$EMPLOYEE_IP, Urgency=$URGENCY_IP, Activity=$ACTIVITY_IP, ActivityUpdater=$ACTIVITY_UPDATER_IP, Version=$VERSION_IP"
-
-          # Health checks with retries
-          for service in "employee:$EMPLOYEE_IP:8082" "urgency:$URGENCY_IP:8083" "activity:$ACTIVITY_IP:8084" "version:$VERSION_IP:8090"; do
-            name=$(echo $service | cut -d: -f1)
-            ip=$(echo $service | cut -d: -f2)
-            port=$(echo $service | cut -d: -f3)
-
-            echo "Checking $name service connectivity..."
-            for i in {1..3}; do
-              if nc -z "$ip" "$port" 2>/dev/null; then
-                echo "SUCCESS: $name service is reachable on port $port"
-                break
-              elif [ $i -eq 3 ]; then
-                echo "FAILURE: $name service not reachable after 3 attempts"
-              else
-                echo "$name service not ready, retrying in 5s... (attempt $i/3)"
-                sleep 5
-              fi
-            done
-          done
-
-          # Special health check for activity-readmodel-updater (has actual /health endpoint)
-          echo "Checking activity-readmodel-updater service health..."
-          for i in {1..5}; do
-            if curl -f -s "http://$ACTIVITY_UPDATER_IP:8090/health" > /dev/null; then
-              echo "SUCCESS: activity-readmodel-updater service is healthy"
-              break
-            elif [ $i -eq 5 ]; then
-              echo "FAILURE: activity-readmodel-updater service health check failed after 5 attempts"
-              curl -v "http://$ACTIVITY_UPDATER_IP:8090/health" || true
-            else
-              echo "activity-readmodel-updater service not ready, retrying in 10s... (attempt $i/5)"
-              sleep 10
-            fi
-          done
-
-
+          set -euo pipefail
+          HOST=mountain-service.duckdns.org
+          echo "Checking ingress endpoints..."
+          curl -fsS "http://$HOST/api/v1/health" >/dev/null || echo "health endpoint not centralized; skipping strict fail"
+          curl -fsS "http://$HOST/api/v1/docs" >/dev/null
