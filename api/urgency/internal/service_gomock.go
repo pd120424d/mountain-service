@@ -80,9 +80,9 @@ func (mr *MockUrgencyServiceMockRecorder) GetAllUrgencies(ctx interface{}) *gomo
 }
 
 // ListUrgencies mocks base method.
-func (m *MockUrgencyService) ListUrgencies(ctx context.Context, page int, pageSize int) ([]model.Urgency, int64, error) {
+func (m *MockUrgencyService) ListUrgencies(ctx context.Context, page int, pageSize int, assignedEmployeeID *uint) ([]model.Urgency, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListUrgencies", ctx, page, pageSize)
+	ret := m.ctrl.Call(m, "ListUrgencies", ctx, page, pageSize, assignedEmployeeID)
 	ret0, _ := ret[0].([]model.Urgency)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -90,9 +90,9 @@ func (m *MockUrgencyService) ListUrgencies(ctx context.Context, page int, pageSi
 }
 
 // ListUrgencies indicates an expected call of ListUrgencies.
-func (mr *MockUrgencyServiceMockRecorder) ListUrgencies(ctx, page, pageSize interface{}) *gomock.Call {
+func (mr *MockUrgencyServiceMockRecorder) ListUrgencies(ctx, page, pageSize, assignedEmployeeID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUrgencies", reflect.TypeOf((*MockUrgencyService)(nil).ListUrgencies), ctx, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUrgencies", reflect.TypeOf((*MockUrgencyService)(nil).ListUrgencies), ctx, page, pageSize, assignedEmployeeID)
 }
 
 // GetUrgencyByID mocks base method.

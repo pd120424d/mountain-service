@@ -142,10 +142,10 @@ func TestUrgencyService_ListUrgencies(t *testing.T) {
 	defer ctrl.Finish()
 
 	repo := repositories.NewMockUrgencyRepository(ctrl)
-	repo.EXPECT().ListPaginated(gomock.Any(), 2, 10).Return([]model.Urgency{{ID: 1}}, int64(11), nil)
+	repo.EXPECT().ListPaginated(gomock.Any(), 2, 10, gomock.Nil()).Return([]model.Urgency{{ID: 1}}, int64(11), nil)
 
 	svc := &urgencyService{log: log, repo: repo}
-	items, total, err := svc.ListUrgencies(context.Background(), 2, 10)
+	items, total, err := svc.ListUrgencies(context.Background(), 2, 10, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(11), total)
 	assert.Len(t, items, 1)

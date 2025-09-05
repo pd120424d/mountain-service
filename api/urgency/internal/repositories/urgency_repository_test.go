@@ -373,13 +373,13 @@ func TestUrgencyRepository_ListPaginated(t *testing.T) {
 
 	page := 2
 	pageSize := 10
-	items, total, err := repo.ListPaginated(context.Background(), page, pageSize)
+	items, total, err := repo.ListPaginated(context.Background(), page, pageSize, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(35), total)
 	assert.Len(t, items, 10)
 
 	// Page beyond total pages returns empty slice
-	items, total, err = repo.ListPaginated(context.Background(), 4, 10)
+	items, total, err = repo.ListPaginated(context.Background(), 4, 10, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(35), total)
 	assert.Len(t, items, 5)

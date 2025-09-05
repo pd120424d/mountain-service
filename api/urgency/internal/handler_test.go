@@ -258,7 +258,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 
 		// No query params -> defaults page=1,pageSize=20
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().ListUrgencies(gomock.Any(), 1, 20).Return(nil, int64(0), errors.New("database error")).Times(1)
+		mockService.EXPECT().ListUrgencies(gomock.Any(), 1, 20, gomock.Nil()).Return(nil, int64(0), errors.New("database error")).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ListUrgencies(ctx)
@@ -275,7 +275,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().ListUrgencies(gomock.Any(), 1, 20).Return([]model.Urgency{}, int64(0), nil).Times(1)
+		mockService.EXPECT().ListUrgencies(gomock.Any(), 1, 20, gomock.Nil()).Return([]model.Urgency{}, int64(0), nil).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ListUrgencies(ctx)
@@ -318,7 +318,7 @@ func TestUrgencyHandler_ListUrgencies(t *testing.T) {
 		}
 
 		mockService := NewMockUrgencyService(ctrl)
-		mockService.EXPECT().ListUrgencies(gomock.Any(), 1, 20).Return(urgencies, int64(len(urgencies)), nil).Times(1)
+		mockService.EXPECT().ListUrgencies(gomock.Any(), 1, 20, gomock.Nil()).Return(urgencies, int64(len(urgencies)), nil).Times(1)
 
 		handler := NewUrgencyHandler(log, mockService)
 		handler.ListUrgencies(ctx)

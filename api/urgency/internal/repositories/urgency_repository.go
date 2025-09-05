@@ -21,7 +21,7 @@ type UrgencyRepository interface {
 	GetByIDPrimary(ctx context.Context, id uint, urgency *model.Urgency) error
 	Update(ctx context.Context, urgency *model.Urgency) error
 	Delete(ctx context.Context, urgencyID uint) error
-	ListPaginated(ctx context.Context, page int, pageSize int) ([]model.Urgency, int64, error)
+	ListPaginated(ctx context.Context, page int, pageSize int, assignedEmployeeID *uint) ([]model.Urgency, int64, error)
 
 	List(ctx context.Context, filters map[string]interface{}) ([]model.Urgency, error)
 	ResetAllData(ctx context.Context) error
@@ -45,6 +45,7 @@ func NewUrgencyRepositoryRW(log utils.Logger, writeDB *gorm.DB, readDB *gorm.DB)
 }
 
 func (r *urgencyRepository) Create(ctx context.Context, urgency *model.Urgency) error {
+	defer utils.TimeOperation(ctx, r.log, "UrgencyRepository.Create")()
 	return r.dbWrite.WithContext(ctx).Create(urgency).Error
 }
 
@@ -101,7 +102,8 @@ func (r *urgencyRepository) List(ctx context.Context, filters map[string]interfa
 	return urgencies, err
 }
 
-func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSize int) ([]model.Urgency, int64, error) {
+func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSize int, assignedEmployeeID *uint) ([]model.Urgency, int64, error) {
+	defer utils.TimeOperation(ctx, r.log, "UrgencyRepository.ListPaginated")()
 	var urgencies []model.Urgency
 	var total int64
 
@@ -118,10 +120,20 @@ func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSiz
 	offset := (page - 1) * pageSize
 
 	q := r.dbRead.WithContext(ctx).Model(&model.Urgency{}).Where("deleted_at IS NULL")
+	if assignedEmployeeID != nil {
+		q = q.Where("assigned_employee_id = ?", *assignedEmployeeID)
+	}
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	if err := q.Order("created_at DESC").Limit(pageSize).Offset(offset).Find(&urgencies).Error; err != nil {
+	orderExpr := "CASE " +
+		"WHEN status = 'open' AND assigned_employee_id IS NULL THEN 0 " +
+		"WHEN status = 'open' AND assigned_employee_id IS NOT NULL THEN 1 " +
+		"WHEN status = 'in_progress' THEN 2 " +
+		"WHEN status = 'resolved' THEN 3 " +
+		"WHEN status = 'closed' THEN 4 " +
+		"ELSE 5 END ASC, created_at DESC"
+	if err := q.Order(orderExpr).Limit(pageSize).Offset(offset).Find(&urgencies).Error; err != nil {
 		return nil, 0, err
 	}
 	return urgencies, total, nil

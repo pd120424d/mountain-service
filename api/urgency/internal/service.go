@@ -21,7 +21,7 @@ import (
 type UrgencyService interface {
 	CreateUrgency(ctx context.Context, urgency *model.Urgency) error
 	GetAllUrgencies(ctx context.Context) ([]model.Urgency, error)
-	ListUrgencies(ctx context.Context, page int, pageSize int) ([]model.Urgency, int64, error)
+	ListUrgencies(ctx context.Context, page int, pageSize int, assignedEmployeeID *uint) ([]model.Urgency, int64, error)
 	GetUrgencyByID(ctx context.Context, id uint) (*model.Urgency, error)
 	UpdateUrgency(ctx context.Context, urgency *model.Urgency) error
 	DeleteUrgency(ctx context.Context, id uint) error
@@ -83,8 +83,8 @@ func (s *urgencyService) CreateUrgency(ctx context.Context, urgency *model.Urgen
 	return nil
 }
 
-func (s *urgencyService) ListUrgencies(ctx context.Context, page int, pageSize int) ([]model.Urgency, int64, error) {
-	return s.repo.ListPaginated(ctx, page, pageSize)
+func (s *urgencyService) ListUrgencies(ctx context.Context, page int, pageSize int, assignedEmployeeID *uint) ([]model.Urgency, int64, error) {
+	return s.repo.ListPaginated(ctx, page, pageSize, assignedEmployeeID)
 }
 
 func (s *urgencyService) GetAllUrgencies(ctx context.Context) ([]model.Urgency, error) {

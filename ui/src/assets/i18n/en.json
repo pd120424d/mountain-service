@@ -177,6 +177,9 @@
         "API_OVERVIEW": {
             "TITLE": "API Overview",
             "DESCRIPTION": "Access API documentation and testing interfaces",
+            "CENTRALIZED_DOCS": "Centralized API Documentation",
+            "OPEN_UNIFIED_SWAGGER": "Open the unified Swagger UI for all healthy services.",
+            "OPEN_API_DOCS": "Open API Docs",
             "EMPLOYEE_API": "Employee Service API",
             "EMPLOYEE_API_DESC": "Manage employees, shifts, and authentication",
             "URGENCY_API": "Urgency Service API",
@@ -260,13 +263,21 @@
         "NO_URGENCIES": "No emergency reports found.",
         "UNASSIGNED_WARNING": "There are {{count}} open emergencies awaiting assignment.",
         "TABLE_HEADERS": {
-            "ID": "ID",
             "NAME": "Reporter Name",
             "LOCATION": "Location",
             "LEVEL": "Urgency Level",
             "STATUS": "Status",
             "CREATED_AT": "Reported At",
             "ACTIONS": "Actions"
+        },
+        "PAGINATION": {
+          "PREVIOUS": "Previous",
+          "NEXT": "Next",
+          "PAGE": "Page {{page}} / {{totalPages}} (total {{total}})"
+        },
+        "TABS": {
+          "MY_URGENCIES": "My emergencies",
+          "ALL_URGENCIES": "All emergencies"
         },
         "VIEW": "View Details"
     },

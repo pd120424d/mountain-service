@@ -113,7 +113,16 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 		}
 	}
 
-	urgencies, total, err := h.svc.ListUrgencies(requestContext(ctx), page, pageSize)
+	var assignedEmployeeID *uint
+	if ctx.Query("myUrgencies") == "true" {
+		if v, exists := ctx.Get("employeeID"); exists {
+			if id, ok := v.(uint); ok {
+				assignedEmployeeID = &id
+			}
+		}
+	}
+
+	urgencies, total, err := h.svc.ListUrgencies(requestContext(ctx), page, pageSize, assignedEmployeeID)
 	if err != nil {
 		reqLog.Errorf("failed to retrieve urgencies: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.LIST_FAILED", "details": err.Error()})
