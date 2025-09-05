@@ -18,6 +18,10 @@ func TimeOperation(ctx context.Context, log Logger, operation string, extraField
 	return func() {
 		elapsed := time.Since(start)
 		l := log.WithContext(ctx)
+
+		// Debug: Always log that timing is being called
+		l.Infof("TIMING_DEBUG: About to log timing for operation: %s", operation)
+
 		fields := []zap.Field{
 			zap.String("op", operation),
 			zap.Duration("duration", elapsed),
@@ -26,5 +30,8 @@ func TimeOperation(ctx context.Context, log Logger, operation string, extraField
 			fields = append(fields, extraFields...)
 		}
 		l.Info("Timing", fields...)
+
+		// Debug: Confirm timing was logged
+		l.Infof("TIMING_DEBUG: Finished logging timing for operation: %s (took %v)", operation, elapsed)
 	}
 }

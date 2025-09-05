@@ -231,6 +231,7 @@ func (z *zapLogger) WithName(name string) Logger {
 	_ = z.rotate()
 	named := z.logger.Named(name)
 	return &zapLogger{
+		mutex:       z.mutex, // Share the same mutex
 		logger:      named,
 		file:        z.file,
 		svcName:     z.svcName,
@@ -249,6 +250,7 @@ func (z *zapLogger) WithContext(ctx context.Context) Logger {
 	// Attach request_id as a field to the logger via a named child with pre-bound field
 	child := z.logger.With(zap.String("request_id", requestID))
 	return &zapLogger{
+		mutex:       z.mutex, // Share the same mutex
 		logger:      child,
 		file:        z.file,
 		svcName:     z.svcName,
