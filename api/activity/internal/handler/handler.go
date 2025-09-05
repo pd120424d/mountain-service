@@ -44,6 +44,7 @@ func NewActivityHandler(log utils.Logger, svc service.ActivityService, readModel
 // @Router /activities [post]
 func (h *activityHandler) CreateActivity(ctx *gin.Context) {
 	log := h.log.WithContext(ctx.Request.Context())
+	defer utils.TimeOperation(ctx.Request.Context(), h.log, "ActivityHandler.CreateActivity")()
 	log.Info("Received Create Activity request")
 
 	var req activityV1.ActivityCreateRequest
@@ -83,6 +84,7 @@ func (h *activityHandler) CreateActivity(ctx *gin.Context) {
 // @Router /activities/{id} [get]
 func (h *activityHandler) GetActivity(ctx *gin.Context) {
 	log := h.log.WithContext(ctx.Request.Context())
+	defer utils.TimeOperation(ctx.Request.Context(), h.log, "ActivityHandler.GetActivity")()
 	log.Info("Received Get Activity request")
 
 	idStr := ctx.Param("id")
@@ -120,6 +122,7 @@ func (h *activityHandler) GetActivity(ctx *gin.Context) {
 func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	var req activityV1.ActivityListRequest
 	log := h.log.WithContext(ctx.Request.Context())
+	defer utils.TimeOperation(ctx.Request.Context(), h.log, "ActivityHandler.ListActivities")()
 	log.Info("Received List Activities request")
 
 	// Parse query parameters
@@ -196,6 +199,7 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 // @Router /activities/stats [get]
 func (h *activityHandler) GetActivityStats(ctx *gin.Context) {
 	log := h.log.WithContext(ctx.Request.Context())
+	defer utils.TimeOperation(ctx.Request.Context(), h.log, "ActivityHandler.GetActivityStats")()
 	log.Info("Received Get Activity Stats request")
 
 	if ctx.Request != nil {
@@ -227,6 +231,7 @@ func (h *activityHandler) GetActivityStats(ctx *gin.Context) {
 // @Router /activities/{id} [delete]
 func (h *activityHandler) DeleteActivity(ctx *gin.Context) {
 	log := h.log.WithContext(ctx.Request.Context())
+	defer utils.TimeOperation(ctx.Request.Context(), h.log, "ActivityHandler.DeleteActivity")()
 	log.Info("Received Delete Activity request")
 
 	if ctx.Request != nil {
@@ -266,6 +271,7 @@ func (h *activityHandler) DeleteActivity(ctx *gin.Context) {
 // @Router /activities/reset [delete]
 func (h *activityHandler) ResetAllData(ctx *gin.Context) {
 	log := h.log.WithContext(ctx.Request.Context())
+	defer utils.TimeOperation(ctx.Request.Context(), h.log, "ActivityHandler.ResetAllData")()
 	log.Info("Received Reset All Data request")
 
 	if ctx.Request != nil {

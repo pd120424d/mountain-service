@@ -78,7 +78,7 @@ describe('UrgencyListComponent', () => {
 
     component.ngOnInit();
 
-    expect(urgencyService.getUrgenciesPaginated).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
+    expect(urgencyService.getUrgenciesPaginated).toHaveBeenCalledWith({ page: 1, pageSize: 20, myUrgencies: true });
     expect(component.urgencies).toEqual(mockUrgencies);
     expect(component.isLoading).toBeFalse();
   });

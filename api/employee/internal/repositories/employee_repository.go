@@ -36,6 +36,7 @@ func NewEmployeeRepository(log utils.Logger, db *gorm.DB) EmployeeRepository {
 
 // Create creates and employee with the hashed version of its password.
 func (r *employeeRepository) Create(employee *model.Employee) error {
+	r.log.Info("EmployeeRepository.Create")
 	hashedPassword, err := auth.HashPassword(employee.Password)
 	if err != nil {
 		return err
