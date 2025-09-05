@@ -43,6 +43,7 @@ func NewActivityService(log utils.Logger, repo repositories.ActivityRepository, 
 
 func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(ctx, s.log, "ActivityService.CreateActivity")()
 
 	if req == nil {
 		log.Error("Activity create request is nil")
@@ -135,6 +136,7 @@ func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.Ac
 
 func (s *activityService) GetActivityByID(ctx context.Context, id uint) (*activityV1.ActivityResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(ctx, s.log, "ActivityService.GetActivityByID")()
 	log.Infof("Getting activity by ID: %d", id)
 
 	if id == 0 {
@@ -157,6 +159,7 @@ func (s *activityService) GetActivityByID(ctx context.Context, id uint) (*activi
 
 func (s *activityService) DeleteActivity(ctx context.Context, id uint) error {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(ctx, s.log, "ActivityService.DeleteActivity")()
 	log.Infof("Deleting activity with ID: %d", id)
 
 	if id == 0 {
@@ -177,6 +180,7 @@ func (s *activityService) DeleteActivity(ctx context.Context, id uint) error {
 
 func (s *activityService) ListActivities(ctx context.Context, req *activityV1.ActivityListRequest) (*activityV1.ActivityListResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(ctx, s.log, "ActivityService.ListActivities")()
 	log.Infof("Listing activities with filters: %+v", req)
 
 	if err := req.Validate(); err != nil {
@@ -235,6 +239,7 @@ func (s *activityService) ListActivities(ctx context.Context, req *activityV1.Ac
 
 func (s *activityService) GetActivityStats(ctx context.Context) (*activityV1.ActivityStatsResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(ctx, s.log, "ActivityService.GetActivityStats")()
 	log.Info("Getting activity statistics")
 
 	stats, err := s.repo.GetStats(ctx)
@@ -250,6 +255,7 @@ func (s *activityService) GetActivityStats(ctx context.Context) (*activityV1.Act
 
 func (s *activityService) ResetAllData(ctx context.Context) error {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(ctx, s.log, "ActivityService.ResetAllData")()
 	log.Info("Resetting all activity data")
 
 	if err := s.repo.ResetAllData(ctx); err != nil {

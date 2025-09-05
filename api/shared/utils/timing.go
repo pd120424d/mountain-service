@@ -25,6 +25,6 @@ func TimeOperation(ctx context.Context, log Logger, operation string, extraField
 		if len(extraFields) > 0 {
 			fields = append(fields, extraFields...)
 		}
-		l.Info("timing", fields...)
+		l.Info("Timing", fields...)
 	}
 }
