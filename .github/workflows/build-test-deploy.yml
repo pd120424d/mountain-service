@@ -465,50 +465,103 @@ jobs:
         run: |
           kubectl -n mountain-service delete ingress activity-service version-service docs-aggregator urgency-service || true
 
+      - name: Prepare charts directory (prefer repo ./charts or ./api/charts; fallback to VM user home)
+        env:
+          VM_USER: ${{ secrets.K8S_VM_USER }}
+        run: |
+          set -euo pipefail
+          if [ -d ./charts ]; then
+            echo "Using charts from repository ./charts"
+          elif [ -d ./api/charts ]; then
+            echo "Seeding ./charts from repository ./api/charts..."
+            mkdir -p ./charts
+            cp -a ./api/charts/. ./charts/
+            ls -la ./charts
+          elif [ -n "${VM_USER:-}" ] && [ -d "/home/$VM_USER/charts" ]; then
+            echo "Syncing charts from VM home directory into workspace ./charts..."
+            mkdir -p ./charts
+            cp -a "/home/$VM_USER/charts/." ./charts/
+            echo "Charts copied. Contents:"
+            ls -la ./charts
+          else
+            echo "ERROR: No charts directory found (neither ./charts nor ./api/charts nor /home/<VM_USER>/charts)." >&2
+            exit 1
+          fi
+
+
       - name: Deploy services via Helm (Ingress + rollout managed by charts)
         run: |
           set -euo pipefail
           NS=mountain-service
           HOST=mountain-service.duckdns.org
+          SHA=${GITHUB_SHA:-${{ github.sha }}}
+          FORCE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true' }}"
+
+          # Determine which components changed (fallback logic mirrors detect-changes)
+          ui_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^ui/' && echo true || echo false)
+          emp_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/employee/' && echo true || echo false)
+          urg_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/urgency/' && echo true || echo false)
+          act_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity/' && echo true || echo false)
+          actu_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity-readmodel-updater/' && echo true || echo false)
+          ver_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/version-service/' && echo true || echo false)
+          docs_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/docs-aggregator/' && echo true || echo false)
+
+          upgrade() {
+            local release="$1" chart="$2" deploy_name="$3" changed_flag="$4"
+            local flags="--atomic --timeout 10m"
+            if [[ "$changed_flag" == "true" || "$FORCE" == "true" ]]; then
+              # Component changed or forced: set the new image tag and reuse existing values
+              echo "[$release] applying new image tag: $SHA (changed=$changed_flag force=$FORCE)"
+              helm upgrade --install "$release" "$chart" -n "$NS" $flags --reuse-values --set image.tag=$SHA
+            else
+              # Component unchanged: reset values so we don't carry forward a previously bad image tag
+              echo "[$release] component unchanged; resetting values to chart defaults (keeping chart-provided config)"
+              helm upgrade --install "$release" "$chart" -n "$NS" $flags --reset-values
+            fi
+            kubectl -n "$NS" rollout status "deploy/$deploy_name" --timeout=300s
+          }
 
           echo "Upgrading Frontend via Helm..."
-          helm upgrade --install frontend ./api/charts/frontend -n "$NS" \
-            --atomic --timeout 5m \
-            --set image.tag=${{ github.sha }}
-          kubectl -n "$NS" rollout status deploy/frontend --timeout=180s
+          upgrade frontend ./charts/frontend frontend "$ui_changed"
 
           echo "Upgrading Employee service via Helm..."
-          helm upgrade --install employee-service ./api/charts/employee-service -n "$NS" \
-            --atomic --timeout 5m \
-            --set image.tag=${{ github.sha }}
-          kubectl -n "$NS" rollout status deploy/employee-service --timeout=180s
+          upgrade employee-service ./charts/employee-service employee-service "$emp_changed"
 
           echo "Upgrading Urgency service via Helm..."
-          helm upgrade --install urgency-service ./api/charts/urgency-service -n "$NS" \
-            --atomic --timeout 5m \
-            --set image.tag=${{ github.sha }}
-          kubectl -n "$NS" rollout status deploy/urgency-service --timeout=180s
+          upgrade urgency-service ./charts/urgency-service urgency-service "$urg_changed"
 
           echo "Upgrading Activity service via Helm..."
-          helm upgrade --install activity-service ./api/charts/activity-service -n "$NS" \
+          upgrade activity-service ./charts/activity-service activity-service "$act_changed"
+
+          echo "Upgrading Activity Readmodel Updater via Helm..."
+          upgrade activity-readmodel-updater ./charts/activity-readmodel-updater activity-readmodel-updater "$actu_changed"
+
+          echo "Upgrading Version service via Helm..."
+          upgrade version-service ./charts/version-service version-service "$ver_changed"
+
+          echo "Upgrading Docs Aggregator via Helm..."
+          upgrade docs-aggregator ./charts/docs-aggregator docs-aggregator "$docs_changed"
+
+          echo "Upgrading Activity service via Helm..."
+          helm upgrade --install activity-service ./charts/activity-service -n "$NS" \
             --atomic --timeout 5m \
             --set image.tag=${{ github.sha }}
           kubectl -n "$NS" rollout status deploy/activity-service --timeout=180s
 
           echo "Upgrading Activity Readmodel Updater via Helm..."
-          helm upgrade --install activity-readmodel-updater ./api/charts/activity-readmodel-updater -n "$NS" \
+          helm upgrade --install activity-readmodel-updater ./charts/activity-readmodel-updater -n "$NS" \
             --atomic --timeout 5m \
             --set image.tag=${{ github.sha }}
           kubectl -n "$NS" rollout status deploy/activity-readmodel-updater --timeout=180s
 
           echo "Upgrading Version service via Helm..."
-          helm upgrade --install version-service ./api/charts/version-service -n "$NS" \
+          helm upgrade --install version-service ./charts/version-service -n "$NS" \
             --atomic --timeout 5m \
             --set image.tag=${{ github.sha }}
           kubectl -n "$NS" rollout status deploy/version-service --timeout=180s
 
           echo "Upgrading Docs Aggregator via Helm..."
-          helm upgrade --install docs-aggregator ./api/charts/docs-aggregator -n "$NS" \
+          helm upgrade --install docs-aggregator ./charts/docs-aggregator -n "$NS" \
             --atomic --timeout 5m \
             --set image.tag=${{ github.sha }}
           kubectl -n "$NS" rollout status deploy/docs-aggregator --timeout=180s

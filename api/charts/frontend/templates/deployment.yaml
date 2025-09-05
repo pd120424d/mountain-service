@@ -16,6 +16,10 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app: ui
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: nginx-config
           configMap:

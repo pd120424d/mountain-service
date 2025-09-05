@@ -30,6 +30,10 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app: docs-aggregator
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: docs-aggregator
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
