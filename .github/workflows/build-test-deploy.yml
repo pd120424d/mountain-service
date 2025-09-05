@@ -262,6 +262,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
@@ -542,29 +544,6 @@ jobs:
           echo "Upgrading Docs Aggregator via Helm..."
           upgrade docs-aggregator ./charts/docs-aggregator docs-aggregator "$docs_changed"
 
-          echo "Upgrading Activity service via Helm..."
-          helm upgrade --install activity-service ./charts/activity-service -n "$NS" \
-            --atomic --timeout 5m \
-            --set image.tag=${{ github.sha }}
-          kubectl -n "$NS" rollout status deploy/activity-service --timeout=180s
-
-          echo "Upgrading Activity Readmodel Updater via Helm..."
-          helm upgrade --install activity-readmodel-updater ./charts/activity-readmodel-updater -n "$NS" \
-            --atomic --timeout 5m \
-            --set image.tag=${{ github.sha }}
-          kubectl -n "$NS" rollout status deploy/activity-readmodel-updater --timeout=180s
-
-          echo "Upgrading Version service via Helm..."
-          helm upgrade --install version-service ./charts/version-service -n "$NS" \
-            --atomic --timeout 5m \
-            --set image.tag=${{ github.sha }}
-          kubectl -n "$NS" rollout status deploy/version-service --timeout=180s
-
-          echo "Upgrading Docs Aggregator via Helm..."
-          helm upgrade --install docs-aggregator ./charts/docs-aggregator -n "$NS" \
-            --atomic --timeout 5m \
-            --set image.tag=${{ github.sha }}
-          kubectl -n "$NS" rollout status deploy/docs-aggregator --timeout=180s
 
       - name: Show status and recent events
         run: |
