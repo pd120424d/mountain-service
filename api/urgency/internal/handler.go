@@ -47,7 +47,7 @@ func NewUrgencyHandler(log utils.Logger, svc UrgencyService) UrgencyHandler {
 // @Router /urgencies [post]
 func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), h.log, "UrgencyHandler.CreateUrgency")()
+	defer utils.TimeOperation(requestContext(ctx), log, "UrgencyHandler.CreateUrgency")()
 	log.Info("Received Create Urgency request")
 
 	var req urgencyV1.UrgencyCreateRequest
@@ -100,7 +100,7 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 // @Router /urgencies [get]
 func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), h.log, "UrgencyHandler.ListUrgencies")()
+	defer utils.TimeOperation(requestContext(ctx), reqLog, "UrgencyHandler.ListUrgencies")()
 	reqLog.Info("Received List Urgencies request")
 
 	// Parse pagination params
@@ -158,7 +158,7 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 // @Router /urgencies/{id} [get]
 func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), h.log, "UrgencyHandler.GetUrgency")()
+	defer utils.TimeOperation(requestContext(ctx), reqLog, "UrgencyHandler.GetUrgency")()
 	reqLog.Info("Received Get Urgency request")
 
 	idParam := ctx.Param("id")
@@ -205,7 +205,7 @@ func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 // @Router /urgencies/{id} [put]
 func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), h.log, "UrgencyHandler.UpdateUrgency")()
+	defer utils.TimeOperation(requestContext(ctx), reqLog, "UrgencyHandler.UpdateUrgency")()
 	reqLog.Info("Received Update Urgency request")
 
 	idParam := ctx.Param("id")
@@ -259,7 +259,7 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 // @Router /urgencies/{id} [delete]
 func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
 	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), h.log, "UrgencyHandler.DeleteUrgency")()
+	defer utils.TimeOperation(requestContext(ctx), reqLog, "UrgencyHandler.DeleteUrgency")()
 	reqLog.Info("Received Delete Urgency request")
 
 	idParam := ctx.Param("id")
@@ -314,7 +314,7 @@ func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
 // @Router /urgencies/{id}/assign [post]
 func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), h.log, "UrgencyHandler.AssignUrgency")()
+	defer utils.TimeOperation(requestContext(ctx), log, "UrgencyHandler.AssignUrgency")()
 	log.Info("Received Assign Urgency request")
 
 	idParam := ctx.Param("id")
@@ -355,7 +355,7 @@ func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
 // @Router /urgencies/{id}/assign [delete]
 func (h *urgencyHandler) UnassignUrgency(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), h.log, "UrgencyHandler.UnassignUrgency")()
+	defer utils.TimeOperation(requestContext(ctx), log, "UrgencyHandler.UnassignUrgency")()
 	log.Info("Received Unassign Urgency request")
 
 	idParam := ctx.Param("id")
@@ -390,7 +390,7 @@ func (h *urgencyHandler) UnassignUrgency(ctx *gin.Context) {
 // @Router /urgencies/{id}/close [put]
 func (h *urgencyHandler) CloseUrgency(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), h.log, "UrgencyHandler.CloseUrgency")()
+	defer utils.TimeOperation(requestContext(ctx), log, "UrgencyHandler.CloseUrgency")()
 	log.Info("Received Close Urgency request")
 
 	idParam := ctx.Param("id")

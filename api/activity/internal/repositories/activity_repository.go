@@ -36,7 +36,7 @@ func NewActivityRepository(log utils.Logger, db *gorm.DB) ActivityRepository {
 
 func (r *activityRepository) Create(ctx context.Context, activity *model.Activity) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, r.log, "ActivityRepository.Create")()
+	defer utils.TimeOperation(ctx, log, "ActivityRepository.Create")()
 	log.Infof("Creating activity: employee_id=%d, urgency_id=%d", activity.EmployeeID, activity.UrgencyID)
 
 	if err := r.db.WithContext(ctx).Create(activity).Error; err != nil {
@@ -50,7 +50,7 @@ func (r *activityRepository) Create(ctx context.Context, activity *model.Activit
 
 func (r *activityRepository) CreateWithOutbox(ctx context.Context, activity *model.Activity, event *models.OutboxEvent) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, r.log, "ActivityRepository.CreateWithOutbox")()
+	defer utils.TimeOperation(ctx, log, "ActivityRepository.CreateWithOutbox")()
 	log.Infof("Creating activity with outbox event")
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(activity).Error; err != nil {
@@ -79,7 +79,7 @@ func (r *activityRepository) CreateWithOutbox(ctx context.Context, activity *mod
 
 func (r *activityRepository) GetByID(ctx context.Context, id uint) (*model.Activity, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, r.log, "ActivityRepository.GetByID")()
+	defer utils.TimeOperation(ctx, log, "ActivityRepository.GetByID")()
 	log.Infof("Getting activity by ID: %d", id)
 
 	var activity model.Activity
@@ -98,7 +98,7 @@ func (r *activityRepository) GetByID(ctx context.Context, id uint) (*model.Activ
 
 func (r *activityRepository) List(ctx context.Context, filter *model.ActivityFilter) ([]model.Activity, int64, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, r.log, "ActivityRepository.List")()
+	defer utils.TimeOperation(ctx, log, "ActivityRepository.List")()
 	log.Infof("Listing activities with filter: page=%d, pageSize=%d", filter.Page, filter.PageSize)
 
 	// Validation of filter just sets defaults if needed and doesn't return error
@@ -144,7 +144,7 @@ func (r *activityRepository) List(ctx context.Context, filter *model.ActivityFil
 
 func (r *activityRepository) GetStats(ctx context.Context) (*model.ActivityStats, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, r.log, "ActivityRepository.GetStats")()
+	defer utils.TimeOperation(ctx, log, "ActivityRepository.GetStats")()
 	log.Info("Getting activity statistics")
 
 	stats := &model.ActivityStats{}
@@ -196,7 +196,7 @@ func (r *activityRepository) GetStats(ctx context.Context) (*model.ActivityStats
 
 func (r *activityRepository) Delete(ctx context.Context, id uint) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, r.log, "ActivityRepository.Delete")()
+	defer utils.TimeOperation(ctx, log, "ActivityRepository.Delete")()
 	log.Infof("Deleting activity: %d", id)
 
 	result := r.db.WithContext(ctx).Delete(&model.Activity{}, id)
@@ -216,7 +216,7 @@ func (r *activityRepository) Delete(ctx context.Context, id uint) error {
 
 func (r *activityRepository) ResetAllData(ctx context.Context) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, r.log, "ActivityRepository.ResetAllData")()
+	defer utils.TimeOperation(ctx, log, "ActivityRepository.ResetAllData")()
 	log.Warn("Resetting all activity data")
 
 	if err := r.db.WithContext(ctx).Exec("DELETE FROM activities").Error; err != nil {
