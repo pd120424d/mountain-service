@@ -468,13 +468,16 @@ jobs:
           kubectl -n mountain-service delete ingress activity-service version-service docs-aggregator urgency-service || true
 
 
-      - name: Remove legacy Fluent Bit objects (first run only; ignore if missing)
+      - name: Remove Fluent Bit completely (cleanup)
         run: |
+          # Remove Helm-managed Fluent Bit
+          helm uninstall fluent-bit-frontend -n mountain-service || true
+          # Remove legacy Fluent Bit objects
           kubectl -n mountain-service delete daemonset fluent-bit-frontend || true
-          kubectl -n mountain-service delete configmap fluent-bit-config || true
-          kubectl -n mountain-service delete serviceaccount fluent-bit-sa || true
-          kubectl delete clusterrolebinding fluent-bit-binding || true
-          kubectl delete clusterrole fluent-bit-role || true
+          kubectl -n mountain-service delete configmap fluent-bit-config fluent-bit-frontend-config || true
+          kubectl -n mountain-service delete serviceaccount fluent-bit-sa fluent-bit-frontend || true
+          kubectl delete clusterrolebinding fluent-bit-binding fluent-bit-frontend || true
+          kubectl delete clusterrole fluent-bit-role fluent-bit-frontend || true
 
       - name: Prepare charts directory (prefer repo ./charts or ./api/charts; fallback to VM user home)
         env:
@@ -552,10 +555,6 @@ jobs:
 
           echo "Upgrading Docs Aggregator via Helm..."
           upgrade docs-aggregator ./charts/docs-aggregator docs-aggregator "$docs_changed"
-
-          echo "Upgrading Fluent Bit (frontend) via Helm..."
-          helm upgrade --install fluent-bit-frontend ./charts/fluent-bit-frontend -n "$NS" --atomic --timeout 10m
-          kubectl -n "$NS" rollout status "ds/fluent-bit-frontend" --timeout=300s
 
 
       - name: Show status and recent events

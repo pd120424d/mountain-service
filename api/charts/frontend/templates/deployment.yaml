@@ -31,6 +31,9 @@ spec:
         - name: frontend
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: NODE_ENV
+              value: production
           ports:
             - containerPort: {{ .Values.service.port }}
           volumeMounts:
