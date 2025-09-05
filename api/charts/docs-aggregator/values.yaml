@@ -12,9 +12,9 @@ service:
 resources: {}
 
 ingress:
-  enabled: false
+  enabled: true
   className: traefik
-  host: ""
+  host: mountain-service.duckdns.org
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
   paths:
