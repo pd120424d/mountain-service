@@ -1,0 +1,24 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/pd120424d/mountain-ui
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+nginx:
+  configMapName: frontend-nginx
+  configPath: /etc/nginx/nginx.conf
+
+ingress:
+  enabled: true
+  className: traefik
+  host: mountain-service.duckdns.org
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+
+resources: {}
+
