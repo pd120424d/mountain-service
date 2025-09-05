@@ -11,6 +11,22 @@ service:
 
 resources: {}
 
+ingress:
+  enabled: false
+  className: traefik
+  host: ""
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  paths:
+    - path: /api/v1/docs
+      pathType: Prefix
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 0
+    maxUnavailable: 1
+
 env:
   EXTERNAL_SCHEME: https
   EXTERNAL_HOST: mountain-service.duckdns.org

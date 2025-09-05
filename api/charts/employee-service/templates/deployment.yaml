@@ -40,6 +40,11 @@ spec:
               value: {{ .Values.appEnv.DB_SSLMODE | quote }}
             - name: REDIS_ADDR
               value: {{ .Values.appEnv.REDIS_ADDR | quote }}
+            # Service-to-service and user JWT secrets (shared across services)
+            - name: JWT_SECRET
+              valueFrom: {secretKeyRef: {name: app-shared, key: JWT_SECRET}}
+            - name: SERVICE_AUTH_SECRET
+              valueFrom: {secretKeyRef: {name: app-shared, key: SERVICE_AUTH_SECRET}}
             # DB credentials via env (server.InitDb supports *_FILE as fallback too)
             - name: DB_USER
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}

@@ -11,3 +11,19 @@ service:
 
 resources: {}
 
+ingress:
+  enabled: false
+  className: traefik
+  host: ""
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  paths:
+    - path: /api/v1/health
+      pathType: Prefix
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 0
+    maxUnavailable: 1
+
