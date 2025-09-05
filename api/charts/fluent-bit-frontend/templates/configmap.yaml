@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-config" (include "fluent-bit-frontend.fullname" .) }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "fluent-bit-frontend.labels" . | nindent 4 }}
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        1
+        Daemon       Off
+        Log_Level    info
+
+    [INPUT]
+        Name              tail
+        Path              /var/log/containers/*.log
+        Tag               kube.*
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        DB                /var/fluent-bit/state/flb_kube.db
+        DB.Sync           Normal
+        Refresh_Interval  10
+
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Merge_Log           On
+        Kube_Tag_Prefix     kube.var.log.containers.
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude On
+        Annotations         Off
+        Labels              On
+        Kube_Meta_Cache_TTL 300s
+        Use_Journal         Off
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+    # Only ship frontend logs in this namespace
+    [FILTER]
+        Name   grep
+        Match  kube.*
+        Regex  kubernetes.container_name  {{ .Values.filters.containerNameRegex | quote }}
+        Regex  kubernetes.namespace_name  ^{{ .Release.Namespace }}$
+
+    [OUTPUT]
+        Name                       stackdriver
+        Match                      kube.*
+        Resource                   {{ .Values.stackdriver.resource }}
+        google_service_credentials {{ printf "%s/%s" .Values.credentialsMountPath .Values.credentialsFileName }}
+        log_name                   {{ .Values.stackdriver.logName }}
+

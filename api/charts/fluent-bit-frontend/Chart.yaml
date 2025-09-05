@@ -1,0 +1,7 @@
+apiVersion: v2
+name: fluent-bit-frontend
+description: Fluent Bit DaemonSet to ship frontend logs to Google Cloud Logging
+version: 0.1.0
+appVersion: "2.2.2"
+type: application
+
