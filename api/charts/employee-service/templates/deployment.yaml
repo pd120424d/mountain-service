@@ -25,6 +25,12 @@ spec:
         - name: cloudsql-sa
           secret:
             secretName: {{ required "secrets.cloudSQLSA is required" .Values.secrets.cloudSQLSA }}
+        - name: gcp-logging-writer-key
+          secret:
+            secretName: gcp-logging-writer-key
+            items:
+              - key: key.json
+                path: key.json
 
       containers:
         # App container
@@ -58,6 +64,22 @@ spec:
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
             - name: employee_service_db
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
+            # GCP Logging Configuration
+            - name: GCP_LOGGING_ENABLED
+              value: "true"
+            - name: GCP_PROJECT_ID
+              value: "reflecting-card-469410-q1"
+            - name: LOG_TO_STDOUT_ONLY
+              value: "true"
+            - name: GCP_LOGGING_CREDENTIALS_PATH
+              value: "/var/secrets/gcp-logging/key.json"
+          volumeMounts:
+            - name: cloudsql-sa
+              mountPath: /secrets
+              readOnly: true
+            - name: gcp-logging-writer-key
+              mountPath: /var/secrets/gcp-logging
+              readOnly: true
           ports:
             - containerPort: {{ .Values.service.port }}
           readinessProbe:
