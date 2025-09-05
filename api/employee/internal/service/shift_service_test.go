@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -27,9 +28,9 @@ func TestShiftService_GetShifts(t *testing.T) {
 
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
-		shiftRepoMock.EXPECT().GetEmployeeShiftRowsByEmployeeID(uint(1)).Return(nil, assert.AnError)
+		shiftRepoMock.EXPECT().GetEmployeeShiftRowsByEmployeeID(gomock.Any(), uint(1)).Return(nil, assert.AnError)
 
-		response, err := service.GetShifts(1)
+		response, err := service.GetShifts(context.Background(), 1)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -65,9 +66,9 @@ func TestShiftService_GetShifts(t *testing.T) {
 			},
 		}
 
-		shiftRepoMock.EXPECT().GetEmployeeShiftRowsByEmployeeID(uint(1)).Return(rows, nil)
+		shiftRepoMock.EXPECT().GetEmployeeShiftRowsByEmployeeID(gomock.Any(), uint(1)).Return(rows, nil)
 
-		response, err := service.GetShifts(1)
+		response, err := service.GetShifts(context.Background(), 1)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -102,9 +103,9 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(assert.AnError)
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -131,12 +132,12 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -166,12 +167,12 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -201,12 +202,12 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -237,7 +238,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 3,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
@@ -247,12 +248,12 @@ func TestShiftService_AssignShift(t *testing.T) {
 			{ShiftDate: futureDate, ShiftType: 2},
 		}
 
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = existingShifts
 			return nil
 		})
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -275,18 +276,18 @@ func TestShiftService_AssignShift(t *testing.T) {
 
 		existingShifts := []model.Shift{{ShiftDate: D, ShiftType: 1}, {ShiftDate: D, ShiftType: 2}}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		}).Times(3)
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = existingShifts
 			return nil
 		}).Times(3)
 
 		for _, st := range []int{1, 2, 3} {
 			req := employeeV1.AssignShiftRequest{ShiftDate: D1.Format("2006-01-02"), ShiftType: st}
-			resp, err := service.AssignShift(1, req)
+			resp, err := service.AssignShift(context.Background(), 1, req)
 			assert.Error(t, err)
 			assert.Nil(t, resp)
 			assert.Equal(t, "SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT|3", err.Error())
@@ -310,22 +311,22 @@ func TestShiftService_AssignShift(t *testing.T) {
 		existingShifts := []model.Shift{{ShiftDate: D, ShiftType: 1}, {ShiftDate: D, ShiftType: 2}}
 		shift := &model.Shift{ID: 10, ShiftDate: D2, ShiftType: 1}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = existingShifts
 			return nil
 		})
 
 		req := employeeV1.AssignShiftRequest{ShiftDate: D2.Format("2006-01-02"), ShiftType: 1}
-		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
-		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(10)).Return(false, nil)
-		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(10), model.Medic).Return(int64(0), nil)
-		shiftRepoMock.EXPECT().CreateAssignment(uint(1), uint(10)).Return(uint(77), nil)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any(), 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), uint(1), uint(10)).Return(false, nil)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), uint(10), model.Medic).Return(int64(0), nil)
+		shiftRepoMock.EXPECT().CreateAssignment(gomock.Any(), uint(1), uint(10)).Return(uint(77), nil)
 
-		resp, err := service.AssignShift(1, req)
+		resp, err := service.AssignShift(context.Background(), 1, req)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, uint(77), resp.ID)
@@ -349,23 +350,23 @@ func TestShiftService_AssignShift(t *testing.T) {
 
 		existingShifts := []model.Shift{{ShiftDate: D, ShiftType: 2}, {ShiftDate: D, ShiftType: 3}}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = existingShifts
 			return nil
 		})
 
 		req := employeeV1.AssignShiftRequest{ShiftDate: D2.Format("2006-01-02"), ShiftType: 1}
 		shift := &model.Shift{ID: 42, ShiftDate: D2, ShiftType: 1}
-		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
-		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(42)).Return(false, nil)
-		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(42), model.Medic).Return(int64(0), nil)
-		shiftRepoMock.EXPECT().CreateAssignment(uint(1), uint(42)).Return(uint(99), nil)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any(), 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), uint(1), uint(42)).Return(false, nil)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), uint(42), model.Medic).Return(int64(0), nil)
+		shiftRepoMock.EXPECT().CreateAssignment(gomock.Any(), uint(1), uint(42)).Return(uint(99), nil)
 
-		resp, err := service.AssignShift(1, req)
+		resp, err := service.AssignShift(context.Background(), 1, req)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, uint(99), resp.ID)
@@ -390,22 +391,22 @@ func TestShiftService_AssignShift(t *testing.T) {
 		existingShifts := []model.Shift{{ShiftDate: D, ShiftType: 2}, {ShiftDate: D, ShiftType: 3}}
 		shift := &model.Shift{ID: 21, ShiftDate: D3, ShiftType: 1}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = existingShifts
 			return nil
 		})
 
 		req := employeeV1.AssignShiftRequest{ShiftDate: D3.Format("2006-01-02"), ShiftType: 1}
-		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
-		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(21)).Return(false, nil)
-		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(21), model.Medic).Return(int64(0), nil)
-		shiftRepoMock.EXPECT().CreateAssignment(uint(1), uint(21)).Return(uint(88), nil)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any(), 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), uint(1), uint(21)).Return(false, nil)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), uint(21), model.Medic).Return(int64(0), nil)
+		shiftRepoMock.EXPECT().CreateAssignment(gomock.Any(), uint(1), uint(21)).Return(uint(88), nil)
 
-		resp, err := service.AssignShift(1, req)
+		resp, err := service.AssignShift(context.Background(), 1, req)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, uint(88), resp.ID)
@@ -436,7 +437,7 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
@@ -447,14 +448,14 @@ func TestShiftService_AssignShift(t *testing.T) {
 			{ShiftDate: futureDate.AddDate(0, 0, 2)},
 		}
 
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = existingShifts
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(nil, fmt.Errorf("database error")).Times(1)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any(), 1).Return(nil, fmt.Errorf("database error")).Times(1)
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -489,20 +490,20 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = []model.Shift{}
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
-		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(false, fmt.Errorf("database error")).Times(1)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any(), 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), uint(1), uint(1)).Return(false, fmt.Errorf("database error")).Times(1)
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -537,20 +538,20 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = []model.Shift{}
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
-		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(true, nil)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any(), 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), uint(1), uint(1)).Return(true, nil)
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -585,21 +586,21 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = []model.Shift{}
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
-		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(false, nil)
-		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(1), model.Medic).Return(int64(1), fmt.Errorf("database error")).Times(1)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any(), 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), uint(1), uint(1)).Return(false, nil)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), uint(1), model.Medic).Return(int64(1), fmt.Errorf("database error")).Times(1)
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -633,21 +634,21 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = []model.Shift{}
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
-		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(false, nil)
-		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(1), model.Medic).Return(int64(2), nil) // Full capacity
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any(), 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), uint(1), uint(1)).Return(false, nil)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), uint(1), model.Medic).Return(int64(2), nil) // Full capacity
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -682,22 +683,22 @@ func TestShiftService_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			*result = []model.Shift{}
 			return nil
 		})
 
-		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), 1).Return(shift, nil)
-		shiftRepoMock.EXPECT().AssignedToShift(uint(1), uint(1)).Return(false, nil)
-		shiftRepoMock.EXPECT().CountAssignmentsByProfile(uint(1), model.Medic).Return(int64(1), nil) // Available capacity
-		shiftRepoMock.EXPECT().CreateAssignment(uint(1), uint(1)).Return(uint(10), nil)
+		shiftRepoMock.EXPECT().GetOrCreateShift(gomock.Any(), gomock.Any(), 1).Return(shift, nil)
+		shiftRepoMock.EXPECT().AssignedToShift(gomock.Any(), uint(1), uint(1)).Return(false, nil)
+		shiftRepoMock.EXPECT().CountAssignmentsByProfile(gomock.Any(), uint(1), model.Medic).Return(int64(1), nil) // Available capacity
+		shiftRepoMock.EXPECT().CreateAssignment(gomock.Any(), uint(1), uint(1)).Return(uint(10), nil)
 
-		response, err := service.AssignShift(1, req)
+		response, err := service.AssignShift(context.Background(), 1, req)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -722,7 +723,7 @@ func TestShiftService_GetShiftsAvailability(t *testing.T) {
 
 		emplId := uint(1)
 
-		response, err := service.GetShiftsAvailability(emplId, 91)
+		response, err := service.GetShiftsAvailability(context.Background(), emplId, 91)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -741,9 +742,9 @@ func TestShiftService_GetShiftsAvailability(t *testing.T) {
 
 		emplId := uint(1)
 
-		shiftRepoMock.EXPECT().GetShiftAvailabilityWithEmployeeStatus(emplId, gomock.Any(), gomock.Any()).Return(nil, assert.AnError)
+		shiftRepoMock.EXPECT().GetShiftAvailabilityWithEmployeeStatus(gomock.Any(), emplId, gomock.Any(), gomock.Any()).Return(nil, assert.AnError)
 
-		response, err := service.GetShiftsAvailability(emplId, 7)
+		response, err := service.GetShiftsAvailability(context.Background(), emplId, 7)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -763,7 +764,7 @@ func TestShiftService_GetShiftsAvailability(t *testing.T) {
 		today := time.Now().Truncate(24 * time.Hour)
 		tomorrow := today.AddDate(0, 0, 1)
 
-		shiftRepoMock.EXPECT().GetShiftAvailabilityWithEmployeeStatus(uint(1), gomock.Any(), gomock.Any()).Return(&model.ShiftsAvailabilityWithEmployeeStatus{
+		shiftRepoMock.EXPECT().GetShiftAvailabilityWithEmployeeStatus(gomock.Any(), uint(1), gomock.Any(), gomock.Any()).Return(&model.ShiftsAvailabilityWithEmployeeStatus{
 			Days: map[time.Time][]model.ShiftAvailabilityWithStatus{
 				today: {
 					{MedicSlotsAvailable: 1, TechnicalSlotsAvailable: 2, IsAssignedToEmployee: false, IsFullyBooked: false},
@@ -778,7 +779,7 @@ func TestShiftService_GetShiftsAvailability(t *testing.T) {
 			},
 		}, nil)
 
-		response, err := service.GetShiftsAvailability(1, 2)
+		response, err := service.GetShiftsAvailability(context.Background(), 1, 2)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -823,7 +824,7 @@ func TestShiftService_RemoveShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		err := service.RemoveShift(1, req)
+		err := service.RemoveShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Equal(t, "invalid shift date format", err.Error())
@@ -847,9 +848,9 @@ func TestShiftService_RemoveShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		shiftRepoMock.EXPECT().RemoveEmployeeFromShiftByDetails(uint(1), gomock.Any(), 1).Return(assert.AnError)
+		shiftRepoMock.EXPECT().RemoveEmployeeFromShiftByDetails(gomock.Any(), uint(1), gomock.Any(), 1).Return(assert.AnError)
 
-		err := service.RemoveShift(1, req)
+		err := service.RemoveShift(context.Background(), 1, req)
 
 		assert.Error(t, err)
 		assert.Equal(t, "failed to remove shift", err.Error())
@@ -873,9 +874,9 @@ func TestShiftService_RemoveShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		shiftRepoMock.EXPECT().RemoveEmployeeFromShiftByDetails(uint(1), gomock.Any(), 1).Return(nil)
+		shiftRepoMock.EXPECT().RemoveEmployeeFromShiftByDetails(gomock.Any(), uint(1), gomock.Any(), 1).Return(nil)
 
-		err := service.RemoveShift(1, req)
+		err := service.RemoveShift(context.Background(), 1, req)
 
 		assert.NoError(t, err)
 	})
@@ -897,9 +898,9 @@ func TestShiftService_GetOnCallEmployees(t *testing.T) {
 		currentTime := time.Now()
 		shiftBuffer := time.Hour
 
-		shiftRepoMock.EXPECT().GetOnCallEmployees(currentTime, shiftBuffer).Return(nil, assert.AnError)
+		shiftRepoMock.EXPECT().GetOnCallEmployees(gomock.Any(), currentTime, shiftBuffer).Return(nil, assert.AnError)
 
-		response, err := service.GetOnCallEmployees(currentTime, shiftBuffer)
+		response, err := service.GetOnCallEmployees(context.Background(), currentTime, shiftBuffer)
 
 		assert.Error(t, err)
 		assert.Nil(t, response)
@@ -936,9 +937,9 @@ func TestShiftService_GetOnCallEmployees(t *testing.T) {
 			},
 		}
 
-		shiftRepoMock.EXPECT().GetOnCallEmployees(currentTime, shiftBuffer).Return(employees, nil)
+		shiftRepoMock.EXPECT().GetOnCallEmployees(gomock.Any(), currentTime, shiftBuffer).Return(employees, nil)
 
-		response, err := service.GetOnCallEmployees(currentTime, shiftBuffer)
+		response, err := service.GetOnCallEmployees(context.Background(), currentTime, shiftBuffer)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -963,9 +964,9 @@ func TestShiftService_GetShiftWarnings(t *testing.T) {
 
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(assert.AnError)
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
 
-		warnings, err := service.GetShiftWarnings(1)
+		warnings, err := service.GetShiftWarnings(context.Background(), 1)
 
 		assert.Error(t, err)
 		assert.Nil(t, warnings)
@@ -987,13 +988,13 @@ func TestShiftService_GetShiftWarnings(t *testing.T) {
 			ProfileType: model.Medic,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
 
 		// Mock GetShiftAvailability to return shifts with at least one Medic assigned (no zero-coverage for Medic)
-		shiftRepoMock.EXPECT().GetShiftAvailability(gomock.Any(), gomock.Any()).Return(&model.ShiftsAvailabilityRange{
+		shiftRepoMock.EXPECT().GetShiftAvailability(gomock.Any(), gomock.Any(), gomock.Any()).Return(&model.ShiftsAvailabilityRange{
 			Days: map[time.Time][]map[model.ProfileType]int{
 				time.Now().Truncate(24 * time.Hour): {
 					{model.Medic: 1, model.Technical: 4}, // at least one medic assigned
@@ -1003,7 +1004,7 @@ func TestShiftService_GetShiftWarnings(t *testing.T) {
 			},
 		}, nil)
 
-		warnings, err := service.GetShiftWarnings(1)
+		warnings, err := service.GetShiftWarnings(context.Background(), 1)
 
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(warnings))
@@ -1024,13 +1025,13 @@ func TestShiftService_GetShiftWarnings(t *testing.T) {
 			ProfileType: model.Medic,
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = *employee
 			return nil
 		})
 
 		// Mock GetShiftAvailability to include at least one shift with zero Medics assigned (2 slots available)
-		shiftRepoMock.EXPECT().GetShiftAvailability(gomock.Any(), gomock.Any()).Return(&model.ShiftsAvailabilityRange{
+		shiftRepoMock.EXPECT().GetShiftAvailability(gomock.Any(), gomock.Any(), gomock.Any()).Return(&model.ShiftsAvailabilityRange{
 			Days: map[time.Time][]map[model.ProfileType]int{
 				time.Now().Truncate(24 * time.Hour): {
 					{model.Medic: 2, model.Technical: 4}, // zero medics assigned triggers warning flow
@@ -1041,7 +1042,7 @@ func TestShiftService_GetShiftWarnings(t *testing.T) {
 		}, nil)
 
 		// Mock employee shifts - less than 5 per week in next 2 weeks, dates within the 14-day window
-		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+		shiftRepoMock.EXPECT().GetShiftsByEmployeeIDInDateRange(gomock.Any(), uint(1), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 			t1 := time.Now().Truncate(24*time.Hour).AddDate(0, 0, 1)
 			t2 := time.Now().Truncate(24*time.Hour).AddDate(0, 0, 2)
 			*result = []model.Shift{
@@ -1051,7 +1052,7 @@ func TestShiftService_GetShiftWarnings(t *testing.T) {
 			return nil
 		})
 
-		warnings, err := service.GetShiftWarnings(1)
+		warnings, err := service.GetShiftWarnings(context.Background(), 1)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, warnings)

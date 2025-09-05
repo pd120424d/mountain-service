@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"regexp"
 	"testing"
 	"time"
@@ -24,7 +25,7 @@ func TestShiftRepositoryMockDB_GetOrCreateShift(t *testing.T) {
 			WithArgs(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC), 1, 1).
 			WillReturnError(sqlmock.ErrCancelled)
 
-		_, err := repo.GetOrCreateShift(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC), 1)
+		_, err := repo.GetOrCreateShift(context.Background(), time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC), 1)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to find or create shift: canceling query due to user request")
 	})
@@ -42,7 +43,7 @@ func TestShiftRepositoryMockDB_AssignedToShift(t *testing.T) {
 			WithArgs(1, 1, 1).
 			WillReturnError(sqlmock.ErrCancelled)
 
-		_, err := repo.AssignedToShift(1, 1)
+		_, err := repo.AssignedToShift(context.Background(), 1, 1)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to check assignment: canceling query due to user request")
 	})
@@ -60,7 +61,7 @@ func TestShiftRepositoryMockDB_CountAssignmentsByProfile(t *testing.T) {
 			WithArgs(1, "Medic").
 			WillReturnError(sqlmock.ErrCancelled)
 
-		_, err := repo.CountAssignmentsByProfile(1, "Medic")
+		_, err := repo.CountAssignmentsByProfile(context.Background(), 1, "Medic")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to count assignments: canceling query due to user request")
 	})
@@ -80,7 +81,7 @@ func TestShiftRepositoryMockDB_CreateAssignment(t *testing.T) {
 			WillReturnError(sqlmock.ErrCancelled)
 		mock.ExpectRollback()
 
-		_, err := repo.CreateAssignment(1, 2)
+		_, err := repo.CreateAssignment(context.Background(), 1, 2)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create assignment: canceling query due to user request")
 	})
@@ -103,7 +104,7 @@ func TestShiftRepositoryMockDB_GetShiftAvailability(t *testing.T) {
 			).
 			WillReturnError(sqlmock.ErrCancelled)
 
-		_, err := repo.GetShiftAvailability(time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC), time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC))
+		_, err := repo.GetShiftAvailability(context.Background(), time.Date(2025, 2, 3, 0, 0, 0, 0, time.UTC), time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC))
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "canceling query due to user request")
 	})
@@ -123,7 +124,7 @@ func TestShiftRepositoryMockDB_RemoveEmployeeFromShiftByDetails(t *testing.T) {
 			WithArgs(shiftDate, 1, 1).
 			WillReturnError(sqlmock.ErrCancelled)
 
-		err := repo.RemoveEmployeeFromShiftByDetails(1, shiftDate, 1)
+		err := repo.RemoveEmployeeFromShiftByDetails(context.Background(), 1, shiftDate, 1)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to find shift")
 	})
@@ -140,7 +141,7 @@ func TestShiftRepositoryMockDB_RemoveEmployeeFromShiftByDetails(t *testing.T) {
 			WithArgs(1, 1, 1).
 			WillReturnError(sqlmock.ErrCancelled)
 
-		err := repo.RemoveEmployeeFromShiftByDetails(1, shiftDate, 1)
+		err := repo.RemoveEmployeeFromShiftByDetails(context.Background(), 1, shiftDate, 1)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to find assignment")
 	})
@@ -163,7 +164,7 @@ func TestShiftRepositoryMockDB_RemoveEmployeeFromShiftByDetails(t *testing.T) {
 			WillReturnError(sqlmock.ErrCancelled)
 		mock.ExpectRollback()
 
-		err := repo.RemoveEmployeeFromShiftByDetails(1, shiftDate, 1)
+		err := repo.RemoveEmployeeFromShiftByDetails(context.Background(), 1, shiftDate, 1)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "canceling query due to user request")
 	})
@@ -180,8 +181,8 @@ func TestShiftRepositoryMockDB_GetOnCallEmployees(t *testing.T) {
 		mock.ExpectQuery(`SELECT DISTINCT employees\.\* FROM "employees" JOIN employee_shifts ON employees\.id = employee_shifts\.employee_id JOIN shifts ON employee_shifts\.shift_id = shifts\.id WHERE \(\(shifts\.shift_date = \$1 AND shifts\.shift_type = \$2\)\) AND "employees"\."deleted_at" IS NULL`).
 			WillReturnError(sqlmock.ErrCancelled)
 
-		testTime := time.Date(2023, 1, 15, 10, 0, 0, 0, time.UTC) // 10 AM, should be shift 1
-		_, err := repo.GetOnCallEmployees(testTime, 0)            // No buffer to keep query simple
+		testTime := time.Date(2023, 1, 15, 10, 0, 0, 0, time.UTC)            // 10 AM, should be shift 1
+		_, err := repo.GetOnCallEmployees(context.Background(), testTime, 0) // No buffer to keep query simple
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get on-call employees: canceling query due to user request")
 	})
@@ -194,8 +195,8 @@ func TestShiftRepositoryMockDB_GetOnCallEmployees(t *testing.T) {
 		mock.ExpectQuery(`SELECT DISTINCT employees\.\* FROM "employees" JOIN employee_shifts ON employees\.id = employee_shifts\.employee_id JOIN shifts ON employee_shifts\.shift_id = shifts\.id WHERE \(\(shifts\.shift_date = \$1 AND shifts\.shift_type = \$2\)\) AND "employees"\."deleted_at" IS NULL`).
 			WillReturnRows(rows)
 
-		testTime := time.Date(2023, 1, 15, 10, 0, 0, 0, time.UTC) // 10 AM, should be shift 1
-		employees, err := repo.GetOnCallEmployees(testTime, 0)    // No buffer
+		testTime := time.Date(2023, 1, 15, 10, 0, 0, 0, time.UTC)                    // 10 AM, should be shift 1
+		employees, err := repo.GetOnCallEmployees(context.Background(), testTime, 0) // No buffer
 
 		assert.NoError(t, err)
 		assert.Len(t, employees, 2)
@@ -213,8 +214,8 @@ func TestShiftRepositoryMockDB_GetOnCallEmployees(t *testing.T) {
 		mock.ExpectQuery(`SELECT DISTINCT employees\.\* FROM "employees" JOIN employee_shifts ON employees\.id = employee_shifts\.employee_id JOIN shifts ON employee_shifts\.shift_id = shifts\.id WHERE \(\(\(shifts\.shift_date = \$1 AND shifts\.shift_type = \$2\)\) OR \(\(shifts\.shift_date = \$3 AND shifts\.shift_type = \$4\)\)\) AND "employees"\."deleted_at" IS NULL`).
 			WillReturnRows(rows)
 
-		testTime := time.Date(2023, 1, 15, 13, 30, 0, 0, time.UTC)       // 1:30 PM, 30 min before shift 1 ends
-		employees, err := repo.GetOnCallEmployees(testTime, 1*time.Hour) // 1 hour buffer
+		testTime := time.Date(2023, 1, 15, 13, 30, 0, 0, time.UTC)                             // 1:30 PM, 30 min before shift 1 ends
+		employees, err := repo.GetOnCallEmployees(context.Background(), testTime, 1*time.Hour) // 1 hour buffer
 
 		assert.NoError(t, err)
 		assert.Len(t, employees, 2)
@@ -439,7 +440,7 @@ func TestShiftRepositoryMockDB_GetShiftAvailabilityWithEmployeeStatus(t *testing
 			WillReturnRows(sqlmock.NewRows([]string{"shift_date", "shift_type"}).
 				AddRow(start, 1))
 
-		result, err := repo.GetShiftAvailabilityWithEmployeeStatus(employeeID, start, end)
+		result, err := repo.GetShiftAvailabilityWithEmployeeStatus(context.Background(), employeeID, start, end)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)

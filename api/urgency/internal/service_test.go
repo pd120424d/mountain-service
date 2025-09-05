@@ -94,7 +94,7 @@ func TestUrgencyService_CreateUrgency(t *testing.T) {
 
 		// Since we no longer create assignments on urgency creation, only notifications are attempted.
 		// Simulate failures in notification creation and ensure service logs and continues without error.
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).AnyTimes().Return(assert.AnError)
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).AnyTimes().Return(assert.AnError)
 
 		svc := NewUrgencyService(log, mockRepo, mockNotificationRepo, mockEmployeeClient)
 
@@ -344,7 +344,7 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 			Email:     "marko@example.com",
 		}
 
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, notification *model.Notification) error {
 			assert.Equal(t, urgency.ID, notification.UrgencyID)
 			assert.Equal(t, employee.ID, notification.EmployeeID)
 			assert.Equal(t, model.NotificationSMS, notification.NotificationType)
@@ -356,7 +356,7 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 			return nil
 		})
 
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, notification *model.Notification) error {
 			assert.Equal(t, model.NotificationEmail, notification.NotificationType)
 			assert.Equal(t, "marko@example.com", notification.Recipient)
 			return nil
@@ -400,7 +400,7 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 			Level:        "High",
 		}
 
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, notification *model.Notification) error {
 			assert.Equal(t, model.NotificationEmail, notification.NotificationType)
 			assert.Equal(t, "marko@example.com", notification.Recipient)
 			return nil
@@ -447,7 +447,7 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 
 		mockRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
 		// Notifications are created on create (no assignments). Accept any number of creates.
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).AnyTimes().Return(nil)
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
 		svc := NewUrgencyService(log, mockRepo, mockNotificationRepo, mockEmployeeClient)
 
@@ -487,7 +487,7 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		}
 
 		mockRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError).AnyTimes()
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(assert.AnError).AnyTimes()
 
 		svc := NewUrgencyService(log, mockRepo, mockNotificationRepo, mockEmployeeClient)
 
@@ -527,7 +527,7 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		}
 
 		mockRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError)
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(assert.AnError)
 
 		svc := NewUrgencyService(log, mockRepo, mockNotificationRepo, mockEmployeeClient)
 
@@ -609,12 +609,12 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		mockRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
 
 		// Expect two notification creations: SMS and Email
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, notification *model.Notification) error {
 			assert.Equal(t, model.NotificationSMS, notification.NotificationType)
 			assert.Equal(t, "+1987654321", notification.Recipient)
 			return nil
 		})
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, notification *model.Notification) error {
 			assert.Equal(t, model.NotificationEmail, notification.NotificationType)
 			assert.Equal(t, "marko@example.com", notification.Recipient)
 			return nil
@@ -667,10 +667,10 @@ func TestUrgencyService_createAssignmentAndNotification(t *testing.T) {
 		mockRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
 
 		// First employee - notifications succeed
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).Return(nil).Times(2) // SMS + Email
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(2) // SMS + Email
 
 		// Second employee - notifications fail (both SMS and Email), service should log and continue
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).Return(assert.AnError).Times(2)
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(assert.AnError).Times(2)
 
 		svc := NewUrgencyService(log, mockRepo, mockNotificationRepo, mockEmployeeClient)
 
@@ -712,7 +712,7 @@ func TestUrgencyService_buildNotificationMessage(t *testing.T) {
 			Level:        urgencyV1.High,
 		}
 
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, notification *model.Notification) error {
 			assert.Equal(t, model.NotificationSMS, notification.NotificationType)
 
 			expectedContent := []string{
@@ -731,7 +731,7 @@ func TestUrgencyService_buildNotificationMessage(t *testing.T) {
 			return nil
 		})
 
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, notification *model.Notification) error {
 			assert.Equal(t, model.NotificationEmail, notification.NotificationType)
 			assert.Equal(t, "marko@example.com", notification.Recipient)
 			return nil
@@ -775,7 +775,7 @@ func TestUrgencyService_buildNotificationMessage(t *testing.T) {
 			Level:        urgencyV1.High,
 		}
 
-		mockNotificationRepo.EXPECT().Create(gomock.Any()).DoAndReturn(func(notification *model.Notification) error {
+		mockNotificationRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, notification *model.Notification) error {
 			assert.Equal(t, model.NotificationEmail, notification.NotificationType)
 
 			expectedContent := []string{

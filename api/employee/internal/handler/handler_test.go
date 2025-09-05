@@ -1123,7 +1123,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 			ctx.Request = httptest.NewRequest(http.MethodPost, "/employees/1/shifts", bytes.NewReader(payload))
 			ctx.Request.Header.Set("Content-Type", "application/json")
 
-			mockShiftSvc.EXPECT().AssignShift(uint(1), req).Return(nil, test.err)
+			mockShiftSvc.EXPECT().AssignShift(gomock.Any(), uint(1), req).Return(nil, test.err)
 
 			handler.AssignShift(ctx)
 
@@ -1160,7 +1160,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 			ShiftType: 1,
 		}
 
-		mockShiftSvc.EXPECT().AssignShift(uint(1), req).Return(response, nil)
+		mockShiftSvc.EXPECT().AssignShift(gomock.Any(), uint(1), req).Return(response, nil)
 
 		handler.AssignShift(ctx)
 
@@ -1232,7 +1232,7 @@ func TestEmployeeHandler_GetShifts(t *testing.T) {
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/shifts", nil)
 
-		mockShiftSvc.EXPECT().GetShifts(uint(1)).Return(nil, fmt.Errorf("database error"))
+		mockShiftSvc.EXPECT().GetShifts(gomock.Any(), uint(1)).Return(nil, fmt.Errorf("database error"))
 
 		handler.GetShifts(ctx)
 
@@ -1263,7 +1263,7 @@ func TestEmployeeHandler_GetShifts(t *testing.T) {
 			},
 		}
 
-		mockShiftSvc.EXPECT().GetShifts(uint(1)).Return(shifts, nil)
+		mockShiftSvc.EXPECT().GetShifts(gomock.Any(), uint(1)).Return(shifts, nil)
 
 		handler.GetShifts(ctx)
 
@@ -1335,7 +1335,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/shifts/availability?days=7", nil)
 		ctx.Set("employeeID", uint(1))
 
-		mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 7).Return(nil, fmt.Errorf("database error"))
+		mockShiftSvc.EXPECT().GetShiftsAvailability(gomock.Any(), uint(1), 7).Return(nil, fmt.Errorf("database error"))
 
 		handler.GetShiftsAvailability(ctx)
 
@@ -1361,7 +1361,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 
 		response := &employeeV1.ShiftAvailabilityResponse{}
 
-		mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 7).Return(response, nil)
+		mockShiftSvc.EXPECT().GetShiftsAvailability(gomock.Any(), uint(1), 7).Return(response, nil)
 
 		handler.GetShiftsAvailability(ctx)
 
@@ -1386,7 +1386,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 
 		response := &employeeV1.ShiftAvailabilityResponse{}
 
-		mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 14).Return(response, nil)
+		mockShiftSvc.EXPECT().GetShiftsAvailability(gomock.Any(), uint(1), 14).Return(response, nil)
 
 		handler.GetShiftsAvailability(ctx)
 
@@ -1498,7 +1498,7 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		mockShiftSvc.EXPECT().RemoveShift(uint(1), req).Return(fmt.Errorf("invalid shift date format"))
+		mockShiftSvc.EXPECT().RemoveShift(gomock.Any(), uint(1), req).Return(fmt.Errorf("invalid shift date format"))
 
 		handler.RemoveShift(ctx)
 
@@ -1528,7 +1528,7 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		mockShiftSvc.EXPECT().RemoveShift(uint(1), req).Return(fmt.Errorf("database error"))
+		mockShiftSvc.EXPECT().RemoveShift(gomock.Any(), uint(1), req).Return(fmt.Errorf("database error"))
 
 		handler.RemoveShift(ctx)
 
@@ -1558,7 +1558,7 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/employees/1/shifts", bytes.NewReader(payload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		mockShiftSvc.EXPECT().RemoveShift(uint(1), req).Return(nil)
+		mockShiftSvc.EXPECT().RemoveShift(gomock.Any(), uint(1), req).Return(nil)
 
 		handler.RemoveShift(ctx)
 
@@ -1655,7 +1655,7 @@ func TestEmployeeHandler_GetOnCallEmployees(t *testing.T) {
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/on-call", nil)
 
-		mockShiftSvc.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("database error"))
+		mockShiftSvc.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("database error"))
 
 		handler.GetOnCallEmployees(ctx)
 
@@ -1687,7 +1687,7 @@ func TestEmployeeHandler_GetOnCallEmployees(t *testing.T) {
 			},
 		}
 
-		mockShiftSvc.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
+		mockShiftSvc.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		handler.GetOnCallEmployees(ctx)
 
@@ -1719,7 +1719,7 @@ func TestEmployeeHandler_GetOnCallEmployees(t *testing.T) {
 			},
 		}
 
-		mockShiftSvc.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any()).Return(employees, nil)
+		mockShiftSvc.EXPECT().GetOnCallEmployees(gomock.Any(), gomock.Any(), gomock.Any()).Return(employees, nil)
 
 		handler.GetOnCallEmployees(ctx)
 
@@ -1872,7 +1872,7 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/shift-warnings", nil)
 
-		mockShiftSvc.EXPECT().GetShiftWarnings(uint(1)).Return(nil, fmt.Errorf("employee not found"))
+		mockShiftSvc.EXPECT().GetShiftWarnings(gomock.Any(), uint(1)).Return(nil, fmt.Errorf("employee not found"))
 
 		handler.GetShiftWarnings(ctx)
 
@@ -1896,7 +1896,7 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/employees/1/shift-warnings", nil)
 
-		mockShiftSvc.EXPECT().GetShiftWarnings(uint(1)).Return(nil, fmt.Errorf("database connection failed"))
+		mockShiftSvc.EXPECT().GetShiftWarnings(gomock.Any(), uint(1)).Return(nil, fmt.Errorf("database connection failed"))
 
 		handler.GetShiftWarnings(ctx)
 
@@ -1925,7 +1925,7 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 			"There is insufficient coverage for some shifts in the next 2 weeks.",
 		}
 
-		mockShiftSvc.EXPECT().GetShiftWarnings(uint(1)).Return(warnings, nil)
+		mockShiftSvc.EXPECT().GetShiftWarnings(gomock.Any(), uint(1)).Return(warnings, nil)
 
 		handler.GetShiftWarnings(ctx)
 
@@ -1953,7 +1953,7 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 
 		warnings := []string{} // Empty warnings array
 
-		mockShiftSvc.EXPECT().GetShiftWarnings(uint(1)).Return(warnings, nil)
+		mockShiftSvc.EXPECT().GetShiftWarnings(gomock.Any(), uint(1)).Return(warnings, nil)
 
 		handler.GetShiftWarnings(ctx)
 
@@ -2037,7 +2037,7 @@ func TestEmployeeHandler_GetAdminShiftsAvailability(t *testing.T) {
 			name:        "it returns StatusInternalServerError when service call fails",
 			queryParams: "?days=7",
 			setupMocks: func(mockShiftSvc *service.MockShiftService) {
-				mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 7).Return(nil, fmt.Errorf("database error"))
+				mockShiftSvc.EXPECT().GetShiftsAvailability(gomock.Any(), uint(1), 7).Return(nil, fmt.Errorf("database error"))
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   `"error":"Failed to retrieve shifts availability"`,
@@ -2071,7 +2071,7 @@ func TestEmployeeHandler_GetAdminShiftsAvailability(t *testing.T) {
 						},
 					},
 				}
-				mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 7).Return(response, nil)
+				mockShiftSvc.EXPECT().GetShiftsAvailability(gomock.Any(), uint(1), 7).Return(response, nil)
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody:   `"days"`,
@@ -2105,7 +2105,7 @@ func TestEmployeeHandler_GetAdminShiftsAvailability(t *testing.T) {
 						},
 					},
 				}
-				mockShiftSvc.EXPECT().GetShiftsAvailability(uint(1), 14).Return(response, nil)
+				mockShiftSvc.EXPECT().GetShiftsAvailability(gomock.Any(), uint(1), 14).Return(response, nil)
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody:   `"days"`,

@@ -10,6 +10,7 @@
 package repositories
 
 import (
+	context "context"
 	reflect "reflect"
 
 	model "github.com/pd120424d/mountain-service/api/employee/internal/model"
@@ -41,116 +42,116 @@ func (m *MockEmployeeRepository) EXPECT() *MockEmployeeRepositoryMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockEmployeeRepository) Create(employee *model.Employee) error {
+func (m *MockEmployeeRepository) Create(ctx context.Context, employee *model.Employee) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", employee)
+	ret := m.ctrl.Call(m, "Create", ctx, employee)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockEmployeeRepositoryMockRecorder) Create(employee any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) Create(ctx, employee any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockEmployeeRepository)(nil).Create), employee)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockEmployeeRepository)(nil).Create), ctx, employee)
 }
 
 // Delete mocks base method.
-func (m *MockEmployeeRepository) Delete(employeeID uint) error {
+func (m *MockEmployeeRepository) Delete(ctx context.Context, employeeID uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", employeeID)
+	ret := m.ctrl.Call(m, "Delete", ctx, employeeID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockEmployeeRepositoryMockRecorder) Delete(employeeID any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) Delete(ctx, employeeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockEmployeeRepository)(nil).Delete), employeeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockEmployeeRepository)(nil).Delete), ctx, employeeID)
 }
 
 // GetAll mocks base method.
-func (m *MockEmployeeRepository) GetAll() ([]model.Employee, error) {
+func (m *MockEmployeeRepository) GetAll(ctx context.Context) ([]model.Employee, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll")
+	ret := m.ctrl.Call(m, "GetAll", ctx)
 	ret0, _ := ret[0].([]model.Employee)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockEmployeeRepositoryMockRecorder) GetAll() *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) GetAll(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockEmployeeRepository)(nil).GetAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockEmployeeRepository)(nil).GetAll), ctx)
 }
 
 // GetEmployeeByID mocks base method.
-func (m *MockEmployeeRepository) GetEmployeeByID(id uint, employee *model.Employee) error {
+func (m *MockEmployeeRepository) GetEmployeeByID(ctx context.Context, id uint, employee *model.Employee) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEmployeeByID", id, employee)
+	ret := m.ctrl.Call(m, "GetEmployeeByID", ctx, id, employee)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // GetEmployeeByID indicates an expected call of GetEmployeeByID.
-func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeByID(id, employee any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeByID(ctx, id, employee any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByID", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeeByID), id, employee)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByID", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeeByID), ctx, id, employee)
 }
 
 // GetEmployeeByUsername mocks base method.
-func (m *MockEmployeeRepository) GetEmployeeByUsername(username string) (*model.Employee, error) {
+func (m *MockEmployeeRepository) GetEmployeeByUsername(ctx context.Context, username string) (*model.Employee, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEmployeeByUsername", username)
+	ret := m.ctrl.Call(m, "GetEmployeeByUsername", ctx, username)
 	ret0, _ := ret[0].(*model.Employee)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetEmployeeByUsername indicates an expected call of GetEmployeeByUsername.
-func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeByUsername(username any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeByUsername(ctx, username any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByUsername", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeeByUsername), username)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByUsername", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeeByUsername), ctx, username)
 }
 
 // ListEmployees mocks base method.
-func (m *MockEmployeeRepository) ListEmployees(filters map[string]any) ([]model.Employee, error) {
+func (m *MockEmployeeRepository) ListEmployees(ctx context.Context, filters map[string]interface{}) ([]model.Employee, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListEmployees", filters)
+	ret := m.ctrl.Call(m, "ListEmployees", ctx, filters)
 	ret0, _ := ret[0].([]model.Employee)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListEmployees indicates an expected call of ListEmployees.
-func (mr *MockEmployeeRepositoryMockRecorder) ListEmployees(filters any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) ListEmployees(ctx, filters any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEmployees", reflect.TypeOf((*MockEmployeeRepository)(nil).ListEmployees), filters)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEmployees", reflect.TypeOf((*MockEmployeeRepository)(nil).ListEmployees), ctx, filters)
 }
 
 // ResetAllData mocks base method.
-func (m *MockEmployeeRepository) ResetAllData() error {
+func (m *MockEmployeeRepository) ResetAllData(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetAllData")
+	ret := m.ctrl.Call(m, "ResetAllData", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ResetAllData indicates an expected call of ResetAllData.
-func (mr *MockEmployeeRepositoryMockRecorder) ResetAllData() *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) ResetAllData(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockEmployeeRepository)(nil).ResetAllData))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllData", reflect.TypeOf((*MockEmployeeRepository)(nil).ResetAllData), ctx)
 }
 
 // UpdateEmployee mocks base method.
-func (m *MockEmployeeRepository) UpdateEmployee(employee *model.Employee) error {
+func (m *MockEmployeeRepository) UpdateEmployee(ctx context.Context, employee *model.Employee) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateEmployee", employee)
+	ret := m.ctrl.Call(m, "UpdateEmployee", ctx, employee)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateEmployee indicates an expected call of UpdateEmployee.
-func (mr *MockEmployeeRepositoryMockRecorder) UpdateEmployee(employee any) *gomock.Call {
+func (mr *MockEmployeeRepositoryMockRecorder) UpdateEmployee(ctx, employee any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmployee", reflect.TypeOf((*MockEmployeeRepository)(nil).UpdateEmployee), employee)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmployee", reflect.TypeOf((*MockEmployeeRepository)(nil).UpdateEmployee), ctx, employee)
 }

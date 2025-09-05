@@ -94,6 +94,8 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 // @Produce  json
 // @Param page query int false "Page number" default(1)
 // @Param pageSize query int false "Page size" default(20)
+// @Param myUrgencies query bool false "Only urgencies assigned to the current user" default(false)
+
 // @Success 200 {object} urgencyV1.UrgencyListResponse
 // @Router /urgencies [get]
 func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {

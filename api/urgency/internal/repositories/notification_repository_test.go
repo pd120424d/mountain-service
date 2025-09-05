@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 	"time"
@@ -34,7 +35,7 @@ func TestNotificationRepository_Create(t *testing.T) {
 			Status:           model.NotificationPending,
 		}
 
-		err := repo.Create(notification)
+		err := repo.Create(context.Background(), notification)
 		assert.NoError(t, err)
 		assert.NotZero(t, notification.ID)
 
@@ -64,7 +65,7 @@ func TestNotificationRepository_Create(t *testing.T) {
 		}
 
 		// GORM allows creating notifications with non-existent foreign keys in SQLite
-		err := repo.Create(notification)
+		err := repo.Create(context.Background(), notification)
 		assert.NoError(t, err)
 		assert.NotZero(t, notification.ID)
 	})
@@ -87,7 +88,7 @@ func TestNotificationRepository_Create(t *testing.T) {
 			Status:           model.NotificationPending,
 		}
 
-		err := repo.Create(notification)
+		err := repo.Create(context.Background(), notification)
 		assert.Error(t, err)
 	})
 }
@@ -114,7 +115,7 @@ func TestNotificationRepository_GetByID(t *testing.T) {
 		require.NoError(t, err)
 
 		var retrievedNotification model.Notification
-		err = repo.GetByID(notification.ID, &retrievedNotification)
+		err = repo.GetByID(context.Background(), notification.ID, &retrievedNotification)
 		assert.NoError(t, err)
 		assert.Equal(t, notification.ID, retrievedNotification.ID)
 		assert.Equal(t, notification.UrgencyID, retrievedNotification.UrgencyID)
@@ -128,7 +129,7 @@ func TestNotificationRepository_GetByID(t *testing.T) {
 		repo := NewNotificationRepository(log, db)
 
 		var nonExistentNotification model.Notification
-		err := repo.GetByID(999, &nonExistentNotification)
+		err := repo.GetByID(context.Background(), 999, &nonExistentNotification)
 		assert.Error(t, err)
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
 	})
@@ -143,7 +144,7 @@ func TestNotificationRepository_GetByID(t *testing.T) {
 		sqlDB.Close()
 
 		var notification model.Notification
-		err := repo.GetByID(1, &notification)
+		err := repo.GetByID(context.Background(), 1, &notification)
 		assert.Error(t, err)
 		assert.NotEqual(t, gorm.ErrRecordNotFound, err)
 	})
@@ -191,7 +192,7 @@ func TestNotificationRepository_GetPendingNotifications(t *testing.T) {
 		err = db.Create(sentNotification).Error
 		require.NoError(t, err)
 
-		notifications, err := repo.GetPendingNotifications(0)
+		notifications, err := repo.GetPendingNotifications(context.Background(), 0)
 		assert.NoError(t, err)
 		assert.Len(t, notifications, 2)
 		for _, notification := range notifications {
@@ -229,7 +230,7 @@ func TestNotificationRepository_GetPendingNotifications(t *testing.T) {
 		err = db.Create(pendingNotification2).Error
 		require.NoError(t, err)
 
-		notifications, err := repo.GetPendingNotifications(1)
+		notifications, err := repo.GetPendingNotifications(context.Background(), 1)
 		assert.NoError(t, err)
 		assert.Len(t, notifications, 1)
 		assert.Equal(t, model.NotificationPending, notifications[0].Status)
@@ -244,7 +245,7 @@ func TestNotificationRepository_GetPendingNotifications(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		notifications, err := repo.GetPendingNotifications(0)
+		notifications, err := repo.GetPendingNotifications(context.Background(), 0)
 		assert.Error(t, err)
 		assert.Nil(t, notifications)
 	})
@@ -303,11 +304,11 @@ func TestNotificationRepository_GetByUrgencyID(t *testing.T) {
 		err = db.Create(notification3).Error
 		require.NoError(t, err)
 
-		notifications, err := repo.GetByUrgencyID(urgency1.ID)
+		notifications, err := repo.GetByUrgencyID(context.Background(), urgency1.ID)
 		assert.NoError(t, err)
 		assert.Len(t, notifications, 2)
 
-		notifications, err = repo.GetByUrgencyID(urgency2.ID)
+		notifications, err = repo.GetByUrgencyID(context.Background(), urgency2.ID)
 		assert.NoError(t, err)
 		assert.Len(t, notifications, 1)
 	})
@@ -317,7 +318,7 @@ func TestNotificationRepository_GetByUrgencyID(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewNotificationRepository(log, db)
 
-		notifications, err := repo.GetByUrgencyID(999)
+		notifications, err := repo.GetByUrgencyID(context.Background(), 999)
 		assert.NoError(t, err)
 		assert.Len(t, notifications, 0)
 	})
@@ -331,7 +332,7 @@ func TestNotificationRepository_GetByUrgencyID(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		notifications, err := repo.GetByUrgencyID(1)
+		notifications, err := repo.GetByUrgencyID(context.Background(), 1)
 		assert.Error(t, err)
 		assert.Nil(t, notifications)
 	})
@@ -379,11 +380,11 @@ func TestNotificationRepository_GetByEmployeeID(t *testing.T) {
 		err = db.Create(notification3).Error
 		require.NoError(t, err)
 
-		notifications, err := repo.GetByEmployeeID(1)
+		notifications, err := repo.GetByEmployeeID(context.Background(), 1)
 		assert.NoError(t, err)
 		assert.Len(t, notifications, 2)
 
-		notifications, err = repo.GetByEmployeeID(2)
+		notifications, err = repo.GetByEmployeeID(context.Background(), 2)
 		assert.NoError(t, err)
 		assert.Len(t, notifications, 1)
 	})
@@ -393,7 +394,7 @@ func TestNotificationRepository_GetByEmployeeID(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewNotificationRepository(log, db)
 
-		notifications, err := repo.GetByEmployeeID(999)
+		notifications, err := repo.GetByEmployeeID(context.Background(), 999)
 		assert.NoError(t, err)
 		assert.Len(t, notifications, 0)
 	})
@@ -407,7 +408,7 @@ func TestNotificationRepository_GetByEmployeeID(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		notifications, err := repo.GetByEmployeeID(1)
+		notifications, err := repo.GetByEmployeeID(context.Background(), 1)
 		assert.Error(t, err)
 		assert.Nil(t, notifications)
 	})
@@ -437,7 +438,7 @@ func TestNotificationRepository_Update(t *testing.T) {
 		notification.Message = "Updated message"
 		notification.Status = model.NotificationSent
 
-		err = repo.Update(notification)
+		err = repo.Update(context.Background(), notification)
 		assert.NoError(t, err)
 
 		var updatedNotification model.Notification
@@ -463,7 +464,7 @@ func TestNotificationRepository_Update(t *testing.T) {
 		}
 
 		// GORM's Save() will create a new record if ID doesn't exist
-		err := repo.Update(notification)
+		err := repo.Update(context.Background(), notification)
 		assert.NoError(t, err)
 
 		// Verify the notification was created with the specified ID
@@ -492,7 +493,7 @@ func TestNotificationRepository_Update(t *testing.T) {
 			Status:           model.NotificationSent,
 		}
 
-		err := repo.Update(notification)
+		err := repo.Update(context.Background(), notification)
 		assert.Error(t, err)
 	})
 }
@@ -518,7 +519,7 @@ func TestNotificationRepository_Delete(t *testing.T) {
 		err := db.Create(notification).Error
 		require.NoError(t, err)
 
-		err = repo.Delete(notification.ID)
+		err = repo.Delete(context.Background(), notification.ID)
 		assert.NoError(t, err)
 
 		var deletedNotification model.Notification
@@ -533,7 +534,7 @@ func TestNotificationRepository_Delete(t *testing.T) {
 		repo := NewNotificationRepository(log, db)
 
 		// GORM's Delete() succeeds even if no records are deleted
-		err := repo.Delete(999) // Non-existent notification
+		err := repo.Delete(context.Background(), 999) // Non-existent notification
 		assert.NoError(t, err)
 	})
 
@@ -546,7 +547,7 @@ func TestNotificationRepository_Delete(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		err := repo.Delete(1)
+		err := repo.Delete(context.Background(), 1)
 		assert.Error(t, err)
 	})
 }
@@ -573,7 +574,7 @@ func TestNotificationRepository_MarkAsSent(t *testing.T) {
 		require.NoError(t, err)
 
 		sentAt := time.Now()
-		err = repo.MarkAsSent(notification.ID, sentAt)
+		err = repo.MarkAsSent(context.Background(), notification.ID, sentAt)
 		assert.NoError(t, err)
 
 		var updatedNotification model.Notification
@@ -590,7 +591,7 @@ func TestNotificationRepository_MarkAsSent(t *testing.T) {
 		repo := NewNotificationRepository(log, db)
 
 		// GORM's Update() succeeds even if no records are updated
-		err := repo.MarkAsSent(999, time.Now()) // Non-existent notification
+		err := repo.MarkAsSent(context.Background(), 999, time.Now()) // Non-existent notification
 		assert.NoError(t, err)
 	})
 
@@ -603,7 +604,7 @@ func TestNotificationRepository_MarkAsSent(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		err := repo.MarkAsSent(1, time.Now())
+		err := repo.MarkAsSent(context.Background(), 1, time.Now())
 		assert.Error(t, err)
 	})
 }
@@ -630,7 +631,7 @@ func TestNotificationRepository_MarkAsFailed(t *testing.T) {
 		require.NoError(t, err)
 
 		errorMessage := "SMS delivery failed"
-		err = repo.MarkAsFailed(notification.ID, errorMessage)
+		err = repo.MarkAsFailed(context.Background(), notification.ID, errorMessage)
 		assert.NoError(t, err)
 
 		var updatedNotification model.Notification
@@ -646,7 +647,7 @@ func TestNotificationRepository_MarkAsFailed(t *testing.T) {
 		repo := NewNotificationRepository(log, db)
 
 		// GORM's Update() succeeds even if no records are updated
-		err := repo.MarkAsFailed(999, "Error message") // Non-existent notification
+		err := repo.MarkAsFailed(context.Background(), 999, "Error message") // Non-existent notification
 		assert.NoError(t, err)
 	})
 
@@ -659,7 +660,7 @@ func TestNotificationRepository_MarkAsFailed(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		err := repo.MarkAsFailed(1, "Error message")
+		err := repo.MarkAsFailed(context.Background(), 1, "Error message")
 		assert.Error(t, err)
 	})
 }
@@ -686,7 +687,7 @@ func TestNotificationRepository_IncrementAttempts(t *testing.T) {
 		err := db.Create(notification).Error
 		require.NoError(t, err)
 
-		err = repo.IncrementAttempts(notification.ID)
+		err = repo.IncrementAttempts(context.Background(), notification.ID)
 		assert.NoError(t, err)
 
 		var updatedNotification model.Notification
@@ -695,7 +696,7 @@ func TestNotificationRepository_IncrementAttempts(t *testing.T) {
 		assert.Equal(t, 1, updatedNotification.Attempts)
 		assert.NotNil(t, updatedNotification.LastAttemptAt)
 
-		err = repo.IncrementAttempts(notification.ID)
+		err = repo.IncrementAttempts(context.Background(), notification.ID)
 		assert.NoError(t, err)
 
 		err = db.First(&updatedNotification, notification.ID).Error
@@ -709,7 +710,7 @@ func TestNotificationRepository_IncrementAttempts(t *testing.T) {
 		repo := NewNotificationRepository(log, db)
 
 		// GORM's Update() succeeds even if no records are updated
-		err := repo.IncrementAttempts(999) // Non-existent notification
+		err := repo.IncrementAttempts(context.Background(), 999) // Non-existent notification
 		assert.NoError(t, err)
 	})
 
@@ -722,7 +723,7 @@ func TestNotificationRepository_IncrementAttempts(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		err := repo.IncrementAttempts(1)
+		err := repo.IncrementAttempts(context.Background(), 1)
 		assert.Error(t, err)
 	})
 }

@@ -3,6 +3,7 @@ package repositories
 //go:generate mockgen -source=shift_repository.go -destination=shift_repository_gomock.go -package=repositories
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -14,17 +15,17 @@ import (
 )
 
 type ShiftRepository interface {
-	GetOrCreateShift(shiftDate time.Time, shiftType int) (*model.Shift, error)
-	AssignedToShift(employeeID, shiftID uint) (bool, error)
-	CountAssignmentsByProfile(shiftID uint, profileType model.ProfileType) (int64, error)
-	CreateAssignment(employeeID, shiftID uint) (uint, error)
-	GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error
-	GetShiftsByEmployeeIDInDateRange(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error
-	GetShiftAvailability(start, end time.Time) (*model.ShiftsAvailabilityRange, error)
-	GetShiftAvailabilityWithEmployeeStatus(employeeID uint, start, end time.Time) (*model.ShiftsAvailabilityWithEmployeeStatus, error)
-	RemoveEmployeeFromShiftByDetails(employeeID uint, shiftDate time.Time, shiftType int) error
-	GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]model.Employee, error)
-	GetEmployeeShiftRowsByEmployeeID(employeeID uint) ([]EmployeeShiftRow, error)
+	GetOrCreateShift(ctx context.Context, shiftDate time.Time, shiftType int) (*model.Shift, error)
+	AssignedToShift(ctx context.Context, employeeID, shiftID uint) (bool, error)
+	CountAssignmentsByProfile(ctx context.Context, shiftID uint, profileType model.ProfileType) (int64, error)
+	CreateAssignment(ctx context.Context, employeeID, shiftID uint) (uint, error)
+	GetShiftsByEmployeeID(ctx context.Context, employeeID uint, result *[]model.Shift) error
+	GetShiftsByEmployeeIDInDateRange(ctx context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error
+	GetShiftAvailability(ctx context.Context, start, end time.Time) (*model.ShiftsAvailabilityRange, error)
+	GetShiftAvailabilityWithEmployeeStatus(ctx context.Context, employeeID uint, start, end time.Time) (*model.ShiftsAvailabilityWithEmployeeStatus, error)
+	RemoveEmployeeFromShiftByDetails(ctx context.Context, employeeID uint, shiftDate time.Time, shiftType int) error
+	GetOnCallEmployees(ctx context.Context, currentTime time.Time, shiftBuffer time.Duration) ([]model.Employee, error)
+	GetEmployeeShiftRowsByEmployeeID(ctx context.Context, employeeID uint) ([]EmployeeShiftRow, error)
 }
 
 // EmployeeShiftRow is a projection combining shift and assignment metadata
@@ -54,7 +55,7 @@ func NewShiftRepositoryRW(log utils.Logger, writeDB *gorm.DB, readDB *gorm.DB) S
 	return &shiftRepository{log: log.WithName("shiftRepository"), dbWrite: writeDB, dbRead: readDB}
 }
 
-func (r *shiftRepository) GetOrCreateShift(shiftDate time.Time, shiftType int) (*model.Shift, error) {
+func (r *shiftRepository) GetOrCreateShift(ctx context.Context, shiftDate time.Time, shiftType int) (*model.Shift, error) {
 	var shift model.Shift
 	err := r.dbWrite.FirstOrCreate(&shift, model.Shift{
 		ShiftDate: shiftDate,
@@ -66,7 +67,7 @@ func (r *shiftRepository) GetOrCreateShift(shiftDate time.Time, shiftType int) (
 	return &shift, nil
 }
 
-func (r *shiftRepository) AssignedToShift(employeeID, shiftID uint) (bool, error) {
+func (r *shiftRepository) AssignedToShift(ctx context.Context, employeeID, shiftID uint) (bool, error) {
 	var existing model.EmployeeShift
 	err := r.dbRead.Where("employee_id = ? AND shift_id = ?", employeeID, shiftID).First(&existing).Error
 	if err == nil {
@@ -78,7 +79,7 @@ func (r *shiftRepository) AssignedToShift(employeeID, shiftID uint) (bool, error
 	return false, fmt.Errorf("failed to check assignment: %w", err)
 }
 
-func (r *shiftRepository) CountAssignmentsByProfile(shiftID uint, profileType model.ProfileType) (int64, error) {
+func (r *shiftRepository) CountAssignmentsByProfile(ctx context.Context, shiftID uint, profileType model.ProfileType) (int64, error) {
 	var count int64
 	err := r.dbRead.Table("employee_shifts").
 		Joins("JOIN employees ON employee_shifts.employee_id = employees.id").
@@ -90,7 +91,7 @@ func (r *shiftRepository) CountAssignmentsByProfile(shiftID uint, profileType mo
 	return count, nil
 }
 
-func (r *shiftRepository) CreateAssignment(employeeID, shiftID uint) (uint, error) {
+func (r *shiftRepository) CreateAssignment(ctx context.Context, employeeID, shiftID uint) (uint, error) {
 	assignment := model.EmployeeShift{
 		EmployeeID: employeeID,
 		ShiftID:    shiftID,
@@ -101,7 +102,7 @@ func (r *shiftRepository) CreateAssignment(employeeID, shiftID uint) (uint, erro
 	return assignment.ID, nil
 }
 
-func (r *shiftRepository) GetShiftsByEmployeeID(employeeID uint, result *[]model.Shift) error {
+func (r *shiftRepository) GetShiftsByEmployeeID(ctx context.Context, employeeID uint, result *[]model.Shift) error {
 	return r.dbRead.Table("employee_shifts").
 		Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
 		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
@@ -110,7 +111,7 @@ func (r *shiftRepository) GetShiftsByEmployeeID(employeeID uint, result *[]model
 		Scan(result).Error
 }
 
-func (r *shiftRepository) GetEmployeeShiftRowsByEmployeeID(employeeID uint) ([]EmployeeShiftRow, error) {
+func (r *shiftRepository) GetEmployeeShiftRowsByEmployeeID(ctx context.Context, employeeID uint) ([]EmployeeShiftRow, error) {
 	var rows []EmployeeShiftRow
 	if err := r.dbRead.Table("employee_shifts").
 		Select("employee_shifts.id as assignment_id, employee_shifts.created_at as assigned_at, shifts.id as shift_id, shifts.shift_date, shifts.shift_type, shifts.created_at as shift_created_at").
@@ -123,7 +124,7 @@ func (r *shiftRepository) GetEmployeeShiftRowsByEmployeeID(employeeID uint) ([]E
 	return rows, nil
 }
 
-func (r *shiftRepository) GetShiftsByEmployeeIDInDateRange(employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
+func (r *shiftRepository) GetShiftsByEmployeeIDInDateRange(ctx context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
 	return r.dbRead.Table("employee_shifts").
 		Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
 		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
@@ -132,7 +133,7 @@ func (r *shiftRepository) GetShiftsByEmployeeIDInDateRange(employeeID uint, star
 		Scan(result).Error
 }
 
-func (r *shiftRepository) GetShiftAvailability(start, end time.Time) (*model.ShiftsAvailabilityRange, error) {
+func (r *shiftRepository) GetShiftAvailability(ctx context.Context, start, end time.Time) (*model.ShiftsAvailabilityRange, error) {
 	result := model.ShiftsAvailabilityRange{
 		Days: map[time.Time][]map[model.ProfileType]int{},
 	}
@@ -180,7 +181,7 @@ func (r *shiftRepository) GetShiftAvailability(start, end time.Time) (*model.Shi
 	return &result, nil
 }
 
-func (r *shiftRepository) GetShiftAvailabilityWithEmployeeStatus(employeeID uint, start, end time.Time) (*model.ShiftsAvailabilityWithEmployeeStatus, error) {
+func (r *shiftRepository) GetShiftAvailabilityWithEmployeeStatus(ctx context.Context, employeeID uint, start, end time.Time) (*model.ShiftsAvailabilityWithEmployeeStatus, error) {
 	result := model.ShiftsAvailabilityWithEmployeeStatus{
 		Days: map[time.Time][]model.ShiftAvailabilityWithStatus{},
 	}
@@ -265,7 +266,7 @@ func (r *shiftRepository) GetShiftAvailabilityWithEmployeeStatus(employeeID uint
 	return &result, nil
 }
 
-func (r *shiftRepository) RemoveEmployeeFromShiftByDetails(employeeID uint, shiftDate time.Time, shiftType int) error {
+func (r *shiftRepository) RemoveEmployeeFromShiftByDetails(ctx context.Context, employeeID uint, shiftDate time.Time, shiftType int) error {
 	var shift model.Shift
 	err := r.dbRead.Where("shift_date = ? AND shift_type = ?", shiftDate, shiftType).First(&shift).Error
 	if err != nil {
@@ -294,7 +295,7 @@ func (r *shiftRepository) RemoveEmployeeFromShiftByDetails(employeeID uint, shif
 // GetOnCallEmployees returns all emloyees who are assigned to the current shift with one exception:
 // If the current shift is ending soon (within the shiftBuffer), we also include employees assigned to the next shift
 // If the shiftBuffer is 0, we only include employees assigned to the current shift
-func (r *shiftRepository) GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]model.Employee, error) {
+func (r *shiftRepository) GetOnCallEmployees(ctx context.Context, currentTime time.Time, shiftBuffer time.Duration) ([]model.Employee, error) {
 	r.log.Infof("Getting on-call employees at %v with buffer %v", currentTime, shiftBuffer)
 
 	currentShiftType := r.getShiftTypeForTime(currentTime)

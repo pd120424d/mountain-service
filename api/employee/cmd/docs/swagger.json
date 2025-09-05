@@ -1033,6 +1033,9 @@
         "github_com_pd120424d_mountain-service_api_employee_internal_handler.ShiftResponse": {
             "type": "object",
             "properties": {
+                "assignedAt": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -1253,6 +1256,9 @@
         "internal_handler.ShiftResponse": {
             "type": "object",
             "properties": {
+                "assignedAt": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },

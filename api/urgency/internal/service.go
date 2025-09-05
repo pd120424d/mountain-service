@@ -56,7 +56,9 @@ func NewUrgencyService(
 
 func (s *urgencyService) CreateUrgency(ctx context.Context, urgency *model.Urgency) error {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(ctx, s.log, "UrgencyService.CreateUrgency")()
 	log.Infof("Creating urgency: %s %s", urgency.FirstName, urgency.LastName)
+	urgency.SortPriority = model.ComputeSortPriority(urgency.Status, urgency.AssignedEmployeeID)
 	err := s.repo.Create(ctx, urgency)
 
 	if err != nil {
@@ -74,7 +76,7 @@ func (s *urgencyService) CreateUrgency(ctx context.Context, urgency *model.Urgen
 	log.Infof("Found %d on-call employees for urgency %d", len(onCallEmployees), urgency.ID)
 
 	for _, employee := range onCallEmployees {
-		if err := s.createAssignmentAndNotification(urgency, employee); err != nil {
+		if err := s.createAssignmentAndNotification(ctx, urgency, employee); err != nil {
 			log.Errorf("Failed to create assignment/notification for employee %d: %v", employee.ID, err)
 			// Continue with other employees even if one fails
 		}
@@ -84,6 +86,7 @@ func (s *urgencyService) CreateUrgency(ctx context.Context, urgency *model.Urgen
 }
 
 func (s *urgencyService) ListUrgencies(ctx context.Context, page int, pageSize int, assignedEmployeeID *uint) ([]model.Urgency, int64, error) {
+	defer utils.TimeOperation(ctx, s.log, "UrgencyService.ListUrgencies")()
 	return s.repo.ListPaginated(ctx, page, pageSize, assignedEmployeeID)
 }
 
@@ -126,7 +129,9 @@ func (s *urgencyService) GetUrgencyByIDPrimary(ctx context.Context, id uint) (*m
 }
 
 func (s *urgencyService) UpdateUrgency(ctx context.Context, urgency *model.Urgency) error {
+	defer utils.TimeOperation(ctx, s.log, "UrgencyService.UpdateUrgency")()
 	log := s.log.WithContext(ctx)
+	urgency.SortPriority = model.ComputeSortPriority(urgency.Status, urgency.AssignedEmployeeID)
 	if err := s.repo.Update(ctx, urgency); err != nil {
 		log.Errorf("Failed to update urgency: %v", err)
 		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to update urgency", map[string]interface{}{"cause": err.Error()})
@@ -136,6 +141,8 @@ func (s *urgencyService) UpdateUrgency(ctx context.Context, urgency *model.Urgen
 
 func (s *urgencyService) DeleteUrgency(ctx context.Context, id uint) error {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(ctx, s.log, "UrgencyService.DeleteUrgency")()
+
 	if err := s.repo.Delete(ctx, id); err != nil {
 		log.Errorf("Failed to delete urgency: %v", err)
 		return commonv1.NewAppError("URGENCY_ERRORS.DELETE_FAILED", "failed to delete urgency", map[string]interface{}{"cause": err.Error()})
@@ -172,6 +179,7 @@ func (s *urgencyService) AssignUrgency(ctx context.Context, urgencyID, employeeI
 	urg.AssignedEmployeeID = &employeeID
 	urg.AssignedAt = &now
 	urg.Status = urgencyV1.InProgress
+	urg.SortPriority = model.ComputeSortPriority(urg.Status, urg.AssignedEmployeeID)
 	if err := s.repo.Update(ctx, urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to update urgency with assignment", map[string]interface{}{"cause": err.Error()})
 	}
@@ -179,6 +187,8 @@ func (s *urgencyService) AssignUrgency(ctx context.Context, urgencyID, employeeI
 }
 
 func (s *urgencyService) UnassignUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error {
+	defer utils.TimeOperation(ctx, s.log, "UrgencyService.UnassignUrgency")()
+
 	if urgencyID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
 	}
@@ -194,6 +204,7 @@ func (s *urgencyService) UnassignUrgency(ctx context.Context, urgencyID uint, ac
 	}
 	urg.AssignedEmployeeID = nil
 	urg.AssignedAt = nil
+	urg.SortPriority = model.ComputeSortPriority(urg.Status, urg.AssignedEmployeeID)
 	if err := s.repo.Update(ctx, urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UNASSIGN_FAILED", "failed to unassign", map[string]interface{}{"cause": err.Error()})
 	}
@@ -201,6 +212,7 @@ func (s *urgencyService) UnassignUrgency(ctx context.Context, urgencyID uint, ac
 }
 
 func (s *urgencyService) CloseUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error {
+	defer utils.TimeOperation(ctx, s.log, "UrgencyService.CloseUrgency")()
 	if urgencyID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
 	}
@@ -223,6 +235,7 @@ func (s *urgencyService) CloseUrgency(ctx context.Context, urgencyID uint, actor
 		return commonv1.NewAppError("URGENCY_ERRORS.INVALID_ASSIGNEE", "assigned employee does not exist or is not accessible", map[string]interface{}{"cause": err.Error(), "employeeId": *urg.AssignedEmployeeID})
 	}
 	urg.Status = urgencyV1.Closed
+	urg.SortPriority = model.ComputeSortPriority(urg.Status, urg.AssignedEmployeeID)
 	if err := s.repo.Update(ctx, urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to close urgency", map[string]interface{}{"cause": err.Error()})
 	}
@@ -247,7 +260,8 @@ func (s *urgencyService) GetAssignment(ctx context.Context, urgencyID uint) (*ur
 	}, nil
 }
 
-func (s *urgencyService) createAssignmentAndNotification(urgency *model.Urgency, employee employeeV1.EmployeeResponse) error {
+func (s *urgencyService) createAssignmentAndNotification(ctx context.Context, urgency *model.Urgency, employee employeeV1.EmployeeResponse) error {
+	log := s.log.WithContext(ctx)
 	if employee.Phone != "" {
 		smsNotification := &model.Notification{
 			UrgencyID:        urgency.ID,
@@ -258,11 +272,11 @@ func (s *urgencyService) createAssignmentAndNotification(urgency *model.Urgency,
 			Status:           model.NotificationPending,
 		}
 
-		if err := s.notificationRepo.Create(smsNotification); err != nil {
-			s.log.Errorf("Failed to create SMS notification: %v", err)
+		if err := s.notificationRepo.Create(ctx, smsNotification); err != nil {
+			log.Errorf("Failed to create SMS notification: %v", err)
 			// don't fail the whole flow; we log and continue
 		} else {
-			s.log.Infof("Created SMS notification %d for employee %d", smsNotification.ID, employee.ID)
+			log.Infof("Created SMS notification %d for employee %d", smsNotification.ID, employee.ID)
 		}
 	}
 
@@ -276,11 +290,11 @@ func (s *urgencyService) createAssignmentAndNotification(urgency *model.Urgency,
 			Status:           model.NotificationPending,
 		}
 
-		if err := s.notificationRepo.Create(emailNotification); err != nil {
-			s.log.Errorf("Failed to create email notification: %v", err)
+		if err := s.notificationRepo.Create(ctx, emailNotification); err != nil {
+			log.Errorf("Failed to create email notification: %v", err)
 			// don't fail the whole flow; we log and continue
 		} else {
-			s.log.Infof("Created email notification %d for employee %d", emailNotification.ID, employee.ID)
+			log.Infof("Created email notification %d for employee %d", emailNotification.ID, employee.ID)
 		}
 	}
 

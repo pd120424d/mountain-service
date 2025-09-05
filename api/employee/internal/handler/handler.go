@@ -527,7 +527,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 		return
 	}
 
-	response, err := h.shiftService.AssignShift(uint(employeeID), req)
+	response, err := h.shiftService.AssignShift(requestContext(ctx), uint(employeeID), req)
 	if err != nil {
 		h.log.Errorf("failed to assign shift: %v", err)
 
@@ -581,7 +581,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 		return
 	}
 
-	response, err := h.shiftService.GetShifts(uint(employeeID))
+	response, err := h.shiftService.GetShifts(requestContext(ctx), uint(employeeID))
 	if err != nil {
 		h.log.Errorf("failed to get shifts for employee ID %d: %v", employeeID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -628,7 +628,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 		return
 	}
 
-	response, err := h.shiftService.GetShiftsAvailability(employeeID, days)
+	response, err := h.shiftService.GetShiftsAvailability(requestContext(ctx), employeeID, days)
 	if err != nil {
 		h.log.Errorf("failed to get shifts availability: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -668,7 +668,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 		return
 	}
 
-	err = h.shiftService.RemoveShift(uint(employeeID), req)
+	err = h.shiftService.RemoveShift(requestContext(ctx), uint(employeeID), req)
 	if err != nil {
 		h.log.Errorf("failed to remove shift: %v", err)
 
@@ -737,7 +737,7 @@ func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
 
 	// For admin, we can get availability for all employees or system-wide availability
 	// For now, let's return system-wide availability (we can use employee ID 1 as a reference)
-	response, err := h.shiftService.GetShiftsAvailability(1, days)
+	response, err := h.shiftService.GetShiftsAvailability(requestContext(ctx), 1, days)
 	if err != nil {
 		h.log.Errorf("failed to get admin shifts availability: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve shifts availability"})
@@ -775,7 +775,7 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 		}
 	}
 
-	employeeResponses, err := h.shiftService.GetOnCallEmployees(time.Now().UTC(), shiftBuffer)
+	employeeResponses, err := h.shiftService.GetOnCallEmployees(requestContext(ctx), time.Now().UTC(), shiftBuffer)
 	if err != nil {
 		h.log.Errorf("Failed to get on-call employees: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve on-call employees"})
@@ -854,7 +854,7 @@ func (h *employeeHandler) GetShiftWarnings(ctx *gin.Context) {
 		return
 	}
 
-	warnings, err := h.shiftService.GetShiftWarnings(uint(employeeID))
+	warnings, err := h.shiftService.GetShiftWarnings(requestContext(ctx), uint(employeeID))
 	if err != nil {
 		h.log.Errorf("failed to get shift warnings for employee ID %d: %v", employeeID, err)
 

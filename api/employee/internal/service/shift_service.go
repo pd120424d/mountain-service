@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -25,21 +26,22 @@ func NewShiftService(log utils.Logger, emplRepo repositories.EmployeeRepository,
 	}
 }
 
-func (s *shiftService) AssignShift(employeeID uint, req employeeV1.AssignShiftRequest) (*employeeV1.AssignShiftResponse, error) {
-	s.log.Infof("Assigning shift for employee ID %d", employeeID)
+func (s *shiftService) AssignShift(ctx context.Context, employeeID uint, req employeeV1.AssignShiftRequest) (*employeeV1.AssignShiftResponse, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Assigning shift for employee ID %d", employeeID)
 
 	// Step 1: Validate employee exists
 	employee := &model.Employee{}
-	err := s.emplRepo.GetEmployeeByID(employeeID, employee)
+	err := s.emplRepo.GetEmployeeByID(ctx, employeeID, employee)
 	if err != nil {
-		s.log.Errorf("failed to get employee: %v", err)
+		log.Errorf("failed to get employee: %v", err)
 		return nil, commonv1.NewAppError("EMPLOYEE_ERRORS.NOT_FOUND", "employee not found", nil)
 	}
 
 	// Step 2: Parse and validate shift date
 	shiftDate, err := time.ParseInLocation("2006-01-02", req.ShiftDate, time.UTC)
 	if err != nil {
-		s.log.Errorf("failed to parse shift date: %v", err)
+		log.Errorf("failed to parse shift date: %v", err)
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_SHIFT_DATE", "invalid shift date format", nil)
 	}
 	// ensure normalized to 00:00:00 UTC
@@ -47,62 +49,62 @@ func (s *shiftService) AssignShift(employeeID uint, req employeeV1.AssignShiftRe
 
 	// Step 3: Validate shift date is in the future
 	if shiftDate.Before(time.Now().UTC().Truncate(24 * time.Hour)) {
-		s.log.Errorf("shift date %s is in the past", req.ShiftDate)
+		log.Errorf("shift date %s is in the past", req.ShiftDate)
 		return nil, commonv1.NewAppError("VALIDATION.SHIFT_IN_PAST", "shift date must be in the future", nil)
 	}
 
 	// Step 4: Validate shift date is within 3 months
 	threeMonthsFromNow := time.Now().UTC().AddDate(0, 3, 0)
 	if shiftDate.After(threeMonthsFromNow) {
-		s.log.Errorf("shift date %s is more than 3 months in the future", req.ShiftDate)
+		log.Errorf("shift date %s is more than 3 months in the future", req.ShiftDate)
 		return nil, commonv1.NewAppError("VALIDATION.SHIFT_TOO_FAR", "shift date cannot be more than 3 months in the future", nil)
 	}
 
 	// Step 5: Check consecutive shifts rule (max 2 consecutive shifts, then 1 day rest)
-	if err := s.validateConsecutiveShifts(employeeID, shiftDate, req.ShiftType); err != nil {
-		s.log.Errorf("consecutive shifts validation failed: %v", err)
+	if err := s.validateConsecutiveShifts(ctx, employeeID, shiftDate, req.ShiftType); err != nil {
+		log.Errorf("consecutive shifts validation failed: %v", err)
 		return nil, err
 	}
 
 	// Step 6: Get or create shift
-	shift, err := s.shiftsRepo.GetOrCreateShift(shiftDate, req.ShiftType)
+	shift, err := s.shiftsRepo.GetOrCreateShift(ctx, shiftDate, req.ShiftType)
 	if err != nil {
-		s.log.Errorf("failed to get or create shift: %v", err)
+		log.Errorf("failed to get or create shift: %v", err)
 		return nil, fmt.Errorf("failed to create shift")
 	}
 
 	// Step 7: Check if employee is already assigned
-	assigned, err := s.shiftsRepo.AssignedToShift(employeeID, shift.ID)
+	assigned, err := s.shiftsRepo.AssignedToShift(ctx, employeeID, shift.ID)
 	if err != nil {
-		s.log.Errorf("failed to check assignment: %v", err)
+		log.Errorf("failed to check assignment: %v", err)
 		return nil, fmt.Errorf("failed to check assignment")
 	}
 	if assigned {
-		s.log.Errorf("employee with ID %d is already assigned to shift ID %d", employeeID, shift.ID)
+		log.Errorf("employee with ID %d is already assigned to shift ID %d", employeeID, shift.ID)
 		return nil, commonv1.NewAppError("SHIFT_ERRORS.ALREADY_ASSIGNED", "employee is already assigned to this shift", nil)
 	}
 
 	// Step 8: Check shift capacity
-	currentCount, err := s.shiftsRepo.CountAssignmentsByProfile(shift.ID, employee.ProfileType)
+	currentCount, err := s.shiftsRepo.CountAssignmentsByProfile(ctx, shift.ID, employee.ProfileType)
 	if err != nil {
-		s.log.Errorf("failed to count assignments: %v", err)
+		log.Errorf("failed to count assignments: %v", err)
 		return nil, fmt.Errorf("failed to check shift capacity")
 	}
 
 	maxCapacity := s.getMaxCapacityForProfile(employee.ProfileType)
 	if currentCount >= int64(maxCapacity) {
-		s.log.Errorf("shift capacity full for profile type %s", employee.ProfileType.String())
+		log.Errorf("shift capacity full for profile type %s", employee.ProfileType.String())
 		return nil, commonv1.NewAppError("SHIFT_ERRORS.CAPACITY_FULL", fmt.Sprintf("shift capacity is full for %s staff", employee.ProfileType.String()), map[string]interface{}{"role": employee.ProfileType.String(), "max": maxCapacity})
 	}
 
 	// Step 9: Create assignment
-	assignmentID, err := s.shiftsRepo.CreateAssignment(employeeID, shift.ID)
+	assignmentID, err := s.shiftsRepo.CreateAssignment(ctx, employeeID, shift.ID)
 	if err != nil {
-		s.log.Errorf("failed to create assignment: %v", err)
+		log.Errorf("failed to create assignment: %v", err)
 		return nil, fmt.Errorf("failed to assign shift")
 	}
 
-	s.log.Infof("Successfully assigned shift for employee ID %d", employeeID)
+	log.Infof("Successfully assigned shift for employee ID %d", employeeID)
 
 	return &employeeV1.AssignShiftResponse{
 		ID:        assignmentID,
@@ -111,16 +113,17 @@ func (s *shiftService) AssignShift(employeeID uint, req employeeV1.AssignShiftRe
 	}, nil
 }
 
-func (s *shiftService) GetShifts(employeeID uint) ([]employeeV1.ShiftResponse, error) {
-	s.log.Infof("Getting shifts for employee ID %d", employeeID)
+func (s *shiftService) GetShifts(ctx context.Context, employeeID uint) ([]employeeV1.ShiftResponse, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Getting shifts for employee ID %d", employeeID)
 
-	rows, err := s.shiftsRepo.GetEmployeeShiftRowsByEmployeeID(employeeID)
+	rows, err := s.shiftsRepo.GetEmployeeShiftRowsByEmployeeID(ctx, employeeID)
 	if err != nil {
-		s.log.Errorf("failed to get shifts for employee ID %d: %v", employeeID, err)
+		log.Errorf("failed to get shifts for employee ID %d: %v", employeeID, err)
 		return nil, fmt.Errorf("failed to retrieve shifts")
 	}
 
-	s.log.Infof("Successfully retrieved %d shifts for employee ID %d", len(rows), employeeID)
+	log.Infof("Successfully retrieved %d shifts for employee ID %d", len(rows), employeeID)
 
 	response := make([]employeeV1.ShiftResponse, 0, len(rows))
 	for _, r := range rows {
@@ -136,20 +139,21 @@ func (s *shiftService) GetShifts(employeeID uint) ([]employeeV1.ShiftResponse, e
 	return response, nil
 }
 
-func (s *shiftService) GetShiftsAvailability(employeeID uint, days int) (*employeeV1.ShiftAvailabilityResponse, error) {
-	s.log.Infof("Getting shift availability for employee %d for %d days", employeeID, days)
+func (s *shiftService) GetShiftsAvailability(ctx context.Context, employeeID uint, days int) (*employeeV1.ShiftAvailabilityResponse, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Getting shift availability for employee %d for %d days", employeeID, days)
 
 	if days <= 0 || days > 90 {
-		s.log.Errorf("invalid days parameter: %d", days)
+		log.Errorf("invalid days parameter: %d", days)
 		return nil, fmt.Errorf("days must be between 1 and 90")
 	}
 
 	start := time.Now().Truncate(24 * time.Hour)
 	end := start.AddDate(0, 0, days)
 
-	availability, err := s.shiftsRepo.GetShiftAvailabilityWithEmployeeStatus(employeeID, start, end)
+	availability, err := s.shiftsRepo.GetShiftAvailabilityWithEmployeeStatus(ctx, employeeID, start, end)
 	if err != nil {
-		s.log.Errorf("failed to get shift availability with employee status: %v", err)
+		log.Errorf("failed to get shift availability with employee status: %v", err)
 		return nil, fmt.Errorf("failed to retrieve shift availability")
 	}
 
@@ -204,37 +208,39 @@ func (s *shiftService) GetShiftsAvailability(employeeID uint, days int) (*employ
 		response.Days[date] = dayAvailability
 	}
 
-	s.log.Infof("Successfully retrieved shift availability for employee %d for %d days", employeeID, days)
+	log.Infof("Successfully retrieved shift availability for employee %d for %d days", employeeID, days)
 	return response, nil
 }
 
-func (s *shiftService) RemoveShift(employeeID uint, req employeeV1.RemoveShiftRequest) error {
-	s.log.Infof("Removing shift for employee ID %d", employeeID)
+func (s *shiftService) RemoveShift(ctx context.Context, employeeID uint, req employeeV1.RemoveShiftRequest) error {
+	log := s.log.WithContext(ctx)
+	log.Infof("Removing shift for employee ID %d", employeeID)
 
 	shiftDate, err := time.ParseInLocation("2006-01-02", req.ShiftDate, time.UTC)
 	if err != nil {
-		s.log.Errorf("failed to parse shift date: %v", err)
+		log.Errorf("failed to parse shift date: %v", err)
 		return commonv1.NewAppError("VALIDATION.INVALID_SHIFT_DATE", "invalid shift date format", nil)
 	}
 	// normalize to midnight UTC for matching persisted shift_date
 	shiftDate = shiftDate.UTC().Truncate(24 * time.Hour)
 
-	err = s.shiftsRepo.RemoveEmployeeFromShiftByDetails(employeeID, shiftDate, req.ShiftType)
+	err = s.shiftsRepo.RemoveEmployeeFromShiftByDetails(ctx, employeeID, shiftDate, req.ShiftType)
 	if err != nil {
-		s.log.Errorf("failed to remove shift: %v", err)
+		log.Errorf("failed to remove shift: %v", err)
 		return fmt.Errorf("failed to remove shift")
 	}
 
-	s.log.Infof("Successfully removed shift for employee ID %d", employeeID)
+	log.Infof("Successfully removed shift for employee ID %d", employeeID)
 	return nil
 }
 
-func (s *shiftService) GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error) {
-	s.log.Infof("Getting on-call employees")
+func (s *shiftService) GetOnCallEmployees(ctx context.Context, currentTime time.Time, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Getting on-call employees")
 
-	employees, err := s.shiftsRepo.GetOnCallEmployees(currentTime, shiftBuffer)
+	employees, err := s.shiftsRepo.GetOnCallEmployees(ctx, currentTime, shiftBuffer)
 	if err != nil {
-		s.log.Errorf("Failed to get on-call employees: %v", err)
+		log.Errorf("Failed to get on-call employees: %v", err)
 		return nil, fmt.Errorf("failed to retrieve on-call employees")
 	}
 
@@ -243,16 +249,17 @@ func (s *shiftService) GetOnCallEmployees(currentTime time.Time, shiftBuffer tim
 		employeeResponses = append(employeeResponses, emp.UpdateResponseFromEmployee())
 	}
 
-	s.log.Infof("Successfully retrieved %d on-call employees", len(employeeResponses))
+	log.Infof("Successfully retrieved %d on-call employees", len(employeeResponses))
 	return employeeResponses, nil
 }
 
-func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
-	s.log.Infof("Getting shift warnings for employee ID %d", employeeID)
+func (s *shiftService) GetShiftWarnings(ctx context.Context, employeeID uint) ([]string, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Getting shift warnings for employee ID %d", employeeID)
 
 	// Check if employee exists
 	employee := &model.Employee{}
-	err := s.emplRepo.GetEmployeeByID(employeeID, employee)
+	err := s.emplRepo.GetEmployeeByID(ctx, employeeID, employee)
 	if err != nil {
 		s.log.Errorf("failed to get employee: %v", err)
 		return nil, commonv1.NewAppError("EMPLOYEE_ERRORS.NOT_FOUND", "employee not found", nil)
@@ -265,7 +272,7 @@ func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
 	end := start.AddDate(0, 0, 14)
 
 	// Check coverage for the employee's role in the next two weeks
-	availability, err := s.shiftsRepo.GetShiftAvailability(start, end)
+	availability, err := s.shiftsRepo.GetShiftAvailability(ctx, start, end)
 	if err != nil {
 		s.log.Errorf("failed to get shift availability: %v", err)
 		return nil, fmt.Errorf("failed to check shift coverage")
@@ -296,15 +303,15 @@ func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
 
 	if !zeroRoleShiftExists {
 		// Adequate baseline coverage for this role; no warnings
-		s.log.Infof("No zero-coverage shifts for role %s in next two weeks; no warnings", employee.ProfileType.String())
+		log.Infof("No zero-coverage shifts for role %s in next two weeks; no warnings", employee.ProfileType.String())
 		return warnings, nil
 	}
 
 	// Compute distinct days scheduled by the employee in the next two weeks (total over 14 days)
 	var employeeShifts []model.Shift
-	err = s.shiftsRepo.GetShiftsByEmployeeIDInDateRange(employeeID, start, end, &employeeShifts)
+	err = s.shiftsRepo.GetShiftsByEmployeeIDInDateRange(ctx, employeeID, start, end, &employeeShifts)
 	if err != nil {
-		s.log.Errorf("failed to get employee shifts: %v", err)
+		log.Errorf("failed to get employee shifts: %v", err)
 		return nil, fmt.Errorf("failed to check employee shifts")
 	}
 
@@ -322,12 +329,13 @@ func (s *shiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
 		warnings = append(warnings, fmt.Sprintf("%s|%d|14|5", model.WarningInsufficientShifts, totalDistinctDays))
 	}
 
-	s.log.Infof("Successfully retrieved %d warnings for employee ID %d", len(warnings), employeeID)
+	log.Infof("Successfully retrieved %d warnings for employee ID %d", len(warnings), employeeID)
 	return warnings, nil
 }
 
-func (s *shiftService) GetAdminShiftsAvailability(days int) (*employeeV1.ShiftAvailabilityResponse, error) {
-	s.log.Infof("Getting admin shifts availability for %d days", days)
+func (s *shiftService) GetAdminShiftsAvailability(ctx context.Context, days int) (*employeeV1.ShiftAvailabilityResponse, error) {
+	log := s.log.WithContext(ctx)
+	log.Infof("Getting admin shifts availability for %d days", days)
 
 	// TODO: we need to return shift availability for all employees here, if it is possible somehow
 	return &employeeV1.ShiftAvailabilityResponse{
@@ -337,13 +345,13 @@ func (s *shiftService) GetAdminShiftsAvailability(days int) (*employeeV1.ShiftAv
 
 // Helper methods
 
-func (s *shiftService) validateConsecutiveShifts(employeeID uint, shiftDate time.Time, shiftType int) error {
+func (s *shiftService) validateConsecutiveShifts(ctx context.Context, employeeID uint, shiftDate time.Time, shiftType int) error {
 	// Build a small window around the candidate date to check adjacency and calendar-day rest rules
 	startDate := shiftDate.AddDate(0, 0, -3)
 	endDate := shiftDate.AddDate(0, 0, 3)
 
 	var shifts []model.Shift
-	if err := s.shiftsRepo.GetShiftsByEmployeeIDInDateRange(employeeID, startDate, endDate, &shifts); err != nil {
+	if err := s.shiftsRepo.GetShiftsByEmployeeIDInDateRange(ctx, employeeID, startDate, endDate, &shifts); err != nil {
 		return fmt.Errorf("failed to get employee shifts: %w", err)
 	}
 

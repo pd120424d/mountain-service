@@ -53,7 +53,7 @@ func (s *employeeService) RegisterEmployee(ctx context.Context, req employeeV1.E
 	usernameFilter := map[string]any{
 		"username": employee.Username,
 	}
-	existingEmployees, err := s.emplRepo.ListEmployees(usernameFilter)
+	existingEmployees, err := s.emplRepo.ListEmployees(ctx, usernameFilter)
 	if err != nil {
 		log.Errorf("failed to register employee, checking for employee with username failed: %v", err)
 		return nil, fmt.Errorf("failed to check for existing username")
@@ -67,7 +67,7 @@ func (s *employeeService) RegisterEmployee(ctx context.Context, req employeeV1.E
 	emailFilter := map[string]any{
 		"email": employee.Email,
 	}
-	existingEmployees, err = s.emplRepo.ListEmployees(emailFilter)
+	existingEmployees, err = s.emplRepo.ListEmployees(ctx, emailFilter)
 	if err != nil {
 		log.Errorf("failed to register employee, checking for employee with email failed: %v", err)
 		return nil, fmt.Errorf("failed to check for existing email")
@@ -84,7 +84,7 @@ func (s *employeeService) RegisterEmployee(ctx context.Context, req employeeV1.E
 	}
 
 	// Create employee
-	if err := s.emplRepo.Create(&employee); err != nil {
+	if err := s.emplRepo.Create(ctx, &employee); err != nil {
 		log.Errorf("failed to create employee: %v", err)
 		// Propagate specific database errors
 		if strings.Contains(err.Error(), "invalid db") {
@@ -113,7 +113,7 @@ func (s *employeeService) LoginEmployee(ctx context.Context, req employeeV1.Empl
 	log := s.log.WithContext(ctx)
 	log.Info("Processing employee login")
 
-	employee, err := s.emplRepo.GetEmployeeByUsername(req.Username)
+	employee, err := s.emplRepo.GetEmployeeByUsername(ctx, req.Username)
 	if err != nil {
 		log.Errorf("failed to retrieve employee: %v", err)
 		return "", fmt.Errorf("invalid credentials")
@@ -156,7 +156,7 @@ func (s *employeeService) ListEmployees(ctx context.Context) ([]employeeV1.Emplo
 	log := s.log.WithContext(ctx)
 	log.Info("Retrieving list of employees")
 
-	employees, err := s.emplRepo.GetAll()
+	employees, err := s.emplRepo.GetAll(ctx)
 	if err != nil {
 		log.Errorf("failed to retrieve employees: %v", err)
 		// Propagate specific database errors
@@ -190,14 +190,14 @@ func (s *employeeService) UpdateEmployee(ctx context.Context, employeeID uint, r
 	log.Infof("Updating employee with ID %d", employeeID)
 
 	var employee model.Employee
-	if err := s.emplRepo.GetEmployeeByID(employeeID, &employee); err != nil {
+	if err := s.emplRepo.GetEmployeeByID(ctx, employeeID, &employee); err != nil {
 		log.Errorf("failed to get employee: %v", err)
 		return nil, fmt.Errorf("employee not found")
 	}
 
 	model.MapUpdateRequestToEmployee(&req, &employee)
 
-	if err := s.emplRepo.UpdateEmployee(&employee); err != nil {
+	if err := s.emplRepo.UpdateEmployee(ctx, &employee); err != nil {
 		log.Errorf("failed to update employee: %v", err)
 		return nil, fmt.Errorf("failed to update employee")
 	}
@@ -211,7 +211,7 @@ func (s *employeeService) DeleteEmployee(ctx context.Context, employeeID uint) e
 	log := s.log.WithContext(ctx)
 	log.Infof("Deleting employee with ID %d", employeeID)
 
-	if err := s.emplRepo.Delete(employeeID); err != nil {
+	if err := s.emplRepo.Delete(ctx, employeeID); err != nil {
 		log.Errorf("failed to delete employee: %v", err)
 		return fmt.Errorf("failed to delete employee")
 	}
@@ -225,7 +225,7 @@ func (s *employeeService) GetEmployeeByID(ctx context.Context, employeeID uint) 
 	log.Infof("Getting employee by ID %d", employeeID)
 
 	var employee model.Employee
-	if err := s.emplRepo.GetEmployeeByID(employeeID, &employee); err != nil {
+	if err := s.emplRepo.GetEmployeeByID(ctx, employeeID, &employee); err != nil {
 		log.Errorf("failed to get employee: %v", err)
 		return nil, fmt.Errorf("employee not found")
 	}
@@ -237,7 +237,7 @@ func (s *employeeService) GetEmployeeByUsername(ctx context.Context, username st
 	log := s.log.WithContext(ctx)
 	log.Infof("Getting employee by username %s", username)
 
-	employee, err := s.emplRepo.GetEmployeeByUsername(username)
+	employee, err := s.emplRepo.GetEmployeeByUsername(ctx, username)
 	if err != nil {
 		log.Errorf("failed to get employee: %v", err)
 		return nil, fmt.Errorf("employee not found")
@@ -250,7 +250,7 @@ func (s *employeeService) ResetAllData(ctx context.Context) error {
 	log := s.log.WithContext(ctx)
 	log.Warn("Resetting all employee data")
 
-	err := s.emplRepo.ResetAllData()
+	err := s.emplRepo.ResetAllData(ctx)
 	if err != nil {
 		log.Errorf("Failed to reset all data: %v", err)
 		return fmt.Errorf("failed to reset data")

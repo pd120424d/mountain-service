@@ -44,107 +44,107 @@ func (m *MockShiftService) EXPECT() *MockShiftServiceMockRecorder {
 }
 
 // AssignShift mocks base method.
-func (m *MockShiftService) AssignShift(employeeID uint, req v1.AssignShiftRequest) (*v1.AssignShiftResponse, error) {
+func (m *MockShiftService) AssignShift(ctx context.Context, employeeID uint, req v1.AssignShiftRequest) (*v1.AssignShiftResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AssignShift", employeeID, req)
+	ret := m.ctrl.Call(m, "AssignShift", ctx, employeeID, req)
 	ret0, _ := ret[0].(*v1.AssignShiftResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AssignShift indicates an expected call of AssignShift.
-func (mr *MockShiftServiceMockRecorder) AssignShift(employeeID, req any) *gomock.Call {
+func (mr *MockShiftServiceMockRecorder) AssignShift(ctx, employeeID, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignShift", reflect.TypeOf((*MockShiftService)(nil).AssignShift), employeeID, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignShift", reflect.TypeOf((*MockShiftService)(nil).AssignShift), ctx, employeeID, req)
 }
 
 // GetAdminShiftsAvailability mocks base method.
-func (m *MockShiftService) GetAdminShiftsAvailability(days int) (*v1.ShiftAvailabilityResponse, error) {
+func (m *MockShiftService) GetAdminShiftsAvailability(ctx context.Context, days int) (*v1.ShiftAvailabilityResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdminShiftsAvailability", days)
+	ret := m.ctrl.Call(m, "GetAdminShiftsAvailability", ctx, days)
 	ret0, _ := ret[0].(*v1.ShiftAvailabilityResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAdminShiftsAvailability indicates an expected call of GetAdminShiftsAvailability.
-func (mr *MockShiftServiceMockRecorder) GetAdminShiftsAvailability(days any) *gomock.Call {
+func (mr *MockShiftServiceMockRecorder) GetAdminShiftsAvailability(ctx, days any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminShiftsAvailability", reflect.TypeOf((*MockShiftService)(nil).GetAdminShiftsAvailability), days)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminShiftsAvailability", reflect.TypeOf((*MockShiftService)(nil).GetAdminShiftsAvailability), ctx, days)
 }
 
 // GetOnCallEmployees mocks base method.
-func (m *MockShiftService) GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]v1.EmployeeResponse, error) {
+func (m *MockShiftService) GetOnCallEmployees(ctx context.Context, currentTime time.Time, shiftBuffer time.Duration) ([]v1.EmployeeResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOnCallEmployees", currentTime, shiftBuffer)
+	ret := m.ctrl.Call(m, "GetOnCallEmployees", ctx, currentTime, shiftBuffer)
 	ret0, _ := ret[0].([]v1.EmployeeResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOnCallEmployees indicates an expected call of GetOnCallEmployees.
-func (mr *MockShiftServiceMockRecorder) GetOnCallEmployees(currentTime, shiftBuffer any) *gomock.Call {
+func (mr *MockShiftServiceMockRecorder) GetOnCallEmployees(ctx, currentTime, shiftBuffer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOnCallEmployees", reflect.TypeOf((*MockShiftService)(nil).GetOnCallEmployees), currentTime, shiftBuffer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOnCallEmployees", reflect.TypeOf((*MockShiftService)(nil).GetOnCallEmployees), ctx, currentTime, shiftBuffer)
 }
 
 // GetShiftWarnings mocks base method.
-func (m *MockShiftService) GetShiftWarnings(employeeID uint) ([]string, error) {
+func (m *MockShiftService) GetShiftWarnings(ctx context.Context, employeeID uint) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetShiftWarnings", employeeID)
+	ret := m.ctrl.Call(m, "GetShiftWarnings", ctx, employeeID)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetShiftWarnings indicates an expected call of GetShiftWarnings.
-func (mr *MockShiftServiceMockRecorder) GetShiftWarnings(employeeID any) *gomock.Call {
+func (mr *MockShiftServiceMockRecorder) GetShiftWarnings(ctx, employeeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftWarnings", reflect.TypeOf((*MockShiftService)(nil).GetShiftWarnings), employeeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftWarnings", reflect.TypeOf((*MockShiftService)(nil).GetShiftWarnings), ctx, employeeID)
 }
 
 // GetShifts mocks base method.
-func (m *MockShiftService) GetShifts(employeeID uint) ([]v1.ShiftResponse, error) {
+func (m *MockShiftService) GetShifts(ctx context.Context, employeeID uint) ([]v1.ShiftResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetShifts", employeeID)
+	ret := m.ctrl.Call(m, "GetShifts", ctx, employeeID)
 	ret0, _ := ret[0].([]v1.ShiftResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetShifts indicates an expected call of GetShifts.
-func (mr *MockShiftServiceMockRecorder) GetShifts(employeeID any) *gomock.Call {
+func (mr *MockShiftServiceMockRecorder) GetShifts(ctx, employeeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShifts", reflect.TypeOf((*MockShiftService)(nil).GetShifts), employeeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShifts", reflect.TypeOf((*MockShiftService)(nil).GetShifts), ctx, employeeID)
 }
 
 // GetShiftsAvailability mocks base method.
-func (m *MockShiftService) GetShiftsAvailability(employeeID uint, days int) (*v1.ShiftAvailabilityResponse, error) {
+func (m *MockShiftService) GetShiftsAvailability(ctx context.Context, employeeID uint, days int) (*v1.ShiftAvailabilityResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetShiftsAvailability", employeeID, days)
+	ret := m.ctrl.Call(m, "GetShiftsAvailability", ctx, employeeID, days)
 	ret0, _ := ret[0].(*v1.ShiftAvailabilityResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetShiftsAvailability indicates an expected call of GetShiftsAvailability.
-func (mr *MockShiftServiceMockRecorder) GetShiftsAvailability(employeeID, days any) *gomock.Call {
+func (mr *MockShiftServiceMockRecorder) GetShiftsAvailability(ctx, employeeID, days any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftsAvailability", reflect.TypeOf((*MockShiftService)(nil).GetShiftsAvailability), employeeID, days)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShiftsAvailability", reflect.TypeOf((*MockShiftService)(nil).GetShiftsAvailability), ctx, employeeID, days)
 }
 
 // RemoveShift mocks base method.
-func (m *MockShiftService) RemoveShift(employeeID uint, req v1.RemoveShiftRequest) error {
+func (m *MockShiftService) RemoveShift(ctx context.Context, employeeID uint, req v1.RemoveShiftRequest) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveShift", employeeID, req)
+	ret := m.ctrl.Call(m, "RemoveShift", ctx, employeeID, req)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveShift indicates an expected call of RemoveShift.
-func (mr *MockShiftServiceMockRecorder) RemoveShift(employeeID, req any) *gomock.Call {
+func (mr *MockShiftServiceMockRecorder) RemoveShift(ctx, employeeID, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveShift", reflect.TypeOf((*MockShiftService)(nil).RemoveShift), employeeID, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveShift", reflect.TypeOf((*MockShiftService)(nil).RemoveShift), ctx, employeeID, req)
 }
 
 // MockEmployeeService is a mock of EmployeeService interface.

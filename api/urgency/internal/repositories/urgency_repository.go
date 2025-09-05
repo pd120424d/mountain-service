@@ -50,6 +50,7 @@ func (r *urgencyRepository) Create(ctx context.Context, urgency *model.Urgency) 
 }
 
 func (r *urgencyRepository) GetAll(ctx context.Context) ([]model.Urgency, error) {
+	defer utils.TimeOperation(ctx, r.log, "UrgencyRepository.GetAll")()
 	var urgencies []model.Urgency
 	err := r.dbRead.WithContext(ctx).Where("deleted_at IS NULL").Find(&urgencies).Error
 	return urgencies, err
@@ -126,13 +127,8 @@ func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSiz
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	orderExpr := "CASE " +
-		"WHEN status = 'open' AND assigned_employee_id IS NULL THEN 0 " +
-		"WHEN status = 'open' AND assigned_employee_id IS NOT NULL THEN 1 " +
-		"WHEN status = 'in_progress' THEN 2 " +
-		"WHEN status = 'resolved' THEN 3 " +
-		"WHEN status = 'closed' THEN 4 " +
-		"ELSE 5 END ASC, created_at DESC"
+	// Prefer indexed business sort via sort_priority if present; fallback to CASE for safety
+	orderExpr := "sort_priority ASC, created_at DESC"
 	if err := q.Order(orderExpr).Limit(pageSize).Offset(offset).Find(&urgencies).Error; err != nil {
 		return nil, 0, err
 	}

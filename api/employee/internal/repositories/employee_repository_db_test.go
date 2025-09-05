@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"context"
+
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
@@ -70,13 +72,13 @@ func TestEmployeeRepository_Create(t *testing.T) {
 		log.Infof("type from test: %T\n", employee.ProfileType)
 		log.Infof("type in SQL: %T\n", employee.ProfileType.String())
 
-		err := repo.Create(employee)
+		err := repo.Create(context.Background(), employee)
 		assert.NoError(t, err)
 	})
 
 	t.Run("it returns an error when password is too long and hashing failes", func(t *testing.T) {
 		employee.Password = "verylongpasswordthatexceedstheallowedlength"
-		err := repo.Create(employee)
+		err := repo.Create(context.Background(), employee)
 		assert.Error(t, err)
 	})
 }
@@ -91,7 +93,7 @@ func TestEmployeeRepository_GetAll(t *testing.T) {
 		gormDB.Create(&model.Employee{Username: "test-user", FirstName: "Bruce", Email: "test-user@example.com", LastName: "Lee", Password: "Pass123!"})
 		gormDB.Create(&model.Employee{Username: "asmith", FirstName: "Alice", Email: "asmith@example.com", LastName: "Markovic", Password: "Pass123!"})
 
-		employees, err := repo.GetAll()
+		employees, err := repo.GetAll(context.Background())
 		assert.NoError(t, err)
 		assert.Len(t, employees, 2)
 	})
@@ -107,7 +109,7 @@ func TestEmployeeRepository_GetEmployeeByID(t *testing.T) {
 		gormDB.Create(&model.Employee{Username: "test-user", FirstName: "Bruce", LastName: "Lee", Password: "Pass123!"})
 
 		var employee model.Employee
-		err := repo.GetEmployeeByID(1, &employee)
+		err := repo.GetEmployeeByID(context.Background(), 1, &employee)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "test-user", employee.Username)
@@ -123,7 +125,7 @@ func TestEmployeeRepository_GetEmployeeByUsername(t *testing.T) {
 	t.Run("it returns an employee when it exists", func(t *testing.T) {
 		gormDB.Create(&model.Employee{Username: "test-user", FirstName: "Bruce", LastName: "Lee", Password: "Pass123!"})
 
-		employee, err := repo.GetEmployeeByUsername("test-user")
+		employee, err := repo.GetEmployeeByUsername(context.Background(), "test-user")
 
 		assert.NoError(t, err)
 		assert.Equal(t, "test-user", employee.Username)
@@ -196,7 +198,7 @@ func TestEmployeeRepository_ListEmployees(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
-			employees, err := repo.ListEmployees(test.filters)
+			employees, err := repo.ListEmployees(context.Background(), test.filters)
 
 			assert.NoError(t, err)
 
@@ -226,7 +228,7 @@ func TestEmployeeRepository_UpdateEmployee(t *testing.T) {
 			Phone:     "123456789",
 		}
 
-		err := repo.UpdateEmployee(employee)
+		err := repo.UpdateEmployee(context.Background(), employee)
 		assert.NoError(t, err)
 	})
 }
@@ -240,13 +242,13 @@ func TestEmployeeRepository_Delete(t *testing.T) {
 	t.Run("it deletes an employee when it exists", func(t *testing.T) {
 		gormDB.Create(&model.Employee{Username: "test-user", FirstName: "Bruce", LastName: "Lee", Password: "Pass123!"})
 
-		err := repo.Delete(1)
+		err := repo.Delete(context.Background(), 1)
 		assert.NoError(t, err)
 	})
 
 	t.Run("it returns an error when employee Lees not exist", func(t *testing.T) {
 
-		err := repo.Delete(999)
+		err := repo.Delete(context.Background(), 999)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 }

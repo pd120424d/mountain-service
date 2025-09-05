@@ -12,14 +12,14 @@ import (
 
 // ShiftService handles all shift-related operations
 type ShiftService interface {
-	AssignShift(employeeID uint, req employeeV1.AssignShiftRequest) (*employeeV1.AssignShiftResponse, error)
-	GetShifts(employeeID uint) ([]employeeV1.ShiftResponse, error)
-	GetShiftsAvailability(employeeID uint, days int) (*employeeV1.ShiftAvailabilityResponse, error)
-	RemoveShift(employeeID uint, req employeeV1.RemoveShiftRequest) error
-	GetOnCallEmployees(currentTime time.Time, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error)
-	GetShiftWarnings(employeeID uint) ([]string, error)
+	AssignShift(ctx context.Context, employeeID uint, req employeeV1.AssignShiftRequest) (*employeeV1.AssignShiftResponse, error)
+	GetShifts(ctx context.Context, employeeID uint) ([]employeeV1.ShiftResponse, error)
+	GetShiftsAvailability(ctx context.Context, employeeID uint, days int) (*employeeV1.ShiftAvailabilityResponse, error)
+	RemoveShift(ctx context.Context, employeeID uint, req employeeV1.RemoveShiftRequest) error
+	GetOnCallEmployees(ctx context.Context, currentTime time.Time, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error)
+	GetShiftWarnings(ctx context.Context, employeeID uint) ([]string, error)
 
-	GetAdminShiftsAvailability(days int) (*employeeV1.ShiftAvailabilityResponse, error)
+	GetAdminShiftsAvailability(ctx context.Context, days int) (*employeeV1.ShiftAvailabilityResponse, error)
 }
 
 // EmployeeService handles employee CRUD operations

@@ -5,6 +5,7 @@
 package repositories
 
 import (
+	"context"
 	reflect "reflect"
 	time "time"
 
@@ -36,144 +37,144 @@ func (m *MockNotificationRepository) EXPECT() *MockNotificationRepositoryMockRec
 }
 
 // Create mocks base method.
-func (m *MockNotificationRepository) Create(notification *model.Notification) error {
+func (m *MockNotificationRepository) Create(ctx context.Context, notification *model.Notification) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", notification)
+	ret := m.ctrl.Call(m, "Create", ctx, notification)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockNotificationRepositoryMockRecorder) Create(notification interface{}) *gomock.Call {
+func (mr *MockNotificationRepositoryMockRecorder) Create(ctx, notification interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockNotificationRepository)(nil).Create), notification)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockNotificationRepository)(nil).Create), ctx, notification)
 }
 
 // Delete mocks base method.
-func (m *MockNotificationRepository) Delete(id uint) error {
+func (m *MockNotificationRepository) Delete(ctx context.Context, id uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockNotificationRepositoryMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockNotificationRepositoryMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockNotificationRepository)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockNotificationRepository)(nil).Delete), ctx, id)
 }
 
 // GetByEmployeeID mocks base method.
-func (m *MockNotificationRepository) GetByEmployeeID(employeeID uint) ([]model.Notification, error) {
+func (m *MockNotificationRepository) GetByEmployeeID(ctx context.Context, employeeID uint) ([]model.Notification, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByEmployeeID", employeeID)
+	ret := m.ctrl.Call(m, "GetByEmployeeID", ctx, employeeID)
 	ret0, _ := ret[0].([]model.Notification)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByEmployeeID indicates an expected call of GetByEmployeeID.
-func (mr *MockNotificationRepositoryMockRecorder) GetByEmployeeID(employeeID interface{}) *gomock.Call {
+func (mr *MockNotificationRepositoryMockRecorder) GetByEmployeeID(ctx, employeeID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByEmployeeID", reflect.TypeOf((*MockNotificationRepository)(nil).GetByEmployeeID), employeeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByEmployeeID", reflect.TypeOf((*MockNotificationRepository)(nil).GetByEmployeeID), ctx, employeeID)
 }
 
 // GetByID mocks base method.
-func (m *MockNotificationRepository) GetByID(id uint, notification *model.Notification) error {
+func (m *MockNotificationRepository) GetByID(ctx context.Context, id uint, notification *model.Notification) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByID", id, notification)
+	ret := m.ctrl.Call(m, "GetByID", ctx, id, notification)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // GetByID indicates an expected call of GetByID.
-func (mr *MockNotificationRepositoryMockRecorder) GetByID(id, notification interface{}) *gomock.Call {
+func (mr *MockNotificationRepositoryMockRecorder) GetByID(ctx, id, notification interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockNotificationRepository)(nil).GetByID), id, notification)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockNotificationRepository)(nil).GetByID), ctx, id, notification)
 }
 
 // GetByUrgencyID mocks base method.
-func (m *MockNotificationRepository) GetByUrgencyID(urgencyID uint) ([]model.Notification, error) {
+func (m *MockNotificationRepository) GetByUrgencyID(ctx context.Context, urgencyID uint) ([]model.Notification, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByUrgencyID", urgencyID)
+	ret := m.ctrl.Call(m, "GetByUrgencyID", ctx, urgencyID)
 	ret0, _ := ret[0].([]model.Notification)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByUrgencyID indicates an expected call of GetByUrgencyID.
-func (mr *MockNotificationRepositoryMockRecorder) GetByUrgencyID(urgencyID interface{}) *gomock.Call {
+func (mr *MockNotificationRepositoryMockRecorder) GetByUrgencyID(ctx, urgencyID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByUrgencyID", reflect.TypeOf((*MockNotificationRepository)(nil).GetByUrgencyID), urgencyID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByUrgencyID", reflect.TypeOf((*MockNotificationRepository)(nil).GetByUrgencyID), ctx, urgencyID)
 }
 
 // GetPendingNotifications mocks base method.
-func (m *MockNotificationRepository) GetPendingNotifications(limit int) ([]model.Notification, error) {
+func (m *MockNotificationRepository) GetPendingNotifications(ctx context.Context, limit int) ([]model.Notification, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPendingNotifications", limit)
+	ret := m.ctrl.Call(m, "GetPendingNotifications", ctx, limit)
 	ret0, _ := ret[0].([]model.Notification)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPendingNotifications indicates an expected call of GetPendingNotifications.
-func (mr *MockNotificationRepositoryMockRecorder) GetPendingNotifications(limit interface{}) *gomock.Call {
+func (mr *MockNotificationRepositoryMockRecorder) GetPendingNotifications(ctx, limit interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingNotifications", reflect.TypeOf((*MockNotificationRepository)(nil).GetPendingNotifications), limit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingNotifications", reflect.TypeOf((*MockNotificationRepository)(nil).GetPendingNotifications), ctx, limit)
 }
 
 // IncrementAttempts mocks base method.
-func (m *MockNotificationRepository) IncrementAttempts(id uint) error {
+func (m *MockNotificationRepository) IncrementAttempts(ctx context.Context, id uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncrementAttempts", id)
+	ret := m.ctrl.Call(m, "IncrementAttempts", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // IncrementAttempts indicates an expected call of IncrementAttempts.
-func (mr *MockNotificationRepositoryMockRecorder) IncrementAttempts(id interface{}) *gomock.Call {
+func (mr *MockNotificationRepositoryMockRecorder) IncrementAttempts(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementAttempts", reflect.TypeOf((*MockNotificationRepository)(nil).IncrementAttempts), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementAttempts", reflect.TypeOf((*MockNotificationRepository)(nil).IncrementAttempts), ctx, id)
 }
 
 // MarkAsFailed mocks base method.
-func (m *MockNotificationRepository) MarkAsFailed(id uint, errorMessage string) error {
+func (m *MockNotificationRepository) MarkAsFailed(ctx context.Context, id uint, errorMessage string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkAsFailed", id, errorMessage)
+	ret := m.ctrl.Call(m, "MarkAsFailed", ctx, id, errorMessage)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MarkAsFailed indicates an expected call of MarkAsFailed.
-func (mr *MockNotificationRepositoryMockRecorder) MarkAsFailed(id, errorMessage interface{}) *gomock.Call {
+func (mr *MockNotificationRepositoryMockRecorder) MarkAsFailed(ctx, id, errorMessage interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsFailed", reflect.TypeOf((*MockNotificationRepository)(nil).MarkAsFailed), id, errorMessage)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsFailed", reflect.TypeOf((*MockNotificationRepository)(nil).MarkAsFailed), ctx, id, errorMessage)
 }
 
 // MarkAsSent mocks base method.
-func (m *MockNotificationRepository) MarkAsSent(id uint, sentAt time.Time) error {
+func (m *MockNotificationRepository) MarkAsSent(ctx context.Context, id uint, sentAt time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkAsSent", id, sentAt)
+	ret := m.ctrl.Call(m, "MarkAsSent", ctx, id, sentAt)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MarkAsSent indicates an expected call of MarkAsSent.
-func (mr *MockNotificationRepositoryMockRecorder) MarkAsSent(id, sentAt interface{}) *gomock.Call {
+func (mr *MockNotificationRepositoryMockRecorder) MarkAsSent(ctx, id, sentAt interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsSent", reflect.TypeOf((*MockNotificationRepository)(nil).MarkAsSent), id, sentAt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsSent", reflect.TypeOf((*MockNotificationRepository)(nil).MarkAsSent), ctx, id, sentAt)
 }
 
 // Update mocks base method.
-func (m *MockNotificationRepository) Update(notification *model.Notification) error {
+func (m *MockNotificationRepository) Update(ctx context.Context, notification *model.Notification) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", notification)
+	ret := m.ctrl.Call(m, "Update", ctx, notification)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockNotificationRepositoryMockRecorder) Update(notification interface{}) *gomock.Call {
+func (mr *MockNotificationRepositoryMockRecorder) Update(ctx, notification interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockNotificationRepository)(nil).Update), notification)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockNotificationRepository)(nil).Update), ctx, notification)
 }

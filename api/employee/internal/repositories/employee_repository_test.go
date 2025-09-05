@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"database/sql/driver"
 	"fmt"
 	"slices"
@@ -104,7 +105,7 @@ func TestEmployeeRepositoryMockDB_ListEmployees(t *testing.T) {
 				WithArgs(expectedArgs...).
 				WillReturnRows(rowsToReturn)
 
-			employees, err := repo.ListEmployees(test.filters)
+			employees, err := repo.ListEmployees(context.Background(), test.filters)
 
 			assert.NoError(t, err)
 
@@ -114,7 +115,7 @@ func TestEmployeeRepositoryMockDB_ListEmployees(t *testing.T) {
 	}
 
 	t.Run("it returns an error when filter is invalid", func(t *testing.T) {
-		employees, err := repo.ListEmployees(map[string]any{"invalid": "invalid"})
+		employees, err := repo.ListEmployees(context.Background(), map[string]any{"invalid": "invalid"})
 
 		assert.Error(t, err)
 		assert.Equal(t, "invalid filter key: invalid", err.Error())
@@ -125,7 +126,7 @@ func TestEmployeeRepositoryMockDB_ListEmployees(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM "employees"`).
 			WillReturnError(sqlmock.ErrCancelled)
 
-		employees, err := repo.ListEmployees(map[string]any{})
+		employees, err := repo.ListEmployees(context.Background(), map[string]any{})
 
 		assert.Error(t, err)
 		assert.Nil(t, employees)
@@ -144,7 +145,7 @@ func TestEmployeeRepositoryMockDB_Delete(t *testing.T) {
 			WithArgs(999, 1).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		err := repo.Delete(999)
+		err := repo.Delete(context.Background(), 999)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -161,7 +162,7 @@ func TestEmployeeRepositoryMockDB_Delete(t *testing.T) {
 			WillReturnError(sqlmock.ErrCancelled)
 		mock.ExpectRollback()
 
-		err := repo.Delete(1)
+		err := repo.Delete(context.Background(), 1)
 		assert.Error(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -181,7 +182,7 @@ func TestEmployeeRepositoryMockDB_ResetAllData(t *testing.T) {
 			WillReturnError(sqlmock.ErrCancelled)
 		mock.ExpectRollback()
 
-		err := repo.ResetAllData()
+		err := repo.ResetAllData(context.Background())
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "canceling query due to user request")
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -198,7 +199,7 @@ func TestEmployeeRepositoryMockDB_ResetAllData(t *testing.T) {
 			WillReturnError(sqlmock.ErrCancelled)
 		mock.ExpectRollback()
 
-		err := repo.ResetAllData()
+		err := repo.ResetAllData(context.Background())
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "canceling query due to user request")
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -220,7 +221,7 @@ func TestEmployeeRepositoryMockDB_ResetAllData(t *testing.T) {
 			WillReturnError(sqlmock.ErrCancelled)
 		mock.ExpectRollback()
 
-		err := repo.ResetAllData()
+		err := repo.ResetAllData(context.Background())
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "canceling query due to user request")
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -242,7 +243,7 @@ func TestEmployeeRepositoryMockDB_ResetAllData(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(0, 2))
 		mock.ExpectCommit()
 
-		err := repo.ResetAllData()
+		err := repo.ResetAllData(context.Background())
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})

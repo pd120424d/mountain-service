@@ -24,6 +24,10 @@ type Urgency struct {
 
 	AssignedEmployeeID *uint      `gorm:"index"`
 	AssignedAt         *time.Time `gorm:"index"`
+
+	// SortPriority is a denormalized, indexed field used to implement sorting efficiently.
+	// 0: open & unassigned, 1: open & assigned, 2: in_progress, 3: resolved, 4: closed, 5: other
+	SortPriority int `gorm:"not null;default:5;index"`
 }
 
 type (

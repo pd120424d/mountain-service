@@ -66,7 +66,7 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		existingEmployees := []model.Employee{
 			{ID: 1, Username: "testuser"},
 		}
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return(existingEmployees, nil)
+		emplRepoMock.EXPECT().ListEmployees(gomock.Any(), gomock.Any()).Return(existingEmployees, nil)
 
 		response, err := service.RegisterEmployee(context.Background(), req)
 
@@ -94,13 +94,13 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		}
 
 		// Mock username check (no existing username)
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{}, nil)
+		emplRepoMock.EXPECT().ListEmployees(gomock.Any(), gomock.Any()).Return([]model.Employee{}, nil)
 
 		// Mock existing email check
 		existingEmployees := []model.Employee{
 			{ID: 1, Email: "test@example.com"},
 		}
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return(existingEmployees, nil)
+		emplRepoMock.EXPECT().ListEmployees(gomock.Any(), gomock.Any()).Return(existingEmployees, nil)
 
 		response, err := service.RegisterEmployee(context.Background(), req)
 
@@ -128,9 +128,9 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		}
 
 		// Mock username check (no existing users)
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{}, nil)
+		emplRepoMock.EXPECT().ListEmployees(gomock.Any(), gomock.Any()).Return([]model.Employee{}, nil)
 		// Mock email check (no existing users)
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{}, nil)
+		emplRepoMock.EXPECT().ListEmployees(gomock.Any(), gomock.Any()).Return([]model.Employee{}, nil)
 
 		response, err := service.RegisterEmployee(context.Background(), req)
 
@@ -158,11 +158,11 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		}
 
 		// Mock username check (no existing users)
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{}, nil)
+		emplRepoMock.EXPECT().ListEmployees(gomock.Any(), gomock.Any()).Return([]model.Employee{}, nil)
 		// Mock email check (no existing users)
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{}, nil)
+		emplRepoMock.EXPECT().ListEmployees(gomock.Any(), gomock.Any()).Return([]model.Employee{}, nil)
 		// Mock database creation failure
-		emplRepoMock.EXPECT().Create(gomock.Any()).Return(assert.AnError)
+		emplRepoMock.EXPECT().Create(gomock.Any(), gomock.Any()).Return(assert.AnError)
 
 		response, err := service.RegisterEmployee(context.Background(), req)
 
@@ -191,13 +191,13 @@ func TestEmployeeService_RegisterEmployee(t *testing.T) {
 		}
 
 		// Mock username check (no existing username)
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{}, nil)
+		emplRepoMock.EXPECT().ListEmployees(gomock.Any(), gomock.Any()).Return([]model.Employee{}, nil)
 
 		// Mock email check (no existing email)
-		emplRepoMock.EXPECT().ListEmployees(gomock.Any()).Return([]model.Employee{}, nil)
+		emplRepoMock.EXPECT().ListEmployees(gomock.Any(), gomock.Any()).Return([]model.Employee{}, nil)
 
 		// Mock successful creation
-		emplRepoMock.EXPECT().Create(gomock.Any()).DoAndReturn(func(emp *model.Employee) error {
+		emplRepoMock.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, emp *model.Employee) error {
 			emp.ID = 1 // Simulate database assigning ID
 			return nil
 		})
@@ -234,7 +234,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 			Password: "Pass123!",
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByUsername("nonexistent").Return(nil, assert.AnError)
+		emplRepoMock.EXPECT().GetEmployeeByUsername(gomock.Any(), "nonexistent").Return(nil, assert.AnError)
 
 		token, err := service.LoginEmployee(context.Background(), req)
 
@@ -264,7 +264,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 			Password: "$2a$10$differenthashvalue", // Different hash that won't match
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByUsername("testuser").Return(employee, nil)
+		emplRepoMock.EXPECT().GetEmployeeByUsername(gomock.Any(), "testuser").Return(employee, nil)
 
 		token, err := service.LoginEmployee(context.Background(), req)
 
@@ -287,7 +287,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 			Password: "Pass123!",
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByUsername("testuser").Return(nil, assert.AnError)
+		emplRepoMock.EXPECT().GetEmployeeByUsername(gomock.Any(), "testuser").Return(nil, assert.AnError)
 
 		token, err := service.LoginEmployee(context.Background(), req)
 
@@ -317,7 +317,7 @@ func TestEmployeeService_LoginEmployee(t *testing.T) {
 			Password: "$2a$10$umEwWgSPqYCkyOEuAMNd7.1mmhRhJVZ3JO1AFq8Z/3bM6uRrwFgDC", // "Pass123!" hashed
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByUsername("testuser").Return(employee, nil)
+		emplRepoMock.EXPECT().GetEmployeeByUsername(gomock.Any(), "testuser").Return(employee, nil)
 
 		token, err := service.LoginEmployee(context.Background(), req)
 
@@ -402,7 +402,7 @@ func TestEmployeeService_ListEmployees(t *testing.T) {
 
 		service := NewEmployeeService(log, emplRepoMock, nil)
 
-		emplRepoMock.EXPECT().GetAll().Return(nil, assert.AnError)
+		emplRepoMock.EXPECT().GetAll(gomock.Any()).Return(nil, assert.AnError)
 
 		employees, err := service.ListEmployees(context.Background())
 
@@ -439,7 +439,7 @@ func TestEmployeeService_ListEmployees(t *testing.T) {
 			},
 		}
 
-		emplRepoMock.EXPECT().GetAll().Return(employees, nil)
+		emplRepoMock.EXPECT().GetAll(gomock.Any()).Return(employees, nil)
 
 		response, err := service.ListEmployees(context.Background())
 
@@ -471,7 +471,7 @@ func TestEmployeeService_UpdateEmployee(t *testing.T) {
 			FirstName: "Updated",
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(assert.AnError)
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
 
 		response, err := service.UpdateEmployee(context.Background(), 1, req)
 
@@ -501,12 +501,12 @@ func TestEmployeeService_UpdateEmployee(t *testing.T) {
 			FirstName: "Original",
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = employee
 			return nil
 		})
 
-		emplRepoMock.EXPECT().UpdateEmployee(gomock.Any()).Return(assert.AnError)
+		emplRepoMock.EXPECT().UpdateEmployee(gomock.Any(), gomock.Any()).Return(assert.AnError)
 
 		response, err := service.UpdateEmployee(context.Background(), 1, req)
 
@@ -536,12 +536,12 @@ func TestEmployeeService_UpdateEmployee(t *testing.T) {
 			LastName:  "Name",
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = employee
 			return nil
 		})
 
-		emplRepoMock.EXPECT().UpdateEmployee(gomock.Any()).Return(nil)
+		emplRepoMock.EXPECT().UpdateEmployee(gomock.Any(), gomock.Any()).Return(nil)
 
 		response, err := service.UpdateEmployee(context.Background(), 1, req)
 
@@ -564,7 +564,7 @@ func TestEmployeeService_DeleteEmployee(t *testing.T) {
 
 		service := NewEmployeeService(log, emplRepoMock, nil)
 
-		emplRepoMock.EXPECT().Delete(uint(1)).Return(assert.AnError)
+		emplRepoMock.EXPECT().Delete(gomock.Any(), uint(1)).Return(assert.AnError)
 
 		err := service.DeleteEmployee(context.Background(), 1)
 
@@ -581,7 +581,7 @@ func TestEmployeeService_DeleteEmployee(t *testing.T) {
 
 		service := NewEmployeeService(log, emplRepoMock, nil)
 
-		emplRepoMock.EXPECT().Delete(uint(1)).Return(nil)
+		emplRepoMock.EXPECT().Delete(gomock.Any(), uint(1)).Return(nil)
 
 		err := service.DeleteEmployee(context.Background(), 1)
 
@@ -601,7 +601,7 @@ func TestEmployeeService_GetEmployeeByID(t *testing.T) {
 
 		service := NewEmployeeService(log, emplRepoMock, nil)
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).Return(assert.AnError)
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).Return(assert.AnError)
 
 		employee, err := service.GetEmployeeByID(context.Background(), 1)
 
@@ -626,7 +626,7 @@ func TestEmployeeService_GetEmployeeByID(t *testing.T) {
 			LastName:  "User",
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByID(uint(1), gomock.Any()).DoAndReturn(func(id uint, emp *model.Employee) error {
+		emplRepoMock.EXPECT().GetEmployeeByID(gomock.Any(), uint(1), gomock.Any()).DoAndReturn(func(_ context.Context, id uint, emp *model.Employee) error {
 			*emp = expectedEmployee
 			return nil
 		})
@@ -652,7 +652,7 @@ func TestEmployeeService_GetEmployeeByUsername(t *testing.T) {
 
 		service := NewEmployeeService(log, emplRepoMock, nil)
 
-		emplRepoMock.EXPECT().GetEmployeeByUsername("nonexistent").Return(nil, assert.AnError)
+		emplRepoMock.EXPECT().GetEmployeeByUsername(gomock.Any(), "nonexistent").Return(nil, assert.AnError)
 
 		employee, err := service.GetEmployeeByUsername(context.Background(), "nonexistent")
 
@@ -677,7 +677,7 @@ func TestEmployeeService_GetEmployeeByUsername(t *testing.T) {
 			LastName:  "User",
 		}
 
-		emplRepoMock.EXPECT().GetEmployeeByUsername("testuser").Return(expectedEmployee, nil)
+		emplRepoMock.EXPECT().GetEmployeeByUsername(gomock.Any(), "testuser").Return(expectedEmployee, nil)
 
 		employee, err := service.GetEmployeeByUsername(context.Background(), "testuser")
 
@@ -700,7 +700,7 @@ func TestEmployeeService_ResetAllData(t *testing.T) {
 
 		service := NewEmployeeService(log, emplRepoMock, nil)
 
-		emplRepoMock.EXPECT().ResetAllData().Return(assert.AnError)
+		emplRepoMock.EXPECT().ResetAllData(gomock.Any()).Return(assert.AnError)
 
 		err := service.ResetAllData(context.Background())
 
@@ -717,7 +717,7 @@ func TestEmployeeService_ResetAllData(t *testing.T) {
 
 		service := NewEmployeeService(log, emplRepoMock, nil)
 
-		emplRepoMock.EXPECT().ResetAllData().Return(nil)
+		emplRepoMock.EXPECT().ResetAllData(gomock.Any()).Return(nil)
 
 		err := service.ResetAllData(context.Background())
 

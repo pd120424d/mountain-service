@@ -120,6 +120,8 @@ definitions:
     type: object
   github_com_pd120424d_mountain-service_api_employee_internal_handler.ShiftResponse:
     properties:
+      assignedAt:
+        type: string
       createdAt:
         type: string
       id:
@@ -267,6 +269,8 @@ definitions:
     type: object
   internal_handler.ShiftResponse:
     properties:
+      assignedAt:
+        type: string
       createdAt:
         type: string
       id:

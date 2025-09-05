@@ -3,6 +3,7 @@ package repositories
 //go:generate mockgen -source=employee_repository.go -destination=employee_repository_gomock.go -package=repositories
 
 import (
+	"context"
 	"fmt"
 	"maps"
 	"slices"
@@ -15,14 +16,14 @@ import (
 )
 
 type EmployeeRepository interface {
-	Create(employee *model.Employee) error
-	GetAll() ([]model.Employee, error)
-	GetEmployeeByID(id uint, employee *model.Employee) error
-	GetEmployeeByUsername(username string) (*model.Employee, error)
-	UpdateEmployee(employee *model.Employee) error
-	Delete(employeeID uint) error
-	ListEmployees(filters map[string]interface{}) ([]model.Employee, error)
-	ResetAllData() error
+	Create(ctx context.Context, employee *model.Employee) error
+	GetAll(ctx context.Context) ([]model.Employee, error)
+	GetEmployeeByID(ctx context.Context, id uint, employee *model.Employee) error
+	GetEmployeeByUsername(ctx context.Context, username string) (*model.Employee, error)
+	UpdateEmployee(ctx context.Context, employee *model.Employee) error
+	Delete(ctx context.Context, employeeID uint) error
+	ListEmployees(ctx context.Context, filters map[string]interface{}) ([]model.Employee, error)
+	ResetAllData(ctx context.Context) error
 }
 
 type employeeRepository struct {
@@ -35,8 +36,8 @@ func NewEmployeeRepository(log utils.Logger, db *gorm.DB) EmployeeRepository {
 }
 
 // Create creates and employee with the hashed version of its password.
-func (r *employeeRepository) Create(employee *model.Employee) error {
-	r.log.Info("EmployeeRepository.Create")
+func (r *employeeRepository) Create(ctx context.Context, employee *model.Employee) error {
+	defer utils.TimeOperation(ctx, r.log, "EmployeeRepository.Create")()
 	hashedPassword, err := auth.HashPassword(employee.Password)
 	if err != nil {
 		return err
@@ -46,28 +47,32 @@ func (r *employeeRepository) Create(employee *model.Employee) error {
 }
 
 // GetAll returns all the employees which have deleted_at flag set as NULL in db.
-func (r *employeeRepository) GetAll() ([]model.Employee, error) {
+func (r *employeeRepository) GetAll(ctx context.Context) ([]model.Employee, error) {
+	defer utils.TimeOperation(ctx, r.log, "EmployeeRepository.GetAll")()
 	var employees []model.Employee
-	err := r.db.Where("deleted_at IS NULL").Find(&employees).Error
+	err := r.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&employees).Error
 	return employees, err
 }
 
 // GetEmployeeByID returns employee by its id or error if it cannot be found.
-func (r *employeeRepository) GetEmployeeByID(id uint, employee *model.Employee) error {
-	return r.db.First(employee, "id = ?", id).Error
+func (r *employeeRepository) GetEmployeeByID(ctx context.Context, id uint, employee *model.Employee) error {
+	defer utils.TimeOperation(ctx, r.log, "EmployeeRepository.GetEmployeeByID")()
+	return r.db.WithContext(ctx).First(employee, "id = ?", id).Error
 }
 
 // GetEmployeeByUsername returns employee by its username or error if it cannot be found.
-func (r *employeeRepository) GetEmployeeByUsername(username string) (*model.Employee, error) {
+func (r *employeeRepository) GetEmployeeByUsername(ctx context.Context, username string) (*model.Employee, error) {
+	defer utils.TimeOperation(ctx, r.log, "EmployeeRepository.GetEmployeeByUsername")()
 	var employee model.Employee
-	err := r.db.Where("username = ?", username).First(&employee).Error
+	err := r.db.WithContext(ctx).Where("username = ?", username).First(&employee).Error
 	return &employee, err
 }
 
-func (r *employeeRepository) ListEmployees(filters map[string]any) ([]model.Employee, error) {
+func (r *employeeRepository) ListEmployees(ctx context.Context, filters map[string]any) ([]model.Employee, error) {
+	defer utils.TimeOperation(ctx, r.log, "EmployeeRepository.ListEmployees")()
 	allowedColumns := r.allowedColumns()
 	var employees []model.Employee
-	query := r.db.Model(&model.Employee{})
+	query := r.db.WithContext(ctx).Model(&model.Employee{})
 
 	// Extract and sort filter keys
 	filterKeys := slices.Collect(maps.Keys(filters))
@@ -97,17 +102,19 @@ func (r *employeeRepository) ListEmployees(filters map[string]any) ([]model.Empl
 	return employees, err
 }
 
-func (r *employeeRepository) UpdateEmployee(employee *model.Employee) error {
-	return r.db.Save(employee).Error
+func (r *employeeRepository) UpdateEmployee(ctx context.Context, employee *model.Employee) error {
+	defer utils.TimeOperation(ctx, r.log, "EmployeeRepository.UpdateEmployee")()
+	return r.db.WithContext(ctx).Save(employee).Error
 }
 
-func (r *employeeRepository) Delete(id uint) error {
+func (r *employeeRepository) Delete(ctx context.Context, id uint) error {
+	defer utils.TimeOperation(ctx, r.log, "EmployeeRepository.Delete")()
 	var employee model.Employee
-	if err := r.db.First(&employee, id).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&employee, id).Error; err != nil {
 		return err
 	}
 
-	if err := r.db.Unscoped().Delete(&employee).Error; err != nil {
+	if err := r.db.WithContext(ctx).Unscoped().Delete(&employee).Error; err != nil {
 		return err
 	}
 
@@ -127,7 +134,8 @@ func (r *employeeRepository) allowedColumns() map[string]bool {
 	}
 }
 
-func (r *employeeRepository) ResetAllData() error {
+func (r *employeeRepository) ResetAllData(ctx context.Context) error {
+	defer utils.TimeOperation(ctx, r.log, "EmployeeRepository.ResetAllData")()
 	r.log.Warn("Resetting all employee and shift data - this action cannot be undone")
 
 	if err := r.db.Unscoped().Delete(&model.EmployeeShift{}, "1=1").Error; err != nil {
