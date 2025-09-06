@@ -21,6 +21,7 @@ func TimeOperation(ctx context.Context, log Logger, operation string, extraField
 		fields := []zap.Field{
 			zap.String("op", operation),
 			zap.Duration("duration", elapsed),
+			zap.String("duration_human", elapsed.String()),
 		}
 		if len(extraFields) > 0 {
 			fields = append(fields, extraFields...)
