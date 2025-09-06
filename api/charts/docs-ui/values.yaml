@@ -1,0 +1,32 @@
+replicaCount: 1
+
+image:
+  repository: swaggerapi/swagger-ui
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8080
+
+resources: {}
+
+ingress:
+  enabled: true
+  className: traefik
+  host: mountain-service.duckdns.org
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  paths:
+    - path: /docs
+      pathType: Prefix
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 0
+    maxUnavailable: 1
+
+env:
+  BASE_URL: /docs
+  CONFIG_URL: /docs/swagger-config.json

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "docs-ui.fullname" . }}
+  labels:
+    {{- include "docs-ui.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  {{- if .Values.strategy }}
+  strategy:
+    type: {{ default "RollingUpdate" .Values.strategy.type }}
+    {{- if or (eq (default "RollingUpdate" .Values.strategy.type) "RollingUpdate") .Values.strategy.rollingUpdate }}
+    rollingUpdate:
+      {{- with .Values.strategy.rollingUpdate.maxSurge }}
+      maxSurge: {{ . }}
+      {{- end }}
+      {{- with .Values.strategy.rollingUpdate.maxUnavailable }}
+      maxUnavailable: {{ . }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "docs-ui.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "docs-ui.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app: docs-ui
+    spec:
+      containers:
+        - name: swagger-ui
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: BASE_URL
+              value: {{ .Values.env.BASE_URL | quote }}
+            - name: CONFIG_URL
+              value: {{ .Values.env.CONFIG_URL | quote }}
+          readinessProbe:
+            httpGet: { path: /, port: {{ .Values.service.port }} }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /, port: {{ .Values.service.port }} }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

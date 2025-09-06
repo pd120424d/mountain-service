@@ -556,6 +556,9 @@ jobs:
           echo "Upgrading Docs Aggregator via Helm..."
           upgrade docs-aggregator ./charts/docs-aggregator docs-aggregator "$docs_changed"
 
+          echo "Upgrading Docs UI via Helm..."
+          upgrade docs-ui ./charts/docs-ui docs-ui "false"
+
 
       - name: Show status and recent events
         run: |
