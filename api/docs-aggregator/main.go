@@ -117,28 +117,40 @@ func main() {
 	})
 
 	docs := r.Group("/docs")
-	{
-		// Root docs endpoint for health checks
-		docs.GET("", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Docs aggregator is running",
-				"endpoints": []string{
-					"/docs/swagger-config.json",
-					"/docs/specs/:service",
-				},
-			})
-		})
+	apiDocs := r.Group("/api/v1/docs")
 
-		docs.GET("/swagger-config.json", func(c *gin.Context) {
+	rootHandler := func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Docs aggregator is running",
+			"endpoints": []string{
+				"/docs/swagger-config.json",
+				"/docs/specs/:service",
+				"/api/v1/docs/swagger-config.json",
+				"/api/v1/docs/specs/:service",
+			},
+		})
+	}
+
+	{
+		docs.GET("", rootHandler)
+		apiDocs.GET("", rootHandler)
+
+		swaggerConfigHandler := func(c *gin.Context) {
 			c.Header("Cache-Control", "public, max-age=60")
 			reqLog := logger.WithContext(c.Request.Context())
 			urls := make([]map[string]string, 0, len(cfg.Services))
+
+			basePath := "/docs/specs"
+			if strings.HasPrefix(c.Request.URL.Path, "/api/v1/docs") {
+				basePath = "/api/v1/docs/specs"
+			}
+
 			for _, s := range cfg.Services {
 				if checkHealth(s.BaseURL, s.HealthPath) {
 					reqLog.Debugf("service %s healthy for docs", s.Name)
 					urls = append(urls, map[string]string{
 						"name": cases.Title(language.English, cases.NoLower).String(s.Name) + " API",
-						"url":  fmt.Sprintf("/docs/specs/%s.json", s.Name),
+						"url":  fmt.Sprintf("%s/%s.json", basePath, s.Name),
 					})
 				}
 			}
@@ -148,9 +160,12 @@ func main() {
 				"layout":      "BaseLayout",
 			}
 			c.JSON(http.StatusOK, resp)
-		})
+		}
 
-		docs.GET("/specs/:service", func(c *gin.Context) {
+		docs.GET("/swagger-config.json", swaggerConfigHandler)
+		apiDocs.GET("/swagger-config.json", swaggerConfigHandler)
+
+		specsHandler := func(c *gin.Context) {
 			reqLog := logger.WithContext(c.Request.Context())
 			name := c.Param("service")
 
@@ -219,7 +234,10 @@ func main() {
 			}
 			c.Header("Cache-Control", "public, max-age=60")
 			c.Data(http.StatusOK, "application/json", rewritten)
-		})
+		}
+
+		docs.GET("/specs/:service", specsHandler)
+		apiDocs.GET("/specs/:service", specsHandler)
 
 	}
 
