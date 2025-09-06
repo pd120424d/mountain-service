@@ -68,6 +68,10 @@ spec:
               valueFrom: {secretKeyRef: {name: app-shared, key: JWT_SECRET}}
             - name: SERVICE_AUTH_SECRET
               valueFrom: {secretKeyRef: {name: app-shared, key: SERVICE_AUTH_SECRET}}
+            - name: ADMIN_PASSWORD
+              valueFrom: {secretKeyRef: {name: app-shared, key: ADMIN_PASSWORD}}
+            - name: CORS_ALLOWED_ORIGINS
+              valueFrom: {secretKeyRef: {name: app-shared, key: CORS_ALLOWED_ORIGINS}}
             - name: EMPLOYEE_SERVICE_URL
               value: http://employee-service:8082
             # DB credentials via env

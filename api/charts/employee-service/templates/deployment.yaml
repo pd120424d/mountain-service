@@ -55,6 +55,10 @@ spec:
               valueFrom: {secretKeyRef: {name: app-shared, key: JWT_SECRET}}
             - name: SERVICE_AUTH_SECRET
               valueFrom: {secretKeyRef: {name: app-shared, key: SERVICE_AUTH_SECRET}}
+            - name: ADMIN_PASSWORD
+              valueFrom: {secretKeyRef: {name: app-shared, key: ADMIN_PASSWORD}}
+            - name: CORS_ALLOWED_ORIGINS
+              valueFrom: {secretKeyRef: {name: app-shared, key: CORS_ALLOWED_ORIGINS}}
             # DB credentials via env (server.InitDb supports *_FILE as fallback too)
             - name: DB_USER
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}
