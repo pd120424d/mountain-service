@@ -66,6 +66,12 @@ spec:
               valueFrom: {secretKeyRef: {name: app-shared, key: ADMIN_PASSWORD}}
             - name: CORS_ALLOWED_ORIGINS
               valueFrom: {secretKeyRef: {name: app-shared, key: CORS_ALLOWED_ORIGINS}}
+            - name: SWAGGER_HOST
+              value: "mountain-service.duckdns.org"
+            - name: EMPLOYEE_SERVICE_URL
+              value: "http://employee-service.mountain-service.svc.cluster.local:8082"
+            - name: URGENCY_SERVICE_URL
+              value: "http://urgency-service.mountain-service.svc.cluster.local:8083"
             - name: DB_USER
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}
             - name: DB_PASSWORD

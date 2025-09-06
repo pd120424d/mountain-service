@@ -74,6 +74,10 @@ spec:
               valueFrom: {secretKeyRef: {name: app-shared, key: CORS_ALLOWED_ORIGINS}}
             - name: EMPLOYEE_SERVICE_URL
               value: http://employee-service:8082
+            - name: ACTIVITY_SERVICE_URL
+              value: http://activity-service:8084
+            - name: SWAGGER_HOST
+              value: "mountain-service.duckdns.org"
             # DB credentials via env
             - name: DB_USER
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbCommon }}, key: DB_USER}}

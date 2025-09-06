@@ -47,6 +47,18 @@ spec:
               value: {{ .Values.env.EXTERNAL_HOST | quote }}
             - name: EXTERNAL_BASE_PATH
               value: {{ .Values.env.EXTERNAL_BASE_PATH | quote }}
+            - name: SERVICES_JSON
+              value: {{ .Values.env.SERVICES_JSON | quote }}
+            - name: CORS_ALLOWED_ORIGINS
+              valueFrom: {secretKeyRef: {name: app-shared, key: CORS_ALLOWED_ORIGINS}}
+          readinessProbe:
+            httpGet: { path: /health, port: {{ .Values.service.port }} }
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: {{ .Values.service.port }} }
+            initialDelaySeconds: 5
+            periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
 

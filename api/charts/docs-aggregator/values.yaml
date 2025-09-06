@@ -35,4 +35,10 @@ env:
   EXTERNAL_SCHEME: https
   EXTERNAL_HOST: mountain-service.duckdns.org
   EXTERNAL_BASE_PATH: /api/v1
+  SERVICES_JSON: |
+    [
+      {"name":"employee","baseURL":"http://employee-service:8082","healthPath":"/api/v1/health","specPath":"/swagger.json"},
+      {"name":"urgency","baseURL":"http://urgency-service:8083","healthPath":"/api/v1/health","specPath":"/swagger.json"},
+      {"name":"activity","baseURL":"http://activity-service:8084","healthPath":"/api/v1/health","specPath":"/swagger.json"}
+    ]
 
