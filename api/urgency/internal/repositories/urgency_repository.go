@@ -46,13 +46,13 @@ func NewUrgencyRepositoryRW(log utils.Logger, writeDB *gorm.DB, readDB *gorm.DB)
 
 func (r *urgencyRepository) Create(ctx context.Context, urgency *model.Urgency) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "UrgencyRepository.Create")()
+	defer utils.TimeOperation(log, "UrgencyRepository.Create")()
 	return r.dbWrite.WithContext(ctx).Create(urgency).Error
 }
 
 func (r *urgencyRepository) GetAll(ctx context.Context) ([]model.Urgency, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "UrgencyRepository.GetAll")()
+	defer utils.TimeOperation(log, "UrgencyRepository.GetAll")()
 	var urgencies []model.Urgency
 	err := r.dbRead.WithContext(ctx).Where("deleted_at IS NULL").Find(&urgencies).Error
 	return urgencies, err
@@ -107,7 +107,7 @@ func (r *urgencyRepository) List(ctx context.Context, filters map[string]interfa
 
 func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSize int, assignedEmployeeID *uint) ([]model.Urgency, int64, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "UrgencyRepository.ListPaginated")()
+	defer utils.TimeOperation(log, "UrgencyRepository.ListPaginated")()
 	var urgencies []model.Urgency
 	var total int64
 

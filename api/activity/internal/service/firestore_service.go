@@ -34,7 +34,7 @@ func NewFirebaseReadService(client firestorex.Client, logger utils.Logger) Fires
 func (s *firestoreService) ListByUrgency(ctx context.Context, urgencyID uint, limit int) ([]sharedModels.Activity, error) {
 	log := s.logger.WithContext(ctx)
 	log.Infof("Listing activities by urgency: %d", urgencyID)
-	defer utils.TimeOperation(ctx, log, "FirestoreService.ListByUrgency")()
+	defer utils.TimeOperation(log, "FirestoreService.ListByUrgency")()
 
 	if s.client == nil {
 		return nil, fmt.Errorf("firestore client is nil")
@@ -91,7 +91,7 @@ func (s *firestoreService) ListByUrgency(ctx context.Context, urgencyID uint, li
 func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedModels.Activity, error) {
 	log := s.logger.WithContext(ctx)
 	log.Infof("Listing all activities with limit: %d", limit)
-	defer utils.TimeOperation(ctx, log, "FirestoreService.ListAll")()
+	defer utils.TimeOperation(log, "FirestoreService.ListAll")()
 
 	if s.client == nil {
 		return nil, fmt.Errorf("firestore client is nil")

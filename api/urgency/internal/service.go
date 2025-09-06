@@ -56,7 +56,7 @@ func NewUrgencyService(
 
 func (s *urgencyService) CreateUrgency(ctx context.Context, urgency *model.Urgency) error {
 	log := s.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "UrgencyService.CreateUrgency")()
+	defer utils.TimeOperation(log, "UrgencyService.CreateUrgency")()
 	log.Infof("Creating urgency: %s %s", urgency.FirstName, urgency.LastName)
 	urgency.SortPriority = model.ComputeSortPriority(urgency.Status, urgency.AssignedEmployeeID)
 	err := s.repo.Create(ctx, urgency)
@@ -87,7 +87,7 @@ func (s *urgencyService) CreateUrgency(ctx context.Context, urgency *model.Urgen
 
 func (s *urgencyService) ListUrgencies(ctx context.Context, page int, pageSize int, assignedEmployeeID *uint) ([]model.Urgency, int64, error) {
 	log := s.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "UrgencyService.ListUrgencies")()
+	defer utils.TimeOperation(log, "UrgencyService.ListUrgencies")()
 	return s.repo.ListPaginated(ctx, page, pageSize, assignedEmployeeID)
 }
 
@@ -131,7 +131,7 @@ func (s *urgencyService) GetUrgencyByIDPrimary(ctx context.Context, id uint) (*m
 
 func (s *urgencyService) UpdateUrgency(ctx context.Context, urgency *model.Urgency) error {
 	log := s.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "UrgencyService.UpdateUrgency")()
+	defer utils.TimeOperation(log, "UrgencyService.UpdateUrgency")()
 	urgency.SortPriority = model.ComputeSortPriority(urgency.Status, urgency.AssignedEmployeeID)
 	if err := s.repo.Update(ctx, urgency); err != nil {
 		log.Errorf("Failed to update urgency: %v", err)
@@ -142,7 +142,7 @@ func (s *urgencyService) UpdateUrgency(ctx context.Context, urgency *model.Urgen
 
 func (s *urgencyService) DeleteUrgency(ctx context.Context, id uint) error {
 	log := s.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "UrgencyService.DeleteUrgency")()
+	defer utils.TimeOperation(log, "UrgencyService.DeleteUrgency")()
 
 	if err := s.repo.Delete(ctx, id); err != nil {
 		log.Errorf("Failed to delete urgency: %v", err)
@@ -189,7 +189,7 @@ func (s *urgencyService) AssignUrgency(ctx context.Context, urgencyID, employeeI
 
 func (s *urgencyService) UnassignUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error {
 	log := s.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "UrgencyService.UnassignUrgency")()
+	defer utils.TimeOperation(log, "UrgencyService.UnassignUrgency")()
 
 	if urgencyID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
@@ -215,7 +215,7 @@ func (s *urgencyService) UnassignUrgency(ctx context.Context, urgencyID uint, ac
 
 func (s *urgencyService) CloseUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error {
 	log := s.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "UrgencyService.CloseUrgency")()
+	defer utils.TimeOperation(log, "UrgencyService.CloseUrgency")()
 	if urgencyID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
 	}

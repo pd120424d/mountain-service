@@ -35,7 +35,7 @@ func NewNotificationRepository(log utils.Logger, db *gorm.DB) NotificationReposi
 
 func (r *notificationRepository) Create(ctx context.Context, notification *model.Notification) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "NotificationRepository.Create")()
+	defer utils.TimeOperation(log, "NotificationRepository.Create")()
 	log.Infof("Creating notification: urgencyID=%d, employeeID=%d, type=%s", notification.UrgencyID, notification.EmployeeID, notification.NotificationType)
 
 	if err := r.db.Create(notification).Error; err != nil {
@@ -49,7 +49,7 @@ func (r *notificationRepository) Create(ctx context.Context, notification *model
 
 func (r *notificationRepository) GetByID(ctx context.Context, id uint, notification *model.Notification) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "NotificationRepository.GetByID")()
+	defer utils.TimeOperation(log, "NotificationRepository.GetByID")()
 	log.Infof("Getting notification by ID: %d", id)
 
 	if err := r.db.Preload("Urgency").First(notification, id).Error; err != nil {
@@ -62,7 +62,7 @@ func (r *notificationRepository) GetByID(ctx context.Context, id uint, notificat
 
 func (r *notificationRepository) GetPendingNotifications(ctx context.Context, limit int) ([]model.Notification, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "NotificationRepository.GetPendingNotifications")()
+	defer utils.TimeOperation(log, "NotificationRepository.GetPendingNotifications")()
 	log.Infof("Getting pending notifications with limit: %d", limit)
 
 	var notifications []model.Notification
@@ -84,7 +84,7 @@ func (r *notificationRepository) GetPendingNotifications(ctx context.Context, li
 
 func (r *notificationRepository) GetByUrgencyID(ctx context.Context, urgencyID uint) ([]model.Notification, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "NotificationRepository.GetByUrgencyID")()
+	defer utils.TimeOperation(log, "NotificationRepository.GetByUrgencyID")()
 	log.Infof("Getting notifications by urgency ID: %d", urgencyID)
 
 	var notifications []model.Notification
@@ -98,7 +98,7 @@ func (r *notificationRepository) GetByUrgencyID(ctx context.Context, urgencyID u
 
 func (r *notificationRepository) GetByEmployeeID(ctx context.Context, employeeID uint) ([]model.Notification, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "NotificationRepository.GetByEmployeeID")()
+	defer utils.TimeOperation(log, "NotificationRepository.GetByEmployeeID")()
 	log.Infof("Getting notifications by employee ID: %d", employeeID)
 
 	var notifications []model.Notification
@@ -112,7 +112,7 @@ func (r *notificationRepository) GetByEmployeeID(ctx context.Context, employeeID
 
 func (r *notificationRepository) Update(ctx context.Context, notification *model.Notification) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "NotificationRepository.Update")()
+	defer utils.TimeOperation(log, "NotificationRepository.Update")()
 	log.Infof("Updating notification: %d", notification.ID)
 
 	if err := r.db.Save(notification).Error; err != nil {
@@ -126,7 +126,7 @@ func (r *notificationRepository) Update(ctx context.Context, notification *model
 
 func (r *notificationRepository) Delete(ctx context.Context, id uint) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "NotificationRepository.Delete")()
+	defer utils.TimeOperation(log, "NotificationRepository.Delete")()
 	log.Infof("Deleting notification: %d", id)
 
 	if err := r.db.Delete(&model.Notification{}, id).Error; err != nil {
@@ -140,7 +140,7 @@ func (r *notificationRepository) Delete(ctx context.Context, id uint) error {
 
 func (r *notificationRepository) MarkAsSent(ctx context.Context, id uint, sentAt time.Time) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "NotificationRepository.MarkAsSent")()
+	defer utils.TimeOperation(log, "NotificationRepository.MarkAsSent")()
 	log.Infof("Marking notification as sent: %d", id)
 
 	updates := map[string]interface{}{
@@ -159,7 +159,7 @@ func (r *notificationRepository) MarkAsSent(ctx context.Context, id uint, sentAt
 
 func (r *notificationRepository) MarkAsFailed(ctx context.Context, id uint, errorMessage string) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "NotificationRepository.MarkAsFailed")()
+	defer utils.TimeOperation(log, "NotificationRepository.MarkAsFailed")()
 	log.Infof("Marking notification as failed: %d", id)
 
 	updates := map[string]interface{}{
@@ -179,7 +179,7 @@ func (r *notificationRepository) MarkAsFailed(ctx context.Context, id uint, erro
 
 func (r *notificationRepository) IncrementAttempts(ctx context.Context, id uint) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "NotificationRepository.IncrementAttempts")()
+	defer utils.TimeOperation(log, "NotificationRepository.IncrementAttempts")()
 	log.Infof("Incrementing notification attempts: %d", id)
 
 	if err := r.db.Model(&model.Notification{}).Where("id = ?", id).Updates(map[string]interface{}{

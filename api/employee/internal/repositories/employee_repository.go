@@ -38,7 +38,7 @@ func NewEmployeeRepository(log utils.Logger, db *gorm.DB) EmployeeRepository {
 // Create creates and employee with the hashed version of its password.
 func (r *employeeRepository) Create(ctx context.Context, employee *model.Employee) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "EmployeeRepository.Create")()
+	defer utils.TimeOperation(log, "EmployeeRepository.Create")()
 	hashedPassword, err := auth.HashPassword(employee.Password)
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func (r *employeeRepository) Create(ctx context.Context, employee *model.Employe
 // GetAll returns all the employees which have deleted_at flag set as NULL in db.
 func (r *employeeRepository) GetAll(ctx context.Context) ([]model.Employee, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "EmployeeRepository.GetAll")()
+	defer utils.TimeOperation(log, "EmployeeRepository.GetAll")()
 	var employees []model.Employee
 	err := r.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&employees).Error
 	return employees, err
@@ -59,14 +59,14 @@ func (r *employeeRepository) GetAll(ctx context.Context) ([]model.Employee, erro
 // GetEmployeeByID returns employee by its id or error if it cannot be found.
 func (r *employeeRepository) GetEmployeeByID(ctx context.Context, id uint, employee *model.Employee) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "EmployeeRepository.GetEmployeeByID")()
+	defer utils.TimeOperation(log, "EmployeeRepository.GetEmployeeByID")()
 	return r.db.WithContext(ctx).First(employee, "id = ?", id).Error
 }
 
 // GetEmployeeByUsername returns employee by its username or error if it cannot be found.
 func (r *employeeRepository) GetEmployeeByUsername(ctx context.Context, username string) (*model.Employee, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "EmployeeRepository.GetEmployeeByUsername")()
+	defer utils.TimeOperation(log, "EmployeeRepository.GetEmployeeByUsername")()
 	var employee model.Employee
 	err := r.db.WithContext(ctx).Where("username = ?", username).First(&employee).Error
 	return &employee, err
@@ -74,7 +74,7 @@ func (r *employeeRepository) GetEmployeeByUsername(ctx context.Context, username
 
 func (r *employeeRepository) ListEmployees(ctx context.Context, filters map[string]any) ([]model.Employee, error) {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "EmployeeRepository.ListEmployees")()
+	defer utils.TimeOperation(log, "EmployeeRepository.ListEmployees")()
 	allowedColumns := r.allowedColumns()
 	var employees []model.Employee
 	query := r.db.WithContext(ctx).Model(&model.Employee{})
@@ -109,13 +109,13 @@ func (r *employeeRepository) ListEmployees(ctx context.Context, filters map[stri
 
 func (r *employeeRepository) UpdateEmployee(ctx context.Context, employee *model.Employee) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "EmployeeRepository.UpdateEmployee")()
+	defer utils.TimeOperation(log, "EmployeeRepository.UpdateEmployee")()
 	return r.db.WithContext(ctx).Save(employee).Error
 }
 
 func (r *employeeRepository) Delete(ctx context.Context, id uint) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "EmployeeRepository.Delete")()
+	defer utils.TimeOperation(log, "EmployeeRepository.Delete")()
 	var employee model.Employee
 	if err := r.db.WithContext(ctx).First(&employee, id).Error; err != nil {
 		return err
@@ -143,7 +143,7 @@ func (r *employeeRepository) allowedColumns() map[string]bool {
 
 func (r *employeeRepository) ResetAllData(ctx context.Context) error {
 	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(ctx, log, "EmployeeRepository.ResetAllData")()
+	defer utils.TimeOperation(log, "EmployeeRepository.ResetAllData")()
 	log.Warn("Resetting all employee and shift data - this action cannot be undone")
 
 	if err := r.db.Unscoped().Delete(&model.EmployeeShift{}, "1=1").Error; err != nil {

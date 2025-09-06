@@ -98,7 +98,7 @@ func requestContext(ctx *gin.Context) context.Context {
 // @Router /employees [post]
 func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), reqLog, "EmployeeHandler.RegisterEmployee")()
+	defer utils.TimeOperation(reqLog, "EmployeeHandler.RegisterEmployee")()
 	reqLog.Info("Received Register Employee request")
 
 	req := &employeeV1.EmployeeCreateRequest{}
@@ -159,7 +159,7 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	var req employeeV1.EmployeeLogin
 	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), reqLog, "EmployeeHandler.LoginEmployee")()
+	defer utils.TimeOperation(reqLog, "EmployeeHandler.LoginEmployee")()
 	reqLog.Info("Received Login Employee request")
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -223,7 +223,7 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 // @Router /logout [post]
 func (h *employeeHandler) LogoutEmployee(ctx *gin.Context) {
 	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), reqLog, "EmployeeHandler.LogoutEmployee")()
+	defer utils.TimeOperation(reqLog, "EmployeeHandler.LogoutEmployee")()
 	reqLog.Info("Received Logout Employee request")
 
 	tokenID, exists := ctx.Get("tokenID")
@@ -345,7 +345,7 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 // @Router /employees [get]
 func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.ListEmployees")()
+	defer utils.TimeOperation(log, "EmployeeHandler.ListEmployees")()
 	log.Info("Received List Employees request")
 
 	employees, err := h.emplService.ListEmployees(requestContext(ctx))
@@ -372,7 +372,7 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 // @Router /employees/{id} [get]
 func (h *employeeHandler) GetEmployee(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.GetEmployee")()
+	defer utils.TimeOperation(log, "EmployeeHandler.GetEmployee")()
 	log.Info("Received Get Employee request")
 
 	idParam := ctx.Param("id")
@@ -424,7 +424,7 @@ func (h *employeeHandler) GetEmployee(ctx *gin.Context) {
 // @Router /employees/{id} [put]
 func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.UpdateEmployee")()
+	defer utils.TimeOperation(log, "EmployeeHandler.UpdateEmployee")()
 	log.Info("Received Update Employee request")
 
 	employeeID, err := strconv.Atoi(ctx.Param("id"))
@@ -480,7 +480,7 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 // @Router /employees/{id} [delete]
 func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.DeleteEmployee")()
+	defer utils.TimeOperation(log, "EmployeeHandler.DeleteEmployee")()
 	h.log.Info("Received Delete Employee request")
 
 	idParam := ctx.Param("id")
@@ -515,7 +515,7 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.AssignShift")()
+	defer utils.TimeOperation(log, "EmployeeHandler.AssignShift")()
 	h.log.Infof("Received Assign Shift request for employee ID %s", employeeIDParam)
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
@@ -577,7 +577,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.GetShifts")()
+	defer utils.TimeOperation(log, "EmployeeHandler.GetShifts")()
 	h.log.Infof("Received Get Shifts request for employee ID %s", employeeIDParam)
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
@@ -609,7 +609,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 // @Router /shifts/availability [get]
 func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.GetShiftsAvailability")()
+	defer utils.TimeOperation(log, "EmployeeHandler.GetShiftsAvailability")()
 	log.Infof("Received Get Shifts Availability request for the next %s days", ctx.Query("days"))
 
 	// Extract employee ID from authentication context
@@ -659,7 +659,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.RemoveShift")()
+	defer utils.TimeOperation(log, "EmployeeHandler.RemoveShift")()
 	h.log.Infof("Received Remove Shift request for employee ID %s", employeeIDParam)
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
@@ -704,7 +704,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 // @Router /admin/reset [delete]
 func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.ResetAllData")()
+	defer utils.TimeOperation(log, "EmployeeHandler.ResetAllData")()
 	h.log.Warn("Admin data reset request received")
 
 	err := h.emplService.ResetAllData(requestContext(ctx))
@@ -730,7 +730,7 @@ func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 // @Router /admin/shifts/availability [get]
 func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.GetAdminShiftsAvailability")()
+	defer utils.TimeOperation(log, "EmployeeHandler.GetAdminShiftsAvailability")()
 	h.log.Info("Admin shifts availability request received")
 
 	// Parse days parameter (default to 7)
@@ -772,7 +772,7 @@ func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
 // @Router /employees/on-call [get]
 func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(requestContext(ctx), log, "EmployeeHandler.GetOnCallEmployees")()
+	defer utils.TimeOperation(log, "EmployeeHandler.GetOnCallEmployees")()
 	log.Info("Getting on-call employees")
 
 	var shiftBuffer time.Duration
