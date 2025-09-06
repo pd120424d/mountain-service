@@ -15,6 +15,28 @@ service:
 
 resources: {}
 
+ingress:
+  enabled: true
+  className: traefik
+  host: mountain-service.duckdns.org
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  paths:
+    - path: /api/v1/employees
+      pathType: Prefix
+    - path: /api/v1/login
+      pathType: Exact
+    - path: /api/v1/logout
+      pathType: Exact
+    - path: /api/v1/oauth
+      pathType: Prefix
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 0
+    maxUnavailable: 1
+
 secrets:
   dbCommon: db-common
   dbService: employee-db

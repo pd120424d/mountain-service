@@ -42,12 +42,12 @@ spec:
             - name: CONFIG_URL
               value: {{ .Values.env.CONFIG_URL | quote }}
           readinessProbe:
-            httpGet: { path: /, port: {{ .Values.service.port }} }
-            initialDelaySeconds: 5
+            httpGet: { path: /docs/, port: {{ .Values.service.port }} }
+            initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
-            httpGet: { path: /, port: {{ .Values.service.port }} }
-            initialDelaySeconds: 10
+            httpGet: { path: /docs/, port: {{ .Values.service.port }} }
+            initialDelaySeconds: 15
             periodSeconds: 15
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

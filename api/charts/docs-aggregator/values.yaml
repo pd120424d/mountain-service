@@ -24,6 +24,10 @@ ingress:
   paths:
     - path: /api/v1/docs
       pathType: Prefix
+    - path: /docs/swagger-config.json
+      pathType: Exact
+    - path: /docs/specs
+      pathType: Prefix
 
 strategy:
   type: RollingUpdate

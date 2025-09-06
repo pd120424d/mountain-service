@@ -273,7 +273,13 @@
         "TITLE": "Urgentne Situacije",
         "LOADING": "Učitavanje urgentnih situacija...",
         "RETRY": "Pokušaj ponovo",
-        "NO_URGENCIES": "Nema urgentnih situacija.",
+        "NO_URGENCIES": "Nema urgentnih situacija.",            
+        "UNASSIGNED_WARNING": "Postoji {{count}} otvorenih urgentnih slučajeva koji čekaju dodelu.",
+        "PAGINATION": {
+        "PREVIOUS": "Prethodna",
+        "NEXT": "Sledeća",
+        "PAGE": "Strana {{page}} / {{totalPages}} (ukupno {{total}})"
+        },
         "TABLE_HEADERS": {
             "ID": "ID",
             "NAME": "Naziv",
@@ -283,7 +289,11 @@
             "CREATED_AT": "Kreirano",
             "ACTIONS": "Akcije"
         },
-        "VIEW": "Prikaži detalje"
+        "VIEW": "Prikaži detalje",
+        "TABS": {
+        "MY_URGENCIES": "Moje urgentne situacije",
+        "ALL_URGENCIES": "Sve urgentne situacije"
+        }
     },
     "URGENCY_DETAIL": {
         "TITLE": "Detalji Urgentne Situacije",

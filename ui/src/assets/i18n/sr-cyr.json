@@ -281,7 +281,7 @@
     "PAGINATION": {
       "PREVIOUS": "Претходна",
       "NEXT": "Следећа",
-      "PAGE": "Страна {{page}} / {{totalPages}} (укупо {{total}})"
+      "PAGE": "Страна {{page}} / {{totalPages}} (укупно {{total}})"
     },
     "TABLE_HEADERS": {
       "NAME": "Име",
