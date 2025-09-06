@@ -111,11 +111,23 @@
 /* 🗓️ Shift day columns */
 .shift-days-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(3, minmax(300px, 1fr));
   gap: 1rem;
   overflow-x: hidden; /* avoid horizontal scroll */
   padding-bottom: 1rem;
   min-height: calc(100vh - 8rem);
+}
+
+@media (max-width: 1200px) {
+  .shift-days-row {
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .shift-days-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .day-section {

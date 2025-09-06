@@ -161,9 +161,9 @@
           </div>
 
         <div *ngIf="!isLoadingActivities && activities.length > 0" class="pagination-controls" style="display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:12px;">
-          <button class="btn btn-secondary" (click)="onPrevActivities()" [disabled]="activitiesPage <= 1">&laquo; {{ 'URGENCY_DETAIL.PAGINATION.PREVIOUS' | translate }}</button>
-          <span>{{ 'URGENCY_DETAIL.PAGINATION.PAGE' | translate:{ page: activitiesPage, totalPages: totalActivitiesPages, total: totalActivities } }}</span>
-          <button class="btn btn-secondary" (click)="onNextActivities()" [disabled]="activitiesPage >= totalActivitiesPages">{{ 'URGENCY_DETAIL.PAGINATION.NEXT' | translate }} &raquo;</button>
+          <button class="btn btn-secondary" (click)="onPrevActivities()" [disabled]="activitiesPage <= 1">&laquo; {{ 'URGENCY_LIST.PAGINATION.PREVIOUS' | translate }}</button>
+          <span>{{ 'URGENCY_LIST.PAGINATION.PAGE' | translate:{ page: activitiesPage, totalPages: totalActivitiesPages, total: totalActivities } }}</span>
+          <button class="btn btn-secondary" (click)="onNextActivities()" [disabled]="activitiesPage >= totalActivitiesPages">{{ 'URGENCY_LIST.PAGINATION.NEXT' | translate }} &raquo;</button>
         </div>
 
         </div>

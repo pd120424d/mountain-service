@@ -118,6 +118,17 @@ func main() {
 
 	docs := r.Group("/docs")
 	{
+		// Root docs endpoint for health checks
+		docs.GET("", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "Docs aggregator is running",
+				"endpoints": []string{
+					"/docs/swagger-config.json",
+					"/docs/specs/:service",
+				},
+			})
+		})
+
 		docs.GET("/swagger-config.json", func(c *gin.Context) {
 			c.Header("Cache-Control", "public, max-age=60")
 			reqLog := logger.WithContext(c.Request.Context())

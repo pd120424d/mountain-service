@@ -327,12 +327,7 @@
         "RESOLVE": "Zatvori",
         "RESOLVING": "Zatvaranje...",
         "RESOLVE_SUCCESS": "Urgentna situacija je zatvorena.",
-        "RESOLVE_ERROR": "Neuspešno zatvaranje urgentne situacije.",
-        "PAGINATION": {
-          "PREVIOUS": "Prethodna",
-          "NEXT": "Sledeća",
-          "PAGE": "Strana {{page}} / {{totalPages}} (ukupno {{total}})"
-        }
+        "RESOLVE_ERROR": "Neuspešno zatvaranje urgentne situacije."
     },
     "RESOLVE_MODAL": {
         "TITLE": "Zatvori urgentnu situaciju",

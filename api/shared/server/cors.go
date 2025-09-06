@@ -24,7 +24,7 @@ func DefaultCORSConfig() CORSConfig {
 	return CORSConfig{
 		AllowedOrigins:     getCORSOrigins(),
 		AllowedMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
-		AllowedHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "X-Request-ID"},
+		AllowedHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Requested-With", "X-Request-ID", "Accept", "Accept-Language", "Content-Language"},
 		ExposeHeaders:      []string{"Content-Length", "X-Request-ID"},
 		AllowCredentials:   true,
 		UseGorillaHandlers: false,
@@ -35,10 +35,39 @@ func DefaultCORSConfig() CORSConfig {
 func getCORSOrigins() []string {
 	corsOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
 	if corsOrigins != "" {
-		return strings.Split(corsOrigins, ",")
+		origins := strings.Split(corsOrigins, ",")
+		// Ensure production domains are included for Swagger
+		requiredOrigins := []string{
+			"https://mountain-service.duckdns.org",
+			"http://mountain-service.duckdns.org",
+		}
+
+		for _, required := range requiredOrigins {
+			hasOrigin := false
+			for _, origin := range origins {
+				if strings.TrimSpace(origin) == required {
+					hasOrigin = true
+					break
+				}
+			}
+			if !hasOrigin {
+				origins = append(origins, required)
+			}
+		}
+		return origins
 	}
-	// Default to localhost for development
-	return []string{"http://localhost:3000", "http://localhost:4200", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "http://localhost:8083", "http://localhost:8084"}
+	// Default to localhost for development + production domain
+	return []string{
+		"http://localhost:3000",
+		"http://localhost:4200",
+		"http://localhost:8080",
+		"http://localhost:8081",
+		"http://localhost:8082",
+		"http://localhost:8083",
+		"http://localhost:8084",
+		"https://mountain-service.duckdns.org",
+		"http://mountain-service.duckdns.org",
+	}
 }
 
 func SetupCORS(log utils.Logger, r *gin.Engine, config CORSConfig) http.Handler {

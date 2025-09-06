@@ -79,6 +79,13 @@ spec:
               value: "/var/secrets/gcp-logging/key.json"
             - name: SWAGGER_HOST
               value: "mountain-service.duckdns.org"
+            # Azure Storage Configuration (for profile picture uploads)
+            - name: AZURE_STORAGE_ACCOUNT_NAME
+              valueFrom: {secretKeyRef: {name: azure-storage, key: AZURE_STORAGE_ACCOUNT_NAME}}
+            - name: AZURE_STORAGE_ACCOUNT_KEY
+              valueFrom: {secretKeyRef: {name: azure-storage, key: AZURE_STORAGE_ACCOUNT_KEY}}
+            - name: AZURE_STORAGE_CONTAINER_NAME
+              valueFrom: {secretKeyRef: {name: azure-storage, key: AZURE_STORAGE_CONTAINER_NAME}}
           volumeMounts:
             - name: cloudsql-sa
               mountPath: /secrets

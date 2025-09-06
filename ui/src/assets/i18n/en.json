@@ -324,12 +324,7 @@
         "RESOLVING": "Resolving...",
         "RESOLVE_SUCCESS": "Urgency closed successfully.",
         "RESOLVE_ERROR": "Failed to close urgency."
-    ,
-    "PAGINATION": {
-      "PREVIOUS": "Previous",
-      "NEXT": "Next",
-      "PAGE": "Page {{page}} / {{totalPages}} (total {{total}})"
-    }
+    
     },
     "RESOLVE_MODAL": {
         "TITLE": "Resolve Urgency",
