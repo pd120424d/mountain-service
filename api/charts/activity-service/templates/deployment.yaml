@@ -93,6 +93,10 @@ spec:
               value: {{ .Values.appEnv.FIREBASE_PROJECT_ID | quote }}
             - name: PUBSUB_TOPIC
               value: {{ .Values.pubsub.topic | quote }}
+            - name: OUTBOX_PUBLISH_INTERVAL_SECONDS
+              value: {{ .Values.appEnv.OUTBOX_PUBLISH_INTERVAL_SECONDS | quote }}
+            - name: OUTBOX_PUBLISH_BATCH_SIZE
+              value: {{ .Values.appEnv.OUTBOX_PUBLISH_BATCH_SIZE | quote }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /var/secrets/gcp/key.json
             - name: FIREBASE_CREDENTIALS_PATH

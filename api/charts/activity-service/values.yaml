@@ -62,9 +62,10 @@ appEnv:
   DB_PORT: "6432"
   DB_SSLMODE: disable
   REDIS_ADDR: redis:6379
-
   GOOGLE_CLOUD_PROJECT: reflecting-card-469410-q1
   FIREBASE_PROJECT_ID: reflecting-card-469410-q1
+  OUTBOX_PUBLISH_INTERVAL_SECONDS: "10"
+  OUTBOX_PUBLISH_BATCH_SIZE: "100"
 pubsub:
   enabled: true
   topic: activity-events

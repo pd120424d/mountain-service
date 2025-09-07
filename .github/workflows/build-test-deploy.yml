@@ -539,7 +539,7 @@ jobs:
           upgrade frontend ./charts/frontend frontend "$ui_changed"
 
           echo "Upgrading Employee service via Helm..."
-          upgrade employee-service ./charts/employee-service employee-service "true"
+          upgrade employee-service ./charts/employee-service employee-service "$emp_changed"
 
           echo "Upgrading Urgency service via Helm..."
           upgrade urgency-service ./charts/urgency-service urgency-service "$urg_changed"

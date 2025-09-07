@@ -15,6 +15,7 @@ import (
 type Config struct {
 	TopicName string
 	Interval  time.Duration
+	BatchSize int
 }
 
 // publishResult abstracts Pub/Sub publish result for testability
@@ -48,8 +49,18 @@ func New(log utils.Logger, repo repositories.OutboxRepository, pubsubClient *pub
 	if cfg.Interval <= 0 {
 		cfg.Interval = 10 * time.Second
 	}
+	if cfg.BatchSize <= 0 {
+		cfg.BatchSize = 100
+	}
 	p := &Publisher{log: log.WithName("publisher"), repo: repo, pubsub: pubsubClient, config: cfg}
-	p.topicFactory = func(name string) topic { return realTopic{t: p.pubsub.Topic(name)} }
+	p.topicFactory = func(name string) topic {
+		t := p.pubsub.Topic(name)
+		// Moderate batching/concurrency to improve throughput while staying safe by default
+		t.PublishSettings.NumGoroutines = 4
+		t.PublishSettings.DelayThreshold = 50 * time.Millisecond
+		t.PublishSettings.CountThreshold = 200
+		return realTopic{t: t}
+	}
 	return p
 }
 
@@ -77,7 +88,11 @@ func (p *Publisher) processOnce(ctx context.Context) error {
 	ctx, _ = utils.EnsureRequestID(ctx)
 	log := p.log.WithContext(ctx)
 	log.Info("Processing outbox events")
-	events, err := p.repo.GetUnpublishedEvents(ctx, 100)
+	batchSize := p.config.BatchSize
+	if batchSize <= 0 {
+		batchSize = 100
+	}
+	events, err := p.repo.GetUnpublishedEvents(ctx, batchSize)
 	if err != nil {
 		return fmt.Errorf("get unpublished: %w", err)
 	}
@@ -89,9 +104,14 @@ func (p *Publisher) processOnce(ctx context.Context) error {
 	topic := p.topicFactory(p.config.TopicName)
 	defer topic.Stop()
 
-	sent := 0
+	type pending struct {
+		id  uint
+		res publishResult
+	}
+	pendings := make([]pending, 0, len(events))
+
+	// Queue all publishes first to enable client-side batching
 	for _, e := range events {
-		// Build the payload from the contract dto
 		payload := activityV1.OutboxEvent{
 			ID:          e.ID,
 			AggregateID: e.AggregateID,
@@ -105,17 +125,21 @@ func (p *Publisher) processOnce(ctx context.Context) error {
 			p.log.Errorf("failed to marshal outbox envelope id=%d: %v", e.ID, mErr)
 			continue
 		}
-
 		res := topic.Publish(ctx, &pubsub.Message{
 			Data:       data,
 			Attributes: map[string]string{"aggregateId": e.AggregateID},
 		})
-		if _, err := res.Get(ctx); err != nil {
-			log.Errorf("failed to publish event id=%d: %v", e.ID, err)
+		pendings = append(pendings, pending{id: e.ID, res: res})
+	}
+
+	sent := 0
+	for _, pnd := range pendings {
+		if _, err := pnd.res.Get(ctx); err != nil {
+			log.Errorf("failed to publish event id=%d: %v", pnd.id, err)
 			continue
 		}
-		if err := p.repo.MarkAsPublished(ctx, e.ID); err != nil {
-			log.Errorf("failed to mark published id=%d: %v", e.ID, err)
+		if err := p.repo.MarkAsPublished(ctx, pnd.id); err != nil {
+			log.Errorf("failed to mark published id=%d: %v", pnd.id, err)
 			continue
 		}
 		sent++

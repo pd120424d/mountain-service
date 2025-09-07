@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -122,7 +123,20 @@ func startPublisherIfConfigured(log utils.Logger, db *gorm.DB) {
 		topic = "activity-events"
 	}
 
-	pub := publisher.New(log, repo, client, publisher.Config{TopicName: topic, Interval: 10 * time.Second})
+	// Configure publisher interval and batch size via env (defaults: 10s, 100)
+	intervalSec := 10
+	if v := os.Getenv("OUTBOX_PUBLISH_INTERVAL_SECONDS"); v != "" {
+		if i, err := strconv.Atoi(v); err == nil && i > 0 {
+			intervalSec = i
+		}
+	}
+	batchSize := 100
+	if v := os.Getenv("OUTBOX_PUBLISH_BATCH_SIZE"); v != "" {
+		if i, err := strconv.Atoi(v); err == nil && i > 0 {
+			batchSize = i
+		}
+	}
+	pub := publisher.New(log, repo, client, publisher.Config{TopicName: topic, Interval: time.Duration(intervalSec) * time.Second, BatchSize: batchSize})
 	ctx, _ := context.WithCancel(context.Background())
 	pub.Start(ctx)
 }

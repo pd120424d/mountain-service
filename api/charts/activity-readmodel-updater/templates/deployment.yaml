@@ -64,6 +64,12 @@ spec:
               value: {{ .Values.appEnv.HEALTH_PORT | quote }}
             - name: LOG_LEVEL
               value: {{ .Values.appEnv.LOG_LEVEL | quote }}
+            - name: SUBSCRIBER_NUM_GOROUTINES
+              value: {{ .Values.appEnv.SUBSCRIBER_NUM_GOROUTINES | quote }}
+            - name: SUBSCRIBER_MAX_OUTSTANDING_MESSAGES
+              value: {{ .Values.appEnv.SUBSCRIBER_MAX_OUTSTANDING_MESSAGES | quote }}
+            - name: SUBSCRIBER_MAX_OUTSTANDING_BYTES
+              value: {{ .Values.appEnv.SUBSCRIBER_MAX_OUTSTANDING_BYTES | quote }}
             - name: GCP_LOGGING_ENABLED
               value: {{ .Values.appEnv.GCP_LOGGING_ENABLED | quote }}
             - name: GCP_PROJECT_ID

@@ -37,6 +37,10 @@ type Config struct {
 
 	OutboxPollIntervalSeconds int
 
+	SubscriberNumGoroutines          int
+	SubscriberMaxOutstandingMessages int
+	SubscriberMaxOutstandingBytes    int
+
 	HealthPort int
 
 	LogLevel string
@@ -57,16 +61,19 @@ func loadConfig() *Config {
 		credPath = getEnvOrDefault("GOOGLE_APPLICATION_CREDENTIALS", "")
 	}
 	return &Config{
-		DatabaseURL:               dbURL,
-		FirebaseProjectID:         getEnvOrDefault("FIREBASE_PROJECT_ID", "your-project-id"),
-		FirebaseCredentialsPath:   credPath,
-		PubSubTopic:               getEnvOrDefault("PUBSUB_TOPIC", "activity-events"),
-		PubSubSubscription:        getEnvOrDefault("PUBSUB_SUBSCRIPTION", "activity-events-sub"),
-		OutboxPollIntervalSeconds: getEnvAsIntOrDefault("OUTBOX_POLL_INTERVAL_SECONDS", 10),
-		HealthPort:                getEnvAsIntOrDefault("HEALTH_PORT", 8090),
-		LogLevel:                  getEnvOrDefault("LOG_LEVEL", "info"),
-		Version:                   getEnvOrDefault("VERSION", "dev"),
-		GitSHA:                    getEnvOrDefault("GIT_SHA", "unknown"),
+		DatabaseURL:                      dbURL,
+		FirebaseProjectID:                getEnvOrDefault("FIREBASE_PROJECT_ID", "your-project-id"),
+		FirebaseCredentialsPath:          credPath,
+		PubSubTopic:                      getEnvOrDefault("PUBSUB_TOPIC", "activity-events"),
+		PubSubSubscription:               getEnvOrDefault("PUBSUB_SUBSCRIPTION", "activity-events-sub"),
+		OutboxPollIntervalSeconds:        getEnvAsIntOrDefault("OUTBOX_POLL_INTERVAL_SECONDS", 10),
+		SubscriberNumGoroutines:          getEnvAsIntOrDefault("SUBSCRIBER_NUM_GOROUTINES", 8),
+		SubscriberMaxOutstandingMessages: getEnvAsIntOrDefault("SUBSCRIBER_MAX_OUTSTANDING_MESSAGES", 1000),
+		SubscriberMaxOutstandingBytes:    getEnvAsIntOrDefault("SUBSCRIBER_MAX_OUTSTANDING_BYTES", 100*1024*1024),
+		HealthPort:                       getEnvAsIntOrDefault("HEALTH_PORT", 8090),
+		LogLevel:                         getEnvOrDefault("LOG_LEVEL", "info"),
+		Version:                          getEnvOrDefault("VERSION", "dev"),
+		GitSHA:                           getEnvOrDefault("GIT_SHA", "unknown"),
 	}
 }
 
@@ -134,6 +141,9 @@ func main() {
 	// Start Pub/Sub subscriber
 	go func() {
 		subscription := pubsubClient.Subscription(cfg.PubSubSubscription)
+		subscription.ReceiveSettings.NumGoroutines = cfg.SubscriberNumGoroutines
+		subscription.ReceiveSettings.MaxOutstandingMessages = cfg.SubscriberMaxOutstandingMessages
+		subscription.ReceiveSettings.MaxOutstandingBytes = cfg.SubscriberMaxOutstandingBytes
 		logger.Infof("Starting Pub/Sub subscriber: subscription=%s", cfg.PubSubSubscription)
 
 		// Use event handler service
