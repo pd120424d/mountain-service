@@ -36,7 +36,11 @@ strategy:
     maxUnavailable: 1
 
 env:
-  EXTERNAL_SCHEME: https
+  # TODO: Keep http until TLS is enabled on ingress (websecure). Swagger Try-It-Out
+  # uses this scheme to call the APIs via the public host. If this is set to https
+  # while ingress only serves http, browsers will fail the requests and surface it
+  # as a CORS/network error. Switch to https once TLS is configured.
+  EXTERNAL_SCHEME: http
   EXTERNAL_HOST: mountain-service.duckdns.org
   EXTERNAL_BASE_PATH: /api/v1
   SERVICES_JSON: |

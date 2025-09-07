@@ -44,6 +44,12 @@ spec:
             items:
               - key: key.json
                 path: key.json
+        - name: gcp-activity-api-key
+          secret:
+            secretName: gcp-activity-api-key
+            items:
+              - key: key.json
+                path: key.json
       containers:
         - name: activity
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -81,14 +87,16 @@ spec:
             - name: activity_service_db
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
             # Optional Firestore/PubSub envs (readable from cluster secrets or direct envs)
+            - name: GOOGLE_CLOUD_PROJECT
+              value: {{ .Values.appEnv.GOOGLE_CLOUD_PROJECT | quote }}
             - name: FIREBASE_PROJECT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: gcp-activity-api-key
-                  key: project_id
-                  optional: true
+              value: {{ .Values.appEnv.FIREBASE_PROJECT_ID | quote }}
+            - name: PUBSUB_TOPIC
+              value: {{ .Values.pubsub.topic | quote }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
-              value: /secrets/key.json
+              value: /var/secrets/gcp/key.json
+            - name: FIREBASE_CREDENTIALS_PATH
+              value: /var/secrets/gcp/key.json
             # GCP Logging Configuration
             - name: GCP_LOGGING_ENABLED
               value: "true"
@@ -99,6 +107,9 @@ spec:
             - name: GCP_LOGGING_CREDENTIALS_PATH
               value: "/var/secrets/gcp-logging/key.json"
           volumeMounts:
+            - name: gcp-activity-api-key
+              mountPath: /var/secrets/gcp
+              readOnly: true
             - name: cloudsql-sa
               mountPath: /secrets
               readOnly: true

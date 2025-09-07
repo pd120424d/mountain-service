@@ -63,6 +63,8 @@ appEnv:
   DB_SSLMODE: disable
   REDIS_ADDR: redis:6379
 
+  GOOGLE_CLOUD_PROJECT: reflecting-card-469410-q1
+  FIREBASE_PROJECT_ID: reflecting-card-469410-q1
 pubsub:
   enabled: true
   topic: activity-events
