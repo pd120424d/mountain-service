@@ -135,6 +135,7 @@ jobs:
       activity-updater-changed: ${{ steps.changes.outputs.activity-updater }}
       version-changed: ${{ steps.changes.outputs.version }}
       docs-aggregator-changed: ${{ steps.changes.outputs.docs-aggregator }}
+      contracts-changed: ${{ steps.changes.outputs.contracts }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -151,6 +152,7 @@ jobs:
           echo "activity-updater=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity-readmodel-updater/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "version=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/version-service/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "docs-aggregator=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/docs-aggregator/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "contracts=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/contracts/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -173,7 +175,7 @@ jobs:
           docker push ghcr.io/pd120424d/mountain-ui:${{ github.sha }}
 
       - name: Build and push Employee service
-        if: steps.changes.outputs.employee == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        if: steps.changes.outputs.employee == 'true' || steps.changes.outputs.contracts == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd api
           docker build -f employee/Dockerfile -t ghcr.io/pd120424d/employee-service:latest \
@@ -186,7 +188,7 @@ jobs:
           docker push ghcr.io/pd120424d/employee-service:${{ github.sha }}
 
       - name: Build and push Urgency service
-        if: steps.changes.outputs.urgency == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        if: steps.changes.outputs.urgency == 'true' || steps.changes.outputs.contracts == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd api
           docker build -f urgency/Dockerfile -t ghcr.io/pd120424d/urgency-service:latest \
@@ -199,7 +201,7 @@ jobs:
           docker push ghcr.io/pd120424d/urgency-service:${{ github.sha }}
 
       - name: Build and push Activity service (with CQRS support)
-        if: steps.changes.outputs.activity == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        if: steps.changes.outputs.activity == 'true' || steps.changes.outputs.contracts == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd api
           docker build -f activity/Dockerfile -t ghcr.io/pd120424d/activity-service:latest \
@@ -244,7 +246,7 @@ jobs:
           docker push ghcr.io/pd120424d/version-service:${{ github.sha }}
 
       - name: Build and push Docs Aggregator
-        if: steps.changes.outputs.docs-aggregator == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        if: steps.changes.outputs.docs-aggregator == 'true' || steps.changes.outputs.contracts == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
         run: |
           cd api
           docker build -f docs-aggregator/Dockerfile -t ghcr.io/pd120424d/docs-aggregator:latest \
@@ -513,12 +515,13 @@ jobs:
 
           # Determine which components changed (fallback logic mirrors detect-changes)
           ui_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^ui/' && echo true || echo false)
-          emp_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/employee/' && echo true || echo false)
-          urg_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/urgency/' && echo true || echo false)
-          act_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity/' && echo true || echo false)
+          contracts_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/contracts/' && echo true || echo false)
+          emp_changed=$([ "$(git diff --name-only HEAD~1 HEAD | grep -q '^api/employee/' && echo true || echo false)" = true -o "$contracts_changed" = true ] && echo true || echo false)
+          urg_changed=$([ "$(git diff --name-only HEAD~1 HEAD | grep -q '^api/urgency/' && echo true || echo false)" = true -o "$contracts_changed" = true ] && echo true || echo false)
+          act_changed=$([ "$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity/' && echo true || echo false)" = true -o "$contracts_changed" = true ] && echo true || echo false)
           actu_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity-readmodel-updater/' && echo true || echo false)
           ver_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/version-service/' && echo true || echo false)
-          docs_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/docs-aggregator/' && echo true || echo false)
+          docs_changed=$([ "$(git diff --name-only HEAD~1 HEAD | grep -q '^api/docs-aggregator/' && echo true || echo false)" = true -o "$contracts_changed" = true ] && echo true || echo false)
 
           upgrade() {
             local release="$1" chart="$2" deploy_name="$3" changed_flag="$4"

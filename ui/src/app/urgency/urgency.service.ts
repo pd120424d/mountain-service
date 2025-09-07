@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Urgency, UrgencyCreateRequest, UrgencyUpdateRequest } from '../shared/models';
 
@@ -18,7 +18,8 @@ export class UrgencyService {
   constructor(private http: HttpClient) { }
 
   getUrgencies(): Observable<Urgency[]> {
-    return this.http.get<Urgency[]>(this.urgencyApiUrl).pipe(
+    return this.http.get<any>(this.urgencyApiUrl).pipe(
+      map((resp) => Array.isArray(resp) ? (resp as Urgency[]) : ((resp?.urgencies as Urgency[]) || [])),
       catchError(this.handleError)
     );
   }

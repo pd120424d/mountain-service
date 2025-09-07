@@ -258,6 +258,11 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 				resp.TotalPages = 1
 			}
 
+			// Provide a nextPageToken for infinite scroll to switch to cursor mode
+			if end-start > 0 {
+				resp.NextPageToken = encodeCursorToken(activities[end-1].CreatedAt)
+			}
+
 			log.Infof("Listed %d activities out of approx %d total. Used Firestore read model.", len(resp.Activities), resp.Total)
 			ctx.JSON(http.StatusOK, resp)
 			return

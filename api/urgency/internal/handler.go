@@ -88,14 +88,13 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 
 // ListUrgencies Извлачење листе ургентних ситуација
 // @Summary Извлачење листе ургентних ситуација
-// @Description Извлачење свих ургентних ситуација
+// @Description Извлачење свих ургентних ситуација са пагинацијом
 // @Tags urgency
 // @Security OAuth2Password
 // @Produce  json
-// @Param page query int false "Page number" default(1)
-// @Param pageSize query int false "Page size" default(20)
+// @Param page query int false "Page number (min 1)" default(1)
+// @Param pageSize query int false "Page size (1-1000)" default(20)
 // @Param myUrgencies query bool false "Only urgencies assigned to the current user" default(false)
-
 // @Success 200 {object} urgencyV1.UrgencyListResponse
 // @Router /urgencies [get]
 func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {

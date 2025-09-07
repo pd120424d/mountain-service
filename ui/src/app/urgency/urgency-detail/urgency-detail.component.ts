@@ -121,6 +121,7 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
     this.nextPageToken = null;
     this.activities = [];
 
+    console.debug('[Activities] Fetch first page', { urgencyId: this.urgencyId, pageSize: this.activitiesPageSize });
     this.activityService.getActivitiesCursor({
       urgencyId: this.urgencyId,
       pageSize: this.activitiesPageSize
@@ -129,10 +130,11 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
         this.activities = (resp.activities || []);
         this.nextPageToken = resp.nextPageToken || null;
         this.isLoadingActivities = false;
+        console.debug('[Activities] First page loaded', { count: this.activities.length, nextPageToken: this.nextPageToken });
         this.setupIntersectionObserver();
       },
       error: (error) => {
-        console.error('Failed to load activities:', error);
+        console.error('[Activities] Failed to load first page', error);
         this.isLoadingActivities = false;
       }
     });
@@ -153,11 +155,19 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
     if (this.intersectionObserver) {
       this.intersectionObserver.disconnect();
     }
+    console.debug('[Activities] Setting up IntersectionObserver', { hasToken: !!this.nextPageToken });
     this.intersectionObserver = new IntersectionObserver(entries => {
       const entry = entries[0];
+      if (entry) {
+        console.debug('[Activities] Intersection observed', { isIntersecting: entry.isIntersecting, hasToken: !!this.nextPageToken, isLoadingMore: this.isLoadingMore });
+      }
       if (entry && entry.isIntersecting && this.nextPageToken && !this.isLoadingMore) {
         this.loadMoreActivities();
       }
+    }, {
+      root: null,
+      rootMargin: '200px 0px',
+      threshold: 0
     });
     this.intersectionObserver.observe(this.loadMoreAnchor.nativeElement);
   }
@@ -165,19 +175,22 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   private loadMoreActivities(): void {
     if (!this.urgencyId || !this.nextPageToken) return;
     this.isLoadingMore = true;
+    const outgoing = this.nextPageToken;
+    console.debug('[Activities] Loading more', { urgencyId: this.urgencyId, pageSize: this.activitiesPageSize, pageToken: outgoing });
     this.activityService.getActivitiesCursor({
       urgencyId: this.urgencyId,
       pageSize: this.activitiesPageSize,
-      pageToken: this.nextPageToken || undefined
+      pageToken: outgoing || undefined
     }).subscribe({
       next: (resp) => {
         const more = resp.activities || [];
         this.activities = this.activities.concat(more);
         this.nextPageToken = resp.nextPageToken || null;
         this.isLoadingMore = false;
+        console.debug('[Activities] Loaded more', { appended: more.length, nextPageToken: this.nextPageToken });
       },
       error: (err) => {
-        console.error('Failed to load more activities:', err);
+        console.error('[Activities] Failed to load more', err);
         this.isLoadingMore = false;
       }
     });
