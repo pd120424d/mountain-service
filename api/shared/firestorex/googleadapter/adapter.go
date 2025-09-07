@@ -64,6 +64,9 @@ func (a *queryAdapter) OrderBy(field string, dir firestorex.Direction) firestore
 	}
 	return &queryAdapter{q: a.q.OrderBy(field, firestore.Asc)}
 }
+func (a *queryAdapter) StartAfter(v interface{}) firestorex.Query {
+	return &queryAdapter{q: a.q.StartAfter(v)}
+}
 func (a *queryAdapter) Limit(n int) firestorex.Query { return &queryAdapter{q: a.q.Limit(n)} }
 func (a *queryAdapter) Documents(ctx context.Context) firestorex.DocumentIterator {
 	it := a.q.Documents(ctx)

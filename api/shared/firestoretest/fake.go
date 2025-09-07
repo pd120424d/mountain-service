@@ -23,11 +23,12 @@ type doc struct {
 }
 
 type coll struct {
-	f   *Fake
-	key string
-	flt []filter
-	ord *order
-	lim int
+	f          *Fake
+	key        string
+	flt        []filter
+	ord        *order
+	startAfter interface{}
+	lim        int
 }
 
 type filter struct {
@@ -80,6 +81,8 @@ func (c *coll) OrderBy(field string, dir firestorex.Direction) firestorex.Query 
 	return c
 }
 
+func (c *coll) StartAfter(v interface{}) firestorex.Query { c.startAfter = v; return c }
+
 func (c *coll) Limit(n int) firestorex.Query { c.lim = n; return c }
 
 func (c *coll) Documents(ctx context.Context) firestorex.DocumentIterator {
@@ -105,6 +108,25 @@ func (c *coll) Documents(ctx context.Context) firestorex.DocumentIterator {
 			return less
 		})
 	}
+	// startAfter
+	if c.ord != nil && c.startAfter != nil {
+		cursor := fmt.Sprint(c.startAfter)
+		filtered := make([]doc, 0, len(items))
+		for _, d := range items {
+			val := fmt.Sprint(d.data[c.ord.field])
+			if c.ord.desc {
+				if val < cursor {
+					filtered = append(filtered, d)
+				}
+			} else {
+				if val > cursor {
+					filtered = append(filtered, d)
+				}
+			}
+		}
+		items = filtered
+	}
+
 	// limit
 	if c.lim > 0 && c.lim < len(items) {
 		items = items[:c.lim]

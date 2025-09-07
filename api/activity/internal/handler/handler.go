@@ -1,14 +1,18 @@
 package handler
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
+	sharedModels "github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
@@ -132,7 +136,22 @@ func buildActivityListRequest(ctx *gin.Context) activityV1.ActivityListRequest {
 	}
 	req.StartDate = ctx.Query("startDate")
 	req.EndDate = ctx.Query("endDate")
+	req.PageToken = ctx.Query("pageToken")
 	return req
+}
+
+// Local cursor token encoder for exposing nextPageToken in page-based responses
+// Matches service-side format: base64(JSON{"createdAt": RFC3339 UTC})
+type cursorToken struct {
+	CreatedAt string `json:"createdAt"`
+}
+
+func encodeCursorToken(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	b, _ := json.Marshal(cursorToken{CreatedAt: t.UTC().Format(time.RFC3339)})
+	return base64.StdEncoding.EncodeToString(b)
 }
 
 // ListActivities Преузимање листе активности са филтрирањем и пагинацијом
@@ -140,10 +159,13 @@ func buildActivityListRequest(ctx *gin.Context) activityV1.ActivityListRequest {
 // @Description Извлачење листе активности са опционим филтрирањем и страничењем
 // @Tags activities
 // @Produce json
-// @Param page query int false "Page number" default(1)
-// @Param pageSize query int false "Page size" default(10)
-// @Param type query string false "Activity type filter"
-// @Param level query string false "Activity level filter"
+// @Param pageToken query string false "Курсор за наставак (вредност nextPageToken из претходног одговора)"
+// @Param page query int false "Број стране (за класично страничење)" default(1)
+// @Param pageSize query int false "Број ставки по страни" default(10)
+// @Param urgencyId query int false "Филтер по ургенцији"
+// @Param employeeId query int false "Филтер по запосленом"
+// @Param startDate query string false "Почетни датум (RFC3339)"
+// @Param endDate query string false "Крајњи датум (RFC3339)"
 // @Success 200 {object} activityV1.ActivityListResponse
 // @Failure 400 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
@@ -155,6 +177,39 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	log.Info("Received List Activities request")
 
 	req = buildActivityListRequest(ctx)
+
+	// Cursor-based pagination (preferred when pageToken provided)
+	if h.readModel != nil && req.PageToken != "" {
+		size := req.PageSize
+		if size <= 0 {
+			size = 10
+		}
+		var (
+			activities []sharedModels.Activity
+			nextToken  string
+			err        error
+		)
+		if req.UrgencyID != nil {
+			activities, nextToken, err = h.readModel.ListByUrgencyCursor(ctx.Request.Context(), *req.UrgencyID, size, req.PageToken)
+		} else {
+			activities, nextToken, err = h.readModel.ListAllCursor(ctx.Request.Context(), size, req.PageToken)
+		}
+		if err != nil {
+			log.Warnf("Cursor read-model fetch failed, falling back: %v", err)
+		} else {
+			resp := &activityV1.ActivityListResponse{Activities: make([]activityV1.ActivityResponse, 0, len(activities))}
+			for _, a := range activities {
+				ar := a.ToResponse()
+				resp.Activities = append(resp.Activities, *ar)
+			}
+			resp.Total = int64(len(activities))
+			resp.PageSize = size
+			resp.NextPageToken = nextToken
+			log.Infof("Listed %d activities using Firestore cursor. nextToken set? %v", len(resp.Activities), nextToken != "")
+			ctx.JSON(http.StatusOK, resp)
+			return
+		}
+	}
 
 	if h.readModel != nil && req.UrgencyID != nil {
 		page := req.Page
@@ -207,6 +262,7 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, resp)
 			return
 		}
+
 	} else if h.readModel != nil && req.UrgencyID == nil {
 		// No urgencyId: still prefer Firestore read model for the main feed (supports pagination)
 		page := req.Page
@@ -222,6 +278,7 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 		if err != nil {
 			log.Warnf("Read-model fetch (all) failed, falling back to DB: %v", err)
 		} else {
+
 			start := (page - 1) * size
 			end := start + size
 			if start > len(activities) {
@@ -243,6 +300,11 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			} else {
 				resp.TotalPages = 1
 			}
+
+			if end-start > 0 {
+				resp.NextPageToken = encodeCursorToken(activities[end-1].CreatedAt)
+			}
+
 			log.Infof("Listed %d activities out of approx %d total. Used Firestore read model (all).", len(resp.Activities), resp.Total)
 			ctx.JSON(http.StatusOK, resp)
 			return

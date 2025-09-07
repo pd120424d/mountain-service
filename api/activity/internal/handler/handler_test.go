@@ -34,6 +34,20 @@ func (f *readModelFake) ListAll(_ context.Context, limit int) ([]sharedModels.Ac
 	return nil, fmt.Errorf("not used")
 }
 
+func (f *readModelFake) ListByUrgencyCursor(_ context.Context, urgencyID uint, pageSize int, pageToken string) ([]sharedModels.Activity, string, error) {
+	if f.err != nil {
+		return nil, "", f.err
+	}
+	return f.items, "", nil
+}
+
+func (f *readModelFake) ListAllCursor(_ context.Context, pageSize int, pageToken string) ([]sharedModels.Activity, string, error) {
+	if f.err != nil {
+		return nil, "", f.err
+	}
+	return f.items, "", nil
+}
+
 func TestActivityHandler_CreateActivity(t *testing.T) {
 	t.Parallel()
 

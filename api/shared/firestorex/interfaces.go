@@ -32,6 +32,7 @@ type CollectionRef interface {
 type Query interface {
 	Where(field string, op string, value interface{}) Query
 	OrderBy(field string, dir Direction) Query
+	StartAfter(v interface{}) Query
 	Limit(n int) Query
 	Documents(ctx context.Context) DocumentIterator
 }

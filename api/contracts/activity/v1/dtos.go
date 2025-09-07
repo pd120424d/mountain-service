@@ -50,16 +50,18 @@ type ActivityListRequest struct {
 	EndDate    string `json:"endDate,omitempty" form:"endDate"`     // RFC3339 format
 	Page       int    `json:"page,omitempty" form:"page"`
 	PageSize   int    `json:"pageSize,omitempty" form:"pageSize"`
+	PageToken  string `json:"pageToken,omitempty" form:"pageToken"`
 }
 
 // ActivityListResponse DTO for returning paginated activities
 // swagger:model
 type ActivityListResponse struct {
-	Activities []ActivityResponse `json:"activities"`
-	Total      int64              `json:"total"`
-	Page       int                `json:"page"`
-	PageSize   int                `json:"pageSize"`
-	TotalPages int                `json:"totalPages"`
+	Activities    []ActivityResponse `json:"activities"`
+	Total         int64              `json:"total"`
+	Page          int                `json:"page"`
+	PageSize      int                `json:"pageSize"`
+	TotalPages    int                `json:"totalPages"`
+	NextPageToken string             `json:"nextPageToken,omitempty"`
 }
 
 // ActivityStatsResponse DTO for returning activity statistics

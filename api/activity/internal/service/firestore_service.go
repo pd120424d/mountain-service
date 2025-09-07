@@ -4,6 +4,8 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -15,6 +17,8 @@ import (
 type FirestoreService interface {
 	ListByUrgency(ctx context.Context, urgencyID uint, limit int) ([]sharedModels.Activity, error)
 	ListAll(ctx context.Context, limit int) ([]sharedModels.Activity, error)
+	ListByUrgencyCursor(ctx context.Context, urgencyID uint, pageSize int, pageToken string) ([]sharedModels.Activity, string, error)
+	ListAllCursor(ctx context.Context, pageSize int, pageToken string) ([]sharedModels.Activity, string, error)
 }
 
 type firestoreService struct {
@@ -140,6 +144,145 @@ func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedMode
 
 	log.Infof("Successfully listed %d activities", len(items))
 	return items, nil
+}
+
+// Cursor token helpers
+type cursorToken struct {
+	CreatedAt string `json:"createdAt"`
+}
+
+func encodeToken(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	b, _ := json.Marshal(cursorToken{CreatedAt: t.UTC().Format(time.RFC3339)})
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+func decodeToken(token string) (time.Time, error) {
+	if token == "" {
+		return time.Time{}, nil
+	}
+	raw, err := base64.StdEncoding.DecodeString(token)
+	if err != nil {
+		return time.Time{}, err
+	}
+	var ct cursorToken
+	if err := json.Unmarshal(raw, &ct); err != nil {
+		return time.Time{}, err
+	}
+	if ct.CreatedAt == "" {
+		return time.Time{}, nil
+	}
+	return time.Parse(time.RFC3339, ct.CreatedAt)
+}
+
+func (s *firestoreService) ListByUrgencyCursor(ctx context.Context, urgencyID uint, pageSize int, pageToken string) ([]sharedModels.Activity, string, error) {
+	log := s.logger.WithContext(ctx)
+	defer utils.TimeOperation(log, "FirestoreService.ListByUrgencyCursor")()
+	if s.client == nil {
+		return nil, "", fmt.Errorf("firestore client is nil")
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	q := s.client.Collection(s.collection).
+		Where("urgency_id", "==", int64(urgencyID)).
+		OrderBy("created_at", firestorex.Desc)
+	if pageToken != "" {
+		if t, err := decodeToken(pageToken); err == nil && !t.IsZero() {
+			q = q.StartAfter(t)
+		}
+	}
+	q = q.Limit(pageSize + 1)
+	it := q.Documents(ctx)
+	defer it.Stop()
+	var items []sharedModels.Activity
+	for {
+		doc, err := it.Next()
+		if isDone(err) {
+			break
+		}
+		if err != nil {
+			return nil, "", err
+		}
+		var a struct {
+			ID          int64       `firestore:"id"`
+			Description string      `firestore:"description"`
+			EmployeeID  int64       `firestore:"employee_id"`
+			UrgencyID   int64       `firestore:"urgency_id"`
+			CreatedAt   interface{} `firestore:"created_at"`
+			UpdatedAt   interface{} `firestore:"updated_at"`
+		}
+		if err := doc.DataTo(&a); err != nil {
+			continue
+		}
+		items = append(items, sharedModels.Activity{
+			ID: uint(a.ID), Description: a.Description,
+			EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
+			CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
+		})
+	}
+	var next string
+	if len(items) > pageSize {
+		last := items[pageSize-1]
+		next = encodeToken(last.CreatedAt)
+		items = items[:pageSize]
+	}
+	return items, next, nil
+}
+
+func (s *firestoreService) ListAllCursor(ctx context.Context, pageSize int, pageToken string) ([]sharedModels.Activity, string, error) {
+	log := s.logger.WithContext(ctx)
+	defer utils.TimeOperation(log, "FirestoreService.ListAllCursor")()
+	if s.client == nil {
+		return nil, "", fmt.Errorf("firestore client is nil")
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	q := s.client.Collection(s.collection).OrderBy("created_at", firestorex.Desc)
+	if pageToken != "" {
+		if t, err := decodeToken(pageToken); err == nil && !t.IsZero() {
+			q = q.StartAfter(t)
+		}
+	}
+	q = q.Limit(pageSize + 1)
+	it := q.Documents(ctx)
+	defer it.Stop()
+	var items []sharedModels.Activity
+	for {
+		doc, err := it.Next()
+		if isDone(err) {
+			break
+		}
+		if err != nil {
+			return nil, "", err
+		}
+		var a struct {
+			ID          int64       `firestore:"id"`
+			Description string      `firestore:"description"`
+			EmployeeID  int64       `firestore:"employee_id"`
+			UrgencyID   int64       `firestore:"urgency_id"`
+			CreatedAt   interface{} `firestore:"created_at"`
+			UpdatedAt   interface{} `firestore:"updated_at"`
+		}
+		if err := doc.DataTo(&a); err != nil {
+			continue
+		}
+		items = append(items, sharedModels.Activity{
+			ID: uint(a.ID), Description: a.Description,
+			EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
+			CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
+		})
+	}
+	var next string
+	if len(items) > pageSize {
+		last := items[pageSize-1]
+		next = encodeToken(last.CreatedAt)
+		items = items[:pageSize]
+	}
+	return items, next, nil
 }
 
 func coerceTime(v interface{}) time.Time {
