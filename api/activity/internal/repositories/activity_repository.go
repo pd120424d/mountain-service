@@ -60,10 +60,15 @@ func (r *activityRepository) CreateWithOutbox(ctx context.Context, activity *mod
 		if event != nil {
 			// Make sure that we have aggregate ID at this point since it won't be processed if it is 0
 			event.AggregateID = fmt.Sprintf("activity-%d", activity.ID)
-			// Try to update eventData.ActivityID if it's a valid ActivityEvent JSON
+			// Try to update eventData fields if it's a valid ActivityEvent JSON
 			var ev activityV1.ActivityEvent
 			if json.Unmarshal([]byte(event.EventData), &ev) == nil {
+				// Ensure ActivityID is set to the DB-generated ID
 				ev.ActivityID = activity.ID
+				// Ensure CreatedAt is populated with DB timestamp if missing/zero
+				if ev.CreatedAt.IsZero() {
+					ev.CreatedAt = activity.CreatedAt
+				}
 				if b, mErr := json.Marshal(ev); mErr == nil {
 					event.EventData = string(b)
 				}

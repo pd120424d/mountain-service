@@ -47,20 +47,28 @@ func NewUrgencyClient(config UrgencyClientConfig) UrgencyClient {
 }
 
 func (c *urgencyClient) GetUrgencyByID(ctx context.Context, id uint) (*urgencyV1.UrgencyResponse, error) {
+	log := c.logger.WithContext(ctx)
+	log.Infof("Getting urgency by ID: %d", id)
+
 	endpoint := fmt.Sprintf("/api/v1/service/urgency/%d", id)
 	resp, err := c.httpClient.Get(ctx, endpoint)
 	if err != nil {
+		log.Errorf("Failed to get urgency: %v", err)
 		return nil, fmt.Errorf("failed to call urgency service: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Errorf("Urgency service returned status %d", resp.StatusCode)
 		return nil, fmt.Errorf("urgency service returned status %d", resp.StatusCode)
 	}
 
 	var ur urgencyV1.UrgencyResponse
 	if err := json.NewDecoder(resp.Body).Decode(&ur); err != nil {
+		log.Errorf("Failed to decode urgency response: %v", err)
 		return nil, fmt.Errorf("failed to decode urgency response: %w", err)
 	}
+
+	log.Infof("Successfully retrieved urgency with ID %d", id)
 	return &ur, nil
 }

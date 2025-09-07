@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -11,12 +12,27 @@ import (
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
+	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
+
+// test fakes for EmployeeClient
+type fakeEmployeeClient struct {
+	first, last string
+	err         error
+}
+
+func (f *fakeEmployeeClient) GetEmployeeByID(ctx context.Context, employeeID uint) (*employeeV1.EmployeeResponse, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return &employeeV1.EmployeeResponse{ID: employeeID, FirstName: f.first, LastName: f.last}, nil
+}
 
 func TestActivityService_CreateActivity(t *testing.T) {
 	t.Parallel()
@@ -316,6 +332,74 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		// For admin we keep the request's EmployeeID (actor may be a system user)
 		assert.Equal(t, uint(123), resp.EmployeeID)
 		assert.Equal(t, uint(11), resp.UrgencyID)
+	})
+}
+
+func TestActivityService_CreateActivity_Enrichment(t *testing.T) {
+	t.Parallel()
+
+	t.Run("enriches employeeName and urgency fields in outbox event", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		assigned := uint(7)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(9)).Return(&urgencyV1.UrgencyResponse{ID: 9, Status: urgencyV1.InProgress, AssignedEmployeeId: &assigned, FirstName: "Petar", LastName: "Petrovic", Level: urgencyV1.High}, nil)
+		// employee client fake that returns a fixed name
+		empClient := &fakeEmployeeClient{first: "Mika", last: "Mikic"}
+		svc := NewActivityServiceWithDeps(log, repo, mockUrg, empClient)
+
+		repo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, activity *model.Activity, ev any) error {
+			assert.Equal(t, uint(7), activity.EmployeeID) // overridden by actor
+			ob, ok := ev.(*models.OutboxEvent)
+			require.True(t, ok)
+			var data activityV1.ActivityEvent
+			require.NoError(t, json.Unmarshal([]byte(ob.EventData), &data))
+			assert.Equal(t, "CREATE", data.Type)
+			assert.Equal(t, uint(9), data.UrgencyID)
+			assert.Equal(t, uint(7), data.EmployeeID)
+			assert.Equal(t, "Mika Mikic", data.EmployeeName)
+			assert.Equal(t, "Petar Petrovic", data.UrgencyTitle)
+			assert.Equal(t, string(urgencyV1.High), data.UrgencyLevel)
+			return nil
+		})
+
+		req := &activityV1.ActivityCreateRequest{Description: "note", EmployeeID: 999, UrgencyID: 9}
+		ctx := context.WithValue(context.Background(), "employeeID", uint(7))
+		ctx = context.WithValue(ctx, "role", "Medic")
+		resp, err := svc.CreateActivity(ctx, req)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("continues when employee client fails (no name)", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		assigned := uint(5)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(3)).Return(&urgencyV1.UrgencyResponse{ID: 3, Status: urgencyV1.InProgress, AssignedEmployeeId: &assigned, FirstName: "Ana", LastName: "Anic", Level: urgencyV1.Medium}, nil)
+		// failing employee client
+		empClient := &fakeEmployeeClient{err: fmt.Errorf("boom")}
+		svc := NewActivityServiceWithDeps(log, repo, mockUrg, empClient)
+
+		repo.EXPECT().CreateWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, activity *model.Activity, ev any) error {
+			ob := ev.(*models.OutboxEvent)
+			var data activityV1.ActivityEvent
+			require.NoError(t, json.Unmarshal([]byte(ob.EventData), &data))
+			assert.Equal(t, "", data.EmployeeName) // still proceeds, empty name
+			assert.Equal(t, "Ana Anic", data.UrgencyTitle)
+			assert.Equal(t, string(urgencyV1.Medium), data.UrgencyLevel)
+			return nil
+		})
+
+		req := &activityV1.ActivityCreateRequest{Description: "x", EmployeeID: 5, UrgencyID: 3}
+		ctx := context.WithValue(context.Background(), "employeeID", uint(5))
+		ctx = context.WithValue(ctx, "role", "Medic")
+		_, err := svc.CreateActivity(ctx, req)
+		assert.NoError(t, err)
 	})
 }
 

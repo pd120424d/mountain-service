@@ -53,54 +53,56 @@ func NewActivityClient(config ActivityClientConfig) ActivityClient {
 
 // CreateActivity creates a new activity
 func (c *activityClient) CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error) {
-	c.logger.Infof("Creating activity for urgency %d by employee %d", req.UrgencyID, req.EmployeeID)
+	log := c.logger.WithContext(ctx)
+	log.Infof("Creating activity for urgency %d by employee %d", req.UrgencyID, req.EmployeeID)
 
 	resp, err := c.httpClient.Post(ctx, "/api/v1/service/activities", req)
 	if err != nil {
-		c.logger.Errorf("Failed to create activity: %v", err)
+		log.Errorf("Failed to create activity: %v", err)
 		return nil, fmt.Errorf("failed to create activity: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
-		c.logger.Errorf("Activity service returned status %d", resp.StatusCode)
+		log.Errorf("Activity service returned status %d", resp.StatusCode)
 		return nil, fmt.Errorf("activity service returned status %d", resp.StatusCode)
 	}
 
 	var activity activityV1.ActivityResponse
 	if err := json.NewDecoder(resp.Body).Decode(&activity); err != nil {
-		c.logger.Errorf("Failed to decode activity response: %v", err)
+		log.Errorf("Failed to decode activity response: %v", err)
 		return nil, fmt.Errorf("failed to decode activity response: %w", err)
 	}
 
-	c.logger.Infof("Successfully created activity with ID %d", activity.ID)
+	log.Infof("Successfully created activity with ID %d", activity.ID)
 	return &activity, nil
 }
 
 // GetActivitiesByUrgency retrieves all activities for a specific urgency
 func (c *activityClient) GetActivitiesByUrgency(ctx context.Context, urgencyID uint) ([]activityV1.ActivityResponse, error) {
-	c.logger.Infof("Getting activities for urgency %d", urgencyID)
+	log := c.logger.WithContext(ctx)
+	log.Infof("Getting activities for urgency %d", urgencyID)
 
 	endpoint := fmt.Sprintf("/api/v1/service/activities?urgencyId=%d", urgencyID)
 	resp, err := c.httpClient.Get(ctx, endpoint)
 	if err != nil {
-		c.logger.Errorf("Failed to get activities: %v", err)
+		log.Errorf("Failed to get activities: %v", err)
 		return nil, fmt.Errorf("failed to get activities: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		c.logger.Errorf("Activity service returned status %d", resp.StatusCode)
+		log.Errorf("Activity service returned status %d", resp.StatusCode)
 		return nil, fmt.Errorf("activity service returned status %d", resp.StatusCode)
 	}
 
 	var listResponse activityV1.ActivityListResponse
 	if err := json.NewDecoder(resp.Body).Decode(&listResponse); err != nil {
-		c.logger.Errorf("Failed to decode activities response: %v", err)
+		log.Errorf("Failed to decode activities response: %v", err)
 		return nil, fmt.Errorf("failed to decode activities response: %w", err)
 	}
 
-	c.logger.Infof("Successfully retrieved %d activities for urgency %d", len(listResponse.Activities), urgencyID)
+	log.Infof("Successfully retrieved %d activities for urgency %d", len(listResponse.Activities), urgencyID)
 	return listResponse.Activities, nil
 }
 

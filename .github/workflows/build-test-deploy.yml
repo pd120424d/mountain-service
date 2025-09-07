@@ -562,7 +562,7 @@ jobs:
           kubectl -n "$NS" delete ingress docs-ui --ignore-not-found=true
 
           echo "Upgrading Docs UI via Helm..."
-          upgrade docs-ui ./charts/docs-ui docs-ui "true"
+          upgrade docs-ui ./charts/docs-ui docs-ui "$docs_changed"
 
 
       - name: Show status and recent events

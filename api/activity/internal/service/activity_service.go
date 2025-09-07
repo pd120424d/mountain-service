@@ -5,12 +5,14 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
+	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
@@ -28,10 +30,14 @@ type ActivityService interface {
 }
 
 type activityService struct {
-	log           utils.Logger
-	repo          repositories.ActivityRepository
+	log  utils.Logger
+	repo repositories.ActivityRepository
+	// clients are optional; when nil, enrichment is skipped
 	urgencyClient interface {
 		GetUrgencyByID(ctx context.Context, id uint) (*urgencyV1.UrgencyResponse, error)
+	}
+	employeeClient interface {
+		GetEmployeeByID(ctx context.Context, employeeID uint) (*employeeV1.EmployeeResponse, error)
 	}
 }
 
@@ -39,6 +45,20 @@ func NewActivityService(log utils.Logger, repo repositories.ActivityRepository, 
 	GetUrgencyByID(ctx context.Context, id uint) (*urgencyV1.UrgencyResponse, error)
 }) ActivityService {
 	return &activityService{log: log.WithName("activityService"), repo: repo, urgencyClient: urgencyClient}
+}
+
+// NewActivityServiceWithDeps allows injecting both urgency and employee clients
+func NewActivityServiceWithDeps(
+	log utils.Logger,
+	repo repositories.ActivityRepository,
+	urgencyClient interface {
+		GetUrgencyByID(ctx context.Context, id uint) (*urgencyV1.UrgencyResponse, error)
+	},
+	employeeClient interface {
+		GetEmployeeByID(ctx context.Context, employeeID uint) (*employeeV1.EmployeeResponse, error)
+	},
+) ActivityService {
+	return &activityService{log: log.WithName("activityService"), repo: repo, urgencyClient: urgencyClient, employeeClient: employeeClient}
 }
 
 func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error) {
@@ -57,6 +77,8 @@ func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.Ac
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", fmt.Sprintf("validation failed: %v", err), nil)
 	}
 
+	var urgencyTitle string
+	var urgencyLevel string
 	if s.urgencyClient != nil {
 		urg, err := s.urgencyClient.GetUrgencyByID(ctx, req.UrgencyID)
 		if err != nil {
@@ -77,6 +99,10 @@ func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.Ac
 				return ""
 			}()})
 		}
+
+		urgencyTitle = fmt.Sprintf("%s %s", strings.TrimSpace(urg.FirstName), strings.TrimSpace(urg.LastName))
+		urgencyTitle = strings.TrimSpace(urgencyTitle)
+		urgencyLevel = string(urg.Level)
 
 		actorID := ctx.Value("employeeID")
 		role := ctx.Value("role")
@@ -110,16 +136,30 @@ func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.Ac
 
 	activity := model.FromCreateRequest(req)
 
-	// Build outbox event payload for CQRS
+	// Denormalize employee name for read-model if client is available
+	var employeeName string
+	if s.employeeClient != nil {
+		if emp, err := s.employeeClient.GetEmployeeByID(ctx, req.EmployeeID); err != nil {
+			log.Warnf("Failed to fetch employee %d for denormalization: %v", req.EmployeeID, err)
+		} else if emp != nil {
+			fullName := strings.TrimSpace(strings.TrimSpace(emp.FirstName) + " " + strings.TrimSpace(emp.LastName))
+			employeeName = fullName
+		}
+	}
+
+	// Build outbox event payload for CQRS (enriched)
 	event := activityV1.CreateOutboxEvent(
 		activity.ID,
 		activityV1.ActivityEvent{
-			Type:        "CREATE", // used by Firestore updater to determine action
-			ActivityID:  activity.ID,
-			UrgencyID:   activity.UrgencyID,
-			EmployeeID:  activity.EmployeeID,
-			Description: activity.Description,
-			CreatedAt:   activity.CreatedAt,
+			Type:         "CREATE", // used by Firestore updater to determine action
+			ActivityID:   activity.ID,
+			UrgencyID:    activity.UrgencyID,
+			EmployeeID:   activity.EmployeeID,
+			Description:  activity.Description,
+			CreatedAt:    activity.CreatedAt,
+			EmployeeName: employeeName,
+			UrgencyTitle: urgencyTitle,
+			UrgencyLevel: urgencyLevel,
 		},
 	)
 

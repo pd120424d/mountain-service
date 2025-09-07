@@ -147,14 +147,21 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	// Initialize repositories and services
 	activityRepo := repositories.NewActivityRepository(log, db)
 
+	serviceAuth := auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: os.Getenv("SERVICE_AUTH_SECRET"), ServiceName: "activity-service", TokenTTL: time.Hour})
+
 	urgencyBaseURL := os.Getenv("URGENCY_SERVICE_URL")
 	if urgencyBaseURL == "" {
 		urgencyBaseURL = "http://urgency-service:8083"
 	}
-	serviceAuth := auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: os.Getenv("SERVICE_AUTH_SECRET"), ServiceName: "activity-service", TokenTTL: time.Hour})
 	urgencyClient := clients.NewUrgencyClient(clients.UrgencyClientConfig{BaseURL: urgencyBaseURL, ServiceAuth: serviceAuth, Logger: log, Timeout: 30 * time.Second})
 
-	activitySvc := service.NewActivityService(log, activityRepo, urgencyClient)
+	employeeBaseURL := os.Getenv("EMPLOYEE_SERVICE_URL")
+	if employeeBaseURL == "" {
+		employeeBaseURL = "http://employee-service:8082"
+	}
+	employeeClient := clients.NewEmployeeClient(clients.EmployeeClientConfig{BaseURL: employeeBaseURL, ServiceAuth: serviceAuth, Logger: log, Timeout: 30 * time.Second})
+
+	activitySvc := service.NewActivityServiceWithDeps(log, activityRepo, urgencyClient, employeeClient)
 
 	// Initialize Firestore service if env vars present
 	var readModel service.FirestoreService

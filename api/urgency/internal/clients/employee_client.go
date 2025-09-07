@@ -73,7 +73,8 @@ func NewEmployeeClientWithHTTPClient(httpClient HTTPClient, logger utils.Logger)
 
 // GetOnCallEmployees retrieves employees currently on call
 func (c *employeeClient) GetOnCallEmployees(ctx context.Context, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error) {
-	c.logger.Info("Getting on-call employees", zap.Duration("shiftBuffer", shiftBuffer))
+	log := c.logger.WithContext(ctx)
+	log.Info("Getting on-call employees", zap.Duration("shiftBuffer", shiftBuffer))
 
 	endpoint := "/api/v1/employees/on-call"
 	if shiftBuffer > 0 {
@@ -82,82 +83,84 @@ func (c *employeeClient) GetOnCallEmployees(ctx context.Context, shiftBuffer tim
 
 	resp, err := c.httpClient.Get(ctx, endpoint)
 	if err != nil {
-		c.logger.Error("Failed to get on-call employees", zap.Error(err))
+		log.Error("Failed to get on-call employees", zap.Error(err))
 		return nil, fmt.Errorf("failed to get on-call employees: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		c.logger.Error("Employee service returned error", zap.Int("statusCode", resp.StatusCode))
+		log.Error("Employee service returned error", zap.Int("statusCode", resp.StatusCode))
 		return nil, fmt.Errorf("employee service returned status %d", resp.StatusCode)
 	}
 
 	var response employeeV1.OnCallEmployeesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		c.logger.Error("Failed to decode on-call employees response", zap.Error(err))
+		log.Error("Failed to decode on-call employees response", zap.Error(err))
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	c.logger.Info("Successfully retrieved on-call employees", zap.Int("count", len(response.Employees)))
+	log.Info("Successfully retrieved on-call employees", zap.Int("count", len(response.Employees)))
 	return response.Employees, nil
 }
 
 // GetAllEmployees retrieves all employees
 func (c *employeeClient) GetAllEmployees(ctx context.Context) ([]employeeV1.EmployeeResponse, error) {
-	c.logger.Info("Getting all employees")
+	log := c.logger.WithContext(ctx)
+	log.Info("Getting all employees")
 
 	resp, err := c.httpClient.Get(ctx, "/api/v1/employees")
 	if err != nil {
-		c.logger.Error("Failed to get all employees", zap.Error(err))
+		log.Error("Failed to get all employees", zap.Error(err))
 		return nil, fmt.Errorf("failed to get all employees: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		c.logger.Error("Employee service returned error", zap.Int("statusCode", resp.StatusCode))
+		log.Error("Employee service returned error", zap.Int("statusCode", resp.StatusCode))
 		return nil, fmt.Errorf("employee service returned status %d", resp.StatusCode)
 	}
 
 	var response employeeV1.AllEmployeesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		c.logger.Error("Failed to decode all employees response", zap.Error(err))
+		log.Error("Failed to decode all employees response", zap.Error(err))
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	c.logger.Info("Successfully retrieved all employees", zap.Int("count", len(response.Employees)))
+	log.Info("Successfully retrieved all employees", zap.Int("count", len(response.Employees)))
 	return response.Employees, nil
 }
 
 // GetEmployeeByID retrieves a specific employee by ID
 func (c *employeeClient) GetEmployeeByID(ctx context.Context, employeeID uint) (*employeeV1.EmployeeResponse, error) {
-	c.logger.Info("Getting employee by ID", zap.Uint("employeeID", employeeID))
+	log := c.logger.WithContext(ctx)
+	log.Info("Getting employee by ID", zap.Uint("employeeID", employeeID))
 
 	// Use service-auth protected endpoint to avoid user JWT requirements
 	endpoint := fmt.Sprintf("/api/v1/service/employees/%d", employeeID)
 	resp, err := c.httpClient.Get(ctx, endpoint)
 	if err != nil {
-		c.logger.Error("Failed to get employee by ID", zap.Uint("employeeID", employeeID), zap.Error(err))
+		log.Error("Failed to get employee by ID", zap.Uint("employeeID", employeeID), zap.Error(err))
 		return nil, fmt.Errorf("failed to get employee %d: %w", employeeID, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		c.logger.Warn("Employee not found", zap.Uint("employeeID", employeeID))
+		log.Warn("Employee not found", zap.Uint("employeeID", employeeID))
 		return nil, fmt.Errorf("employee %d not found", employeeID)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		c.logger.Error("Employee service returned error", zap.Int("statusCode", resp.StatusCode), zap.Uint("employeeID", employeeID))
+		log.Error("Employee service returned error", zap.Int("statusCode", resp.StatusCode), zap.Uint("employeeID", employeeID))
 		return nil, fmt.Errorf("employee service returned status %d", resp.StatusCode)
 	}
 
 	var employee employeeV1.EmployeeResponse
 	if err := json.NewDecoder(resp.Body).Decode(&employee); err != nil {
-		c.logger.Error("Failed to decode employee response", zap.Uint("employeeID", employeeID), zap.Error(err))
+		log.Error("Failed to decode employee response", zap.Uint("employeeID", employeeID), zap.Error(err))
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	c.logger.Info("Successfully retrieved employee", zap.Uint("employeeID", employeeID))
+	log.Info("Successfully retrieved employee", zap.Uint("employeeID", employeeID))
 	return &employee, nil
 }
 
