@@ -64,6 +64,8 @@ func SnapshotDataTo(ds map[string]interface{}, out interface{}) error {
 							}
 						}
 					}
+				case reflect.Interface:
+					fv.Set(reflect.ValueOf(val))
 				}
 			}
 		}
