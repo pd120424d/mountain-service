@@ -3,6 +3,7 @@ package firestorex
 import (
 	"fmt"
 	"reflect"
+	"time"
 )
 
 // SnapshotDataTo populates out (pointer to struct) from the given snapshot using `firestore` tags.
@@ -50,6 +51,18 @@ func SnapshotDataTo(ds map[string]interface{}, out interface{}) error {
 				case reflect.String:
 					if s, ok := val.(string); ok {
 						fv.SetString(s)
+					}
+				case reflect.Struct:
+					// Support time.Time fields
+					if fv.Type() == reflect.TypeOf(time.Time{}) {
+						switch tval := val.(type) {
+						case time.Time:
+							fv.Set(reflect.ValueOf(tval))
+						case string:
+							if parsed, err := time.Parse(time.RFC3339, tval); err == nil {
+								fv.Set(reflect.ValueOf(parsed))
+							}
+						}
 					}
 				}
 			}

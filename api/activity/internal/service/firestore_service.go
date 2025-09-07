@@ -62,12 +62,12 @@ func (s *firestoreService) ListByUrgency(ctx context.Context, urgencyID uint, li
 		}
 
 		var a struct {
-			ID          int64  `firestore:"id"`
-			Description string `firestore:"description"`
-			EmployeeID  int64  `firestore:"employee_id"`
-			UrgencyID   int64  `firestore:"urgency_id"`
-			CreatedAt   string `firestore:"created_at"`
-			UpdatedAt   string `firestore:"updated_at"`
+			ID          int64       `firestore:"id"`
+			Description string      `firestore:"description"`
+			EmployeeID  int64       `firestore:"employee_id"`
+			UrgencyID   int64       `firestore:"urgency_id"`
+			CreatedAt   interface{} `firestore:"created_at"`
+			UpdatedAt   interface{} `firestore:"updated_at"`
 		}
 		if err := doc.DataTo(&a); err != nil {
 			log.Errorf("failed to unmarshal firestore doc: %v", err)
@@ -78,8 +78,8 @@ func (s *firestoreService) ListByUrgency(ctx context.Context, urgencyID uint, li
 			Description: a.Description,
 			EmployeeID:  uint(a.EmployeeID),
 			UrgencyID:   uint(a.UrgencyID),
-			CreatedAt:   s.parseTime(a.CreatedAt),
-			UpdatedAt:   s.parseTime(a.UpdatedAt),
+			CreatedAt:   coerceTime(a.CreatedAt),
+			UpdatedAt:   coerceTime(a.UpdatedAt),
 		}
 		items = append(items, item)
 	}
@@ -116,12 +116,12 @@ func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedMode
 			return nil, err
 		}
 		var a struct {
-			ID          int64  `firestore:"id"`
-			Description string `firestore:"description"`
-			EmployeeID  int64  `firestore:"employee_id"`
-			UrgencyID   int64  `firestore:"urgency_id"`
-			CreatedAt   string `firestore:"created_at"`
-			UpdatedAt   string `firestore:"updated_at"`
+			ID          int64     `firestore:"id"`
+			Description string    `firestore:"description"`
+			EmployeeID  int64     `firestore:"employee_id"`
+			UrgencyID   int64     `firestore:"urgency_id"`
+			CreatedAt   time.Time `firestore:"created_at"`
+			UpdatedAt   time.Time `firestore:"updated_at"`
 		}
 		if err := doc.DataTo(&a); err != nil {
 			log.Errorf("failed to unmarshal firestore doc: %v", err)
@@ -132,8 +132,8 @@ func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedMode
 			Description: a.Description,
 			EmployeeID:  uint(a.EmployeeID),
 			UrgencyID:   uint(a.UrgencyID),
-			CreatedAt:   s.parseTime(a.CreatedAt),
-			UpdatedAt:   s.parseTime(a.UpdatedAt),
+			CreatedAt:   a.CreatedAt,
+			UpdatedAt:   a.UpdatedAt,
 		}
 		items = append(items, item)
 	}
@@ -142,14 +142,19 @@ func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedMode
 	return items, nil
 }
 
-func (s *firestoreService) parseTime(ts string) (t time.Time) {
-	if ts == "" {
-		return
+func coerceTime(v interface{}) time.Time {
+	switch t := v.(type) {
+	case time.Time:
+		return t
+	case string:
+		if parsed, err := time.Parse(time.RFC3339, t); err == nil {
+			return parsed
+		}
+		if parsed, err := time.Parse("2006-01-02T15:04:05Z07:00", t); err == nil {
+			return parsed
+		}
 	}
-	if parsed, err := time.Parse(time.RFC3339, ts); err == nil {
-		return parsed
-	}
-	return
+	return time.Time{}
 }
 
 func isDone(err error) bool { return firestorex.IsDone(err) }

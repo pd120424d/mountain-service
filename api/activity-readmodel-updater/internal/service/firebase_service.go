@@ -30,16 +30,16 @@ type firebaseService struct {
 
 // FirebaseActivityDoc represents the document structure in Firestore
 type FirebaseActivityDoc struct {
-	ID           int64  `firestore:"id"`
-	UrgencyID    int64  `firestore:"urgency_id"`
-	EmployeeID   int64  `firestore:"employee_id"`
-	Description  string `firestore:"description"`
-	CreatedAt    string `firestore:"created_at"`
-	EmployeeName string `firestore:"employee_name"`
-	UrgencyTitle string `firestore:"urgency_title"`
-	UrgencyLevel string `firestore:"urgency_level"`
-	SyncedAt     string `firestore:"synced_at"`
-	Version      int    `firestore:"version"`
+	ID           int64     `firestore:"id"`
+	UrgencyID    int64     `firestore:"urgency_id"`
+	EmployeeID   int64     `firestore:"employee_id"`
+	Description  string    `firestore:"description"`
+	CreatedAt    time.Time `firestore:"created_at"`
+	EmployeeName string    `firestore:"employee_name"`
+	UrgencyTitle string    `firestore:"urgency_title"`
+	UrgencyLevel string    `firestore:"urgency_level"`
+	SyncedAt     time.Time `firestore:"synced_at"`
+	Version      int       `firestore:"version"`
 }
 
 func NewFirebaseService(client firestorex.Client, logger utils.Logger) FirebaseService {
@@ -161,11 +161,11 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 			UrgencyID:    int64(eventData.UrgencyID),
 			EmployeeID:   int64(eventData.EmployeeID),
 			Description:  eventData.Description,
-			CreatedAt:    eventData.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			CreatedAt:    eventData.CreatedAt.UTC(),
 			EmployeeName: eventData.EmployeeName,
 			UrgencyTitle: eventData.UrgencyTitle,
 			UrgencyLevel: eventData.UrgencyLevel,
-			SyncedAt:     time.Now().UTC().Format(time.RFC3339),
+			SyncedAt:     time.Now().UTC(),
 			Version:      1,
 		}
 

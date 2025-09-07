@@ -10,8 +10,8 @@ type OutboxEvent struct {
 	ID          uint       `gorm:"primaryKey" json:"id"`
 	AggregateID string     `gorm:"not null" json:"aggregateId"`
 	EventData   string     `gorm:"type:text" json:"eventData"`
-	Published   bool       `gorm:"default:false" json:"published"`
-	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"createdAt"`
+	Published   bool       `gorm:"default:false;index:idx_outbox_published_created_at,priority:1" json:"published"`
+	CreatedAt   time.Time  `gorm:"autoCreateTime;index:idx_outbox_published_created_at,priority:2" json:"createdAt"`
 	PublishedAt *time.Time `json:"publishedAt,omitempty"`
 }
 
