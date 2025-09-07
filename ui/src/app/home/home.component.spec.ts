@@ -19,7 +19,9 @@ describe('HomeComponent', () => {
   beforeEach(async () => {
     const spinnerSpy = jasmine.createSpyObj('NgxSpinnerService', ['show', 'hide']);
     const toastrSpy = jasmine.createSpyObj('ToastrService', ['success', 'error', 'info', 'warning']);
-    const authSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'isAdmin']);
+    const authSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'isAdmin'], {
+      authChanged$: of('login')
+    });
 
     await TestBed.configureTestingModule({
       imports: [HomeComponent],

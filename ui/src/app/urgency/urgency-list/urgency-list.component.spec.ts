@@ -8,6 +8,7 @@ import { of, throwError } from 'rxjs';
 import { UrgencyListComponent } from './urgency-list.component';
 import { UrgencyService } from '../urgency.service';
 import { Urgency, UrgencyLevel, UrgencyStatus } from '../../shared/models';
+import { AuthService } from '../../services/auth.service';
 
 describe('UrgencyListComponent', () => {
   let component: UrgencyListComponent;
@@ -58,7 +59,8 @@ describe('UrgencyListComponent', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         TranslateService,
-        { provide: UrgencyService, useValue: urgencyServiceSpy }
+        { provide: UrgencyService, useValue: urgencyServiceSpy },
+        { provide: AuthService, useValue: jasmine.createSpyObj('AuthService', ['getUserId']) }
       ]
     })
       .compileComponents();
@@ -114,4 +116,49 @@ describe('UrgencyListComponent', () => {
     expect(component.getLevelClass(UrgencyLevel.High)).toBe('level-high');
     expect(component.getLevelClass(UrgencyLevel.Critical)).toBe('level-critical');
   });
+
+  it('should compute unassignedCount correctly', () => {
+    urgencyService.getUrgenciesPaginated.and.returnValue(of({ urgencies: mockUrgencies, total: mockUrgencies.length, page: 1, pageSize: 20, totalPages: 1 }));
+    component.ngOnInit();
+    expect(component.unassignedCount).toBe(1); // one without assignedEmployeeId
+  });
+
+  it('should return correct row class based on status and assignment', () => {
+    const auth = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+    auth.getUserId.and.returnValue('456');
+
+    const openUnassigned = { ...mockUrgencies[0], status: UrgencyStatus.Open };
+    const inProgressMine = { ...mockUrgencies[1], status: UrgencyStatus.InProgress };
+    const inProgressOther = { ...mockUrgencies[1], status: UrgencyStatus.InProgress, assignedEmployeeId: 999 };
+    const closed = { ...mockUrgencies[1], status: UrgencyStatus.Closed };
+
+    expect(component.getRowClass(openUnassigned as any)).toBe('urgency-row-open-unassigned');
+    expect(component.getRowClass(inProgressMine as any)).toBe('urgency-row-assigned-me');
+    expect(component.getRowClass(inProgressOther as any)).toBe('urgency-row-assigned-other');
+    expect(component.getRowClass(closed as any)).toBe('urgency-row-closed');
+  });
+
+  it('should paginate with onPrev and onNext correctly', () => {
+    // Return response without page so component retains its local page value after load
+    urgencyService.getUrgenciesPaginated.and.callFake(() => of({ urgencies: mockUrgencies, total: 50, page: component.page, pageSize: 20, totalPages: 3 }));
+    component.page = 2;
+    component.totalPages = 3;
+
+    component.onPrev();
+    expect(component.page).toBe(1);
+
+    component.onNext();
+    expect(component.page).toBe(2);
+
+    // at bounds
+    component.page = 1;
+    component.onPrev();
+    expect(component.page).toBe(1);
+
+    component.page = 3;
+    component.totalPages = 3;
+    component.onNext();
+    expect(component.page).toBe(3);
+  });
+
 });

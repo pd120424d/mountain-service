@@ -445,6 +445,106 @@ describe('ShiftManagementComponent', () => {
       expect(component.selectedTimeSpan).toBe(7);
       expect(component.loadShiftAvailability).not.toHaveBeenCalled();
     });
+
+  describe('Tooltip and assignment time helpers', () => {
+    beforeEach(() => {
+      // set locale/lang if needed implicitly via translate; we only check translation keys
+      (component as any).translate.instant = (key: string) => key;
+    });
+
+    it('getAssignButtonTooltip covers processing/select/assigned/fully booked/default', () => {
+      const day = new Date('2025-08-01');
+      // Default available data
+      component.shiftAvailability = {
+        days: {
+          '2025-08-01': {
+            firstShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 1, isAssignedToEmployee: false, isFullyBooked: false },
+            secondShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 0, isAssignedToEmployee: false, isFullyBooked: true },
+            thirdShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 1, isAssignedToEmployee: true, isFullyBooked: false }
+          }
+        }
+      } as any;
+
+      // processing state
+      component.isAssigning = true;
+      expect(component.getAssignButtonTooltip(1, day)).toBe('SHIFT_MANAGEMENT.TOOLTIP_PROCESSING');
+      component.isAssigning = false;
+
+      // admin needs selected employee
+      (component['auth'].getRole as jasmine.Spy).and.returnValue('Administrator');
+      component.userRole = 'Administrator';
+      expect(component.getAssignButtonTooltip(1, day)).toBe('SHIFT_MANAGEMENT.TOOLTIP_SELECT_EMPLOYEE');
+
+      // switch to normal user for following checks
+      (component['auth'].getRole as jasmine.Spy).and.returnValue('Medic');
+      component.userRole = 'Medic';
+
+      // already assigned (current user)
+      expect(component.getAssignButtonTooltip(3, day)).toBe('SHIFT_MANAGEMENT.TOOLTIP_ALREADY_ASSIGNED');
+
+      // fully booked
+      expect(component.getAssignButtonTooltip(2, day)).toBe('SHIFT_MANAGEMENT.TOOLTIP_FULLY_BOOKED');
+
+      // default assign
+      expect(component.getAssignButtonTooltip(1, day)).toBe('SHIFT_MANAGEMENT.TOOLTIP_ASSIGN');
+    });
+
+    it('getRemoveButtonTooltip covers processing/select/not assigned/default', () => {
+      const day = new Date('2025-08-01');
+      component.shiftAvailability = {
+        days: {
+          '2025-08-01': {
+            firstShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 1, isAssignedToEmployee: true, isFullyBooked: false },
+            secondShift: { medicSlotsAvailable: 1, technicalSlotsAvailable: 1, isAssignedToEmployee: false, isFullyBooked: false }
+          }
+        }
+      } as any;
+
+      // processing
+      component.isRemoving = true;
+      expect(component.getRemoveButtonTooltip(1, day)).toBe('SHIFT_MANAGEMENT.TOOLTIP_PROCESSING');
+      component.isRemoving = false;
+
+      // admin needs employee
+      (component['auth'].getRole as jasmine.Spy).and.returnValue('Administrator');
+      component.userRole = 'Administrator';
+      expect(component.getRemoveButtonTooltip(1, day)).toBe('SHIFT_MANAGEMENT.TOOLTIP_SELECT_EMPLOYEE');
+
+      // switch to normal user for following checks
+      (component['auth'].getRole as jasmine.Spy).and.returnValue('Medic');
+      component.userRole = 'Medic';
+
+      // not assigned
+      expect(component.getRemoveButtonTooltip(2, day)).toBe('SHIFT_MANAGEMENT.TOOLTIP_NOT_ASSIGNED');
+
+      // default remove
+      expect(component.getRemoveButtonTooltip(1, day)).toBe('SHIFT_MANAGEMENT.TOOLTIP_REMOVE');
+    });
+
+    it('getAssignmentTime formats date and falls back safely', () => {
+      // prepare assignment cache for current user
+      component.userId = 'u1';
+      component.selectedEmployeeShifts.set('u1', [
+        { id: 1, shiftDate: '2024-01-15', shiftType: 1, assignedAt: '2024-01-15T10:30:00Z' } as any,
+        { id: 2, shiftDate: '2024-01-16', shiftType: 2, createdAt: '2024-01-16T11:45:00Z' } as any,
+        { id: 3, shiftDate: '2024-01-17', shiftType: 3 } as any
+      ]);
+
+      // Valid assignedAt
+      const t1 = component.getAssignmentTime(1, new Date('2024-01-15'));
+      expect(typeof t1).toBe('string');
+      expect(t1).not.toBeNull();
+
+      // Fallback to createdAt
+      const t2 = component.getAssignmentTime(2, new Date('2024-01-16'));
+      expect(typeof t2).toBe('string');
+
+      // No timestamps
+      const t3 = component.getAssignmentTime(3, new Date('2024-01-17'));
+      expect(t3).toBeNull();
+    });
+  });
+
   });
 
 });

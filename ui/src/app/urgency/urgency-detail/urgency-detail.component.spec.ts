@@ -147,4 +147,51 @@ describe('UrgencyDetailComponent', () => {
     expect(toastrService.success).toHaveBeenCalled();
     expect(component.isSubmittingActivity).toBeFalse();
   });
+
+  it('canAddActivity returns true only when assigned and InProgress', () => {
+    component.urgency = {
+      id: 1,
+      description: 'd',
+      level: UrgencyLevel.High,
+      status: UrgencyStatus.InProgress,
+      createdAt: new Date().toISOString(),
+      assignedEmployeeId: 1
+    } as any;
+
+    expect(component.canAddActivity()).toBeTrue();
+
+    component.urgency = { ...(component.urgency as any), status: UrgencyStatus.Open } as any;
+    expect(component.canAddActivity()).toBeFalse();
+
+    component.urgency = { ...(component.urgency as any), assignedEmployeeId: undefined, status: UrgencyStatus.InProgress } as any;
+    expect(component.canAddActivity()).toBeFalse();
+  });
+
+  it('onPrevActivities and onNextActivities enforce bounds and reload', () => {
+    spyOn(component, 'loadActivities');
+
+    component.activitiesPage = 2;
+    component.totalActivitiesPages = 3;
+
+    component.onPrevActivities();
+    expect(component.activitiesPage).toBe(1);
+    expect(component.loadActivities).toHaveBeenCalled();
+
+    (component.loadActivities as jasmine.Spy).calls.reset();
+    component.onPrevActivities(); // at lower bound
+    expect(component.activitiesPage).toBe(1);
+    expect(component.loadActivities).not.toHaveBeenCalled();
+
+    component.activitiesPage = 2;
+    component.onNextActivities();
+    expect(component.activitiesPage).toBe(3);
+    expect(component.loadActivities).toHaveBeenCalled();
+
+    (component.loadActivities as jasmine.Spy).calls.reset();
+    component.onNextActivities(); // at upper bound
+    expect(component.activitiesPage).toBe(3);
+    expect(component.loadActivities).not.toHaveBeenCalled();
+  });
+
+
 });

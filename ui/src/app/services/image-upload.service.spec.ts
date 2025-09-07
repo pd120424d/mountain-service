@@ -73,12 +73,15 @@ describe('ImageUploadService', () => {
       } as any);
     });
 
-    xit('should handle upload error', (done) => {
+    it('should handle upload error', (done) => {
       const employeeId = 123;
       const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
 
       service.uploadProfilePicture(employeeId, file).subscribe({
-        next: () => fail('Should not have succeeded'),
+        next: (progress) => {
+          // Ignore intermediate progress events; error will be delivered via error callback
+          expect(['uploading', 'completed']).toContain(progress.status);
+        },
         error: (error) => {
           expect(error.status).toBe('error');
           expect(error.message).toContain('Http failure response');

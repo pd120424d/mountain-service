@@ -52,15 +52,16 @@ export class HomeComponent implements OnInit {
 
     // Fetch open urgencies count when user is authenticated
     if (this.authService.isAuthenticated()) {
-      this.urgencyService.getUrgencies().subscribe({
-        next: (urgencies) => {
-          this.openUrgenciesCount = (urgencies || []).filter(u => !hasAcceptedAssignment(u as any)).length;
-        },
-        error: () => {
-          this.openUrgenciesCount = this.openUrgenciesCount || 0;
-        }
-      });
+      this.refreshOpenUrgencies();
     }
+
+    this.authService.authChanged$.subscribe(() => {
+      if (this.authService.isAuthenticated()) {
+        this.refreshOpenUrgencies();
+      } else {
+        this.openUrgenciesCount = 0;
+      }
+    });
 
     setInterval(() => {
       const nextIndex = (this.currentImageIndex + 1) % this.images.length;
@@ -71,6 +72,17 @@ export class HomeComponent implements OnInit {
         this.currentImageIndex = nextIndex;
       });
     }, 8000);
+  }
+
+  private refreshOpenUrgencies(): void {
+    this.urgencyService.getUrgencies().subscribe({
+      next: (urgencies) => {
+        this.openUrgenciesCount = (urgencies || []).filter(u => !hasAcceptedAssignment(u as any)).length;
+      },
+      error: () => {
+        this.openUrgenciesCount = this.openUrgenciesCount || 0;
+      }
+    });
   }
 
   preloadImage(url: string): Promise<void> {
