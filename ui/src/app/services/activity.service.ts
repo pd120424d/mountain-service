@@ -39,6 +39,7 @@ export class ActivityService {
     );
   }
 
+  // Existing page/pageSize API (kept for backward compatibility)
   getActivitiesWithPagination(params: {
     urgencyId?: number;
     employeeId?: number;
@@ -60,6 +61,30 @@ export class ActivityService {
         page: resp?.page ?? 1,
         pageSize: resp?.pageSize ?? 20,
         totalPages: resp?.totalPages ?? 0,
+      })),
+      catchError(this.handleError)
+    );
+  }
+
+  // Cursor-based API (preferred when available)
+  getActivitiesCursor(params: {
+    urgencyId?: number;
+    employeeId?: number;
+    pageSize?: number;
+    pageToken?: string;
+  }): Observable<{ activities: Activity[]; nextPageToken?: string }> {
+    const queryParams = new URLSearchParams();
+    if (params.urgencyId) queryParams.append('urgencyId', params.urgencyId.toString());
+    if (params.employeeId) queryParams.append('employeeId', params.employeeId.toString());
+    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+    if (params.pageToken) queryParams.append('pageToken', params.pageToken);
+
+    const url = queryParams.toString() ? `${this.activityApiUrl}?${queryParams.toString()}` : this.activityApiUrl;
+
+    return this.http.get<any>(url).pipe(
+      map((resp) => ({
+        activities: (resp?.activities ?? []).map((a: any) => this.mapActivityFromServer(a)),
+        nextPageToken: resp?.nextPageToken,
       })),
       catchError(this.handleError)
     );

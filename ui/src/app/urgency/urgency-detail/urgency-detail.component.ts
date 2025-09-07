@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -30,16 +30,20 @@ import { ResolveModalComponent, ResolveModalResult } from '../resolve-modal/reso
   templateUrl: './urgency-detail.component.html',
   styleUrls: ['./urgency-detail.component.css']
 })
-export class UrgencyDetailComponent extends BaseTranslatableComponent implements OnInit {
+export class UrgencyDetailComponent extends BaseTranslatableComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('activityTextarea') activityTextarea!: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('loadMoreAnchor') loadMoreAnchor!: ElementRef<HTMLDivElement>;
 
   urgency: Urgency | null = null;
   activities: Activity[] = [];
   activityForm!: FormGroup;
   isLoading = true;
   isLoadingActivities = false;
+  isLoadingMore = false;
   isSubmittingActivity = false;
-  // Pagination for activities
+  nextPageToken: string | null = null;
+  private intersectionObserver?: IntersectionObserver;
+  // Pagination (legacy, retained for compatibility)
   activitiesPage = 1;
   activitiesPageSize = 10;
   totalActivities = 0;
@@ -114,13 +118,18 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
     if (!this.urgencyId) return;
 
     this.isLoadingActivities = true;
+    this.nextPageToken = null;
+    this.activities = [];
 
-    this.activityService.getActivitiesWithPagination({ urgencyId: this.urgencyId, page: this.activitiesPage, pageSize: this.activitiesPageSize }).subscribe({
+    this.activityService.getActivitiesCursor({
+      urgencyId: this.urgencyId,
+      pageSize: this.activitiesPageSize
+    }).subscribe({
       next: (resp) => {
         this.activities = (resp.activities || []);
-        this.totalActivities = resp.total || this.activities.length;
-        this.totalActivitiesPages = resp.totalPages || Math.ceil(this.totalActivities / this.activitiesPageSize);
+        this.nextPageToken = resp.nextPageToken || null;
         this.isLoadingActivities = false;
+        this.setupIntersectionObserver();
       },
       error: (error) => {
         console.error('Failed to load activities:', error);
@@ -128,6 +137,52 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
       }
     });
   }
+
+  ngAfterViewInit(): void {
+    this.setupIntersectionObserver();
+  }
+
+  ngOnDestroy(): void {
+    if (this.intersectionObserver) {
+      this.intersectionObserver.disconnect();
+    }
+  }
+
+  private setupIntersectionObserver(): void {
+    if (!this.loadMoreAnchor) return;
+    if (this.intersectionObserver) {
+      this.intersectionObserver.disconnect();
+    }
+    this.intersectionObserver = new IntersectionObserver(entries => {
+      const entry = entries[0];
+      if (entry && entry.isIntersecting && this.nextPageToken && !this.isLoadingMore) {
+        this.loadMoreActivities();
+      }
+    });
+    this.intersectionObserver.observe(this.loadMoreAnchor.nativeElement);
+  }
+
+  private loadMoreActivities(): void {
+    if (!this.urgencyId || !this.nextPageToken) return;
+    this.isLoadingMore = true;
+    this.activityService.getActivitiesCursor({
+      urgencyId: this.urgencyId,
+      pageSize: this.activitiesPageSize,
+      pageToken: this.nextPageToken || undefined
+    }).subscribe({
+      next: (resp) => {
+        const more = resp.activities || [];
+        this.activities = this.activities.concat(more);
+        this.nextPageToken = resp.nextPageToken || null;
+        this.isLoadingMore = false;
+      },
+      error: (err) => {
+        console.error('Failed to load more activities:', err);
+        this.isLoadingMore = false;
+      }
+    });
+  }
+
 
   onSubmitActivity(): void {
     if (!this.canAddActivity()) {

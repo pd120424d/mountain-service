@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { of, throwError } from 'rxjs';
 
@@ -35,7 +35,7 @@ describe('UrgencyDetailComponent', () => {
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: '2024-01-15T10:00:00Z',
     assignedEmployeeId: undefined
-  };
+  } as Urgency;
 
   const mockActivities: Activity[] = [
     {
@@ -49,9 +49,17 @@ describe('UrgencyDetailComponent', () => {
   ];
 
   beforeEach(async () => {
-    const urgencyServiceSpy = jasmine.createSpyObj('UrgencyService', ['getUrgencyById']);
-    const activityServiceSpy = jasmine.createSpyObj('ActivityService', ['getActivitiesByUrgency', 'getActivitiesWithPagination', 'createActivity']);
-    const authServiceSpy = jasmine.createSpyObj('AuthService', ['getUserId']);
+    // Mock IntersectionObserver used by the component
+    (window as any).IntersectionObserver = class {
+      constructor(_: any) {}
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+
+    const urgencyServiceSpy = jasmine.createSpyObj('UrgencyService', ['getUrgencyById', 'assignUrgency', 'unassignUrgency', 'closeUrgency']);
+    const activityServiceSpy = jasmine.createSpyObj('ActivityService', ['getActivitiesByUrgency', 'getActivitiesWithPagination', 'getActivitiesCursor', 'createActivity']);
+    const authServiceSpy = jasmine.createSpyObj('AuthService', ['getUserId', 'isAdmin']);
     const toastrServiceSpy = jasmine.createSpyObj('ToastrService', ['success', 'error', 'warning']);
     const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
       params: of({ id: '1' })
@@ -86,12 +94,12 @@ describe('UrgencyDetailComponent', () => {
 
   it('should load urgency and activities on init', () => {
     urgencyService.getUrgencyById.and.returnValue(of(mockUrgency));
-    activityService.getActivitiesWithPagination.and.returnValue(of({ activities: mockActivities, total: mockActivities.length, page: 1, pageSize: 10, totalPages: 1 }));
+    activityService.getActivitiesCursor.and.returnValue(of({ activities: mockActivities, nextPageToken: undefined }));
 
     component.ngOnInit();
 
     expect(urgencyService.getUrgencyById).toHaveBeenCalledWith(1);
-    expect(activityService.getActivitiesWithPagination).toHaveBeenCalledWith({ urgencyId: 1, page: 1, pageSize: 10 });
+    expect(activityService.getActivitiesCursor).toHaveBeenCalledWith({ urgencyId: 1, pageSize: 10 });
     expect(component.urgency).toEqual(mockUrgency);
     expect(component.activities).toEqual(mockActivities);
   });
@@ -99,7 +107,7 @@ describe('UrgencyDetailComponent', () => {
   it('should handle error when loading urgency', () => {
     const errorMessage = 'Failed to load urgency';
     urgencyService.getUrgencyById.and.returnValue(throwError(() => new Error(errorMessage)));
-    activityService.getActivitiesWithPagination.and.returnValue(of({ activities: [], total: 0, page: 1, pageSize: 10, totalPages: 0 }));
+    activityService.getActivitiesCursor.and.returnValue(of({ activities: [], nextPageToken: undefined }));
 
     component.ngOnInit();
 
@@ -120,7 +128,7 @@ describe('UrgencyDetailComponent', () => {
     // Set up the mocks before calling ngOnInit
     const assignedInProgress = { ...mockUrgency, status: UrgencyStatus.InProgress, assignedEmployeeId: 1 } as Urgency;
     urgencyService.getUrgencyById.and.returnValue(of(assignedInProgress));
-    activityService.getActivitiesWithPagination.and.returnValue(of({ activities: mockActivities, total: mockActivities.length, page: 1, pageSize: 10, totalPages: 1 }));
+    activityService.getActivitiesCursor.and.returnValue(of({ activities: mockActivities, nextPageToken: undefined }));
 
     component.urgencyId = 1;
     component.ngOnInit(); // Initialize the form and load data
@@ -131,7 +139,7 @@ describe('UrgencyDetailComponent', () => {
 
     authService.getUserId.and.returnValue('1');
     activityService.createActivity.and.returnValue(of(newActivity));
-    activityService.getActivitiesWithPagination.and.returnValue(of({ activities: [newActivity, ...mockActivities], total: mockActivities.length + 1, page: 1, pageSize: 10, totalPages: 1 }));
+    activityService.getActivitiesCursor.and.returnValue(of({ activities: [newActivity, ...mockActivities], nextPageToken: undefined }));
 
     component.onSubmitActivity();
 
