@@ -131,7 +131,8 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
         this.nextPageToken = resp.nextPageToken || null;
         this.isLoadingActivities = false;
         console.debug('[Activities] First page loaded', { count: this.activities.length, nextPageToken: this.nextPageToken });
-        this.setupIntersectionObserver();
+        // Defer to allow Angular to render the #loadMoreAnchor (*ngIf depends on nextPageToken)
+        setTimeout(() => this.setupIntersectionObserver());
       },
       error: (error) => {
         console.error('[Activities] Failed to load first page', error);
@@ -151,7 +152,10 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   }
 
   private setupIntersectionObserver(): void {
-    if (!this.loadMoreAnchor) return;
+    if (!this.loadMoreAnchor) {
+      console.warn('[Activities] loadMoreAnchor not available yet; will retry on next change detection');
+      return;
+    }
     if (this.intersectionObserver) {
       this.intersectionObserver.disconnect();
     }
