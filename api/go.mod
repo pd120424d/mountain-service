@@ -1,6 +1,8 @@
 module github.com/pd120424d/mountain-service/api
 
-go 1.23.0
+go 1.25
+
+toolchain go1.25.1
 
 require (
 	cloud.google.com/go/firestore v1.18.0

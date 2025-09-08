@@ -1,5 +1,5 @@
 # Step 1: Build
-FROM golang:1.23-alpine AS build
+FROM golang:1.25.1-alpine AS build
 
 # Build arguments to bust cache when needed
 ARG BUILD_TIMESTAMP
