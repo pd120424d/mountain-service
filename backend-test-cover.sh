@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Default to pure-Go builds to avoid CGO flakiness (e.g., mattn/go-sqlite3 compile)
+export CGO_ENABLED=${CGO_ENABLED:-0}
+
 # Install go-acc if needed
 command -v go-acc >/dev/null || {
   echo "Installing go-acc..."
@@ -22,9 +25,20 @@ for SERVICE in "${SERVICES[@]}"; do
 
     TARGETS=$(go list ./$SERVICE/internal/... 2>/dev/null || echo "")
     [ -z "$TARGETS" ] && { echo "WARNING: No packages found for $SERVICE, skipping"; continue; }
+    if [ -n "${VERBOSE:-}" ]; then
+      echo "Targets: $TARGETS"
+    fi
 
+    TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-600}"
     COVERAGE_FILE="coverage-$SERVICE.out"
-    if go-acc $TARGETS --ignore ".*_gomock.go" --output "$COVERAGE_FILE" >/dev/null 2>&1; then
+    if [ -n "${VERBOSE:-}" ]; then
+      echo "Running: go-acc $TARGETS --ignore '.*_gomock.go' --output '$COVERAGE_FILE' -- -v (timeout ${TIMEOUT_SECONDS}s)"
+      timeout "${TIMEOUT_SECONDS}s" go-acc $TARGETS --ignore ".*_gomock.go" --output "$COVERAGE_FILE" -- -v
+    else
+      timeout "${TIMEOUT_SECONDS}s" go-acc $TARGETS --ignore ".*_gomock.go" --output "$COVERAGE_FILE" >/dev/null 2>&1
+    fi
+
+    if [ -f "$COVERAGE_FILE" ]; then
       COVERAGE=$(go tool cover -func="$COVERAGE_FILE" | grep total | awk '{print substr($3, 1, length($3)-1)}')
 
       if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then

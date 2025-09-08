@@ -6,6 +6,9 @@
 
 set -e
 
+# Force pure-Go builds during coverage to avoid CGO toolchain stalls (e.g., sqlite3 CGO)
+export CGO_ENABLED=${CGO_ENABLED:-0}
+
 # Default values
 SERVICE=""
 GENERATE_HTML=false

@@ -2,7 +2,6 @@ package clients
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,24 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// fakeHTTPClient wraps the real HTTP client to capture URLs being called
-
-type testHTTPClient struct{ inner *client.HTTPClient }
-
-type errHTTPClient struct{}
-
-func (t *testHTTPClient) Get(ctx context.Context, endpoint string) (*http.Response, error) {
-	return t.inner.Get(ctx, endpoint)
-}
-
-func (e *errHTTPClient) Get(ctx context.Context, endpoint string) (*http.Response, error) {
-	return nil, fmt.Errorf("boom")
-}
-
-func TestUrgencyClient_GetUrgencyByID(t *testing.T) {
+func TestEmployeeClient_GetEmployeeByID(t *testing.T) {
 	t.Parallel()
 	log := utils.NewTestLogger()
 
+	// Shared 200 server (no path assertion to mirror urgency tests and avoid double /api/v1 coupling)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
@@ -42,8 +28,8 @@ func TestUrgencyClient_GetUrgencyByID(t *testing.T) {
 	t.Run("it succeeds with base URL without /api/v1", func(t *testing.T) {
 		base := server.URL
 		httpClient := client.NewHTTPClient(client.HTTPClientConfig{BaseURL: base, Timeout: 2 * time.Second, ServiceAuth: auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: "s", ServiceName: "activity-service", TokenTTL: time.Hour}), Logger: log})
-		uc := &urgencyClient{httpClient: httpClient, logger: log}
-		resp, err := uc.GetUrgencyByID(t.Context(), 2)
+		ec := &employeeClient{httpClient: httpClient, logger: log}
+		resp, err := ec.GetEmployeeByID(t.Context(), 2)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 	})
@@ -51,20 +37,20 @@ func TestUrgencyClient_GetUrgencyByID(t *testing.T) {
 	t.Run("it succeeds with base URL includes /api/v1", func(t *testing.T) {
 		base := server.URL + "/api/v1"
 		httpClient := client.NewHTTPClient(client.HTTPClientConfig{BaseURL: base, Timeout: 2 * time.Second, ServiceAuth: auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: "s", ServiceName: "activity-service", TokenTTL: time.Hour}), Logger: log})
-		uc := &urgencyClient{httpClient: httpClient, logger: log}
-		resp, err := uc.GetUrgencyByID(t.Context(), 2)
+		ec := &employeeClient{httpClient: httpClient, logger: log}
+		resp, err := ec.GetEmployeeByID(t.Context(), 2)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 	})
 
-	t.Run("it returns error when urgency service returns non-200", func(t *testing.T) {
+	t.Run("it returns error when employee service returns non-200", func(t *testing.T) {
 		server500 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}))
 		defer server500.Close()
 		httpClient := client.NewHTTPClient(client.HTTPClientConfig{BaseURL: server500.URL, Timeout: 2 * time.Second, ServiceAuth: auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: "s", ServiceName: "activity-service", TokenTTL: time.Hour}), Logger: log})
-		uc := &urgencyClient{httpClient: httpClient, logger: log}
-		resp, err := uc.GetUrgencyByID(t.Context(), 42)
+		ec := &employeeClient{httpClient: httpClient, logger: log}
+		resp, err := ec.GetEmployeeByID(t.Context(), 42)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 	})
@@ -77,15 +63,15 @@ func TestUrgencyClient_GetUrgencyByID(t *testing.T) {
 		}))
 		defer serverInvalid.Close()
 		httpClient := client.NewHTTPClient(client.HTTPClientConfig{BaseURL: serverInvalid.URL, Timeout: 2 * time.Second, ServiceAuth: auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: "s", ServiceName: "activity-service", TokenTTL: time.Hour}), Logger: log})
-		uc := &urgencyClient{httpClient: httpClient, logger: log}
-		resp, err := uc.GetUrgencyByID(t.Context(), 7)
+		ec := &employeeClient{httpClient: httpClient, logger: log}
+		resp, err := ec.GetEmployeeByID(t.Context(), 7)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 	})
 
 	t.Run("it returns error when HTTP client returns error", func(t *testing.T) {
-		uc := &urgencyClient{httpClient: &errHTTPClient{}, logger: log}
-		resp, err := uc.GetUrgencyByID(t.Context(), 1)
+		ec := &employeeClient{httpClient: &errHTTPClient{}, logger: log}
+		resp, err := ec.GetEmployeeByID(t.Context(), 1)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 	})
@@ -98,8 +84,8 @@ func TestUrgencyClient_GetUrgencyByID(t *testing.T) {
 		}))
 		defer serverSlow.Close()
 		httpClient := client.NewHTTPClient(client.HTTPClientConfig{BaseURL: serverSlow.URL, Timeout: 50 * time.Millisecond, ServiceAuth: auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: "s", ServiceName: "activity-service", TokenTTL: time.Hour}), Logger: log})
-		uc := &urgencyClient{httpClient: httpClient, logger: log}
-		resp, err := uc.GetUrgencyByID(t.Context(), 3)
+		ec := &employeeClient{httpClient: httpClient, logger: log}
+		resp, err := ec.GetEmployeeByID(t.Context(), 3)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 	})
@@ -112,12 +98,11 @@ func TestUrgencyClient_GetUrgencyByID(t *testing.T) {
 		}))
 		defer serverBlock.Close()
 		httpClient := client.NewHTTPClient(client.HTTPClientConfig{BaseURL: serverBlock.URL, Timeout: 2 * time.Second, ServiceAuth: auth.NewServiceAuth(auth.ServiceAuthConfig{Secret: "s", ServiceName: "activity-service", TokenTTL: time.Hour}), Logger: log})
-		uc := &urgencyClient{httpClient: httpClient, logger: log}
+		ec := &employeeClient{httpClient: httpClient, logger: log}
 		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Millisecond)
 		defer cancel()
-		resp, err := uc.GetUrgencyByID(ctx, 4)
+		resp, err := ec.GetEmployeeByID(ctx, 4)
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 	})
-
 }

@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"context"
 	"database/sql"
 	"regexp"
 	"testing"
@@ -40,7 +39,7 @@ func TestOutboxRepository_GetUnpublishedEvents(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "aggregate_id", "event_data", "published", "created_at", "published_at"}).
 			AddRow(1, "activity-1", `{"x":1}`, false, time.Now(), nil))
 
-	events, err := repo.GetUnpublishedEvents(context.Background(), 100)
+	events, err := repo.GetUnpublishedEvents(t.Context(), 100)
 	assert.NoError(t, err)
 	assert.Len(t, events, 1)
 
@@ -51,7 +50,7 @@ func TestOutboxRepository_GetUnpublishedEvents(t *testing.T) {
 		WithArgs(false, 50).
 		WillReturnError(assert.AnError)
 
-	_, err = repo.GetUnpublishedEvents(context.Background(), 50)
+	_, err = repo.GetUnpublishedEvents(t.Context(), 50)
 	assert.Error(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -70,7 +69,7 @@ func TestOutboxRepository_MarkAsPublished(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	err := repo.MarkAsPublished(context.Background(), 1)
+	err := repo.MarkAsPublished(t.Context(), 1)
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 
@@ -81,7 +80,7 @@ func TestOutboxRepository_MarkAsPublished(t *testing.T) {
 		WillReturnError(assert.AnError)
 	mock.ExpectRollback()
 
-	err = repo.MarkAsPublished(context.Background(), 2)
+	err = repo.MarkAsPublished(t.Context(), 2)
 	assert.Error(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -101,7 +100,7 @@ func TestOutboxRepository_MarkOutboxEventAsPublished(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	err := repo.MarkOutboxEventAsPublished(context.Background(), event)
+	err := repo.MarkOutboxEventAsPublished(t.Context(), event)
 	assert.NoError(t, err)
 	assert.True(t, event.Published)
 	assert.NotNil(t, event.PublishedAt)
@@ -115,7 +114,7 @@ func TestOutboxRepository_MarkOutboxEventAsPublished(t *testing.T) {
 		WillReturnError(assert.AnError)
 	mock.ExpectRollback()
 
-	err = repo.MarkOutboxEventAsPublished(context.Background(), event)
+	err = repo.MarkOutboxEventAsPublished(t.Context(), event)
 	assert.Error(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

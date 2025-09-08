@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"context"
 	"database/sql"
 	"regexp"
 	"testing"
@@ -21,12 +20,15 @@ func setupActivityTestDB(t *testing.T) *gorm.DB {
 	sqlDB, err := sql.Open("sqlite", ":memory:")
 	require.NoError(t, err)
 
-	db, err := gorm.Open(sqlite.Dialector{Conn: sqlDB}, &gorm.Config{})
+	db, err := gorm.Open(sqlite.Dialector{DriverName: "sqlite", Conn: sqlDB}, &gorm.Config{})
 	require.NoError(t, err)
 
 	err = db.AutoMigrate(&model.Activity{}, &models.OutboxEvent{})
 	require.NoError(t, err)
 
+	// Ensure proper cleanup of underlying sql.DB
+	sqlStd, _ := db.DB()
+	t.Cleanup(func() { _ = sqlStd.Close() })
 	return db
 }
 
@@ -48,7 +50,7 @@ func TestActivityRepository_Create(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		err := repo.Create(context.Background(), activity)
+		err := repo.Create(t.Context(), activity)
 		assert.Error(t, err)
 	})
 
@@ -63,7 +65,7 @@ func TestActivityRepository_Create(t *testing.T) {
 			UrgencyID:   2,
 		}
 
-		err := repo.Create(context.Background(), activity)
+		err := repo.Create(t.Context(), activity)
 		assert.NoError(t, err)
 		assert.NotZero(t, activity.ID)
 
@@ -86,7 +88,7 @@ func TestActivityRepository_Create(t *testing.T) {
 			UrgencyID:   4,
 		}
 
-		err := repo.Create(context.Background(), activity)
+		err := repo.Create(t.Context(), activity)
 		assert.NoError(t, err)
 		assert.NotZero(t, activity.ID)
 
@@ -119,7 +121,7 @@ func TestActivityRepository_CreateWithOutbox(t *testing.T) {
 			EventData:   `{"x":1}`,
 		}
 
-		err := repo.CreateWithOutbox(context.Background(), activity, event)
+		err := repo.CreateWithOutbox(t.Context(), activity, event)
 		assert.Error(t, err)
 	})
 
@@ -139,7 +141,7 @@ func TestActivityRepository_CreateWithOutbox(t *testing.T) {
 			EventData:   `{"x":1}`,
 		}
 
-		err := repo.CreateWithOutbox(context.Background(), activity, event)
+		err := repo.CreateWithOutbox(t.Context(), activity, event)
 		assert.NoError(t, err)
 	})
 
@@ -159,7 +161,7 @@ func TestActivityRepository_CreateWithOutbox(t *testing.T) {
 			EventData:   `{"x":1}`,
 		}
 
-		err := repo.CreateWithOutbox(context.Background(), activity, event)
+		err := repo.CreateWithOutbox(t.Context(), activity, event)
 		assert.NoError(t, err)
 		assert.NotZero(t, activity.ID)
 		assert.NotZero(t, event.ID)
@@ -175,7 +177,7 @@ func TestActivityRepository_GetByID(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		retrievedActivity, err := repo.GetByID(context.Background(), 999)
+		retrievedActivity, err := repo.GetByID(t.Context(), 999)
 		assert.Error(t, err)
 		assert.Nil(t, retrievedActivity)
 		assert.Contains(t, err.Error(), "activity not found")
@@ -190,7 +192,7 @@ func TestActivityRepository_GetByID(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		retrievedActivity, err := repo.GetByID(context.Background(), 1)
+		retrievedActivity, err := repo.GetByID(t.Context(), 1)
 		assert.Error(t, err)
 		assert.Nil(t, retrievedActivity)
 	})
@@ -208,7 +210,7 @@ func TestActivityRepository_GetByID(t *testing.T) {
 		err := db.Create(activity).Error
 		require.NoError(t, err)
 
-		retrievedActivity, err := repo.GetByID(context.Background(), activity.ID)
+		retrievedActivity, err := repo.GetByID(t.Context(), activity.ID)
 		assert.NoError(t, err)
 		require.NotNil(t, retrievedActivity)
 		assert.Equal(t, activity.ID, retrievedActivity.ID)
@@ -232,7 +234,7 @@ func TestActivityRepository_List(t *testing.T) {
 		sqlDB.Close()
 
 		filter := model.NewActivityFilter()
-		result, total, err := repo.List(context.Background(), filter)
+		result, total, err := repo.List(t.Context(), filter)
 		assert.Error(t, err)
 		assert.Nil(t, result)
 		assert.Equal(t, int64(0), total)
@@ -262,7 +264,7 @@ func TestActivityRepository_List(t *testing.T) {
 		}
 
 		filter := model.NewActivityFilter()
-		result, total, err := repo.List(context.Background(), filter)
+		result, total, err := repo.List(t.Context(), filter)
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
 		assert.Equal(t, int64(2), total)
@@ -282,7 +284,7 @@ func TestActivityRepository_List(t *testing.T) {
 			EmployeeID: &employeeID,
 			UrgencyID:  &urgencyID,
 		}
-		result, total, err := repo.List(context.Background(), filter)
+		result, total, err := repo.List(t.Context(), filter)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), total)
 		assert.Len(t, result, 0)
@@ -303,7 +305,7 @@ func TestActivityRepository_GetStats(t *testing.T) {
 		sqlDB, _ := db.DB()
 		sqlDB.Close()
 
-		stats, err := repo.GetStats(context.Background())
+		stats, err := repo.GetStats(t.Context())
 		assert.Error(t, err)
 		assert.Nil(t, stats)
 	})
@@ -321,7 +323,7 @@ func TestActivityRepository_GetStats(t *testing.T) {
 			WithArgs(10).
 			WillReturnError(sqlmock.ErrCancelled)
 
-		stats, err := repo.GetStats(context.Background())
+		stats, err := repo.GetStats(t.Context())
 		assert.Error(t, err)
 		assert.Nil(t, stats)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -349,7 +351,7 @@ func TestActivityRepository_GetStats(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		stats, err := repo.GetStats(context.Background())
+		stats, err := repo.GetStats(t.Context())
 		assert.NoError(t, err)
 		require.NotNil(t, stats)
 
@@ -362,7 +364,7 @@ func TestActivityRepository_GetStats(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		stats, err := repo.GetStats(context.Background())
+		stats, err := repo.GetStats(t.Context())
 		assert.NoError(t, err)
 		require.NotNil(t, stats)
 
@@ -386,7 +388,7 @@ func TestActivityRepository_Delete(t *testing.T) {
 		err := db.Create(activity).Error
 		require.NoError(t, err)
 
-		err = repo.Delete(context.Background(), activity.ID)
+		err = repo.Delete(t.Context(), activity.ID)
 		assert.NoError(t, err)
 
 		var deletedActivity model.Activity
@@ -400,7 +402,7 @@ func TestActivityRepository_Delete(t *testing.T) {
 		log := utils.NewTestLogger()
 		repo := NewActivityRepository(log, db)
 
-		err := repo.Delete(context.Background(), 999)
+		err := repo.Delete(t.Context(), 999)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "activity not found")
 	})
@@ -437,7 +439,7 @@ func TestActivityRepository_ResetAllData(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), count)
 
-		err = repo.ResetAllData(context.Background())
+		err = repo.ResetAllData(t.Context())
 		assert.NoError(t, err)
 
 		err = db.Model(&model.Activity{}).Count(&count).Error
@@ -459,7 +461,7 @@ func TestActivityRepository_DatabaseConnection(t *testing.T) {
 			Description: "Test",
 		}
 
-		err := repo.Create(context.Background(), activity)
+		err := repo.Create(t.Context(), activity)
 		assert.NoError(t, err)
 		assert.NotZero(t, activity.ID)
 	})
@@ -487,9 +489,9 @@ func TestActivityRepository_QueryBuilding(t *testing.T) {
 			UrgencyID:   urgencyID,
 		}
 
-		err := repo.Create(context.Background(), activity1)
+		err := repo.Create(t.Context(), activity1)
 		assert.NoError(t, err)
-		err = repo.Create(context.Background(), activity2)
+		err = repo.Create(t.Context(), activity2)
 		assert.NoError(t, err)
 
 		// Test complex filter with multiple criteria
@@ -500,7 +502,7 @@ func TestActivityRepository_QueryBuilding(t *testing.T) {
 			PageSize:   10,
 		}
 
-		activities, total, err := repo.List(context.Background(), filter)
+		activities, total, err := repo.List(t.Context(), filter)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), total)
 		assert.Len(t, activities, 1)

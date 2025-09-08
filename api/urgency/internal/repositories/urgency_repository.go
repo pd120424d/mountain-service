@@ -54,12 +54,12 @@ func (r *urgencyRepository) GetAll(ctx context.Context) ([]model.Urgency, error)
 	log := r.log.WithContext(ctx)
 	defer utils.TimeOperation(log, "UrgencyRepository.GetAll")()
 	var urgencies []model.Urgency
-	err := r.dbRead.WithContext(ctx).Where("deleted_at IS NULL").Find(&urgencies).Error
+	err := r.getReadDB(ctx).Where("deleted_at IS NULL").Find(&urgencies).Error
 	return urgencies, err
 }
 
 func (r *urgencyRepository) GetByID(ctx context.Context, id uint, urgency *model.Urgency) error {
-	return r.dbRead.WithContext(ctx).First(urgency, "id = ?", id).Error
+	return r.getReadDB(ctx).First(urgency, "id = ?", id).Error
 }
 
 func (r *urgencyRepository) GetByIDPrimary(ctx context.Context, id uint, urgency *model.Urgency) error {
@@ -77,7 +77,7 @@ func (r *urgencyRepository) Delete(ctx context.Context, urgencyID uint) error {
 func (r *urgencyRepository) List(ctx context.Context, filters map[string]interface{}) ([]model.Urgency, error) {
 	allowedColumns := r.allowedColumns()
 	var urgencies []model.Urgency
-	query := r.dbRead.WithContext(ctx).Model(&model.Urgency{})
+	query := r.getReadDB(ctx).Model(&model.Urgency{})
 
 	filterKeys := slices.Collect(maps.Keys(filters))
 	slices.Sort(filterKeys)
@@ -123,7 +123,7 @@ func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSiz
 
 	offset := (page - 1) * pageSize
 
-	q := r.dbRead.WithContext(ctx).Model(&model.Urgency{}).Where("deleted_at IS NULL")
+	q := r.getReadDB(ctx).Model(&model.Urgency{}).Where("deleted_at IS NULL")
 	if assignedEmployeeID != nil {
 		q = q.Where("assigned_employee_id = ?", *assignedEmployeeID)
 	}
@@ -140,6 +140,15 @@ func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSiz
 
 func (r *urgencyRepository) ResetAllData(ctx context.Context) error {
 	return r.dbWrite.WithContext(ctx).Unscoped().Delete(&model.Urgency{}, "1 = 1").Error
+}
+
+func (r *urgencyRepository) getReadDB(ctx context.Context) *gorm.DB {
+	if utils.IsFreshRequired(ctx) {
+		// Read-Your-Writes: route to primary within fresh window
+		r.log.WithContext(ctx).Debugf("RYW: using primary for read")
+		return r.dbWrite.WithContext(ctx)
+	}
+	return r.dbRead.WithContext(ctx)
 }
 
 func (r *urgencyRepository) allowedColumns() map[string]bool {

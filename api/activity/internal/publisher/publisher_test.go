@@ -60,7 +60,7 @@ func TestPublisher_processOnce(t *testing.T) {
 			return nil
 		}
 
-		err := publish(context.Background())
+		err := publish(t.Context())
 		assert.NoError(t, err)
 	})
 
@@ -73,7 +73,7 @@ func TestPublisher_processOnce(t *testing.T) {
 		mockRepo.EXPECT().GetUnpublishedEvents(gomock.Any(), 100).Return(nil, errors.New("boom"))
 
 		p := &Publisher{log: log, repo: mockRepo, config: Config{TopicName: "activity-events"}}
-		err := p.processOnce(context.Background())
+		err := p.processOnce(t.Context())
 		assert.Error(t, err)
 	})
 }
@@ -91,7 +91,7 @@ func TestPublisher_processOnce_MoreCases(t *testing.T) {
 		p := &Publisher{log: log, repo: mockRepo, config: Config{TopicName: "activity-events", Interval: 1}}
 		// Inject a topic that would panic if used
 		p.topicFactory = func(name string) topic { return &fakeTopic{res: &fakePublishResult{err: nil}} }
-		err := p.processOnce(context.Background())
+		err := p.processOnce(t.Context())
 		assert.NoError(t, err)
 	})
 
@@ -107,7 +107,7 @@ func TestPublisher_processOnce_MoreCases(t *testing.T) {
 
 		p := &Publisher{log: log, repo: mockRepo, config: Config{TopicName: "activity-events", Interval: 1}}
 		p.topicFactory = func(name string) topic { return &fakeTopic{res: &fakePublishResult{err: errors.New("pubsub down")}} }
-		err := p.processOnce(context.Background())
+		err := p.processOnce(t.Context())
 		assert.NoError(t, err)
 	})
 
@@ -127,7 +127,7 @@ func TestPublisher_processOnce_MoreCases(t *testing.T) {
 
 		p := &Publisher{log: log, repo: mockRepo, config: Config{TopicName: "activity-events", Interval: 1}}
 		p.topicFactory = func(name string) topic { return &fakeTopic{res: &fakePublishResult{err: nil}} }
-		err := p.processOnce(context.Background())
+		err := p.processOnce(t.Context())
 		assert.NoError(t, err)
 	})
 }

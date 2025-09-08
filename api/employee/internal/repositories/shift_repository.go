@@ -57,7 +57,7 @@ func NewShiftRepositoryRW(log utils.Logger, writeDB *gorm.DB, readDB *gorm.DB) S
 
 func (r *shiftRepository) GetOrCreateShift(ctx context.Context, shiftDate time.Time, shiftType int) (*model.Shift, error) {
 	var shift model.Shift
-	err := r.dbWrite.FirstOrCreate(&shift, model.Shift{
+	err := r.dbWrite.WithContext(ctx).FirstOrCreate(&shift, model.Shift{
 		ShiftDate: shiftDate,
 		ShiftType: shiftType,
 	}).Error
@@ -69,7 +69,7 @@ func (r *shiftRepository) GetOrCreateShift(ctx context.Context, shiftDate time.T
 
 func (r *shiftRepository) AssignedToShift(ctx context.Context, employeeID, shiftID uint) (bool, error) {
 	var existing model.EmployeeShift
-	err := r.dbRead.Where("employee_id = ? AND shift_id = ?", employeeID, shiftID).First(&existing).Error
+	err := r.getReadDB(ctx).Where("employee_id = ? AND shift_id = ?", employeeID, shiftID).First(&existing).Error
 	if err == nil {
 		return true, nil
 	}
@@ -81,7 +81,7 @@ func (r *shiftRepository) AssignedToShift(ctx context.Context, employeeID, shift
 
 func (r *shiftRepository) CountAssignmentsByProfile(ctx context.Context, shiftID uint, profileType model.ProfileType) (int64, error) {
 	var count int64
-	err := r.dbRead.Table("employee_shifts").
+	err := r.getReadDB(ctx).Table("employee_shifts").
 		Joins("JOIN employees ON employee_shifts.employee_id = employees.id").
 		Where("employee_shifts.shift_id = ? AND employees.profile_type = ?", shiftID, profileType).
 		Count(&count).Error
@@ -103,7 +103,7 @@ func (r *shiftRepository) CreateAssignment(ctx context.Context, employeeID, shif
 }
 
 func (r *shiftRepository) GetShiftsByEmployeeID(ctx context.Context, employeeID uint, result *[]model.Shift) error {
-	return r.dbRead.Table("employee_shifts").
+	return r.getReadDB(ctx).Table("employee_shifts").
 		Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
 		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
 		Where("employee_shifts.employee_id = ?", employeeID).
@@ -113,7 +113,7 @@ func (r *shiftRepository) GetShiftsByEmployeeID(ctx context.Context, employeeID 
 
 func (r *shiftRepository) GetEmployeeShiftRowsByEmployeeID(ctx context.Context, employeeID uint) ([]EmployeeShiftRow, error) {
 	var rows []EmployeeShiftRow
-	if err := r.dbRead.Table("employee_shifts").
+	if err := r.getReadDB(ctx).Table("employee_shifts").
 		Select("employee_shifts.id as assignment_id, employee_shifts.created_at as assigned_at, shifts.id as shift_id, shifts.shift_date, shifts.shift_type, shifts.created_at as shift_created_at").
 		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
 		Where("employee_shifts.employee_id = ?", employeeID).
@@ -125,7 +125,7 @@ func (r *shiftRepository) GetEmployeeShiftRowsByEmployeeID(ctx context.Context, 
 }
 
 func (r *shiftRepository) GetShiftsByEmployeeIDInDateRange(ctx context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
-	return r.dbRead.Table("employee_shifts").
+	return r.getReadDB(ctx).Table("employee_shifts").
 		Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
 		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
 		Where("employee_shifts.employee_id = ? AND shifts.shift_date >= ? AND shifts.shift_date < ?", employeeID, startDate, endDate).
@@ -156,7 +156,7 @@ func (r *shiftRepository) GetShiftAvailability(ctx context.Context, start, end t
 		Count        int
 	}
 
-	err := r.dbRead.Table("shifts").
+	err := r.getReadDB(ctx).Table("shifts").
 		Joins("JOIN employee_shifts ON shifts.id = employee_shifts.shift_id").
 		Joins("JOIN employees ON employee_shifts.employee_id = employees.id").
 		Select("shifts.shift_date, shifts.shift_type, employees.profile_type AS employee_role, COUNT(*) AS count").
@@ -237,7 +237,7 @@ func (r *shiftRepository) GetShiftAvailabilityWithEmployeeStatus(ctx context.Con
 	}
 
 	// Check if employee is assigned to each shift and if shifts are fully booked
-	err = r.dbRead.Table("shifts").
+	err = r.getReadDB(ctx).Table("shifts").
 		Joins("JOIN employee_shifts ON shifts.id = employee_shifts.shift_id").
 		Select("shifts.shift_date, shifts.shift_type").
 		Where("employee_shifts.employee_id = ? AND shift_date >= ? AND shift_date < ?", employeeID, start, end).
@@ -268,7 +268,7 @@ func (r *shiftRepository) GetShiftAvailabilityWithEmployeeStatus(ctx context.Con
 
 func (r *shiftRepository) RemoveEmployeeFromShiftByDetails(ctx context.Context, employeeID uint, shiftDate time.Time, shiftType int) error {
 	var shift model.Shift
-	err := r.dbRead.Where("shift_date = ? AND shift_type = ?", shiftDate, shiftType).First(&shift).Error
+	err := r.getReadDB(ctx).Where("shift_date = ? AND shift_type = ?", shiftDate, shiftType).First(&shift).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("shift not found for date %s and type %d", shiftDate.Format(time.DateOnly), shiftType)
@@ -277,7 +277,7 @@ func (r *shiftRepository) RemoveEmployeeFromShiftByDetails(ctx context.Context, 
 	}
 
 	var assignment model.EmployeeShift
-	err = r.dbRead.Where("employee_id = ? AND shift_id = ?", employeeID, shift.ID).First(&assignment).Error
+	err = r.getReadDB(ctx).Where("employee_id = ? AND shift_id = ?", employeeID, shift.ID).First(&assignment).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("employee is not assigned to this shift")
@@ -320,7 +320,7 @@ func (r *shiftRepository) GetOnCallEmployees(ctx context.Context, currentTime ti
 		}
 	}
 
-	query := r.dbRead.Distinct().
+	query := r.getReadDB(ctx).Distinct().
 		Select("employees.*").
 		Table("employees").
 		Joins("JOIN employee_shifts ON employees.id = employee_shifts.employee_id").
@@ -396,4 +396,13 @@ func (r *shiftRepository) getNextShift(currentShiftType int, currentDate time.Ti
 	}
 
 	return nextShiftType, shiftDate
+}
+
+func (r *shiftRepository) getReadDB(ctx context.Context) *gorm.DB {
+	if utils.IsFreshRequired(ctx) {
+		// Read-Your-Writes: route to primary within fresh window
+		r.log.WithContext(ctx).Debugf("RYW: using primary for read")
+		return r.dbWrite.WithContext(ctx)
+	}
+	return r.dbRead.WithContext(ctx)
 }

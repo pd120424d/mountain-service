@@ -19,6 +19,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23'
+          cache-dependency-path: api/go.sum
 
       - name: Run test coverage check
+        env:
+          VERBOSE: '1'
+          TIMEOUT_SECONDS: '900'
         run: ./backend-test-cover.sh all --threshold=75
