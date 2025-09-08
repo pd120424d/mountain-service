@@ -9,6 +9,7 @@ import (
 
 	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
 	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
+	"github.com/pd120424d/mountain-service/api/shared/config"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 )
@@ -52,13 +53,13 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 
 	var req urgencyV1.UrgencyCreateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		h.log.Errorf("failed to bind JSON: %v", err)
+		log.Errorf("failed to bind JSON: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := req.Validate(); err != nil {
-		h.log.Errorf("validation failed: %v", err)
+		log.Errorf("validation failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -98,9 +99,12 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 // @Success 200 {object} urgencyV1.UrgencyListResponse
 // @Router /urgencies [get]
 func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
-	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(reqLog, "UrgencyHandler.ListUrgencies")()
-	reqLog.Info("Received List Urgencies request")
+	base := requestContext(ctx)
+	cctx, cancel := context.WithTimeout(base, config.DefaultListTimeout)
+	defer cancel()
+	log := h.log.WithContext(cctx)
+	defer utils.TimeOperation(log, "UrgencyHandler.ListUrgencies")()
+	log.Info("Received List Urgencies request")
 
 	// Parse pagination params
 	page := 1
@@ -125,9 +129,9 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 		}
 	}
 
-	urgencies, total, err := h.svc.ListUrgencies(requestContext(ctx), page, pageSize, assignedEmployeeID)
+	urgencies, total, err := h.svc.ListUrgencies(cctx, page, pageSize, assignedEmployeeID)
 	if err != nil {
-		reqLog.Errorf("failed to retrieve urgencies: %v", err)
+		log.Errorf("failed to retrieve urgencies: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.LIST_FAILED", "details": err.Error()})
 		return
 	}
@@ -142,7 +146,7 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 	}
 
 	resp := urgencyV1.UrgencyListResponse{Urgencies: items, Total: total, Page: page, PageSize: pageSize, TotalPages: totalPages}
-	reqLog.Infof("Successfully retrieved %d urgencies out of %d total", len(items), total)
+	log.Infof("Successfully retrieved %d urgencies out of %d total", len(items), total)
 	ctx.JSON(http.StatusOK, resp)
 }
 
@@ -156,21 +160,21 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 // @Success 200 {object} urgencyV1.UrgencyResponse
 // @Router /urgencies/{id} [get]
 func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
-	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(reqLog, "UrgencyHandler.GetUrgency")()
-	reqLog.Info("Received Get Urgency request")
+	log := h.log.WithContext(requestContext(ctx))
+	defer utils.TimeOperation(log, "UrgencyHandler.GetUrgency")()
+	log.Info("Received Get Urgency request")
 
 	idParam := ctx.Param("id")
 	urgencyID, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
-		reqLog.Errorf("invalid urgency ID: %v", err)
+		log.Errorf("invalid urgency ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
 		return
 	}
 
 	urgency, err := h.svc.GetUrgencyByID(requestContext(ctx), uint(urgencyID))
 	if err != nil {
-		reqLog.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
+		log.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
 		if aerr, ok := err.(*commonv1.AppError); ok {
 			if aerr.Code == "URGENCY_ERRORS.NOT_FOUND" {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
@@ -187,7 +191,7 @@ func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 	}
 
 	response := urgency.ToResponse()
-	reqLog.Infof("Successfully retrieved urgency with ID %d", urgencyID)
+	log.Infof("Successfully retrieved urgency with ID %d", urgencyID)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -203,34 +207,34 @@ func (h *urgencyHandler) GetUrgency(ctx *gin.Context) {
 // @Success 200 {object} urgencyV1.UrgencyResponse
 // @Router /urgencies/{id} [put]
 func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
-	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(reqLog, "UrgencyHandler.UpdateUrgency")()
-	reqLog.Info("Received Update Urgency request")
+	log := h.log.WithContext(requestContext(ctx))
+	defer utils.TimeOperation(log, "UrgencyHandler.UpdateUrgency")()
+	log.Info("Received Update Urgency request")
 
 	idParam := ctx.Param("id")
 	urgencyID, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
-		reqLog.Errorf("invalid urgency ID: %v", err)
+		log.Errorf("invalid urgency ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
 		return
 	}
 
 	var req urgencyV1.UrgencyUpdateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		reqLog.Errorf("failed to bind JSON: %v", err)
+		log.Errorf("failed to bind JSON: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := req.Validate(); err != nil {
-		reqLog.Errorf("validation failed: %v", err)
+		log.Errorf("validation failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	urgency, err := h.svc.GetUrgencyByID(requestContext(ctx), uint(urgencyID))
 	if err != nil {
-		reqLog.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
+		log.Errorf("failed to get urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency not found"})
 		return
 	}
@@ -238,13 +242,13 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 	urgency.UpdateWithRequest(&req)
 
 	if err := h.svc.UpdateUrgency(requestContext(ctx), urgency); err != nil {
-		reqLog.Errorf("failed to update urgency: %v", err)
+		log.Errorf("failed to update urgency: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.UPDATE_FAILED", "details": err.Error()})
 		return
 	}
 
 	response := urgency.ToResponse()
-	reqLog.Infof("Successfully updated urgency with ID %d", urgencyID)
+	log.Infof("Successfully updated urgency with ID %d", urgencyID)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -257,25 +261,25 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 // @Success 204
 // @Router /urgencies/{id} [delete]
 func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
-	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(reqLog, "UrgencyHandler.DeleteUrgency")()
-	reqLog.Info("Received Delete Urgency request")
+	log := h.log.WithContext(requestContext(ctx))
+	defer utils.TimeOperation(log, "UrgencyHandler.DeleteUrgency")()
+	log.Info("Received Delete Urgency request")
 
 	idParam := ctx.Param("id")
 	urgencyID, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
-		reqLog.Errorf("invalid urgency ID: %v", err)
+		log.Errorf("invalid urgency ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid urgency ID"})
 		return
 	}
 
 	if err := h.svc.DeleteUrgency(requestContext(ctx), uint(urgencyID)); err != nil {
-		reqLog.Errorf("failed to delete urgency with ID %d: %v", urgencyID, err)
+		log.Errorf("failed to delete urgency with ID %d: %v", urgencyID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.DELETE_FAILED", "details": err.Error()})
 		return
 	}
 
-	reqLog.Infof("Successfully deleted urgency with ID %d", urgencyID)
+	log.Infof("Successfully deleted urgency with ID %d", urgencyID)
 	ctx.JSON(http.StatusNoContent, nil)
 }
 

@@ -5,22 +5,22 @@ import (
 )
 
 // ComputeSortPriority maps business rules to a small int for quick indexed sorting.
-// 0: open & unassigned, 1: open & assigned, 2: in_progress, 3: resolved, 4: closed, 5: other
+// NOTE: shifted by +1 to avoid zero, so GORM doesn’t omit the column when a DB default exists.
+// 1: open & unassigned, 2: open & assigned, 3: in_progress, 4: resolved, 5: closed, 6: other
 func ComputeSortPriority(status urgencyV1.UrgencyStatus, assignedEmployeeID *uint) int {
 	switch status {
-	case urgencyV1.UrgencyStatus("Open"), urgencyV1.UrgencyStatus("open"):
+	case urgencyV1.Open:
 		if assignedEmployeeID == nil {
-			return 0
+			return 1
 		}
-		return 1
-	case urgencyV1.UrgencyStatus("InProgress"), urgencyV1.UrgencyStatus("in_progress"):
 		return 2
-	case urgencyV1.UrgencyStatus("Resolved"), urgencyV1.UrgencyStatus("resolved"):
+	case urgencyV1.InProgress:
 		return 3
-	case urgencyV1.UrgencyStatus("Closed"), urgencyV1.UrgencyStatus("closed"):
+	case urgencyV1.Resolved:
 		return 4
-	default:
+	case urgencyV1.Closed:
 		return 5
+	default:
+		return 6
 	}
 }
-

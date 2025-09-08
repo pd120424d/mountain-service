@@ -164,52 +164,72 @@ func (z *zapLogger) rotate() error {
 
 // Logging methods with rotation check
 func (z *zapLogger) Debug(msg string, fields ...zap.Field) {
-	_ = z.rotate()
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	z.logger.Debug(msg, fields...)
 }
 
 func (z *zapLogger) Info(msg string, fields ...zap.Field) {
-	_ = z.rotate()
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	z.logger.Info(msg, fields...)
 }
 
 func (z *zapLogger) Warn(msg string, fields ...zap.Field) {
-	_ = z.rotate()
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	z.logger.Warn(msg, fields...)
 }
 
 func (z *zapLogger) Error(msg string, fields ...zap.Field) {
-	_ = z.rotate()
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	z.logger.Error(msg, fields...)
 }
 
 func (z *zapLogger) Fatal(msg string, fields ...zap.Field) {
-	_ = z.rotate()
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	z.logger.Fatal(msg, fields...)
 }
 
 func (z *zapLogger) Debugf(format string, args ...interface{}) {
-	_ = z.rotate()
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	z.logger.Debug(fmt.Sprintf(format, args...))
 }
 
 func (z *zapLogger) Infof(format string, args ...interface{}) {
-	_ = z.rotate()
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	z.logger.Info(fmt.Sprintf(format, args...))
 }
 
 func (z *zapLogger) Warnf(format string, args ...interface{}) {
-	_ = z.rotate()
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	z.logger.Warn(fmt.Sprintf(format, args...))
 }
 
 func (z *zapLogger) Errorf(format string, args ...interface{}) {
-	_ = z.rotate()
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	z.logger.Error(fmt.Sprintf(format, args...))
 }
 
 func (z *zapLogger) Fatalf(format string, args ...interface{}) {
-	_ = z.rotate()
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	z.logger.Fatal(fmt.Sprintf(format, args...))
 }
 
@@ -241,7 +261,10 @@ func (z *zapLogger) WithName(name string) Logger {
 }
 
 func (z *zapLogger) WithContext(ctx context.Context) Logger {
-	_ = z.rotate()
+	// Avoid rotation for lightweight test loggers (svcName empty)
+	if z.svcName != "" {
+		_ = z.rotate()
+	}
 	// Extract request ID if present
 	requestID := RequestIDFromContext(ctx)
 	if requestID == "" {

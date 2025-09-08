@@ -4,6 +4,7 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -69,7 +70,9 @@ func (r *shiftRepository) GetOrCreateShift(ctx context.Context, shiftDate time.T
 
 func (r *shiftRepository) AssignedToShift(ctx context.Context, employeeID, shiftID uint) (bool, error) {
 	var existing model.EmployeeShift
-	err := r.getReadDB(ctx).Where("employee_id = ? AND shift_id = ?", employeeID, shiftID).First(&existing).Error
+	err := r.withRead(ctx, func(db *gorm.DB) error {
+		return db.Where("employee_id = ? AND shift_id = ?", employeeID, shiftID).First(&existing).Error
+	})
 	if err == nil {
 		return true, nil
 	}
@@ -81,10 +84,12 @@ func (r *shiftRepository) AssignedToShift(ctx context.Context, employeeID, shift
 
 func (r *shiftRepository) CountAssignmentsByProfile(ctx context.Context, shiftID uint, profileType model.ProfileType) (int64, error) {
 	var count int64
-	err := r.getReadDB(ctx).Table("employee_shifts").
-		Joins("JOIN employees ON employee_shifts.employee_id = employees.id").
-		Where("employee_shifts.shift_id = ? AND employees.profile_type = ?", shiftID, profileType).
-		Count(&count).Error
+	err := r.withRead(ctx, func(db *gorm.DB) error {
+		return db.Table("employee_shifts").
+			Joins("JOIN employees ON employee_shifts.employee_id = employees.id").
+			Where("employee_shifts.shift_id = ? AND employees.profile_type = ?", shiftID, profileType).
+			Count(&count).Error
+	})
 	if err != nil {
 		return 0, fmt.Errorf("failed to count assignments: %w", err)
 	}
@@ -103,34 +108,40 @@ func (r *shiftRepository) CreateAssignment(ctx context.Context, employeeID, shif
 }
 
 func (r *shiftRepository) GetShiftsByEmployeeID(ctx context.Context, employeeID uint, result *[]model.Shift) error {
-	return r.getReadDB(ctx).Table("employee_shifts").
-		Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
-		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
-		Where("employee_shifts.employee_id = ?", employeeID).
-		Order("employee_shifts.created_at ASC").
-		Scan(result).Error
+	return r.withRead(ctx, func(db *gorm.DB) error {
+		return db.Table("employee_shifts").
+			Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
+			Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
+			Where("employee_shifts.employee_id = ?", employeeID).
+			Order("employee_shifts.created_at ASC").
+			Scan(result).Error
+	})
 }
 
 func (r *shiftRepository) GetEmployeeShiftRowsByEmployeeID(ctx context.Context, employeeID uint) ([]EmployeeShiftRow, error) {
 	var rows []EmployeeShiftRow
-	if err := r.getReadDB(ctx).Table("employee_shifts").
-		Select("employee_shifts.id as assignment_id, employee_shifts.created_at as assigned_at, shifts.id as shift_id, shifts.shift_date, shifts.shift_type, shifts.created_at as shift_created_at").
-		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
-		Where("employee_shifts.employee_id = ?", employeeID).
-		Order("employee_shifts.created_at ASC").
-		Scan(&rows).Error; err != nil {
+	if err := r.withRead(ctx, func(db *gorm.DB) error {
+		return db.Table("employee_shifts").
+			Select("employee_shifts.id as assignment_id, employee_shifts.created_at as assigned_at, shifts.id as shift_id, shifts.shift_date, shifts.shift_type, shifts.created_at as shift_created_at").
+			Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
+			Where("employee_shifts.employee_id = ?", employeeID).
+			Order("employee_shifts.created_at ASC").
+			Scan(&rows).Error
+	}); err != nil {
 		return nil, err
 	}
 	return rows, nil
 }
 
 func (r *shiftRepository) GetShiftsByEmployeeIDInDateRange(ctx context.Context, employeeID uint, startDate, endDate time.Time, result *[]model.Shift) error {
-	return r.getReadDB(ctx).Table("employee_shifts").
-		Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
-		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
-		Where("employee_shifts.employee_id = ? AND shifts.shift_date >= ? AND shifts.shift_date < ?", employeeID, startDate, endDate).
-		Order("shifts.shift_date ASC, shifts.shift_type ASC").
-		Scan(result).Error
+	return r.withRead(ctx, func(db *gorm.DB) error {
+		return db.Table("employee_shifts").
+			Select("shifts.id, shifts.shift_date, shifts.shift_type, shifts.created_at").
+			Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
+			Where("employee_shifts.employee_id = ? AND shifts.shift_date >= ? AND shifts.shift_date < ?", employeeID, startDate, endDate).
+			Order("shifts.shift_date ASC, shifts.shift_type ASC").
+			Scan(result).Error
+	})
 }
 
 func (r *shiftRepository) GetShiftAvailability(ctx context.Context, start, end time.Time) (*model.ShiftsAvailabilityRange, error) {
@@ -156,13 +167,15 @@ func (r *shiftRepository) GetShiftAvailability(ctx context.Context, start, end t
 		Count        int
 	}
 
-	err := r.getReadDB(ctx).Table("shifts").
-		Joins("JOIN employee_shifts ON shifts.id = employee_shifts.shift_id").
-		Joins("JOIN employees ON employee_shifts.employee_id = employees.id").
-		Select("shifts.shift_date, shifts.shift_type, employees.profile_type AS employee_role, COUNT(*) AS count").
-		Where("shift_date >= ? AND shift_date < ?", start, end).
-		Group("shifts.shift_date, shifts.shift_type, employees.profile_type").
-		Scan(&counts).Error
+	err := r.withRead(ctx, func(db *gorm.DB) error {
+		return db.Table("shifts").
+			Joins("JOIN employee_shifts ON shifts.id = employee_shifts.shift_id").
+			Joins("JOIN employees ON employee_shifts.employee_id = employees.id").
+			Select("shifts.shift_date, shifts.shift_type, employees.profile_type AS employee_role, COUNT(*) AS count").
+			Where("shift_date >= ? AND shift_date < ?", start, end).
+			Group("shifts.shift_date, shifts.shift_type, employees.profile_type").
+			Scan(&counts).Error
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -237,11 +250,13 @@ func (r *shiftRepository) GetShiftAvailabilityWithEmployeeStatus(ctx context.Con
 	}
 
 	// Check if employee is assigned to each shift and if shifts are fully booked
-	err = r.getReadDB(ctx).Table("shifts").
-		Joins("JOIN employee_shifts ON shifts.id = employee_shifts.shift_id").
-		Select("shifts.shift_date, shifts.shift_type").
-		Where("employee_shifts.employee_id = ? AND shift_date >= ? AND shift_date < ?", employeeID, start, end).
-		Scan(&employeeAssignments).Error
+	err = r.withRead(ctx, func(db *gorm.DB) error {
+		return db.Table("shifts").
+			Joins("JOIN employee_shifts ON shifts.id = employee_shifts.shift_id").
+			Select("shifts.shift_date, shifts.shift_type").
+			Where("employee_shifts.employee_id = ? AND shift_date >= ? AND shift_date < ?", employeeID, start, end).
+			Scan(&employeeAssignments).Error
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -320,20 +335,23 @@ func (r *shiftRepository) GetOnCallEmployees(ctx context.Context, currentTime ti
 		}
 	}
 
-	query := r.getReadDB(ctx).Distinct().
-		Select("employees.*").
-		Table("employees").
-		Joins("JOIN employee_shifts ON employees.id = employee_shifts.employee_id").
-		Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
-		Where("(shifts.shift_date = ? AND shifts.shift_type = ?)", shiftDates[0], shiftTypes[0])
-
-	for i := 1; i < len(shiftDates); i++ {
-		query = query.Or("(shifts.shift_date = ? AND shifts.shift_type = ?)", shiftDates[i], shiftTypes[i])
-	}
-
-	if err := query.Find(&employees).Error; err != nil {
-		r.log.Errorf("Failed to get on-call employees: %v", err)
-		return nil, fmt.Errorf("failed to get on-call employees: %w", err)
+	var queryErr error
+	_ = r.withRead(ctx, func(db *gorm.DB) error {
+		q := db.Distinct().
+			Select("employees.*").
+			Table("employees").
+			Joins("JOIN employee_shifts ON employees.id = employee_shifts.employee_id").
+			Joins("JOIN shifts ON employee_shifts.shift_id = shifts.id").
+			Where("(shifts.shift_date = ? AND shifts.shift_type = ?)", shiftDates[0], shiftTypes[0])
+		for i := 1; i < len(shiftDates); i++ {
+			q = q.Or("(shifts.shift_date = ? AND shifts.shift_type = ?)", shiftDates[i], shiftTypes[i])
+		}
+		queryErr = q.Find(&employees).Error
+		return queryErr
+	})
+	if queryErr != nil {
+		r.log.Errorf("Failed to get on-call employees: %v", queryErr)
+		return nil, fmt.Errorf("failed to get on-call employees: %w", queryErr)
 	}
 
 	r.log.Infof("Successfully retrieved on-call employees: count=%d", len(employees))
@@ -405,4 +423,27 @@ func (r *shiftRepository) getReadDB(ctx context.Context) *gorm.DB {
 		return r.dbWrite.WithContext(ctx)
 	}
 	return r.dbRead.WithContext(ctx)
+}
+
+// withRead executes the provided function using the replica in a read-only transaction when applicable.
+// If RYW fresh window is active or a replica is not configured, it executes against primary without a transaction.
+func (r *shiftRepository) withRead(ctx context.Context, fn func(db *gorm.DB) error) error {
+	if utils.IsFreshRequired(ctx) || r.dbRead == nil || r.dbRead == r.dbWrite {
+		return fn(r.dbWrite.WithContext(ctx))
+	}
+	tx := r.dbRead.WithContext(ctx).Begin(&sql.TxOptions{ReadOnly: true})
+	if tx.Error != nil {
+		return tx.Error
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		}
+	}()
+	if err := fn(tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit().Error
 }

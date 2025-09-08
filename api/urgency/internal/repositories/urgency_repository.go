@@ -4,6 +4,7 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"maps"
 	"slices"
@@ -54,12 +55,16 @@ func (r *urgencyRepository) GetAll(ctx context.Context) ([]model.Urgency, error)
 	log := r.log.WithContext(ctx)
 	defer utils.TimeOperation(log, "UrgencyRepository.GetAll")()
 	var urgencies []model.Urgency
-	err := r.getReadDB(ctx).Where("deleted_at IS NULL").Find(&urgencies).Error
+	err := r.withRead(ctx, func(db *gorm.DB) error {
+		return db.Where("deleted_at IS NULL").Find(&urgencies).Error
+	})
 	return urgencies, err
 }
 
 func (r *urgencyRepository) GetByID(ctx context.Context, id uint, urgency *model.Urgency) error {
-	return r.getReadDB(ctx).First(urgency, "id = ?", id).Error
+	return r.withRead(ctx, func(db *gorm.DB) error {
+		return db.First(urgency, "id = ?", id).Error
+	})
 }
 
 func (r *urgencyRepository) GetByIDPrimary(ctx context.Context, id uint, urgency *model.Urgency) error {
@@ -77,32 +82,29 @@ func (r *urgencyRepository) Delete(ctx context.Context, urgencyID uint) error {
 func (r *urgencyRepository) List(ctx context.Context, filters map[string]interface{}) ([]model.Urgency, error) {
 	allowedColumns := r.allowedColumns()
 	var urgencies []model.Urgency
-	query := r.getReadDB(ctx).Model(&model.Urgency{})
-
-	filterKeys := slices.Collect(maps.Keys(filters))
-	slices.Sort(filterKeys)
-
-	for _, key := range filterKeys {
-		if _, ok := allowedColumns[key]; !ok {
-			return nil, fmt.Errorf("invalid filter key: %s", key)
+	if err := r.withRead(ctx, func(db *gorm.DB) error {
+		query := db.Model(&model.Urgency{})
+		filterKeys := slices.Collect(maps.Keys(filters))
+		slices.Sort(filterKeys)
+		for _, key := range filterKeys {
+			if _, ok := allowedColumns[key]; !ok {
+				return fmt.Errorf("invalid filter key: %s", key)
+			}
+			value := filters[key]
+			switch v := value.(type) {
+			case string:
+				query = query.Where(fmt.Sprintf("%s LIKE ?", key), fmt.Sprintf("%%%s%%", v))
+			case int, int32, int64, float32, float64, bool:
+				query = query.Where(fmt.Sprintf("%s = ?", key), v)
+			default:
+				return fmt.Errorf("unsupported type for filter key: %s", key)
+			}
 		}
-
-		value := filters[key]
-
-		switch v := value.(type) {
-		case string:
-			// Use LIKE for string fields
-			query = query.Where(fmt.Sprintf("%s LIKE ?", key), fmt.Sprintf("%%%s%%", v))
-		case int, int32, int64, float32, float64, bool:
-			// Use exact match for non-string types
-			query = query.Where(fmt.Sprintf("%s = ?", key), v)
-		default:
-			return nil, fmt.Errorf("unsupported type for filter key: %s", key)
-		}
+		return query.Find(&urgencies).Error
+	}); err != nil {
+		return nil, err
 	}
-
-	err := query.Find(&urgencies).Error
-	return urgencies, err
+	return urgencies, nil
 }
 
 func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSize int, assignedEmployeeID *uint) ([]model.Urgency, int64, error) {
@@ -123,16 +125,17 @@ func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSiz
 
 	offset := (page - 1) * pageSize
 
-	q := r.getReadDB(ctx).Model(&model.Urgency{}).Where("deleted_at IS NULL")
-	if assignedEmployeeID != nil {
-		q = q.Where("assigned_employee_id = ?", *assignedEmployeeID)
-	}
-	if err := q.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-	// Prefer indexed business sort via sort_priority if present; fallback to CASE for safety
-	orderExpr := "sort_priority ASC, created_at DESC"
-	if err := q.Order(orderExpr).Limit(pageSize).Offset(offset).Find(&urgencies).Error; err != nil {
+	if err := r.withRead(ctx, func(db *gorm.DB) error {
+		q := db.Model(&model.Urgency{}).Where("deleted_at IS NULL")
+		if assignedEmployeeID != nil {
+			q = q.Where("assigned_employee_id = ?", *assignedEmployeeID)
+		}
+		if err := q.Count(&total).Error; err != nil {
+			return err
+		}
+		orderExpr := "sort_priority ASC, created_at DESC"
+		return q.Order(orderExpr).Limit(pageSize).Offset(offset).Find(&urgencies).Error
+	}); err != nil {
 		return nil, 0, err
 	}
 	return urgencies, total, nil
@@ -149,6 +152,31 @@ func (r *urgencyRepository) getReadDB(ctx context.Context) *gorm.DB {
 		return r.dbWrite.WithContext(ctx)
 	}
 	return r.dbRead.WithContext(ctx)
+}
+
+// withRead executes the provided function using the replica in a read-only transaction when applicable.
+// If RYW fresh window is active or a replica is not configured, it executes against primary without a transaction.
+func (r *urgencyRepository) withRead(ctx context.Context, fn func(db *gorm.DB) error) error {
+	// If fresh is required or read pool is the same as write, avoid read-only tx
+	if utils.IsFreshRequired(ctx) || r.dbRead == nil || r.dbRead == r.dbWrite {
+		return fn(r.dbWrite.WithContext(ctx))
+	}
+	// Begin a read-only transaction on the read pool
+	tx := r.dbRead.WithContext(ctx).Begin(&sql.TxOptions{ReadOnly: true})
+	if tx.Error != nil {
+		return tx.Error
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		}
+	}()
+	if err := fn(tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit().Error
 }
 
 func (r *urgencyRepository) allowedColumns() map[string]bool {

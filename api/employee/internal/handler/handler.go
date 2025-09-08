@@ -158,46 +158,46 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 // @Router /login [post]
 func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 	var req employeeV1.EmployeeLogin
-	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(reqLog, "EmployeeHandler.LoginEmployee")()
-	reqLog.Info("Received Login Employee request")
+	log := h.log.WithContext(requestContext(ctx))
+	defer utils.TimeOperation(log, "EmployeeHandler.LoginEmployee")()
+	log.Info("Received Login Employee request")
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		reqLog.Errorf("Failed to bind login request: %v", err)
+		log.Errorf("Failed to bind login request: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request payload: %v", err)})
 		return
 	}
 
 	if err := req.Validate(); err != nil {
-		h.log.Errorf("validation failed: %v", err)
+		log.Errorf("validation failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if sharedAuth.IsAdminLogin(req.Username) {
-		h.log.Info("Admin login attempt detected")
+		log.Info("Admin login attempt detected")
 
 		if !sharedAuth.ValidateAdminPassword(req.Password) {
-			h.log.Error("Invalid admin password")
+			log.Error("Invalid admin password")
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 			return
 		}
 
 		token, err := sharedAuth.GenerateAdminJWT()
 		if err != nil {
-			h.log.Errorf("failed to generate admin token: %v", err)
+			log.Errorf("failed to generate admin token: %v", err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 			return
 		}
 
-		h.log.Info("Successfully authenticated admin user")
+		log.Info("Successfully authenticated admin user")
 		ctx.JSON(http.StatusOK, gin.H{"token": token})
 		return
 	}
 
 	token, err := h.emplService.LoginEmployee(requestContext(ctx), req)
 	if err != nil {
-		h.log.Errorf("failed to login employee: %v", err)
+		log.Errorf("failed to login employee: %v", err)
 
 		if err.Error() == "invalid credentials" {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
@@ -207,7 +207,7 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 		return
 	}
 
-	h.log.Info("Successfully validated employee and generated JWT token")
+	log.Info("Successfully validated employee and generated JWT token")
 	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }
 
@@ -222,20 +222,20 @@ func (h *employeeHandler) LoginEmployee(ctx *gin.Context) {
 // @Failure 500 {object} ErrorResponse
 // @Router /logout [post]
 func (h *employeeHandler) LogoutEmployee(ctx *gin.Context) {
-	reqLog := h.log.WithContext(requestContext(ctx))
-	defer utils.TimeOperation(reqLog, "EmployeeHandler.LogoutEmployee")()
-	reqLog.Info("Received Logout Employee request")
+	log := h.log.WithContext(requestContext(ctx))
+	defer utils.TimeOperation(log, "EmployeeHandler.LogoutEmployee")()
+	log.Info("Received Logout Employee request")
 
 	tokenID, exists := ctx.Get("tokenID")
 	if !exists {
-		reqLog.Error("Token ID not found in context")
+		log.Error("Token ID not found in context")
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
 	tokenIDStr, ok := tokenID.(string)
 	if !ok {
-		h.log.Error("Token ID is not a string")
+		log.Error("Token ID is not a string")
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
@@ -248,7 +248,7 @@ func (h *employeeHandler) LogoutEmployee(ctx *gin.Context) {
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		claims, err := sharedAuth.ValidateJWT(tokenString, nil)
 		if err != nil {
-			h.log.Errorf("failed to parse token for logout: %v", err)
+			log.Errorf("failed to parse token for logout: %v", err)
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			return
 		}
@@ -256,12 +256,12 @@ func (h *employeeHandler) LogoutEmployee(ctx *gin.Context) {
 	}
 	expiresAt, _ := expiresAny.(time.Time)
 	if err := h.emplService.LogoutEmployee(requestContext(ctx), tokenIDStr, expiresAt); err != nil {
-		h.log.Errorf("failed to logout employee: %v", err)
+		log.Errorf("failed to logout employee: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to logout"})
 		return
 	}
 
-	h.log.Info("Successfully logged out employee")
+	log.Info("Successfully logged out employee")
 	ctx.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
@@ -278,7 +278,9 @@ func (h *employeeHandler) LogoutEmployee(ctx *gin.Context) {
 // @Failure 401 {object} ErrorResponse
 // @Router /oauth/token [post]
 func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
-	h.log.Info("Received OAuth2 Token request")
+	log := h.log.WithContext(requestContext(ctx))
+	defer utils.TimeOperation(log, "EmployeeHandler.OAuth2Token")()
+	log.Info("Received OAuth2 Token request")
 
 	username := ctx.PostForm("username")
 	password := ctx.PostForm("password")
@@ -289,29 +291,29 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 	}
 
 	if err := req.Validate(); err != nil {
-		h.log.Errorf("validation failed: %v", err)
+		log.Errorf("validation failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Check if it's admin login
 	if sharedAuth.IsAdminLogin(username) {
-		h.log.Info("Admin OAuth2 login attempt detected")
+		log.Info("Admin OAuth2 login attempt detected")
 
 		if !sharedAuth.ValidateAdminPassword(password) {
-			h.log.Error("Invalid admin password")
+			log.Error("Invalid admin password")
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 			return
 		}
 
 		token, err := sharedAuth.GenerateAdminJWT()
 		if err != nil {
-			h.log.Errorf("failed to generate admin token: %v", err)
+			log.Errorf("failed to generate admin token: %v", err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 			return
 		}
 
-		h.log.Info("Successfully authenticated admin user via OAuth2")
+		log.Info("Successfully authenticated admin user via OAuth2")
 		ctx.JSON(http.StatusOK, gin.H{
 			"access_token": token,
 			"token_type":   "Bearer",
@@ -322,12 +324,12 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 
 	token, err := h.emplService.LoginEmployee(requestContext(ctx), req)
 	if err != nil {
-		h.log.Errorf("failed to login employee: %v", err)
+		log.Errorf("failed to login employee: %v", err)
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	h.log.Info("Successfully validated employee and generated JWT token via OAuth2")
+	log.Info("Successfully validated employee and generated JWT token via OAuth2")
 	ctx.JSON(http.StatusOK, gin.H{
 		"access_token": token,
 		"token_type":   "Bearer",
@@ -350,12 +352,12 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 
 	employees, err := h.emplService.ListEmployees(requestContext(ctx))
 	if err != nil {
-		h.log.Errorf("failed to retrieve employees: %v", err)
+		log.Errorf("failed to retrieve employees: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve employees"})
 		return
 	}
 
-	h.log.Infof("Successfully retrieved %d employees", len(employees))
+	log.Infof("Successfully retrieved %d employees", len(employees))
 	ctx.JSON(http.StatusOK, employees)
 }
 
@@ -378,14 +380,14 @@ func (h *employeeHandler) GetEmployee(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	employeeID, err := strconv.Atoi(idParam)
 	if err != nil {
-		h.log.Errorf("failed to convert employee ID: %v", err)
+		log.Errorf("failed to convert employee ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
 
 	employee, err := h.emplService.GetEmployeeByID(requestContext(ctx), uint(employeeID))
 	if err != nil {
-		h.log.Errorf("failed to retrieve employee: %v", err)
+		log.Errorf("failed to retrieve employee: %v", err)
 		if strings.Contains(err.Error(), "not found") {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
 		} else {
@@ -406,7 +408,7 @@ func (h *employeeHandler) GetEmployee(ctx *gin.Context) {
 		ProfileType:    employee.ProfileType.String(),
 	}
 
-	h.log.Infof("Successfully retrieved employee with ID %d", employeeID)
+	log.Infof("Successfully retrieved employee with ID %d", employeeID)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -429,28 +431,28 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 
 	employeeID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		h.log.Errorf("failed to convert employee ID: %v", err)
+		log.Errorf("failed to convert employee ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
 
 	var req employeeV1.EmployeeUpdateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		h.log.Errorf("failed to update employee, invalid employee update payload: %v", err)
+		log.Errorf("failed to update employee, invalid employee update payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
 	// Additional validation
 	if err := req.Validate(); err != nil {
-		h.log.Errorf("validation failed: %v", err)
+		log.Errorf("validation failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	response, err := h.emplService.UpdateEmployee(requestContext(ctx), uint(employeeID), req)
 	if err != nil {
-		h.log.Errorf("failed to update employee: %v", err)
+		log.Errorf("failed to update employee: %v", err)
 
 		switch err.Error() {
 		case "employee not found":
@@ -481,24 +483,24 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
 	defer utils.TimeOperation(log, "EmployeeHandler.DeleteEmployee")()
-	h.log.Info("Received Delete Employee request")
+	log.Info("Received Delete Employee request")
 
 	idParam := ctx.Param("id")
 	employeeID, err := strconv.Atoi(idParam)
 	if err != nil {
-		h.log.Errorf("failed to convert employee ID: %v", err)
+		log.Errorf("failed to convert employee ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
 
 	err = h.emplService.DeleteEmployee(requestContext(ctx), uint(employeeID))
 	if err != nil {
-		h.log.Errorf("failed to delete employee: %v", err)
+		log.Errorf("failed to delete employee: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete employee"})
 		return
 	}
 
-	h.log.Infof("Employee with ID %d was deleted", employeeID)
+	log.Infof("Employee with ID %d was deleted", employeeID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Employee deleted successfully"})
 }
 
@@ -516,25 +518,25 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
 	log := h.log.WithContext(requestContext(ctx))
 	defer utils.TimeOperation(log, "EmployeeHandler.AssignShift")()
-	h.log.Infof("Received Assign Shift request for employee ID %s", employeeIDParam)
+	log.Infof("Received Assign Shift request for employee ID %s", employeeIDParam)
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {
-		h.log.Errorf("failed to extract url param, invalid employee ID: %v", err)
+		log.Errorf("failed to extract url param, invalid employee ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid employee ID"})
 		return
 	}
 
 	var req employeeV1.AssignShiftRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		h.log.Errorf("failed to assign shift, invalid shift payload: %v", err)
+		log.Errorf("failed to assign shift, invalid shift payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	response, err := h.shiftService.AssignShift(requestContext(ctx), uint(employeeID), req)
 	if err != nil {
-		h.log.Errorf("failed to assign shift: %v", err)
+		log.Errorf("failed to assign shift: %v", err)
 
 		if strings.HasPrefix(err.Error(), model.ErrorConsecutiveShiftsLimit) {
 			parts := strings.Split(err.Error(), "|")
@@ -562,7 +564,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 		return
 	}
 
-	h.log.Infof("Successfully assigned shift for employee ID %d", employeeID)
+	log.Infof("Successfully assigned shift for employee ID %d", employeeID)
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -578,23 +580,23 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
 	log := h.log.WithContext(requestContext(ctx))
 	defer utils.TimeOperation(log, "EmployeeHandler.GetShifts")()
-	h.log.Infof("Received Get Shifts request for employee ID %s", employeeIDParam)
+	log.Infof("Received Get Shifts request for employee ID %s", employeeIDParam)
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {
-		h.log.Errorf("failed to extract url param, invalid employee ID: %v", err)
+		log.Errorf("failed to extract url param, invalid employee ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
 
 	response, err := h.shiftService.GetShifts(requestContext(ctx), uint(employeeID))
 	if err != nil {
-		h.log.Errorf("failed to get shifts for employee ID %d: %v", employeeID, err)
+		log.Errorf("failed to get shifts for employee ID %d: %v", employeeID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	h.log.Infof("Successfully retrieved %d shifts for employee ID %d", len(response), employeeID)
+	log.Infof("Successfully retrieved %d shifts for employee ID %d", len(response), employeeID)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -615,14 +617,14 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	// Extract employee ID from authentication context
 	employeeIDValue, exists := ctx.Get("employeeID")
 	if !exists {
-		h.log.Errorf("employee ID not found in context")
+		log.Errorf("employee ID not found in context")
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
 	employeeID, ok := employeeIDValue.(uint)
 	if !ok || employeeID <= 0 {
-		h.log.Errorf("invalid employee ID in context: %v", employeeIDValue)
+		log.Errorf("invalid employee ID in context: %v", employeeIDValue)
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid employee ID"})
 		return
 	}
@@ -630,19 +632,19 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 	daysStr := ctx.DefaultQuery("days", "7")
 	days, err := strconv.Atoi(daysStr)
 	if err != nil || days <= 0 {
-		h.log.Errorf("failed to extract url param, invalid days: %v", err)
+		log.Errorf("failed to extract url param, invalid days: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid days parameter"})
 		return
 	}
 
 	response, err := h.shiftService.GetShiftsAvailability(requestContext(ctx), employeeID, days)
 	if err != nil {
-		h.log.Errorf("failed to get shifts availability: %v", err)
+		log.Errorf("failed to get shifts availability: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	h.log.Infof("Successfully retrieved shifts availability for employee %d for the next %v days", employeeID, days)
+	log.Infof("Successfully retrieved shifts availability for employee %d for the next %v days", employeeID, days)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -660,25 +662,25 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
 	log := h.log.WithContext(requestContext(ctx))
 	defer utils.TimeOperation(log, "EmployeeHandler.RemoveShift")()
-	h.log.Infof("Received Remove Shift request for employee ID %s", employeeIDParam)
+	log.Infof("Received Remove Shift request for employee ID %s", employeeIDParam)
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {
-		h.log.Errorf("failed to extract url param, invalid employee ID: %v", err)
+		log.Errorf("failed to extract url param, invalid employee ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
 
 	var req employeeV1.RemoveShiftRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		h.log.Errorf("failed to remove shift, invalid shift payload: %v", err)
+		log.Errorf("failed to remove shift, invalid shift payload: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	err = h.shiftService.RemoveShift(requestContext(ctx), uint(employeeID), req)
 	if err != nil {
-		h.log.Errorf("failed to remove shift: %v", err)
+		log.Errorf("failed to remove shift: %v", err)
 
 		if err.Error() == "invalid shift date format" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -688,7 +690,7 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 		return
 	}
 
-	h.log.Infof("Successfully removed shift for employee ID %d", employeeID)
+	log.Infof("Successfully removed shift for employee ID %d", employeeID)
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
@@ -705,16 +707,16 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
 	defer utils.TimeOperation(log, "EmployeeHandler.ResetAllData")()
-	h.log.Warn("Admin data reset request received")
+	log.Warn("Admin data reset request received")
 
 	err := h.emplService.ResetAllData(requestContext(ctx))
 	if err != nil {
-		h.log.Errorf("Failed to reset all data: %v", err)
+		log.Errorf("Failed to reset all data: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset data"})
 		return
 	}
 
-	h.log.Info("Successfully reset all system data")
+	log.Info("Successfully reset all system data")
 	ctx.JSON(http.StatusOK, gin.H{"message": "All data has been successfully reset"})
 }
 
@@ -731,7 +733,7 @@ func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
 	log := h.log.WithContext(requestContext(ctx))
 	defer utils.TimeOperation(log, "EmployeeHandler.GetAdminShiftsAvailability")()
-	h.log.Info("Admin shifts availability request received")
+	log.Info("Admin shifts availability request received")
 
 	// Parse days parameter (default to 7)
 	days := 7
@@ -739,7 +741,7 @@ func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
 		var err error
 		days, err = strconv.Atoi(daysStr)
 		if err != nil || days <= 0 || days > 90 {
-			h.log.Errorf("Invalid days parameter: %s", daysStr)
+			log.Errorf("Invalid days parameter: %s", daysStr)
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Days must be a number between 1 and 90"})
 			return
 		}
@@ -749,12 +751,12 @@ func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
 	// For now, let's return system-wide availability (we can use employee ID 1 as a reference)
 	response, err := h.shiftService.GetShiftsAvailability(requestContext(ctx), 1, days)
 	if err != nil {
-		h.log.Errorf("failed to get admin shifts availability: %v", err)
+		log.Errorf("failed to get admin shifts availability: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve shifts availability"})
 		return
 	}
 
-	h.log.Infof("Successfully retrieved admin shifts availability for %d days", days)
+	log.Infof("Successfully retrieved admin shifts availability for %d days", days)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -780,7 +782,7 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 		var err error
 		shiftBuffer, err = time.ParseDuration(bufferStr)
 		if err != nil {
-			h.log.Errorf("Invalid shift_buffer parameter: %v", err)
+			log.Errorf("Invalid shift_buffer parameter: %v", err)
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid shift_buffer format. Use format like '1h', '30m'"})
 			return
 		}
@@ -788,7 +790,7 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 
 	employeeResponses, err := h.shiftService.GetOnCallEmployees(requestContext(ctx), time.Now().UTC(), shiftBuffer)
 	if err != nil {
-		h.log.Errorf("Failed to get on-call employees: %v", err)
+		log.Errorf("Failed to get on-call employees: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve on-call employees"})
 		return
 	}
@@ -797,7 +799,7 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 		Employees: employeeResponses,
 	}
 
-	h.log.Infof("Successfully retrieved %d on-call employees", len(employeeResponses))
+	log.Infof("Successfully retrieved %d on-call employees", len(employeeResponses))
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -815,20 +817,21 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 // @Failure 500 {object} ErrorResponse
 // @Router /employees/{id}/active-emergencies [get]
 func (h *employeeHandler) CheckActiveEmergencies(ctx *gin.Context) {
+	log := h.log.WithContext(requestContext(ctx))
 	employeeIDStr := ctx.Param("id")
 	employeeID, err := strconv.ParseUint(employeeIDStr, 10, 32)
 	if err != nil {
-		h.log.Errorf("Invalid employee ID: %v", err)
+		log.Errorf("Invalid employee ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
 
-	h.log.Infof("Checking active emergencies for employee %d", employeeID)
+	log.Infof("Checking active emergencies for employee %d", employeeID)
 
 	// Check if employee exists
 	_, err = h.emplService.GetEmployeeByID(requestContext(ctx), uint(employeeID))
 	if err != nil {
-		h.log.Errorf("Employee not found: %v", err)
+		log.Errorf("Employee not found: %v", err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
 		return
 	}
@@ -839,7 +842,7 @@ func (h *employeeHandler) CheckActiveEmergencies(ctx *gin.Context) {
 		HasActiveEmergencies: false,
 	}
 
-	h.log.Infof("Employee %d has active emergencies: %v", employeeID, response.HasActiveEmergencies)
+	log.Infof("Employee %d has active emergencies: %v", employeeID, response.HasActiveEmergencies)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -855,19 +858,20 @@ func (h *employeeHandler) CheckActiveEmergencies(ctx *gin.Context) {
 // @Failure 500 {object} ErrorResponse
 // @Router /employees/{id}/shift-warnings [get]
 func (h *employeeHandler) GetShiftWarnings(ctx *gin.Context) {
+	log := h.log.WithContext(requestContext(ctx))
 	employeeIDParam := ctx.Param("id")
-	h.log.Infof("Received Get Shift Warnings request for employee ID %s", employeeIDParam)
+	log.Infof("Received Get Shift Warnings request for employee ID %s", employeeIDParam)
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
 	if err != nil || employeeID <= 0 {
-		h.log.Errorf("failed to extract url param, invalid employee ID: %v", err)
+		log.Errorf("failed to extract url param, invalid employee ID: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
 
 	warnings, err := h.shiftService.GetShiftWarnings(requestContext(ctx), uint(employeeID))
 	if err != nil {
-		h.log.Errorf("failed to get shift warnings for employee ID %d: %v", employeeID, err)
+		log.Errorf("failed to get shift warnings for employee ID %d: %v", employeeID, err)
 
 		if err.Error() == "employee not found" {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -877,7 +881,7 @@ func (h *employeeHandler) GetShiftWarnings(ctx *gin.Context) {
 		return
 	}
 
-	h.log.Infof("Successfully retrieved %d warnings for employee ID %d", len(warnings), employeeID)
+	log.Infof("Successfully retrieved %d warnings for employee ID %d", len(warnings), employeeID)
 	ctx.JSON(http.StatusOK, gin.H{"warnings": warnings})
 }
 

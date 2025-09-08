@@ -53,30 +53,31 @@ type UploadProfilePictureResponse struct {
 // @Failure 500 {object} ErrorResponse
 // @Router /employees/{id}/profile-picture [post]
 func (h *fileHandler) UploadProfilePicture(ctx *gin.Context) {
-	h.log.Info("Received profile picture upload request")
+	log := h.log.WithContext(requestContext(ctx))
+	log.Info("Received profile picture upload request")
 
 	employeeIDStr := ctx.Param("id")
 	employeeID, err := strconv.ParseUint(employeeIDStr, 10, 32)
 	if err != nil {
-		h.log.Errorf("Invalid employee ID: %s", employeeIDStr)
+		log.Errorf("Invalid employee ID: %s", employeeIDStr)
 		ctx.JSON(http.StatusBadRequest, employeeV1.ErrorResponse{Error: "Invalid employee ID"})
 		return
 	}
 
 	file, header, err := ctx.Request.FormFile("file")
 	if err != nil {
-		h.log.Errorf("Failed to get file from form: %v", err)
+		log.Errorf("Failed to get file from form: %v", err)
 		ctx.JSON(http.StatusBadRequest, employeeV1.ErrorResponse{Error: "No file provided or invalid file"})
 		return
 	}
 	defer file.Close()
 
-	h.log.Infof("Uploading profile picture for employee %d: %s (size: %d bytes)",
+	log.Infof("Uploading profile picture for employee %d: %s (size: %d bytes)",
 		employeeID, header.Filename, header.Size)
 
 	result, err := h.blobService.UploadProfilePicture(ctx.Request.Context(), file, header, uint(employeeID))
 	if err != nil {
-		h.log.Errorf("Failed to upload profile picture: %v", err)
+		log.Errorf("Failed to upload profile picture: %v", err)
 
 		errorMsg := "Failed to upload profile picture"
 		if err.Error() != "" {
@@ -94,7 +95,7 @@ func (h *fileHandler) UploadProfilePicture(ctx *gin.Context) {
 
 	_, err = h.employeeService.UpdateEmployee(ctx.Request.Context(), uint(employeeID), updateRequest)
 	if err != nil {
-		h.log.Errorf("Failed to update employee profile picture URL: %v", err)
+		log.Errorf("Failed to update employee profile picture URL: %v", err)
 		// Note: We don't return an error here because the upload was successful
 		// The frontend will still get the blob URL and can handle this gracefully
 	}
@@ -106,7 +107,7 @@ func (h *fileHandler) UploadProfilePicture(ctx *gin.Context) {
 		Message:  "Profile picture uploaded successfully",
 	}
 
-	h.log.Infof("Successfully uploaded profile picture for employee %d", employeeID)
+	log.Infof("Successfully uploaded profile picture for employee %d", employeeID)
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -122,24 +123,25 @@ func (h *fileHandler) UploadProfilePicture(ctx *gin.Context) {
 // @Failure 500 {object} ErrorResponse
 // @Router /employees/{id}/profile-picture [delete]
 func (h *fileHandler) DeleteProfilePicture(ctx *gin.Context) {
-	h.log.Info("Received profile picture delete request")
+	log := h.log.WithContext(requestContext(ctx))
+	log.Info("Received profile picture delete request")
 
 	employeeIDStr := ctx.Param("id")
 	employeeID, err := strconv.ParseUint(employeeIDStr, 10, 32)
 	if err != nil {
-		h.log.Errorf("Invalid employee ID: %s", employeeIDStr)
+		log.Errorf("Invalid employee ID: %s", employeeIDStr)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}
 
 	blobName := ctx.Query("blobName")
 	if blobName == "" {
-		h.log.Error("Blob name is required")
+		log.Error("Blob name is required")
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Blob name is required"})
 		return
 	}
 
-	h.log.Infof("Deleting profile picture for employee %d: %s", employeeID, blobName)
+	log.Infof("Deleting profile picture for employee %d: %s", employeeID, blobName)
 
 	err = h.blobService.DeleteProfilePicture(ctx.Request.Context(), blobName)
 	if err != nil {
@@ -148,7 +150,7 @@ func (h *fileHandler) DeleteProfilePicture(ctx *gin.Context) {
 		return
 	}
 
-	h.log.Infof("Successfully deleted profile picture for employee %d", employeeID)
+	log.Infof("Successfully deleted profile picture for employee %d", employeeID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Profile picture deleted successfully"})
 }
 
@@ -163,12 +165,15 @@ func (h *fileHandler) DeleteProfilePicture(ctx *gin.Context) {
 // @Failure 404 {object} ErrorResponse
 // @Router /files/profile-picture/info [get]
 func (h *fileHandler) GetProfilePictureInfo(ctx *gin.Context) {
+	log := h.log.WithContext(requestContext(ctx))
 	blobName := ctx.Query("blobName")
 	if blobName == "" {
+		log.Error("Blob name is required")
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Blob name is required"})
 		return
 	}
 
+	log.Infof("Successfully retrieved profile picture info for blob name %s", blobName)
 	// For now, just return basic info
 	ctx.JSON(http.StatusOK, gin.H{
 		"blobName": blobName,

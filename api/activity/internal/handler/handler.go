@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
+	"github.com/pd120424d/mountain-service/api/shared/config"
 	sharedModels "github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
@@ -173,7 +175,11 @@ func encodeCursorToken(t time.Time, id uint) string {
 // @Router /activities [get]
 func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	var req activityV1.ActivityListRequest
-	log := h.log.WithContext(ctx.Request.Context())
+	// Apply a bounded timeout for list operations
+	baseCtx := ctx.Request.Context()
+	cctx, cancel := context.WithTimeout(baseCtx, config.DefaultListTimeout)
+	defer cancel()
+	log := h.log.WithContext(cctx)
 	defer utils.TimeOperation(log, "ActivityHandler.ListActivities")()
 	log.Info("Received List Activities request")
 
@@ -195,9 +201,9 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			err        error
 		)
 		if req.UrgencyID != nil {
-			activities, nextToken, err = h.readModel.ListByUrgencyCursor(ctx.Request.Context(), *req.UrgencyID, size, req.PageToken)
+			activities, nextToken, err = h.readModel.ListByUrgencyCursor(cctx, *req.UrgencyID, size, req.PageToken)
 		} else {
-			activities, nextToken, err = h.readModel.ListAllCursor(ctx.Request.Context(), size, req.PageToken)
+			activities, nextToken, err = h.readModel.ListAllCursor(cctx, size, req.PageToken)
 		}
 		if err != nil {
 			log.Warnf("Cursor read-model fetch failed, falling back: %v", err)
@@ -227,7 +233,7 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 		}
 
 		limit := page * size
-		activities, err := h.readModel.ListByUrgency(ctx.Request.Context(), *req.UrgencyID, limit)
+		activities, err := h.readModel.ListByUrgency(cctx, *req.UrgencyID, limit)
 		if err != nil {
 			// If Firestore has no data we don't want to fail
 			// but just return empty result
@@ -285,7 +291,7 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			size = 10
 		}
 		limit := page * size
-		activities, err := h.readModel.ListAll(ctx.Request.Context(), limit)
+		activities, err := h.readModel.ListAll(cctx, limit)
 		if err != nil {
 			log.Warnf("Read-model fetch (all) failed, falling back to DB: %v", err)
 		} else {
@@ -323,7 +329,7 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 		}
 	}
 
-	response, err := h.svc.ListActivities(ctx.Request.Context(), &req)
+	response, err := h.svc.ListActivities(cctx, &req)
 	if err != nil {
 		log.Errorf("Failed to list activities: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list activities", "details": err.Error()})

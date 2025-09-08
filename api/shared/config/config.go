@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 // Package config contains service configuration constants and utilities
 
 const (
@@ -24,4 +26,8 @@ const (
 const (
 	REDIS_ADDR = "REDIS_ADDR"
 	REDIS_DB   = "REDIS_DB"
+)
+
+const (
+	DefaultListTimeout = 300 * time.Millisecond
 )

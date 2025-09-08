@@ -59,6 +59,9 @@ func (s *urgencyService) CreateUrgency(ctx context.Context, urgency *model.Urgen
 	defer utils.TimeOperation(log, "UrgencyService.CreateUrgency")()
 	log.Infof("Creating urgency: %s %s", urgency.FirstName, urgency.LastName)
 	urgency.SortPriority = model.ComputeSortPriority(urgency.Status, urgency.AssignedEmployeeID)
+	if urgency.SortPriority == 0 { // safety guard against zero triggering DB defaults
+		urgency.SortPriority = 1
+	}
 	err := s.repo.Create(ctx, urgency)
 
 	if err != nil {
@@ -133,6 +136,9 @@ func (s *urgencyService) UpdateUrgency(ctx context.Context, urgency *model.Urgen
 	log := s.log.WithContext(ctx)
 	defer utils.TimeOperation(log, "UrgencyService.UpdateUrgency")()
 	urgency.SortPriority = model.ComputeSortPriority(urgency.Status, urgency.AssignedEmployeeID)
+	if urgency.SortPriority == 0 { // safety guard against zero triggering DB defaults
+		urgency.SortPriority = 1
+	}
 	if err := s.repo.Update(ctx, urgency); err != nil {
 		log.Errorf("Failed to update urgency: %v", err)
 		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to update urgency", map[string]interface{}{"cause": err.Error()})
@@ -181,6 +187,9 @@ func (s *urgencyService) AssignUrgency(ctx context.Context, urgencyID, employeeI
 	urg.AssignedAt = &now
 	urg.Status = urgencyV1.InProgress
 	urg.SortPriority = model.ComputeSortPriority(urg.Status, urg.AssignedEmployeeID)
+	if urg.SortPriority == 0 { // safety guard against zero triggering DB defaults
+		urg.SortPriority = 1
+	}
 	if err := s.repo.Update(ctx, urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to update urgency with assignment", map[string]interface{}{"cause": err.Error()})
 	}
@@ -207,6 +216,9 @@ func (s *urgencyService) UnassignUrgency(ctx context.Context, urgencyID uint, ac
 	urg.AssignedEmployeeID = nil
 	urg.AssignedAt = nil
 	urg.SortPriority = model.ComputeSortPriority(urg.Status, urg.AssignedEmployeeID)
+	if urg.SortPriority == 0 { // safety guard against zero triggering DB defaults
+		urg.SortPriority = 1
+	}
 	if err := s.repo.Update(ctx, urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UNASSIGN_FAILED", "failed to unassign", map[string]interface{}{"cause": err.Error()})
 	}
@@ -239,6 +251,9 @@ func (s *urgencyService) CloseUrgency(ctx context.Context, urgencyID uint, actor
 	}
 	urg.Status = urgencyV1.Closed
 	urg.SortPriority = model.ComputeSortPriority(urg.Status, urg.AssignedEmployeeID)
+	if urg.SortPriority == 0 { // safety guard against zero triggering DB defaults
+		urg.SortPriority = 1
+	}
 	if err := s.repo.Update(ctx, urg); err != nil {
 		return commonv1.NewAppError("URGENCY_ERRORS.UPDATE_FAILED", "failed to close urgency", map[string]interface{}{"cause": err.Error()})
 	}
