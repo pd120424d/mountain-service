@@ -185,6 +185,10 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 		if size <= 0 {
 			size = 10
 		}
+		if size > 100 {
+			size = 100
+		}
+
 		var (
 			activities []sharedModels.Activity
 			nextToken  string
