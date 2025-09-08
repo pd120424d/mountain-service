@@ -35,7 +35,7 @@ describe('AppComponent', () => {
     const authSpy = jasmine.createSpyObj('AuthService', ['getRole', 'getUserId', 'isAuthenticated']);
     const employeeSpy = jasmine.createSpyObj('EmployeeService', ['getEmployeeById']);
     const appInitSpy = jasmine.createSpyObj('AppInitializationService', ['initialize', 'cleanup']);
-    const urgencySpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies']);
+    const urgencySpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated']);
 
     await TestBed.configureTestingModule({
       imports: [AppComponent],
@@ -274,7 +274,7 @@ describe('AppComponent', () => {
       { id: 2, assignedEmployeeId: null }, // unassigned
       { id: 3, assignedEmployeeId: 5 } // assigned
     ] as any[];
-    urgencyService.getUrgencies.and.returnValue(of(urgencies));
+    urgencyService.getUrgenciesPaginated.and.returnValue(of({ urgencies, total: urgencies.length, page: 1, pageSize: 1000, totalPages: 1 }));
 
     (component as any)['refreshOpenUrgencies']();
 
@@ -284,10 +284,25 @@ describe('AppComponent', () => {
   it('should keep previous openUrgenciesCount on error', () => {
     authService.isAuthenticated.and.returnValue(true);
     component.openUrgenciesCount = 5;
-    urgencyService.getUrgencies.and.returnValue(throwError(() => new Error('fail')));
+    urgencyService.getUrgenciesPaginated.and.returnValue(throwError(() => new Error('fail')));
 
     (component as any)['refreshOpenUrgencies']();
 
     expect(component.openUrgenciesCount).toBe(5);
   });
+
+  it('should compute open urgencies from all (not only mine) via paginated API', () => {
+    authService.isAuthenticated.and.returnValue(true);
+    urgencyService.getUrgenciesPaginated = jasmine.createSpy().and.returnValue(of({ urgencies: [
+      { id: 1, assignedEmployeeId: undefined },
+      { id: 2, assignedEmployeeId: null },
+      { id: 3, assignedEmployeeId: 5 }
+    ] as any[], total: 3, page: 1, pageSize: 1000, totalPages: 1 }));
+
+    (component as any)['refreshOpenUrgencies']();
+
+    expect(urgencyService.getUrgenciesPaginated).toHaveBeenCalledWith({ page: 1, pageSize: 1000, myUrgencies: false });
+    expect(component.openUrgenciesCount).toBe(2);
+  });
+
 });

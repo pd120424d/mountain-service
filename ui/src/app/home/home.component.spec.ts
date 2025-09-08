@@ -3,6 +3,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrService } from 'ngx-toastr';
 import { of } from 'rxjs';
+import { UrgencyService } from '../urgency/urgency.service';
 
 import { HomeComponent } from './home.component';
 import { sharedTestingProviders } from '../test-utils/shared-test-imports';
@@ -28,6 +29,7 @@ describe('HomeComponent', () => {
       providers: [
         ...sharedTestingProviders,
         { provide: NgxSpinnerService, useValue: spinnerSpy },
+        { provide: UrgencyService, useValue: jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated']) },
         { provide: ToastrService, useValue: toastrSpy },
         { provide: AuthService, useValue: authSpy }
       ]

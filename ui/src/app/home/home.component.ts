@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../services/auth.service';
-import { UrgencyService } from '../urgency/urgency.service';
-import { hasAcceptedAssignment } from '../shared/models';
+
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrService } from 'ngx-toastr';
 import { NgxSpinnerModule } from 'ngx-spinner';
@@ -36,12 +35,11 @@ export class HomeComponent implements OnInit {
   prevImageIndex = 0;
   isStaging = environment.staging;
 
-  openUrgenciesCount: number = 0;
+
 
   constructor(
     private translate: TranslateService,
     public authService: AuthService,
-    private urgencyService: UrgencyService,
     private spinner: NgxSpinnerService,
     private toastr: ToastrService) {
     this.translate.setDefaultLang('sr-cyr')
@@ -50,18 +48,6 @@ export class HomeComponent implements OnInit {
   ngOnInit(): void {
     this.preloadImage(this.images[1]); // preload second image immediately
 
-    // Fetch open urgencies count when user is authenticated
-    if (this.authService.isAuthenticated()) {
-      this.refreshOpenUrgencies();
-    }
-
-    this.authService.authChanged$.subscribe(() => {
-      if (this.authService.isAuthenticated()) {
-        this.refreshOpenUrgencies();
-      } else {
-        this.openUrgenciesCount = 0;
-      }
-    });
 
     setInterval(() => {
       const nextIndex = (this.currentImageIndex + 1) % this.images.length;
@@ -74,16 +60,7 @@ export class HomeComponent implements OnInit {
     }, 8000);
   }
 
-  private refreshOpenUrgencies(): void {
-    this.urgencyService.getUrgencies().subscribe({
-      next: (urgencies) => {
-        this.openUrgenciesCount = (urgencies || []).filter(u => !hasAcceptedAssignment(u as any)).length;
-      },
-      error: () => {
-        this.openUrgenciesCount = this.openUrgenciesCount || 0;
-      }
-    });
-  }
+
 
   preloadImage(url: string): Promise<void> {
     return new Promise((resolve) => {

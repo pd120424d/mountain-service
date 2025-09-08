@@ -27,11 +27,6 @@
         <i class="fas fa-exclamation-triangle"></i>
         <h3 class="urgency-nav-title">
           {{ 'NAV.URGENCY_MANAGEMENT.TITLE' | translate }}
-          <span *ngIf="openUrgenciesCount > 0" class="open-urgencies-indicator nav-indicator"
-                title="{{ 'URGENCY_LIST.UNASSIGNED_WARNING' | translate:{ count: openUrgenciesCount } }}">
-            <span class="dot"></span>
-            <span class="count">{{ openUrgenciesCount }}</span>
-          </span>
         </h3>
         <p>{{ 'NAV.URGENCY_MANAGEMENT.DESCRIPTION' | translate }}</p>
       </a>

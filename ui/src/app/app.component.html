@@ -20,6 +20,14 @@
       </span>
     </div>
   </div>
+
+<!-- Global Open Urgencies Indicator next to user info (top-left) -->
+<div class="open-urgencies-indicator" *ngIf="authService.isAuthenticated() && openUrgenciesCount > 0" (click)="goToUrgencies()"
+     [title]="('URGENCY_LIST.UNASSIGNED_WARNING' | translate:{ count: openUrgenciesCount })">
+  <i class="fas fa-exclamation-triangle"></i>
+  {{ openUrgenciesCount }}
+</div>
+
 </div>
 
 <!-- Top-right section (Language Switcher + Login Button) -->
@@ -60,6 +68,16 @@
     {{ 'LOGOUT.BUTTON' | translate }}
   </button>
 </div>
+
+<!-- Global Open Urgencies Indicator in header -->
+<span *ngIf="authService.isAuthenticated() && openUrgenciesCount > 0"
+      class="open-urgencies-indicator"
+      (click)="goToUrgencies()"
+      [title]="('URGENCY_LIST.UNASSIGNED_WARNING' | translate:{ count: openUrgenciesCount })">
+  <i class="fas fa-exclamation-triangle"></i>
+  {{ openUrgenciesCount }}
+</span>
+
 
 <ngx-spinner>
 </ngx-spinner>
