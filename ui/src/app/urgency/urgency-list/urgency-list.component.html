@@ -6,6 +6,15 @@
       {{ 'GO_HOME' | translate }}
     </button>
     <h2>{{ 'URGENCY_LIST.TITLE' | translate }}</h2>
+  <!-- Global Open Urgencies Indicator -->
+  <div *ngIf="authService.isAuthenticated() && unassignedCount > 0"
+       class="open-urgencies-indicator"
+       (click)="activeTab='all'; page=1; loadUrgencies()"
+       [title]="('URGENCY_LIST.UNASSIGNED_WARNING' | translate:{ count: unassignedCount })">
+    <i class="fas fa-exclamation-triangle"></i>
+    {{ unassignedCount }}
+  </div>
+
   </div>
   <!-- Tabs for Mine vs All -->
   <div class="tabs" *ngIf="!isLoading && !error" style="margin: 8px 0; display:flex; gap:8px;">

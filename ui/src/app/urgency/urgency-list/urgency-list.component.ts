@@ -36,7 +36,7 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   constructor(
     private urgencyService: UrgencyService,
     private router: Router,
-    private authService: AuthService,
+    public authService: AuthService,
     translate: TranslateService
   ) {
     super(translate);
