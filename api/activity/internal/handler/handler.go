@@ -152,7 +152,7 @@ func encodeCursorToken(t time.Time, id uint) string {
 		return ""
 	}
 	b, _ := json.Marshal(cursorToken{CreatedAt: t.UTC().Format(time.RFC3339), ID: id})
-	return base64.StdEncoding.EncodeToString(b)
+	return base64.RawURLEncoding.EncodeToString(b)
 }
 
 // ListActivities Преузимање листе активности са филтрирањем и пагинацијом

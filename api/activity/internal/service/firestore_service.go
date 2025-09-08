@@ -4,8 +4,6 @@ package service
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -146,42 +144,6 @@ func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedMode
 	return items, nil
 }
 
-// Cursor token helpers
-type cursorToken struct {
-	CreatedAt string `json:"createdAt"`
-	ID        uint   `json:"id,omitempty"`
-}
-
-func encodeToken(t time.Time, id uint) string {
-	if t.IsZero() {
-		return ""
-	}
-	b, _ := json.Marshal(cursorToken{CreatedAt: t.UTC().Format(time.RFC3339), ID: id})
-	return base64.StdEncoding.EncodeToString(b)
-}
-
-func decodeToken(token string) (time.Time, uint, error) {
-	if token == "" {
-		return time.Time{}, 0, nil
-	}
-	raw, err := base64.StdEncoding.DecodeString(token)
-	if err != nil {
-		return time.Time{}, 0, err
-	}
-	var ct cursorToken
-	if err := json.Unmarshal(raw, &ct); err != nil {
-		return time.Time{}, 0, err
-	}
-	if ct.CreatedAt == "" {
-		return time.Time{}, ct.ID, nil
-	}
-	t, err := time.Parse(time.RFC3339, ct.CreatedAt)
-	if err != nil {
-		return time.Time{}, ct.ID, err
-	}
-	return t, ct.ID, nil
-}
-
 func (s *firestoreService) ListByUrgencyCursor(ctx context.Context, urgencyID uint, pageSize int, pageToken string) ([]sharedModels.Activity, string, error) {
 	log := s.logger.WithContext(ctx)
 	defer utils.TimeOperation(log, "FirestoreService.ListByUrgencyCursor")()
@@ -190,6 +152,9 @@ func (s *firestoreService) ListByUrgencyCursor(ctx context.Context, urgencyID ui
 	}
 	if pageSize <= 0 {
 		pageSize = 10
+	}
+	if pageSize > 100 {
+		pageSize = 100
 	}
 
 	log.Infof("Cursor list by urgency: urgencyId=%d pageSize=%d token_present=%v", urgencyID, pageSize, pageToken != "")
@@ -372,6 +337,10 @@ func (s *firestoreService) ListAllCursor(ctx context.Context, pageSize int, page
 	if s.client == nil {
 		return nil, "", fmt.Errorf("firestore client is nil")
 	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
 	if pageSize <= 0 {
 		pageSize = 10
 	}
