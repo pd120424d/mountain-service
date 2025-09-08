@@ -144,13 +144,14 @@ func buildActivityListRequest(ctx *gin.Context) activityV1.ActivityListRequest {
 // Matches service-side format: base64(JSON{"createdAt": RFC3339 UTC})
 type cursorToken struct {
 	CreatedAt string `json:"createdAt"`
+	ID        uint   `json:"id,omitempty"`
 }
 
-func encodeCursorToken(t time.Time) string {
+func encodeCursorToken(t time.Time, id uint) string {
 	if t.IsZero() {
 		return ""
 	}
-	b, _ := json.Marshal(cursorToken{CreatedAt: t.UTC().Format(time.RFC3339)})
+	b, _ := json.Marshal(cursorToken{CreatedAt: t.UTC().Format(time.RFC3339), ID: id})
 	return base64.StdEncoding.EncodeToString(b)
 }
 
@@ -260,7 +261,8 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 
 			// Provide a nextPageToken for infinite scroll to switch to cursor mode
 			if end-start > 0 {
-				resp.NextPageToken = encodeCursorToken(activities[end-1].CreatedAt)
+				last := activities[end-1]
+				resp.NextPageToken = encodeCursorToken(last.CreatedAt, last.ID)
 			}
 
 			log.Infof("Listed %d activities out of approx %d total. Used Firestore read model.", len(resp.Activities), resp.Total)
@@ -307,7 +309,8 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			}
 
 			if end-start > 0 {
-				resp.NextPageToken = encodeCursorToken(activities[end-1].CreatedAt)
+				last := activities[end-1]
+				resp.NextPageToken = encodeCursorToken(last.CreatedAt, last.ID)
 			}
 
 			log.Infof("Listed %d activities out of approx %d total. Used Firestore read model (all).", len(resp.Activities), resp.Total)

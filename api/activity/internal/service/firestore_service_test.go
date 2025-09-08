@@ -81,22 +81,24 @@ func TestFirestoreService_ListAllCursor(t *testing.T) {
 
 func TestEncodeDecodeToken(t *testing.T) {
 	zero := time.Time{}
-	assert.Equal(t, "", encodeToken(zero))
+	assert.Equal(t, "", encodeToken(zero, 0))
 
 	nonZero := time.Date(2025, 1, 5, 12, 0, 0, 0, time.UTC)
-	tok := encodeToken(nonZero)
+	tok := encodeToken(nonZero, 0)
 	assert.NotEmpty(t, tok)
 
-	decoded, err := decodeToken(tok)
+	tDecoded, id, err := decodeToken(tok)
 	assert.NoError(t, err)
-	assert.True(t, decoded.Equal(nonZero))
+	assert.True(t, tDecoded.Equal(nonZero))
+	assert.Equal(t, uint(0), id)
 
-	_, err = decodeToken("???")
+	_, _, err = decodeToken("???")
 	assert.Error(t, err)
 
-	decoded, err = decodeToken("")
+	tDecoded2, id2, err := decodeToken("")
 	assert.NoError(t, err)
-	assert.True(t, decoded.IsZero())
+	assert.True(t, tDecoded2.IsZero())
+	assert.Equal(t, uint(0), id2)
 }
 
 func TestCoerceTime(t *testing.T) {

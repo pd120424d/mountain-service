@@ -494,10 +494,10 @@ func TestBuildActivityListRequest_InvalidValues(t *testing.T) {
 
 func TestEncodeCursorToken(t *testing.T) {
 	zero := time.Time{}
-	assert.Equal(t, "", encodeCursorToken(zero))
+	assert.Equal(t, "", encodeCursorToken(zero, 0))
 
 	nonZero := time.Date(2025, 3, 1, 12, 0, 0, 0, time.UTC)
-	enc := encodeCursorToken(nonZero)
+	enc := encodeCursorToken(nonZero, 0)
 	assert.NotEmpty(t, enc)
 }
 

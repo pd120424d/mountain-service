@@ -136,6 +136,7 @@ func startPublisherIfConfigured(log utils.Logger, db *gorm.DB) {
 			batchSize = i
 		}
 	}
+
 	pub := publisher.New(log, repo, client, publisher.Config{TopicName: topic, Interval: time.Duration(intervalSec) * time.Second, BatchSize: batchSize})
 	ctx, _ := context.WithCancel(context.Background())
 	pub.Start(ctx)

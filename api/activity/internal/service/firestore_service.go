@@ -149,32 +149,37 @@ func (s *firestoreService) ListAll(ctx context.Context, limit int) ([]sharedMode
 // Cursor token helpers
 type cursorToken struct {
 	CreatedAt string `json:"createdAt"`
+	ID        uint   `json:"id,omitempty"`
 }
 
-func encodeToken(t time.Time) string {
+func encodeToken(t time.Time, id uint) string {
 	if t.IsZero() {
 		return ""
 	}
-	b, _ := json.Marshal(cursorToken{CreatedAt: t.UTC().Format(time.RFC3339)})
+	b, _ := json.Marshal(cursorToken{CreatedAt: t.UTC().Format(time.RFC3339), ID: id})
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-func decodeToken(token string) (time.Time, error) {
+func decodeToken(token string) (time.Time, uint, error) {
 	if token == "" {
-		return time.Time{}, nil
+		return time.Time{}, 0, nil
 	}
 	raw, err := base64.StdEncoding.DecodeString(token)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, 0, err
 	}
 	var ct cursorToken
 	if err := json.Unmarshal(raw, &ct); err != nil {
-		return time.Time{}, err
+		return time.Time{}, 0, err
 	}
 	if ct.CreatedAt == "" {
-		return time.Time{}, nil
+		return time.Time{}, ct.ID, nil
 	}
-	return time.Parse(time.RFC3339, ct.CreatedAt)
+	t, err := time.Parse(time.RFC3339, ct.CreatedAt)
+	if err != nil {
+		return time.Time{}, ct.ID, err
+	}
+	return t, ct.ID, nil
 }
 
 func (s *firestoreService) ListByUrgencyCursor(ctx context.Context, urgencyID uint, pageSize int, pageToken string) ([]sharedModels.Activity, string, error) {
@@ -186,49 +191,178 @@ func (s *firestoreService) ListByUrgencyCursor(ctx context.Context, urgencyID ui
 	if pageSize <= 0 {
 		pageSize = 10
 	}
-	q := s.client.Collection(s.collection).
-		Where("urgency_id", "==", int64(urgencyID)).
-		OrderBy("created_at", firestorex.Desc)
-	if pageToken != "" {
-		if t, err := decodeToken(pageToken); err == nil && !t.IsZero() {
-			q = q.StartAfter(t)
-		}
-	}
-	q = q.Limit(pageSize + 1)
-	it := q.Documents(ctx)
-	defer it.Stop()
+
+	log.Infof("Cursor list by urgency: urgencyId=%d pageSize=%d token_present=%v", urgencyID, pageSize, pageToken != "")
+
 	var items []sharedModels.Activity
-	for {
-		doc, err := it.Next()
-		if isDone(err) {
-			break
+
+	// Handle invalid token by falling back to first page
+	if pageToken != "" {
+		if _, _, err := decodeToken(pageToken); err != nil {
+			log.Warnf("Invalid cursor token for urgency %d; falling back to first page: %v", urgencyID, err)
+			pageToken = ""
 		}
-		if err != nil {
-			return nil, "", err
-		}
-		var a struct {
-			ID          int64       `firestore:"id"`
-			Description string      `firestore:"description"`
-			EmployeeID  int64       `firestore:"employee_id"`
-			UrgencyID   int64       `firestore:"urgency_id"`
-			CreatedAt   interface{} `firestore:"created_at"`
-			UpdatedAt   interface{} `firestore:"updated_at"`
-		}
-		if err := doc.DataTo(&a); err != nil {
-			continue
-		}
-		items = append(items, sharedModels.Activity{
-			ID: uint(a.ID), Description: a.Description,
-			EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
-			CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
-		})
 	}
+
+	if pageToken == "" {
+		// First page: simple query by created_at desc
+		q := s.client.Collection(s.collection).
+			Where("urgency_id", "==", int64(urgencyID)).
+			OrderBy("created_at", firestorex.Desc).
+			Limit(pageSize + 1)
+		it := q.Documents(ctx)
+		defer it.Stop()
+		for {
+			doc, err := it.Next()
+			if isDone(err) {
+				break
+			}
+			if err != nil {
+				return nil, "", err
+			}
+			var a struct {
+				ID          int64       `firestore:"id"`
+				Description string      `firestore:"description"`
+				EmployeeID  int64       `firestore:"employee_id"`
+				UrgencyID   int64       `firestore:"urgency_id"`
+				CreatedAt   interface{} `firestore:"created_at"`
+				UpdatedAt   interface{} `firestore:"updated_at"`
+			}
+			if err := doc.DataTo(&a); err != nil {
+				continue
+			}
+			items = append(items, sharedModels.Activity{
+				ID: uint(a.ID), Description: a.Description,
+				EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
+				CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
+			})
+		}
+	} else {
+		// Next pages
+		t, lastID, _ := decodeToken(pageToken)
+		log.Debugf("Cursor token decoded (urgency): createdAt=%s id=%d", t.UTC().Format(time.RFC3339), lastID)
+
+		if lastID == 0 {
+			// No id provided in token: fetch strictly older than t
+			qOlder := s.client.Collection(s.collection).
+				Where("urgency_id", "==", int64(urgencyID)).
+				OrderBy("created_at", firestorex.Desc).
+				StartAfter(t).
+				Limit(pageSize + 1)
+			it := qOlder.Documents(ctx)
+			defer it.Stop()
+			for {
+				doc, err := it.Next()
+				if isDone(err) {
+					break
+				}
+				if err != nil {
+					return nil, "", err
+				}
+				var a struct {
+					ID          int64       `firestore:"id"`
+					Description string      `firestore:"description"`
+					EmployeeID  int64       `firestore:"employee_id"`
+					UrgencyID   int64       `firestore:"urgency_id"`
+					CreatedAt   interface{} `firestore:"created_at"`
+					UpdatedAt   interface{} `firestore:"updated_at"`
+				}
+				if err := doc.DataTo(&a); err != nil {
+					continue
+				}
+				items = append(items, sharedModels.Activity{
+					ID: uint(a.ID), Description: a.Description,
+					EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
+					CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
+				})
+			}
+		} else {
+			// Two-phase to handle duplicate timestamps
+			qSame := s.client.Collection(s.collection).
+				Where("urgency_id", "==", int64(urgencyID)).
+				Where("created_at", "==", t).
+				OrderBy("id", firestorex.Desc)
+			qSame = qSame.StartAfter(int64(lastID)).Limit(pageSize + 1)
+			it1 := qSame.Documents(ctx)
+			defer it1.Stop()
+			for {
+				doc, err := it1.Next()
+				if isDone(err) {
+					break
+				}
+				if err != nil {
+					return nil, "", err
+				}
+				var a struct {
+					ID          int64       `firestore:"id"`
+					Description string      `firestore:"description"`
+					EmployeeID  int64       `firestore:"employee_id"`
+					UrgencyID   int64       `firestore:"urgency_id"`
+					CreatedAt   interface{} `firestore:"created_at"`
+					UpdatedAt   interface{} `firestore:"updated_at"`
+				}
+				if err := doc.DataTo(&a); err != nil {
+					continue
+				}
+				items = append(items, sharedModels.Activity{
+					ID: uint(a.ID), Description: a.Description,
+					EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
+					CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
+				})
+				if len(items) >= pageSize+1 {
+					break
+				}
+			}
+			if len(items) < pageSize+1 {
+				remain := (pageSize + 1) - len(items)
+				qOlder := s.client.Collection(s.collection).
+					Where("urgency_id", "==", int64(urgencyID)).
+					OrderBy("created_at", firestorex.Desc).
+					StartAfter(t).
+					Limit(remain)
+				it2 := qOlder.Documents(ctx)
+				defer it2.Stop()
+				for {
+					doc, err := it2.Next()
+					if isDone(err) {
+						break
+					}
+					if err != nil {
+						return nil, "", err
+					}
+					var a struct {
+						ID          int64       `firestore:"id"`
+						Description string      `firestore:"description"`
+						EmployeeID  int64       `firestore:"employee_id"`
+						UrgencyID   int64       `firestore:"urgency_id"`
+						CreatedAt   interface{} `firestore:"created_at"`
+						UpdatedAt   interface{} `firestore:"updated_at"`
+					}
+					if err := doc.DataTo(&a); err != nil {
+						continue
+					}
+					items = append(items, sharedModels.Activity{
+						ID: uint(a.ID), Description: a.Description,
+						EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
+						CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
+					})
+				}
+			}
+		}
+	}
+
+	if pageToken != "" && len(items) == 0 {
+		log.Warnf("Cursor by urgency returned 0 items for non-empty token; urgencyId=%d", urgencyID)
+	}
+
 	var next string
 	if len(items) > pageSize {
 		last := items[pageSize-1]
-		next = encodeToken(last.CreatedAt)
+		next = encodeToken(last.CreatedAt, last.ID)
 		items = items[:pageSize]
 	}
+	log.Infof("Cursor by urgency result: count=%d nextToken=%v", len(items), next != "")
+
 	return items, next, nil
 }
 
@@ -241,47 +375,171 @@ func (s *firestoreService) ListAllCursor(ctx context.Context, pageSize int, page
 	if pageSize <= 0 {
 		pageSize = 10
 	}
-	q := s.client.Collection(s.collection).OrderBy("created_at", firestorex.Desc)
-	if pageToken != "" {
-		if t, err := decodeToken(pageToken); err == nil && !t.IsZero() {
-			q = q.StartAfter(t)
-		}
-	}
-	q = q.Limit(pageSize + 1)
-	it := q.Documents(ctx)
-	defer it.Stop()
+	log.Infof("Cursor list (all): pageSize=%d token_present=%v", pageSize, pageToken != "")
+
 	var items []sharedModels.Activity
-	for {
-		doc, err := it.Next()
-		if isDone(err) {
-			break
+
+	// Handle invalid token by falling back to first page
+	if pageToken != "" {
+		if _, _, err := decodeToken(pageToken); err != nil {
+			log.Warnf("Invalid cursor token (all); falling back to first page: %v", err)
+			pageToken = ""
 		}
-		if err != nil {
-			return nil, "", err
-		}
-		var a struct {
-			ID          int64       `firestore:"id"`
-			Description string      `firestore:"description"`
-			EmployeeID  int64       `firestore:"employee_id"`
-			UrgencyID   int64       `firestore:"urgency_id"`
-			CreatedAt   interface{} `firestore:"created_at"`
-			UpdatedAt   interface{} `firestore:"updated_at"`
-		}
-		if err := doc.DataTo(&a); err != nil {
-			continue
-		}
-		items = append(items, sharedModels.Activity{
-			ID: uint(a.ID), Description: a.Description,
-			EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
-			CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
-		})
 	}
+
+	if pageToken == "" {
+		q := s.client.Collection(s.collection).
+			OrderBy("created_at", firestorex.Desc).
+			Limit(pageSize + 1)
+		it := q.Documents(ctx)
+		defer it.Stop()
+		for {
+			doc, err := it.Next()
+			if isDone(err) {
+				break
+			}
+			if err != nil {
+				return nil, "", err
+			}
+			var a struct {
+				ID          int64       `firestore:"id"`
+				Description string      `firestore:"description"`
+				EmployeeID  int64       `firestore:"employee_id"`
+				UrgencyID   int64       `firestore:"urgency_id"`
+				CreatedAt   interface{} `firestore:"created_at"`
+				UpdatedAt   interface{} `firestore:"updated_at"`
+			}
+			if err := doc.DataTo(&a); err != nil {
+				continue
+			}
+			items = append(items, sharedModels.Activity{
+				ID: uint(a.ID), Description: a.Description,
+				EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
+				CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
+			})
+		}
+	} else {
+		t, lastID, _ := decodeToken(pageToken)
+		log.Debugf("Cursor token decoded (all): createdAt=%s id=%d", t.UTC().Format(time.RFC3339), lastID)
+
+		if lastID == 0 {
+			// No id provided: fetch strictly older than t
+			qOlder := s.client.Collection(s.collection).
+				OrderBy("created_at", firestorex.Desc).
+				StartAfter(t).
+				Limit(pageSize + 1)
+			it := qOlder.Documents(ctx)
+			defer it.Stop()
+			for {
+				doc, err := it.Next()
+				if isDone(err) {
+					break
+				}
+				if err != nil {
+					return nil, "", err
+				}
+				var a struct {
+					ID          int64       `firestore:"id"`
+					Description string      `firestore:"description"`
+					EmployeeID  int64       `firestore:"employee_id"`
+					UrgencyID   int64       `firestore:"urgency_id"`
+					CreatedAt   interface{} `firestore:"created_at"`
+					UpdatedAt   interface{} `firestore:"updated_at"`
+				}
+				if err := doc.DataTo(&a); err != nil {
+					continue
+				}
+				items = append(items, sharedModels.Activity{
+					ID: uint(a.ID), Description: a.Description,
+					EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
+					CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
+				})
+			}
+		} else {
+			// Two-phase to handle duplicate timestamps
+			qSame := s.client.Collection(s.collection).
+				Where("created_at", "==", t).
+				OrderBy("id", firestorex.Desc)
+			qSame = qSame.StartAfter(int64(lastID)).Limit(pageSize + 1)
+			it1 := qSame.Documents(ctx)
+			defer it1.Stop()
+			for {
+				doc, err := it1.Next()
+				if isDone(err) {
+					break
+				}
+				if err != nil {
+					return nil, "", err
+				}
+				var a struct {
+					ID          int64       `firestore:"id"`
+					Description string      `firestore:"description"`
+					EmployeeID  int64       `firestore:"employee_id"`
+					UrgencyID   int64       `firestore:"urgency_id"`
+					CreatedAt   interface{} `firestore:"created_at"`
+					UpdatedAt   interface{} `firestore:"updated_at"`
+				}
+				if err := doc.DataTo(&a); err != nil {
+					continue
+				}
+				items = append(items, sharedModels.Activity{
+					ID: uint(a.ID), Description: a.Description,
+					EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
+					CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
+				})
+				if len(items) >= pageSize+1 {
+					break
+				}
+			}
+			if len(items) < pageSize+1 {
+				remain := (pageSize + 1) - len(items)
+				qOlder := s.client.Collection(s.collection).
+					OrderBy("created_at", firestorex.Desc).
+					StartAfter(t).
+					Limit(remain)
+				it2 := qOlder.Documents(ctx)
+				defer it2.Stop()
+				for {
+					doc, err := it2.Next()
+					if isDone(err) {
+						break
+					}
+					if err != nil {
+						return nil, "", err
+					}
+					var a struct {
+						ID          int64       `firestore:"id"`
+						Description string      `firestore:"description"`
+						EmployeeID  int64       `firestore:"employee_id"`
+						UrgencyID   int64       `firestore:"urgency_id"`
+						CreatedAt   interface{} `firestore:"created_at"`
+						UpdatedAt   interface{} `firestore:"updated_at"`
+					}
+					if err := doc.DataTo(&a); err != nil {
+						continue
+					}
+					items = append(items, sharedModels.Activity{
+						ID: uint(a.ID), Description: a.Description,
+						EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
+						CreatedAt: coerceTime(a.CreatedAt), UpdatedAt: coerceTime(a.UpdatedAt),
+					})
+				}
+			}
+		}
+	}
+
+	if pageToken != "" && len(items) == 0 {
+		log.Warn("Cursor (all) returned 0 items for non-empty token; possible boundary/filters changed")
+	}
+
 	var next string
 	if len(items) > pageSize {
 		last := items[pageSize-1]
-		next = encodeToken(last.CreatedAt)
+		next = encodeToken(last.CreatedAt, last.ID)
 		items = items[:pageSize]
 	}
+	log.Infof("Cursor (all) result: count=%d nextToken=%v", len(items), next != "")
+
 	return items, next, nil
 }
 
