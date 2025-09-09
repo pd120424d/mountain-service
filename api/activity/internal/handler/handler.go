@@ -74,6 +74,9 @@ func (h *activityHandler) CreateActivity(ctx *gin.Context) {
 	}
 
 	log.Infof("Successfully created activity with ID: %d", response.ID)
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -411,6 +414,9 @@ func (h *activityHandler) DeleteActivity(ctx *gin.Context) {
 	}
 
 	log.Infof("Successfully deleted activity with ID: %d", id)
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusOK, gin.H{"message": "Activity deleted successfully"})
 }
 
@@ -439,5 +445,8 @@ func (h *activityHandler) ResetAllData(ctx *gin.Context) {
 	}
 
 	log.Info("Successfully reset all activity data")
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusOK, gin.H{"message": "All activity data reset successfully"})
 }

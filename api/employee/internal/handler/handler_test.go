@@ -18,6 +18,7 @@ import (
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/service"
+	"github.com/pd120424d/mountain-service/api/shared/config"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
@@ -182,6 +183,14 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, w.Code)
 		assert.Contains(t, w.Body.String(), "testuser")
+
+		// Fresh window header should be present and in the future
+		expires := w.Header().Get(config.FreshWindowHeader)
+		if assert.NotEmpty(t, expires) {
+			if ts, err := time.Parse(time.RFC3339, expires); assert.NoError(t, err) {
+				assert.True(t, ts.After(time.Now().Add(-1*time.Second)))
+			}
+		}
 	})
 }
 

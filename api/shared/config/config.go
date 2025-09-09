@@ -30,4 +30,8 @@ const (
 
 const (
 	DefaultListTimeout = 300 * time.Millisecond
+
+	// Fresh-read (RYW) propagation via header and default window duration
+	FreshWindowHeader  = "X-Fresh-Until"
+	DefaultFreshWindow = 2 * time.Second
 )

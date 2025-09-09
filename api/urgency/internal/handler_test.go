@@ -16,6 +16,7 @@ import (
 
 	commonv1 "github.com/pd120424d/mountain-service/api/contracts/common/v1"
 	urgencyV1 "github.com/pd120424d/mountain-service/api/contracts/urgency/v1"
+	"github.com/pd120424d/mountain-service/api/shared/config"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/model"
 )
@@ -241,6 +242,13 @@ func TestUrgencyHandler_CreateUrgency(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "Doe")
 		assert.Contains(t, w.Body.String(), "test@example.com")
 		assert.Contains(t, w.Body.String(), "high")
+
+		// Fresh window header present
+		expires := w.Header().Get(config.FreshWindowHeader)
+		if assert.NotEmpty(t, expires) {
+			_, err := time.Parse(time.RFC3339, expires)
+			assert.NoError(t, err)
+		}
 	})
 }
 
@@ -624,6 +632,13 @@ func TestUrgencyHandler_UpdateUrgency(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "Urgency")
 		assert.Contains(t, w.Body.String(), "updated@example.com")
 		assert.Contains(t, w.Body.String(), "in_progress")
+
+		// Fresh window header present
+		expires := w.Header().Get(config.FreshWindowHeader)
+		if assert.NotEmpty(t, expires) {
+			_, err := time.Parse(time.RFC3339, expires)
+			assert.NoError(t, err)
+		}
 	})
 }
 
@@ -680,6 +695,12 @@ func TestUrgencyHandler_DeleteUrgency(t *testing.T) {
 		handler.DeleteUrgency(ctx)
 
 		assert.Equal(t, http.StatusNoContent, w.Code)
+		// Fresh window header present on delete
+		expires := w.Header().Get(config.FreshWindowHeader)
+		if assert.NotEmpty(t, expires) {
+			_, err := time.Parse(time.RFC3339, expires)
+			assert.NoError(t, err)
+		}
 	})
 }
 
@@ -719,6 +740,12 @@ func TestUrgencyHandler_ResetAllData(t *testing.T) {
 		handler.ResetAllData(ctx)
 
 		assert.Equal(t, http.StatusNoContent, w.Code)
+		// Fresh window header present on reset
+		expires := w.Header().Get(config.FreshWindowHeader)
+		if assert.NotEmpty(t, expires) {
+			_, err := time.Parse(time.RFC3339, expires)
+			assert.NoError(t, err)
+		}
 	})
 }
 
@@ -791,6 +818,12 @@ func TestUrgencyHandler_AssignUrgency(t *testing.T) {
 		handler.AssignUrgency(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"status\":\"assigned\"")
+		// Fresh window header present on assign
+		expires := w.Header().Get(config.FreshWindowHeader)
+		if assert.NotEmpty(t, expires) {
+			_, err := time.Parse(time.RFC3339, expires)
+			assert.NoError(t, err)
+		}
 	})
 }
 
@@ -835,6 +868,12 @@ func TestUrgencyHandler_UnassignUrgency(t *testing.T) {
 		handler := NewUrgencyHandler(log, svc)
 		handler.UnassignUrgency(ctx)
 		assert.Equal(t, http.StatusNoContent, w.Code)
+		// Fresh window header present on unassign
+		expires := w.Header().Get(config.FreshWindowHeader)
+		if assert.NotEmpty(t, expires) {
+			_, err := time.Parse(time.RFC3339, expires)
+			assert.NoError(t, err)
+		}
 	})
 
 }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
+	"github.com/pd120424d/mountain-service/api/shared/config"
 	sharedModels "github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
@@ -135,6 +136,13 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, w.Code)
 		assert.Contains(t, w.Body.String(), "{\"id\":1")
+
+		// Fresh window header should be present
+		expires := w.Header().Get(config.FreshWindowHeader)
+		if assert.NotEmpty(t, expires) {
+			_, err := time.Parse(time.RFC3339, expires)
+			assert.NoError(t, err)
+		}
 	})
 }
 
@@ -449,6 +457,13 @@ func TestActivityHandler_DeleteActivity_Suite(t *testing.T) {
 		NewActivityHandler(log, svcMock, nil).DeleteActivity(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "Activity deleted successfully")
+
+		// Header present on delete
+		expires := w.Header().Get(config.FreshWindowHeader)
+		if assert.NotEmpty(t, expires) {
+			_, err := time.Parse(time.RFC3339, expires)
+			assert.NoError(t, err)
+		}
 	})
 }
 
@@ -479,6 +494,13 @@ func TestActivityHandler_ResetAllData_Suite(t *testing.T) {
 		NewActivityHandler(log, svcMock, nil).ResetAllData(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "All activity data reset successfully")
+
+		// Header present on reset
+		expires := w.Header().Get(config.FreshWindowHeader)
+		if assert.NotEmpty(t, expires) {
+			_, err := time.Parse(time.RFC3339, expires)
+			assert.NoError(t, err)
+		}
 	})
 }
 

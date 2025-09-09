@@ -81,6 +81,8 @@ func (h *urgencyHandler) CreateUrgency(ctx *gin.Context) {
 		return
 	}
 
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	response := urgency.ToResponse()
 	ctx.JSON(http.StatusCreated, response)
 
@@ -249,6 +251,9 @@ func (h *urgencyHandler) UpdateUrgency(ctx *gin.Context) {
 
 	response := urgency.ToResponse()
 	log.Infof("Successfully updated urgency with ID %d", urgencyID)
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -280,6 +285,9 @@ func (h *urgencyHandler) DeleteUrgency(ctx *gin.Context) {
 	}
 
 	log.Infof("Successfully deleted urgency with ID %d", urgencyID)
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
@@ -301,6 +309,9 @@ func (h *urgencyHandler) ResetAllData(ctx *gin.Context) {
 	}
 
 	log.Info("Successfully reset all urgency data")
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
@@ -342,6 +353,9 @@ func (h *urgencyHandler) AssignUrgency(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": appErr.Error()})
 		return
 	}
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusOK, gin.H{"status": "assigned"})
 
 	log.Info("Successfully assigned urgency")
@@ -377,6 +391,9 @@ func (h *urgencyHandler) UnassignUrgency(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusNoContent, nil)
 
 	log.Info("Successfully unassigned urgency")
@@ -416,6 +433,9 @@ func (h *urgencyHandler) CloseUrgency(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusNoContent, nil)
 
 	log.Info("Successfully closed urgency")

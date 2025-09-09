@@ -39,6 +39,9 @@ func InitializeServer(log utils.Logger, config ServerConfig) error {
 	r.Use(utils.RequestIDMiddleware())
 	r.Use(log.RequestLogger())
 
+	// Apply fresh-read window from client (if any)
+	r.Use(utils.FreshReadWindowMiddleware())
+
 	SetupHealthEndpoint(log, r, config.ServiceName)
 	SetupSwaggerEndpoints(log, r, config.RouteConfig)
 

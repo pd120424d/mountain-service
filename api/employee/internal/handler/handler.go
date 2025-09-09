@@ -14,6 +14,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/employee/internal/service"
 	sharedAuth "github.com/pd120424d/mountain-service/api/shared/auth"
+	"github.com/pd120424d/mountain-service/api/shared/config"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
@@ -77,14 +78,6 @@ func NewEmployeeHandler(log utils.Logger, employeeService service.EmployeeServic
 	}
 }
 
-// requestContext safely extracts a context from gin.Context; falls back to Background.
-func requestContext(ctx *gin.Context) context.Context {
-	if ctx != nil && ctx.Request != nil {
-		return ctx.Request.Context()
-	}
-	return context.Background()
-}
-
 // RegisterEmployee Креирање новог запосленог
 // @Summary Креирање новог запосленог
 // @Description Креирање новог запосленог у систему
@@ -143,6 +136,9 @@ func (h *employeeHandler) RegisterEmployee(ctx *gin.Context) {
 	}
 
 	reqLog.Infof("Successfully registered employee with username %s", response.Username)
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -443,7 +439,6 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 		return
 	}
 
-	// Additional validation
 	if err := req.Validate(); err != nil {
 		log.Errorf("validation failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -462,11 +457,14 @@ func (h *employeeHandler) UpdateEmployee(ctx *gin.Context) {
 			if strings.Contains(err.Error(), "mail:") || strings.Contains(err.Error(), "@") {
 				ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			} else {
+
 				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update employee"})
 			}
 		}
 		return
 	}
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
 
 	ctx.JSON(http.StatusOK, response)
 }
@@ -501,6 +499,9 @@ func (h *employeeHandler) DeleteEmployee(ctx *gin.Context) {
 	}
 
 	log.Infof("Employee with ID %d was deleted", employeeID)
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusOK, gin.H{"message": "Employee deleted successfully"})
 }
 
@@ -544,6 +545,7 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 				"error": "SHIFT_ERRORS.CONSECUTIVE_SHIFTS_LIMIT",
 				"limit": parts[len(parts)-1],
 			})
+
 			return
 		}
 		if strings.HasPrefix(err.Error(), "shift capacity is full for ") || strings.HasPrefix(err.Error(), "maximum capacity for this role reached") {
@@ -565,6 +567,9 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 	}
 
 	log.Infof("Successfully assigned shift for employee ID %d", employeeID)
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -691,11 +696,15 @@ func (h *employeeHandler) RemoveShift(ctx *gin.Context) {
 	}
 
 	log.Infof("Successfully removed shift for employee ID %d", employeeID)
+
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
 // ResetAllData Ресетовање свих података (само за админе)
 // @Summary Ресетовање свих података
+
 // @Description Брише све запослене, смене и повезане податке из система (само за админе)
 // @Tags админ
 // @Security OAuth2Password
@@ -717,6 +726,8 @@ func (h *employeeHandler) ResetAllData(ctx *gin.Context) {
 	}
 
 	log.Info("Successfully reset all system data")
+	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
+
 	ctx.JSON(http.StatusOK, gin.H{"message": "All data has been successfully reset"})
 }
 
@@ -908,4 +919,12 @@ func (h *employeeHandler) GetErrorCatalog(ctx *gin.Context) {
 		"errors":   errors,
 		"warnings": []catalogEntry{{Code: model.WarningInsufficientShifts, Service: "employee-service", HttpStatus: http.StatusOK, DefaultMsg: "Insufficient shifts in the next period", DetailsSchema: map[string]string{"count": "number", "periodDays": "number", "perWeek": "number"}}},
 	})
+}
+
+// requestContext safely extracts a context from gin.Context; falls back to Background.
+func requestContext(ctx *gin.Context) context.Context {
+	if ctx != nil && ctx.Request != nil {
+		return ctx.Request.Context()
+	}
+	return context.Background()
 }
