@@ -28,7 +28,8 @@ type firebaseService struct {
 	collection string
 }
 
-// FirebaseActivityDoc represents the document structure in Firestore
+// FirebaseActivityDoc represents the document structure in Firestore.
+// last_event_at is used to provide lightweight ordering guards when processing events.
 type FirebaseActivityDoc struct {
 	ID           int64     `firestore:"id"`
 	UrgencyID    int64     `firestore:"urgency_id"`
@@ -40,6 +41,7 @@ type FirebaseActivityDoc struct {
 	UrgencyLevel string    `firestore:"urgency_level"`
 	SyncedAt     time.Time `firestore:"synced_at"`
 	Version      int       `firestore:"version"`
+	LastEventAt  time.Time `firestore:"last_event_at"`
 }
 
 func NewFirebaseService(client firestorex.Client, logger utils.Logger) FirebaseService {
@@ -152,10 +154,30 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 	log.Infof("Syncing activity to Firebase: activity_id=%d, type=%s", eventData.ActivityID, eventData.Type)
 
 	docID := strconv.Itoa(int(eventData.ActivityID))
-	docRef := s.client.Collection(s.collection).Doc(docID)
+	col := s.client.Collection(s.collection)
+	docRef := col.Doc(docID)
+
+	// simple ordering guard: if event carries a CreatedAt timestamp,
+	// fetch current doc by id and ignore stale events (older last_event_at)
+	var existing *FirebaseActivityDoc
+	if !eventData.CreatedAt.IsZero() {
+		iter := col.Where("id", "==", int64(eventData.ActivityID)).Limit(1).Documents(ctx)
+		if snap, err := iter.Next(); err == nil {
+			var cur FirebaseActivityDoc
+			if derr := snap.DataTo(&cur); derr == nil {
+				existing = &cur
+			}
+		}
+	}
 
 	switch eventData.Type {
 	case "CREATE":
+		// If an existing doc is newer, ignore duplicate/late create
+		if existing != nil && !existing.LastEventAt.IsZero() && !eventData.CreatedAt.After(existing.LastEventAt) {
+			log.Infof("Ignoring stale CREATE for activity_id=%d (incoming_at=%s <= last_event_at=%s)", eventData.ActivityID, eventData.CreatedAt.UTC(), existing.LastEventAt.UTC())
+			return nil
+		}
+
 		fbDoc := FirebaseActivityDoc{
 			ID:           int64(eventData.ActivityID),
 			UrgencyID:    int64(eventData.UrgencyID),
@@ -167,6 +189,7 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 			UrgencyLevel: eventData.UrgencyLevel,
 			SyncedAt:     time.Now().UTC(),
 			Version:      1,
+			LastEventAt:  eventData.CreatedAt.UTC(),
 		}
 
 		_, err := docRef.Set(ctx, fbDoc)
@@ -176,13 +199,21 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 		}
 
 	case "UPDATE":
+		// Drop non-idempotent counters and apply deterministic field updates only
 		updates := []firestorex.Update{
 			{Path: "description", Value: eventData.Description},
 			{Path: "employee_name", Value: eventData.EmployeeName},
 			{Path: "urgency_title", Value: eventData.UrgencyTitle},
 			{Path: "urgency_level", Value: eventData.UrgencyLevel},
 			{Path: "synced_at", Value: firestorex.ServerTimestamp()},
-			{Path: "version", Value: firestorex.Increment(1)},
+		}
+		// If we have an event timestamp, use it to advance last_event_at, otherwise leave as-is
+		if !eventData.CreatedAt.IsZero() {
+			updates = append(updates, firestorex.Update{Path: "last_event_at", Value: eventData.CreatedAt.UTC()})
+			if existing != nil && !existing.LastEventAt.IsZero() && !eventData.CreatedAt.After(existing.LastEventAt) {
+				log.Infof("Ignoring stale UPDATE for activity_id=%d (incoming_at=%s <= last_event_at=%s)", eventData.ActivityID, eventData.CreatedAt.UTC(), existing.LastEventAt.UTC())
+				return nil
+			}
 		}
 
 		_, err := docRef.Update(ctx, updates)
@@ -192,6 +223,12 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 		}
 
 	case "DELETE":
+		// If we have a timestamp and existing doc is newer, ignore the delete
+		if existing != nil && !existing.LastEventAt.IsZero() && !eventData.CreatedAt.IsZero() && !eventData.CreatedAt.After(existing.LastEventAt) {
+			log.Infof("Ignoring stale DELETE for activity_id=%d (incoming_at=%s <= last_event_at=%s)", eventData.ActivityID, eventData.CreatedAt.UTC(), existing.LastEventAt.UTC())
+			return nil
+		}
+
 		_, err := docRef.Delete(ctx)
 		if err != nil {
 			s.logger.Errorf("Failed to delete activity in Firebase: activity_id=%d, error=%v", eventData.ActivityID, err)

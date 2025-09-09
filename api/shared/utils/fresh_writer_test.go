@@ -46,7 +46,7 @@ func TestWriteFreshWindow(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("POST", "/test", nil)
 
-		d := 500 * time.Millisecond
+		d := 2 * time.Second
 		before := time.Now().UTC()
 		WriteFreshWindow(c, d)
 

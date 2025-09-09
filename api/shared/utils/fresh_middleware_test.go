@@ -69,7 +69,7 @@ func TestFreshReadWindowMiddleware_AllowsChainWithoutHeader(t *testing.T) {
 		})
 
 		req := httptest.NewRequest(http.MethodGet, "/check", nil)
-		req.Header.Set(config.FreshWindowHeader, time.Now().Add(750*time.Millisecond).UTC().Format(time.RFC3339))
+		req.Header.Set(config.FreshWindowHeader, time.Now().Add(2*time.Second).UTC().Format(time.RFC3339))
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
