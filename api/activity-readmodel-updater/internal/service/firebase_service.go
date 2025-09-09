@@ -161,8 +161,7 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 	// fetch current doc by id and ignore stale events (older last_event_at)
 	var existing *FirebaseActivityDoc
 	if !eventData.CreatedAt.IsZero() {
-		iter := col.Where("id", "==", int64(eventData.ActivityID)).Limit(1).Documents(ctx)
-		if snap, err := iter.Next(); err == nil {
+		if snap, err := docRef.Get(ctx); err == nil {
 			var cur FirebaseActivityDoc
 			if derr := snap.DataTo(&cur); derr == nil {
 				existing = &cur

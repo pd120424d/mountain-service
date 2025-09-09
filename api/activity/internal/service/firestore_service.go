@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/shared/firestorex"
@@ -246,8 +247,8 @@ func (s *firestoreService) ListByUrgencyCursor(ctx context.Context, urgencyID ui
 			qSame := s.client.Collection(s.collection).
 				Where("urgency_id", "==", int64(urgencyID)).
 				Where("created_at", "==", t).
-				OrderBy("id", firestorex.Desc)
-			qSame = qSame.StartAfter(int64(lastID)).Limit(pageSize + 1)
+				OrderBy("__name__", firestorex.Desc)
+			qSame = qSame.StartAfter(strconv.Itoa(int(lastID))).Limit(pageSize + 1)
 			it1 := qSame.Documents(ctx)
 			defer it1.Stop()
 			for {
@@ -428,8 +429,8 @@ func (s *firestoreService) ListAllCursor(ctx context.Context, pageSize int, page
 			// Two-phase to handle duplicate timestamps
 			qSame := s.client.Collection(s.collection).
 				Where("created_at", "==", t).
-				OrderBy("id", firestorex.Desc)
-			qSame = qSame.StartAfter(int64(lastID)).Limit(pageSize + 1)
+				OrderBy("__name__", firestorex.Desc)
+			qSame = qSame.StartAfter(strconv.Itoa(int(lastID))).Limit(pageSize + 1)
 			it1 := qSame.Documents(ctx)
 			defer it1.Stop()
 			for {

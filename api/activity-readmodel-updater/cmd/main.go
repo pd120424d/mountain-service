@@ -11,8 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"strings"
-
 	events "github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/event"
 
 	"cloud.google.com/go/firestore"
@@ -21,7 +19,6 @@ import (
 	"google.golang.org/api/option"
 
 	"github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/service"
-	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/firestorex/googleadapter"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
@@ -37,9 +34,14 @@ type Config struct {
 
 	OutboxPollIntervalSeconds int
 
+	// Pub/Sub subscriber parallelism
 	SubscriberNumGoroutines          int
 	SubscriberMaxOutstandingMessages int
 	SubscriberMaxOutstandingBytes    int
+
+	// Internal sharded dispatcher parallelism (per-activity ordering)
+	ShardWorkers int
+	ShardQueue   int
 
 	HealthPort int
 
@@ -70,6 +72,8 @@ func loadConfig() *Config {
 		SubscriberNumGoroutines:          getEnvAsIntOrDefault("SUBSCRIBER_NUM_GOROUTINES", 8),
 		SubscriberMaxOutstandingMessages: getEnvAsIntOrDefault("SUBSCRIBER_MAX_OUTSTANDING_MESSAGES", 1000),
 		SubscriberMaxOutstandingBytes:    getEnvAsIntOrDefault("SUBSCRIBER_MAX_OUTSTANDING_BYTES", 100*1024*1024),
+		ShardWorkers:                     getEnvAsIntOrDefault("SHARD_WORKERS", 16),
+		ShardQueue:                       getEnvAsIntOrDefault("SHARD_QUEUE", 1024),
 		HealthPort:                       getEnvAsIntOrDefault("HEALTH_PORT", 8090),
 		LogLevel:                         getEnvOrDefault("LOG_LEVEL", "info"),
 		Version:                          getEnvOrDefault("VERSION", "dev"),
@@ -146,14 +150,14 @@ func main() {
 		subscription.ReceiveSettings.MaxOutstandingBytes = cfg.SubscriberMaxOutstandingBytes
 		logger.Infof("Starting Pub/Sub subscriber: subscription=%s", cfg.PubSubSubscription)
 
-		// Use event handler service
-		h := events.NewHandler(firebaseService, logger)
+		// Sharded dispatcher ensures per-activity ordering, parallel across activities
+		dispatcher := events.NewShardedDispatcher(firebaseService, logger, cfg.ShardWorkers, cfg.ShardQueue)
 		err := subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 			ctx, reqID := utils.EnsureRequestID(ctx)
 			reqLog := logger.WithContext(ctx)
 			reqLog.Infof("Handling activity event: message_id=%s", msg.ID)
 
-			if err := h.Handle(ctx, msg); err != nil {
+			if err := dispatcher.Process(ctx, msg); err != nil {
 				reqLog.Errorf("Failed to handle activity event: error=%v, message_id=%s, request_id=%s", err, msg.ID, reqID)
 				msg.Nack()
 			} else {
@@ -180,27 +184,6 @@ func main() {
 	// Give some time for graceful shutdown
 	time.Sleep(5 * time.Second)
 	logger.Infof("Activity Read Model Updater stopped")
-}
-
-func normalizeAndProcess(ctx context.Context, ev activityV1.ActivityEvent, firebaseService service.FirebaseService, logger utils.Logger) error {
-	// normalize Type: in case that producer uses fully qualified event types like "activity.created"
-	t := strings.ToUpper(ev.Type)
-	switch t {
-	case "ACTIVITY.CREATED":
-		t = "CREATE"
-	case "ACTIVITY.UPDATED":
-		t = "UPDATE"
-	case "ACTIVITY.DELETED":
-		t = "DELETE"
-	case "CREATED":
-		t = "CREATE" // defensively handle past tense
-	case "UPDATED":
-		t = "UPDATE"
-	case "DELETED":
-		t = "DELETE"
-	}
-	ev.Type = t
-	return firebaseService.SyncActivity(ctx, ev)
 }
 
 func initFirestore(credentialsPath, projectID string) (*firestore.Client, error) {

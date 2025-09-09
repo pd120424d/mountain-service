@@ -161,6 +161,18 @@ type snap struct{ doc doc }
 func (s snap) DataTo(v interface{}) error { return firestorex.SnapshotDataTo(s.doc.data, v) }
 func (s snap) ID() string                 { return s.doc.id }
 
+func (r *docRef) Get(ctx context.Context) (firestorex.DocumentSnapshot, error) {
+	r.f.mu.RLock()
+	defer r.f.mu.RUnlock()
+	arr := r.f.collections[r.key]
+	for _, d := range arr {
+		if d.id == r.id {
+			return snap{doc: d}, nil
+		}
+	}
+	return nil, errors.New("firestoretest: doc not found")
+}
+
 func (r *docRef) Set(ctx context.Context, data interface{}) (*firestorex.WriteResult, error) {
 	m, ok := toMap(data)
 	if !ok {

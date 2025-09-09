@@ -96,6 +96,14 @@ func iteratorDone() error {
 	return fmt.Errorf("iterator done")
 }
 
+func (a *docRefAdapter) Get(ctx context.Context) (firestorex.DocumentSnapshot, error) {
+	ds, err := a.d.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return snapshotWrapper{ds: ds}, nil
+}
+
 // Doc ref
 func (a *docRefAdapter) Set(ctx context.Context, data interface{}) (*firestorex.WriteResult, error) {
 	_, err := a.d.Set(ctx, data)

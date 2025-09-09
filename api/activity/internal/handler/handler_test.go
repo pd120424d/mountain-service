@@ -324,7 +324,7 @@ func TestActivityHandler_ListActivities_Suite(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "\"id\":10")
 	})
 
-	t.Run("cursor read-model error fallback", func(t *testing.T) {
+	t.Run("cursor read-model error returns empty page (no fallback)", func(t *testing.T) {
 		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
@@ -332,10 +332,13 @@ func TestActivityHandler_ListActivities_Suite(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?pageToken=abc&pageSize=2", nil)
 		readModel := &readModelFake{err: fmt.Errorf("rm fail")}
 		svcMock := service.NewMockActivityService(ctrl)
-		svcMock.EXPECT().ListActivities(gomock.Any(), gomock.Any()).Return(&activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{{ID: 11}}, Total: 1, Page: 1, PageSize: 2}, nil)
+		// When a cursor token is provided and read-model fails, we do not fall back to DB paging.
 		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "\"id\":11")
+		body := w.Body.String()
+		assert.Contains(t, body, "\"activities\":[]")
+		assert.NotContains(t, body, "\"id\":")
+		assert.NotContains(t, body, "\"nextPageToken\":\"")
 	})
 
 	t.Run("read-model all success", func(t *testing.T) {

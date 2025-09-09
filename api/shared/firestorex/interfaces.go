@@ -48,6 +48,7 @@ type DocumentSnapshot interface {
 }
 
 type DocumentRef interface {
+	Get(ctx context.Context) (DocumentSnapshot, error)
 	Set(ctx context.Context, data interface{}) (*WriteResult, error)
 	Update(ctx context.Context, updates []Update) (*WriteResult, error)
 	Delete(ctx context.Context) (*WriteResult, error)

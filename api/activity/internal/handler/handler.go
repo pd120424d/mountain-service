@@ -177,16 +177,18 @@ func encodeCursorToken(t time.Time, id uint) string {
 // @Failure 500 {object} map[string]interface{}
 // @Router /activities [get]
 func (h *activityHandler) ListActivities(ctx *gin.Context) {
-	var req activityV1.ActivityListRequest
-	// Apply a bounded timeout for list operations
+	// Parse query first, then choose timeout (cursor path gets a longer timeout)
+	req := buildActivityListRequest(ctx)
 	baseCtx := ctx.Request.Context()
-	cctx, cancel := context.WithTimeout(baseCtx, config.DefaultListTimeout)
+	to := config.DefaultListTimeout
+	if req.PageToken != "" {
+		to = config.CursorListTimeout
+	}
+	cctx, cancel := context.WithTimeout(baseCtx, to)
 	defer cancel()
 	log := h.log.WithContext(cctx)
 	defer utils.TimeOperation(log, "ActivityHandler.ListActivities")()
 	log.Info("Received List Activities request")
-
-	req = buildActivityListRequest(ctx)
 
 	// Cursor-based pagination (preferred when pageToken provided)
 	if h.readModel != nil && req.PageToken != "" {
@@ -209,7 +211,15 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			activities, nextToken, err = h.readModel.ListAllCursor(cctx, size, req.PageToken)
 		}
 		if err != nil {
-			log.Warnf("Cursor read-model fetch failed, falling back: %v", err)
+			log.Warnf("Cursor read-model fetch failed; returning empty page to stop repetition: %v", err)
+			resp := &activityV1.ActivityListResponse{
+				Activities:    []activityV1.ActivityResponse{},
+				Total:         0,
+				PageSize:      size,
+				NextPageToken: "",
+			}
+			ctx.JSON(http.StatusOK, resp)
+			return
 		} else {
 			resp := &activityV1.ActivityListResponse{Activities: make([]activityV1.ActivityResponse, 0, len(activities))}
 			for _, a := range activities {
