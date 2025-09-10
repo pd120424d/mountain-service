@@ -26,6 +26,7 @@ type UrgencyService interface {
 	UpdateUrgency(ctx context.Context, urgency *model.Urgency) error
 	DeleteUrgency(ctx context.Context, id uint) error
 	ResetAllData(ctx context.Context) error
+	ListUnassignedIDs(ctx context.Context) ([]uint, error)
 
 	AssignUrgency(ctx context.Context, urgencyID, employeeID uint) error
 	UnassignUrgency(ctx context.Context, urgencyID uint, actorID uint, isAdmin bool) error
@@ -92,6 +93,12 @@ func (s *urgencyService) ListUrgencies(ctx context.Context, page int, pageSize i
 	log := s.log.WithContext(ctx)
 	defer utils.TimeOperation(log, "UrgencyService.ListUrgencies")()
 	return s.repo.ListPaginated(ctx, page, pageSize, assignedEmployeeID)
+}
+
+func (s *urgencyService) ListUnassignedIDs(ctx context.Context) ([]uint, error) {
+	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "UrgencyService.ListUnassignedIDs")()
+	return s.repo.ListUnassignedIDs(ctx)
 }
 
 func (s *urgencyService) GetAllUrgencies(ctx context.Context) ([]model.Urgency, error) {

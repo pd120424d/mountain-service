@@ -35,7 +35,7 @@ describe('AppComponent', () => {
     const authSpy = jasmine.createSpyObj('AuthService', ['getRole', 'getUserId', 'isAuthenticated']);
     const employeeSpy = jasmine.createSpyObj('EmployeeService', ['getEmployeeById']);
     const appInitSpy = jasmine.createSpyObj('AppInitializationService', ['initialize', 'cleanup']);
-    const urgencySpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated']);
+    const urgencySpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated', 'getUnassignedUrgencyIds']);
 
     await TestBed.configureTestingModule({
       imports: [AppComponent],
@@ -269,40 +269,32 @@ describe('AppComponent', () => {
 
   it('should compute open urgencies count when authenticated', () => {
     authService.isAuthenticated.and.returnValue(true);
-    const urgencies = [
-      { id: 1, assignedEmployeeId: undefined }, // unassigned
-      { id: 2, assignedEmployeeId: null }, // unassigned
-      { id: 3, assignedEmployeeId: 5 } // assigned
-    ] as any[];
-    urgencyService.getUrgenciesPaginated.and.returnValue(of({ urgencies, total: urgencies.length, page: 1, pageSize: 1000, totalPages: 1 }));
+    urgencyService.getUnassignedUrgencyIds.and.returnValue(of([1, 2]));
 
     (component as any)['refreshOpenUrgencies']();
 
+    expect(urgencyService.getUnassignedUrgencyIds).toHaveBeenCalled();
     expect(component.openUrgenciesCount).toBe(2);
   });
 
   it('should keep previous openUrgenciesCount on error', () => {
     authService.isAuthenticated.and.returnValue(true);
     component.openUrgenciesCount = 5;
-    urgencyService.getUrgenciesPaginated.and.returnValue(throwError(() => new Error('fail')));
+    urgencyService.getUnassignedUrgencyIds.and.returnValue(throwError(() => new Error('fail')));
 
     (component as any)['refreshOpenUrgencies']();
 
     expect(component.openUrgenciesCount).toBe(5);
   });
 
-  it('should compute open urgencies from all (not only mine) via paginated API', () => {
+  it('should request unassigned urgency IDs instead of loading large pages', () => {
     authService.isAuthenticated.and.returnValue(true);
-    urgencyService.getUrgenciesPaginated = jasmine.createSpy().and.returnValue(of({ urgencies: [
-      { id: 1, assignedEmployeeId: undefined },
-      { id: 2, assignedEmployeeId: null },
-      { id: 3, assignedEmployeeId: 5 }
-    ] as any[], total: 3, page: 1, pageSize: 1000, totalPages: 1 }));
+    urgencyService.getUnassignedUrgencyIds.and.returnValue(of([10, 20, 30]));
 
     (component as any)['refreshOpenUrgencies']();
 
-    expect(urgencyService.getUrgenciesPaginated).toHaveBeenCalledWith({ page: 1, pageSize: 1000, myUrgencies: false });
-    expect(component.openUrgenciesCount).toBe(2);
+    expect(urgencyService.getUnassignedUrgencyIds).toHaveBeenCalled();
+    expect(component.openUrgenciesCount).toBe(3);
   });
 
 });

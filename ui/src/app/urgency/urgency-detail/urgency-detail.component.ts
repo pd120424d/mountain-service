@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -60,6 +60,18 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   isUnassigning = false;
   isResolving = false;
   showResolveModal = false;
+  showScrollTop = false;
+
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    const offset = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    this.showScrollTop = offset > 200;
+  }
+
+  scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
 
   constructor(
     private route: ActivatedRoute,

@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, RouterOutlet, Router } from '@angular/router';
 import { VersionBannerComponent } from './version-banner/version-banner.component';
 import { NgxSpinnerModule } from 'ngx-spinner';
-import { Employee, hasAcceptedAssignment } from './shared/models';
+import { Employee } from './shared/models';
 import { UrgencyService } from './urgency/urgency.service';
 
 @Component({
@@ -126,10 +126,9 @@ export class AppComponent implements OnInit, OnDestroy {
       this.openUrgenciesCount = 0;
       return;
     }
-    this.urgencyService.getUrgenciesPaginated({ page: 1, pageSize: 1000, myUrgencies: false }).subscribe({
-      next: (resp) => {
-        const items = resp?.urgencies || [];
-        this.openUrgenciesCount = items.filter(u => !hasAcceptedAssignment(u as any)).length;
+    this.urgencyService.getUnassignedUrgencyIds().subscribe({
+      next: (ids) => {
+        this.openUrgenciesCount = (ids || []).length;
       },
       error: () => {
         this.openUrgenciesCount = this.openUrgenciesCount || 0;

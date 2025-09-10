@@ -935,3 +935,32 @@ func TestUrgencyHandler_CreateUrgency_LevelMapping(t *testing.T) {
 		})
 	}
 }
+
+func TestUrgencyHandler_UnassignedUrgencyIDs(t *testing.T) {
+	log := utils.NewTestLogger()
+
+	t.Run("it returns 500 when service fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		svc := NewMockUrgencyService(ctrl)
+		svc.EXPECT().ListUnassignedIDs(gomock.Any()).Return(nil, errors.New("db error"))
+		h := NewUrgencyHandler(log, svc)
+		h.UnassignedUrgencyIDs(ctx)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("it returns ids when service succeeds", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		svc := NewMockUrgencyService(ctrl)
+		svc.EXPECT().ListUnassignedIDs(gomock.Any()).Return([]uint{5, 9}, nil)
+		h := NewUrgencyHandler(log, svc)
+		h.UnassignedUrgencyIDs(ctx)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "\"ids\":[5,9]")
+	})
+}

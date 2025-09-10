@@ -384,3 +384,28 @@ func TestUrgencyRepository_ListPaginated(t *testing.T) {
 	assert.Equal(t, int64(35), total)
 	assert.Len(t, items, 5)
 }
+
+func TestUrgencyRepository_ListUnassignedIDs(t *testing.T) {
+	db := setupTestDB(t)
+	log := utils.NewTestLogger()
+	repo := NewUrgencyRepository(log, db)
+
+	// u1: open & unassigned -> SortPriority 1 (should be returned)
+	u1 := &model.Urgency{FirstName: "A", LastName: "U", ContactPhone: "1", Location: "L", Description: "d", Level: urgencyV1.Medium, Status: urgencyV1.Open, SortPriority: 1}
+	require.NoError(t, repo.Create(context.Background(), u1))
+
+	// u2: open & assigned -> SortPriority 2 (should be excluded)
+	emp := uint(10)
+	u2 := &model.Urgency{FirstName: "B", LastName: "A", ContactPhone: "1", Location: "L", Description: "d", Level: urgencyV1.Medium, Status: urgencyV1.Open, AssignedEmployeeID: &emp, SortPriority: 2}
+	require.NoError(t, repo.Create(context.Background(), u2))
+
+	// u3: in_progress -> SortPriority 3 (should be excluded)
+	u3 := &model.Urgency{FirstName: "C", LastName: "P", ContactPhone: "1", Location: "L", Description: "d", Level: urgencyV1.Medium, Status: urgencyV1.InProgress, SortPriority: 3}
+	require.NoError(t, repo.Create(context.Background(), u3))
+
+	ids, err := repo.ListUnassignedIDs(context.Background())
+	assert.NoError(t, err)
+	if assert.Len(t, ids, 1) {
+		assert.Equal(t, u1.ID, ids[0])
+	}
+}

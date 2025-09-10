@@ -136,6 +136,20 @@ func TestUrgencyService_GetAllUrgencies(t *testing.T) {
 	})
 }
 
+func TestUrgencyService_ListUnassignedIDs(t *testing.T) {
+	log := utils.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := repositories.NewMockUrgencyRepository(ctrl)
+	repo.EXPECT().ListUnassignedIDs(gomock.Any()).Return([]uint{1, 2, 3}, nil)
+
+	svc := &urgencyService{log: log, repo: repo}
+	ids, err := svc.ListUnassignedIDs(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, []uint{1, 2, 3}, ids)
+}
+
 func TestUrgencyService_ListUrgencies(t *testing.T) {
 	log := utils.NewTestLogger()
 	ctrl := gomock.NewController(t)

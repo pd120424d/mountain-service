@@ -35,6 +35,13 @@ export class UrgencyService {
     );
   }
 
+  getUnassignedUrgencyIds(): Observable<number[]> {
+    const url = `${this.urgencyApiUrl}/unassigned-ids`;
+    return this.http.get<{ ids: number[] }>(url).pipe(
+      map((resp) => (resp?.ids ?? [])),
+      catchError(this.handleError)
+    );
+  }
 
   getUrgencyById(id: number): Observable<Urgency> {
     return this.http.get<Urgency>(`${this.urgencyApiUrl}/${id}`).pipe(

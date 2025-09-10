@@ -342,11 +342,14 @@ func (h *employeeHandler) OAuth2Token(ctx *gin.Context) {
 // @Success 200 {array} []EmployeeResponse
 // @Router /employees [get]
 func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
-	log := h.log.WithContext(requestContext(ctx))
+	base := requestContext(ctx)
+	cctx, cancel := context.WithTimeout(base, config.DefaultListTimeout)
+	defer cancel()
+	log := h.log.WithContext(cctx)
 	defer utils.TimeOperation(log, "EmployeeHandler.ListEmployees")()
 	log.Info("Received List Employees request")
 
-	employees, err := h.emplService.ListEmployees(requestContext(ctx))
+	employees, err := h.emplService.ListEmployees(cctx)
 	if err != nil {
 		log.Errorf("failed to retrieve employees: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve employees"})
@@ -369,7 +372,10 @@ func (h *employeeHandler) ListEmployees(ctx *gin.Context) {
 // @Failure 404 {object} ErrorResponse
 // @Router /employees/{id} [get]
 func (h *employeeHandler) GetEmployee(ctx *gin.Context) {
-	log := h.log.WithContext(requestContext(ctx))
+	base := requestContext(ctx)
+	cctx, cancel := context.WithTimeout(base, config.DefaultListTimeout)
+	defer cancel()
+	log := h.log.WithContext(cctx)
 	defer utils.TimeOperation(log, "EmployeeHandler.GetEmployee")()
 	log.Info("Received Get Employee request")
 
@@ -381,7 +387,7 @@ func (h *employeeHandler) GetEmployee(ctx *gin.Context) {
 		return
 	}
 
-	employee, err := h.emplService.GetEmployeeByID(requestContext(ctx), uint(employeeID))
+	employee, err := h.emplService.GetEmployeeByID(cctx, uint(employeeID))
 	if err != nil {
 		log.Errorf("failed to retrieve employee: %v", err)
 		if strings.Contains(err.Error(), "not found") {
@@ -583,7 +589,10 @@ func (h *employeeHandler) AssignShift(ctx *gin.Context) {
 // @Router /employees/{id}/shifts [get]
 func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 	employeeIDParam := ctx.Param("id")
-	log := h.log.WithContext(requestContext(ctx))
+	base := requestContext(ctx)
+	cctx, cancel := context.WithTimeout(base, config.DefaultListTimeout)
+	defer cancel()
+	log := h.log.WithContext(cctx)
 	defer utils.TimeOperation(log, "EmployeeHandler.GetShifts")()
 	log.Infof("Received Get Shifts request for employee ID %s", employeeIDParam)
 
@@ -594,7 +603,7 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 		return
 	}
 
-	response, err := h.shiftService.GetShifts(requestContext(ctx), uint(employeeID))
+	response, err := h.shiftService.GetShifts(cctx, uint(employeeID))
 	if err != nil {
 		log.Errorf("failed to get shifts for employee ID %d: %v", employeeID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -615,7 +624,10 @@ func (h *employeeHandler) GetShifts(ctx *gin.Context) {
 // @Failure 400 {object} ErrorResponse
 // @Router /shifts/availability [get]
 func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
-	log := h.log.WithContext(requestContext(ctx))
+	base := requestContext(ctx)
+	cctx, cancel := context.WithTimeout(base, config.DefaultListTimeout)
+	defer cancel()
+	log := h.log.WithContext(cctx)
 	defer utils.TimeOperation(log, "EmployeeHandler.GetShiftsAvailability")()
 	log.Infof("Received Get Shifts Availability request for the next %s days", ctx.Query("days"))
 
@@ -642,7 +654,7 @@ func (h *employeeHandler) GetShiftsAvailability(ctx *gin.Context) {
 		return
 	}
 
-	response, err := h.shiftService.GetShiftsAvailability(requestContext(ctx), employeeID, days)
+	response, err := h.shiftService.GetShiftsAvailability(cctx, employeeID, days)
 	if err != nil {
 		log.Errorf("failed to get shifts availability: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -784,7 +796,10 @@ func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
 // @Failure 500 {object} ErrorResponse
 // @Router /employees/on-call [get]
 func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
-	log := h.log.WithContext(requestContext(ctx))
+	base := requestContext(ctx)
+	cctx, cancel := context.WithTimeout(base, config.DefaultListTimeout)
+	defer cancel()
+	log := h.log.WithContext(cctx)
 	defer utils.TimeOperation(log, "EmployeeHandler.GetOnCallEmployees")()
 	log.Info("Getting on-call employees")
 
@@ -799,7 +814,7 @@ func (h *employeeHandler) GetOnCallEmployees(ctx *gin.Context) {
 		}
 	}
 
-	employeeResponses, err := h.shiftService.GetOnCallEmployees(requestContext(ctx), time.Now().UTC(), shiftBuffer)
+	employeeResponses, err := h.shiftService.GetOnCallEmployees(cctx, time.Now().UTC(), shiftBuffer)
 	if err != nil {
 		log.Errorf("Failed to get on-call employees: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve on-call employees"})

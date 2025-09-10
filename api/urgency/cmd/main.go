@@ -130,6 +130,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	authorized := r.Group("/api/v1").Use(auth.AuthMiddleware(log, tokenBlacklist))
 	{
 		authorized.GET("/urgencies", urgencyHandler.ListUrgencies)
+		authorized.GET("/urgencies/unassigned-ids", urgencyHandler.UnassignedUrgencyIDs)
 		authorized.GET("/urgencies/:id", urgencyHandler.GetUrgency)
 		authorized.PUT("/urgencies/:id", urgencyHandler.UpdateUrgency)
 		authorized.DELETE("/urgencies/:id", urgencyHandler.DeleteUrgency)

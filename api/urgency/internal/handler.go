@@ -17,6 +17,7 @@ import (
 type UrgencyHandler interface {
 	CreateUrgency(ctx *gin.Context)
 	ListUrgencies(ctx *gin.Context)
+	UnassignedUrgencyIDs(ctx *gin.Context)
 	GetUrgency(ctx *gin.Context)
 	UpdateUrgency(ctx *gin.Context)
 	DeleteUrgency(ctx *gin.Context)
@@ -149,7 +150,32 @@ func (h *urgencyHandler) ListUrgencies(ctx *gin.Context) {
 
 	resp := urgencyV1.UrgencyListResponse{Urgencies: items, Total: total, Page: page, PageSize: pageSize, TotalPages: totalPages}
 	log.Infof("Successfully retrieved %d urgencies out of %d total", len(items), total)
+
 	ctx.JSON(http.StatusOK, resp)
+}
+
+// UnassignedUrgencyIDs Само ID-еви недодељених ургенција
+// @Summary Само ID-еви недодељених ургенција
+// @Tags urgency
+// @Security OAuth2Password
+// @Produce  json
+// @Success 200 {object} map[string][]uint
+// @Router /urgencies/unassigned-ids [get]
+func (h *urgencyHandler) UnassignedUrgencyIDs(ctx *gin.Context) {
+	base := requestContext(ctx)
+	cctx, cancel := context.WithTimeout(base, config.DefaultListTimeout)
+	defer cancel()
+	log := h.log.WithContext(cctx)
+	defer utils.TimeOperation(log, "UrgencyHandler.UnassignedUrgencyIDs")()
+	log.Info("Received Unassigned Urgency IDs request")
+
+	ids, err := h.svc.ListUnassignedIDs(cctx)
+	if err != nil {
+		log.Errorf("failed to retrieve unassigned urgency ids: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "URGENCY_ERRORS.LIST_FAILED", "details": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"ids": ids})
 }
 
 // GetUrgency Извлачење ургентне ситуације по ID

@@ -23,8 +23,8 @@ type UrgencyRepository interface {
 	Update(ctx context.Context, urgency *model.Urgency) error
 	Delete(ctx context.Context, urgencyID uint) error
 	ListPaginated(ctx context.Context, page int, pageSize int, assignedEmployeeID *uint) ([]model.Urgency, int64, error)
-
 	List(ctx context.Context, filters map[string]interface{}) ([]model.Urgency, error)
+	ListUnassignedIDs(ctx context.Context) ([]uint, error)
 	ResetAllData(ctx context.Context) error
 }
 
@@ -138,7 +138,22 @@ func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSiz
 	}); err != nil {
 		return nil, 0, err
 	}
+
 	return urgencies, total, nil
+}
+
+func (r *urgencyRepository) ListUnassignedIDs(ctx context.Context) ([]uint, error) {
+	log := r.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "UrgencyRepository.ListUnassignedIDs")()
+	var ids []uint
+	if err := r.withRead(ctx, func(db *gorm.DB) error {
+		return db.Model(&model.Urgency{}).
+			Where("deleted_at IS NULL AND sort_priority = ?", 1).
+			Pluck("id", &ids).Error
+	}); err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 func (r *urgencyRepository) ResetAllData(ctx context.Context) error {
