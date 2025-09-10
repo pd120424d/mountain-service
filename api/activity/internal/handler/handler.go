@@ -146,7 +146,7 @@ func buildActivityListRequest(ctx *gin.Context) activityV1.ActivityListRequest {
 }
 
 // Local cursor token encoder for exposing nextPageToken in page-based responses
-// Matches service-side format: base64(JSON{"createdAt": RFC3339 UTC})
+// Matches service-side format: base64(JSON{"createdAt": RFC3339Nano UTC})
 type cursorToken struct {
 	CreatedAt string `json:"createdAt"`
 	ID        uint   `json:"id,omitempty"`
@@ -156,7 +156,7 @@ func encodeCursorToken(t time.Time, id uint) string {
 	if t.IsZero() {
 		return ""
 	}
-	b, _ := json.Marshal(cursorToken{CreatedAt: t.UTC().Format(time.RFC3339), ID: id})
+	b, _ := json.Marshal(cursorToken{CreatedAt: t.UTC().Format(time.RFC3339Nano), ID: id})
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 

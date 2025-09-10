@@ -253,6 +253,13 @@ func TestEncodeDecodeToken(t *testing.T) {
 	assert.True(t, tDecoded3.Equal(nonZero))
 	assert.Equal(t, uint(123), id3)
 
+	nano := time.Date(2025, 1, 5, 12, 0, 0, 123456789, time.UTC)
+	tok3 := encodeToken(nano, 0)
+	tDecoded4, id4, err := decodeToken(tok3)
+	assert.NoError(t, err)
+	assert.True(t, tDecoded4.Equal(nano))
+	assert.Equal(t, uint(0), id4)
+
 	_, _, err = decodeToken("???")
 	assert.Error(t, err)
 

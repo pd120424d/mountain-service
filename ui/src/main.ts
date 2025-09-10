@@ -11,11 +11,12 @@ import { NgxSpinnerModule } from 'ngx-spinner';
 import { importProvidersFrom } from '@angular/core';
 
 import { requestIdInterceptor } from './app/request-id.interceptor';
+import { freshWindowInterceptor } from './app/fresh-window.interceptor';
 
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withInterceptors([requestIdInterceptor, authInterceptor])),
+    provideHttpClient(withInterceptors([requestIdInterceptor, authInterceptor, freshWindowInterceptor])),
     provideAnimations(),
     provideTranslate(),
     importProvidersFrom(
