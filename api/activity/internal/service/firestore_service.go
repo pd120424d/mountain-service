@@ -212,8 +212,8 @@ func (s *firestoreService) ListByUrgencyCursor(ctx context.Context, urgencyID ui
 			// No id provided in token: fetch strictly older than t
 			qOlder := s.client.Collection(s.collection).
 				Where("urgency_id", "==", int64(urgencyID)).
+				Where("created_at", "<", t).
 				OrderBy("created_at", firestorex.Desc).
-				StartAfter(t).
 				Limit(pageSize + 1)
 			it := qOlder.Documents(ctx)
 			defer it.Stop()
@@ -283,8 +283,8 @@ func (s *firestoreService) ListByUrgencyCursor(ctx context.Context, urgencyID ui
 				remain := (pageSize + 1) - len(items)
 				qOlder := s.client.Collection(s.collection).
 					Where("urgency_id", "==", int64(urgencyID)).
+					Where("created_at", "<", t).
 					OrderBy("created_at", firestorex.Desc).
-					StartAfter(t).
 					Limit(remain)
 				it2 := qOlder.Documents(ctx)
 				defer it2.Stop()
@@ -395,8 +395,8 @@ func (s *firestoreService) ListAllCursor(ctx context.Context, pageSize int, page
 		if lastID == 0 {
 			// No id provided: fetch strictly older than t
 			qOlder := s.client.Collection(s.collection).
+				Where("created_at", "<", t).
 				OrderBy("created_at", firestorex.Desc).
-				StartAfter(t).
 				Limit(pageSize + 1)
 			it := qOlder.Documents(ctx)
 			defer it.Stop()
@@ -464,8 +464,8 @@ func (s *firestoreService) ListAllCursor(ctx context.Context, pageSize int, page
 			if len(items) < pageSize+1 {
 				remain := (pageSize + 1) - len(items)
 				qOlder := s.client.Collection(s.collection).
+					Where("created_at", "<", t).
 					OrderBy("created_at", firestorex.Desc).
-					StartAfter(t).
 					Limit(remain)
 				it2 := qOlder.Documents(ctx)
 				defer it2.Stop()

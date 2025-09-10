@@ -136,14 +136,104 @@ func (c *coll) Documents(ctx context.Context) firestorex.DocumentIterator {
 
 func matchFilters(m map[string]interface{}, flts []filter) bool {
 	for _, f := range flts {
-		if f.op != "==" {
-			return false
-		}
-		if !reflect.DeepEqual(m[f.field], f.value) {
+		av := m[f.field]
+		switch f.op {
+		case "==":
+			if !reflect.DeepEqual(av, f.value) {
+				// Try semantic equality for time and numbers
+				if cmp, ok := compareValues(av, f.value); !ok || cmp != 0 {
+					return false
+				}
+			}
+		case "<":
+			if cmp, ok := compareValues(av, f.value); !ok || !(cmp < 0) {
+				return false
+			}
+		case ">":
+			if cmp, ok := compareValues(av, f.value); !ok || !(cmp > 0) {
+				return false
+			}
+		case "<=":
+			if cmp, ok := compareValues(av, f.value); !ok || !(cmp <= 0) {
+				return false
+			}
+		case ">=":
+			if cmp, ok := compareValues(av, f.value); !ok || !(cmp >= 0) {
+				return false
+			}
+		default:
 			return false
 		}
 	}
 	return true
+}
+
+func compareValues(a, b interface{}) (int, bool) {
+	// Try time comparison
+	if ta, ok := toTime(a); ok {
+		if tb, ok2 := toTime(b); ok2 {
+			if ta.Before(tb) {
+				return -1, true
+			}
+			if ta.After(tb) {
+				return 1, true
+			}
+			return 0, true
+		}
+	}
+	// Try numeric comparison
+	if fa, ok := toFloat(a); ok {
+		if fb, ok2 := toFloat(b); ok2 {
+			if fa < fb {
+				return -1, true
+			}
+			if fa > fb {
+				return 1, true
+			}
+			return 0, true
+		}
+	}
+	// Fallback to string compare
+	sa := fmt.Sprint(a)
+	sb := fmt.Sprint(b)
+	if sa < sb {
+		return -1, true
+	}
+	if sa > sb {
+		return 1, true
+	}
+	return 0, true
+}
+
+func toTime(v interface{}) (time.Time, bool) {
+	switch t := v.(type) {
+	case time.Time:
+		return t, true
+	case string:
+		if ts, err := time.Parse(time.RFC3339Nano, t); err == nil {
+			return ts, true
+		}
+		if ts, err := time.Parse(time.RFC3339, t); err == nil {
+			return ts, true
+		}
+	}
+	return time.Time{}, false
+}
+
+func toFloat(v interface{}) (float64, bool) {
+	switch t := v.(type) {
+	case int:
+		return float64(t), true
+	case int64:
+		return float64(t), true
+	case uint:
+		return float64(t), true
+	case uint64:
+		return float64(t), true
+	case float64:
+		return t, true
+	}
+	return 0, false
 }
 
 func (it *iter) Next() (firestorex.DocumentSnapshot, error) {
