@@ -35,7 +35,7 @@ describe('AppComponent', () => {
     const authSpy = jasmine.createSpyObj('AuthService', ['getRole', 'getUserId', 'isAuthenticated']);
     const employeeSpy = jasmine.createSpyObj('EmployeeService', ['getEmployeeById']);
     const appInitSpy = jasmine.createSpyObj('AppInitializationService', ['initialize', 'cleanup']);
-    const urgencySpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated', 'getUnassignedUrgencyIds']);
+    const urgencySpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated', 'refreshUnassignedCount'], { unassignedCount$: of(0) });
 
     await TestBed.configureTestingModule({
       imports: [AppComponent],
@@ -267,34 +267,29 @@ describe('AppComponent', () => {
     expect(component.openUrgenciesCount).toBe(0);
   });
 
-  it('should compute open urgencies count when authenticated', () => {
+  it('should subscribe to unassignedCount$ on init and update header badge', () => {
+    (urgencyService as any).unassignedCount$ = of(7);
+    component.ngOnInit();
+    expect(component.openUrgenciesCount).toBe(7);
+  });
+
+  it('should call refreshUnassignedCount when authenticated', () => {
     authService.isAuthenticated.and.returnValue(true);
-    urgencyService.getUnassignedUrgencyIds.and.returnValue(of([1, 2]));
+    urgencyService.refreshUnassignedCount.and.returnValue(of(2));
 
     (component as any)['refreshOpenUrgencies']();
 
-    expect(urgencyService.getUnassignedUrgencyIds).toHaveBeenCalled();
-    expect(component.openUrgenciesCount).toBe(2);
+    expect(urgencyService.refreshUnassignedCount).toHaveBeenCalled();
   });
 
   it('should keep previous openUrgenciesCount on error', () => {
     authService.isAuthenticated.and.returnValue(true);
     component.openUrgenciesCount = 5;
-    urgencyService.getUnassignedUrgencyIds.and.returnValue(throwError(() => new Error('fail')));
+    urgencyService.refreshUnassignedCount.and.returnValue(throwError(() => new Error('fail')));
 
     (component as any)['refreshOpenUrgencies']();
 
     expect(component.openUrgenciesCount).toBe(5);
-  });
-
-  it('should request unassigned urgency IDs instead of loading large pages', () => {
-    authService.isAuthenticated.and.returnValue(true);
-    urgencyService.getUnassignedUrgencyIds.and.returnValue(of([10, 20, 30]));
-
-    (component as any)['refreshOpenUrgencies']();
-
-    expect(urgencyService.getUnassignedUrgencyIds).toHaveBeenCalled();
-    expect(component.openUrgenciesCount).toBe(3);
   });
 
 });

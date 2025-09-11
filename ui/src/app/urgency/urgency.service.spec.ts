@@ -206,6 +206,31 @@ describe('UrgencyService', () => {
     req.flush({});
   });
 
+  it('should fetch unassigned urgency ids', () => {
+    service.getUnassignedUrgencyIds().subscribe(ids => {
+      expect(ids).toEqual([1, 2, 3]);
+    });
+
+    const req = httpMock.expectOne(`${expectedUrgencyUrl}/unassigned-ids`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ ids: [1, 2, 3] });
+  });
+
+  it('should refresh unassigned count and update observable', () => {
+    let observed: number | undefined;
+    service.unassignedCount$.subscribe(v => observed = v);
+
+    service.refreshUnassignedCount().subscribe(len => {
+      expect(len).toBe(2);
+    });
+
+    const req = httpMock.expectOne(`${expectedUrgencyUrl}/unassigned-ids`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ ids: [10, 20] });
+
+    expect(observed).toBe(2);
+  });
+
   it('should handle error when fetching urgencies fails', () => {
     const errorMessage = 'Server error';
 

@@ -45,6 +45,9 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Keep header badge in sync with service count
+    this.urgencyService.unassignedCount$.subscribe(count => this.openUrgenciesCount = count);
+
     // Initialize the application
     this.appInitService.initialize().then(() => {
       console.log('Application initialized successfully');
@@ -126,10 +129,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.openUrgenciesCount = 0;
       return;
     }
-    this.urgencyService.getUnassignedUrgencyIds().subscribe({
-      next: (ids) => {
-        this.openUrgenciesCount = (ids || []).length;
-      },
+    this.urgencyService.refreshUnassignedCount().subscribe({
       error: () => {
         this.openUrgenciesCount = this.openUrgenciesCount || 0;
       }

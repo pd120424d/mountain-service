@@ -1,8 +1,8 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Urgency, UrgencyCreateRequest, UrgencyUpdateRequest } from '../shared/models';
 
@@ -14,6 +14,9 @@ export class UrgencyService {
     ? '/api/v1'
     : `${environment.apiUrl}`;
   private urgencyApiUrl = this.baseApiUrl + "/urgencies";
+
+  private unassignedCountSubject = new BehaviorSubject<number>(0);
+  unassignedCount$ = this.unassignedCountSubject.asObservable();
 
   constructor(private http: HttpClient) { }
 
@@ -40,6 +43,13 @@ export class UrgencyService {
     return this.http.get<{ ids: number[] }>(url).pipe(
       map((resp) => (resp?.ids ?? [])),
       catchError(this.handleError)
+    );
+  }
+
+  refreshUnassignedCount(): Observable<number> {
+    return this.getUnassignedUrgencyIds().pipe(
+      tap((ids) => this.unassignedCountSubject.next(ids.length)),
+      map((ids) => ids.length)
     );
   }
 

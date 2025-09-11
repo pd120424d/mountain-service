@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../services/auth.service';
+import { UrgencyService } from '../urgency/urgency.service';
 
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrService } from 'ngx-toastr';
@@ -34,19 +35,21 @@ export class HomeComponent implements OnInit {
   currentImageIndex = 0;
   prevImageIndex = 0;
   isStaging = environment.staging;
-
-
+  unassignedCount = 0;
 
   constructor(
     private translate: TranslateService,
     public authService: AuthService,
     private spinner: NgxSpinnerService,
-    private toastr: ToastrService) {
+    private toastr: ToastrService,
+    private urgencyService: UrgencyService) {
     this.translate.setDefaultLang('sr-cyr')
   }
 
   ngOnInit(): void {
     this.preloadImage(this.images[1]); // preload second image immediately
+
+    this.urgencyService.unassignedCount$.subscribe(count => this.unassignedCount = count);
 
 
     setInterval(() => {

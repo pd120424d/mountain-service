@@ -75,9 +75,9 @@
           type="button"
           class="btn btn-outline-primary map-toggle-btn"
           (click)="toggleMap()"
-          title="{{ showMap ? 'LOCATION_MAP.HIDE_MAP' : 'LOCATION_MAP.SHOW_MAP' | translate }}">
+          title="{{ (showMap ? 'LOCATION_MAP.HIDE_MAP' : 'LOCATION_MAP.SHOW_MAP') | translate }}">
           <i class="fas" [class.fa-map]="!showMap" [class.fa-times]="showMap"></i>
-          {{ showMap ? 'Hide Map' : 'Show Map' }}
+          {{ (showMap ? 'LOCATION_MAP.HIDE_MAP' : 'LOCATION_MAP.SHOW_MAP') | translate }}
         </button>
       </div>
 
@@ -91,7 +91,7 @@
             type="button"
             class="btn btn-link btn-sm p-0 ms-2"
             (click)="clearMapLocation()"
-            title="Clear coordinates">
+            title="{{ 'LOCATION_MAP.CLEAR' | translate }}">
             <i class="fas fa-times"></i>
           </button>
         </small>

@@ -148,6 +148,41 @@ describe('UrgencyDetailComponent', () => {
     expect(component.isSubmittingActivity).toBeFalse();
   });
 
+
+  it('should prepend activity immediately and refresh list after short delay', () => {
+    const newActivity: Activity = {
+      id: 99,
+      description: 'Immediate note',
+      employeeId: 1,
+      urgencyId: 1,
+      createdAt: '2024-01-15T12:00:00Z',
+      updatedAt: '2024-01-15T12:00:00Z'
+    };
+
+    const assignedInProgress = { ...mockUrgency, status: UrgencyStatus.InProgress, assignedEmployeeId: 1 } as Urgency;
+    urgencyService.getUrgencyById.and.returnValue(of(assignedInProgress));
+    activityService.getActivitiesCursor.and.returnValue(of({ activities: mockActivities, nextPageToken: undefined }));
+
+    component.urgencyId = 1;
+    component.ngOnInit();
+    component.activityForm.patchValue({ description: 'Immediate note' });
+    authService.getUserId.and.returnValue('1');
+    activityService.createActivity.and.returnValue(of(newActivity));
+
+    spyOn(component, 'loadActivities');
+
+    jasmine.clock().install();
+    try {
+      component.onSubmitActivity();
+      expect(component.activities[0]).toEqual(newActivity);
+
+      jasmine.clock().tick(900);
+      expect(component.loadActivities).toHaveBeenCalled();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
   it('canAddActivity returns true only when assigned and InProgress', () => {
     component.urgency = {
       id: 1,

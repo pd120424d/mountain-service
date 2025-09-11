@@ -230,15 +230,18 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
       };
 
       this.activityService.createActivity(activityRequest).subscribe({
-        next: () => {
+        next: (created) => {
+          if (created) {
+            this.activities = [created, ...this.activities];
+          }
           this.toastr.success(this.translate.instant('URGENCY_DETAIL.ACTIVITY_ADDED_SUCCESS'));
           this.activityForm.reset();
-          this.loadActivities();
           this.isSubmittingActivity = false;
           // Focus the textarea for easier consecutive activity additions
           setTimeout(() => {
             this.activityTextarea?.nativeElement?.focus();
           }, 100);
+          setTimeout(() => this.loadActivities(), 800);
         },
         error: (error) => {
           console.error('Error creating activity:', error);

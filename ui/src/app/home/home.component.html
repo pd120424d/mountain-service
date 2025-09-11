@@ -27,6 +27,7 @@
         <i class="fas fa-exclamation-triangle"></i>
         <h3 class="urgency-nav-title">
           {{ 'NAV.URGENCY_MANAGEMENT.TITLE' | translate }}
+          <span class="badge bg-danger ms-2" *ngIf="unassignedCount > 0">{{ unassignedCount }}</span>
         </h3>
         <p>{{ 'NAV.URGENCY_MANAGEMENT.DESCRIPTION' | translate }}</p>
       </a>
