@@ -10,6 +10,7 @@ import {
   Employee,
   EmployeeResponseProfileTypeEnum
 } from '../shared/models';
+import { AuthService } from '../services/auth.service';
 
 describe('ShiftManagementService', () => {
   let service: ShiftManagementService;
@@ -65,7 +66,8 @@ describe('ShiftManagementService', () => {
       providers: [
         ShiftManagementService,
         provideHttpClient(),
-        provideHttpClientTesting()
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: jasmine.createSpyObj('AuthService', ['isAdmin']) }
       ]
     });
     service = TestBed.inject(ShiftManagementService);
@@ -222,6 +224,34 @@ describe('ShiftManagementService', () => {
         shiftType: 2
       } as RemoveShiftRequest);
       req.flush({});
+    });
+  });
+
+  describe('getShiftWarnings', () => {
+    it('should call non-admin endpoint when isAdmin=false', () => {
+      const auth = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+      auth.isAdmin.and.returnValue(false);
+
+      service.getShiftWarnings('42').subscribe(resp => {
+        expect(resp).toEqual({ warnings: ['w1'] });
+      });
+
+      const req = httpMock.expectOne('/api/v1/employees/42/shift-warnings');
+      expect(req.request.method).toBe('GET');
+      req.flush({ warnings: ['w1'] });
+    });
+
+    it('should call admin endpoint when isAdmin=true', () => {
+      const auth = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+      auth.isAdmin.and.returnValue(true);
+
+      service.getShiftWarnings('99').subscribe(resp => {
+        expect(resp).toEqual({ warnings: [] });
+      });
+
+      const req = httpMock.expectOne('/api/v1/admin/employees/99/shift-warnings');
+      expect(req.request.method).toBe('GET');
+      req.flush({ warnings: [] });
     });
   });
 

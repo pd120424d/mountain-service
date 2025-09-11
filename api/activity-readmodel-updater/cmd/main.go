@@ -116,16 +116,26 @@ func main() {
 	fsAdapter := googleadapter.NewClientAdapter(firestoreClient)
 	firebaseService := service.NewFirebaseService(fsAdapter, logger)
 
-	// Start health check server
+	// Start health/ready endpoints server
 	go func() {
-		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		mux := http.NewServeMux()
+
+		// Liveness: process is up
+		mux.HandleFunc("/live", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status":"alive","service":"activity-readmodel-updater"}`))
+		})
+
+		// Readiness: strict dependency checks (longer timeout)
+		mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 			defer cancel()
 			// Firestore connectivity
 			if _, err := firestoreClient.Collections(ctx).Next(); err != nil && err != iterator.Done {
 				w.WriteHeader(http.StatusServiceUnavailable)
-				w.Write([]byte(fmt.Sprintf(`{"status":"unhealthy","service":"activity-readmodel-updater","firestore_error":"%v"}`, err)))
+				w.Write([]byte(fmt.Sprintf(`{"status":"unready","service":"activity-readmodel-updater","firestore_error":"%v"}`, err)))
 				return
 			}
 			// Pub/Sub topic/subscription existence
@@ -135,16 +145,41 @@ func main() {
 			sExists, sErr := sub.Exists(ctx)
 			if tErr != nil || sErr != nil || !tExists || !sExists {
 				w.WriteHeader(http.StatusServiceUnavailable)
-				w.Write([]byte(fmt.Sprintf(`{"status":"unhealthy","service":"activity-readmodel-updater","pubsub_topic_exists":%t,"pubsub_subscription_exists":%t,"topic_error":"%v","subscription_error":"%v"}`, tExists, sExists, tErr, sErr)))
+				w.Write([]byte(fmt.Sprintf(`{"status":"unready","service":"activity-readmodel-updater","pubsub_topic_exists":%t,"pubsub_subscription_exists":%t,"topic_error":"%v","subscription_error":"%v"}`, tExists, sExists, tErr, sErr)))
 				return
 			}
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"status":"healthy","service":"activity-readmodel-updater"}`))
+			w.Write([]byte(`{"status":"ready","service":"activity-readmodel-updater"}`))
+		})
+
+		// Backward-compatible health - lightweight summary
+		mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+			defer cancel()
+			fsOK := true
+			if _, err := firestoreClient.Collections(ctx).Next(); err != nil && err != iterator.Done {
+				fsOK = false
+			}
+			tExists, sExists := false, false
+			topic := pubsubClient.Topic(cfg.PubSubTopic)
+			sub := pubsubClient.Subscription(cfg.PubSubSubscription)
+			if te, se := func() (error, error) {
+				te := error(nil)
+				se := error(nil)
+				tExists, te = topic.Exists(ctx)
+				sExists, se = sub.Exists(ctx)
+				return te, se
+			}(); te != nil || se != nil {
+				logger.Warnf("Failed to check Pub/Sub health: topic_exists=%t, subscription_exists=%t, topic_error=%v, subscription_error=%v", tExists, sExists, te, se)
+			}
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(fmt.Sprintf(`{"status":"ok","service":"activity-readmodel-updater","firestore_ok":%t,"pubsub_topic_exists":%t,"pubsub_subscription_exists":%t}`, fsOK, tExists, sExists)))
 		})
 
 		healthAddr := fmt.Sprintf(":%d", cfg.HealthPort)
 		logger.Infof("Starting health check server on %s", healthAddr)
-		if err := http.ListenAndServe(healthAddr, nil); err != nil {
+		if err := http.ListenAndServe(healthAddr, mux); err != nil {
 			logger.Errorf("Health check server error: %v", err)
 		}
 	}()

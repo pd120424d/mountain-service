@@ -134,7 +134,7 @@
         </div>
 
         <!-- Admin view -->
-        <div *ngIf="canModifyOthers()" class="admin-actions">
+        <div *ngIf="isAdmin()" class="admin-actions">
           <label for="employeeSelect-{{ day.toDateString() }}-{{ shiftType }}">
             {{ 'SHIFT_MANAGEMENT.SELECT_EMPLOYEE' | translate }}
           </label>
@@ -166,7 +166,7 @@
         </div>
 
         <!-- Normal user view -->
-        <div *ngIf="!canModifyOthers()" class="user-actions">
+        <div *ngIf="!isAdmin()" class="user-actions">
           <div class="hover-actions">
             <div class="button-group">
               <button class="btn add-me" (click)="assignToShift(shiftType, day)"

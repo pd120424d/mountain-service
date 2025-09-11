@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { ImageUploadService, ImageUploadProgress, CachedImage } from '../../../services/image-upload.service';
@@ -18,7 +18,7 @@ export interface ImageUploadEvent {
   template: `
     <div class="image-upload-container">
       <!-- Upload Area -->
-      <div 
+      <div
         class="upload-area"
         [class.drag-over]="isDragOver"
         [class.has-image]="previewUrl"
@@ -26,9 +26,9 @@ export interface ImageUploadEvent {
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave($event)"
         (drop)="onDrop($event)">
-        
+
         <!-- File Input -->
-        <input 
+        <input
           #fileInput
           type="file"
           accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
@@ -39,8 +39,8 @@ export interface ImageUploadEvent {
         <div *ngIf="previewUrl" class="image-preview">
           <img [src]="previewUrl" [alt]="'IMAGE_UPLOAD.PREVIEW_ALT' | translate">
           <div class="image-overlay">
-            <button 
-              type="button" 
+            <button
+              type="button"
               class="btn btn-sm btn-danger remove-btn"
               (click)="removeImage($event)"
               [title]="'IMAGE_UPLOAD.REMOVE' | translate">
@@ -237,7 +237,7 @@ export interface ImageUploadEvent {
     }
   `]
 })
-export class ImageUploadComponent implements OnInit, OnDestroy {
+export class ImageUploadComponent implements OnInit, OnDestroy, OnChanges {
   @Input() employeeId?: number;
   @Input() cacheKey?: string;
   @Input() initialImageUrl?: string | undefined;
@@ -276,6 +276,12 @@ export class ImageUploadComponent implements OnInit, OnDestroy {
       this.previewUrl = this.initialImageUrl;
     }
   }
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['initialImageUrl'] && !this.previewUrl && this.initialImageUrl) {
+      this.previewUrl = this.initialImageUrl;
+    }
+  }
+
 
   ngOnDestroy(): void {
     if (this.uploadSubscription) {

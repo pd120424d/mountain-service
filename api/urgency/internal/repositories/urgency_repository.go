@@ -134,6 +134,9 @@ func (r *urgencyRepository) ListPaginated(ctx context.Context, page int, pageSiz
 			return err
 		}
 		orderExpr := "sort_priority ASC, created_at DESC"
+		if assignedEmployeeID != nil {
+			orderExpr = "created_at DESC, CASE level WHEN 'Critical' THEN 4 WHEN 'High' THEN 3 WHEN 'Medium' THEN 2 WHEN 'Low' THEN 1 ELSE 0 END DESC"
+		}
 		return q.Order(orderExpr).Limit(pageSize).Offset(offset).Find(&urgencies).Error
 	}); err != nil {
 		return nil, 0, err

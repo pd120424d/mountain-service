@@ -111,6 +111,11 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   }
 
   loadShiftWarnings() {
+    // Warnings are per-employee; skip for admin (no specific employee context)
+    if (this.isAdmin()) {
+      this.shiftWarnings = [];
+      return;
+    }
     if (this.userId) {
       this.shiftService.getShiftWarnings(this.userId).subscribe({
         next: (data) => {
@@ -135,7 +140,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
   }
 
   private getAssignmentFor(shiftType: number, date: Date, employeeId?: string): ShiftResponse | undefined {
-    const id = (this.canModifyOthers() && employeeId) ? employeeId : this.userId;
+    const id = (this.isAdmin() && employeeId) ? employeeId : this.userId;
     if (!id) { return undefined; }
     const shifts = this.selectedEmployeeShifts.get(id);
     if (!shifts) { return undefined; }
@@ -157,7 +162,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     }
   }
 
-  canModifyOthers(): boolean {
+  isAdmin(): boolean {
     return this.userRole === AdministratorRole;
   }
 
@@ -183,9 +188,11 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     this.shiftService.assignEmployeeToShift(shiftType, idToAssign, date).subscribe({
       next: (response) => {
         console.log('Assignment successful:', response);
-        // Reload data to reflect the assignment
-        this.loadShiftAvailability();
-        this.loadShiftWarnings();
+        // Allow read-replica a brief moment to catch up before reloading
+        setTimeout(() => {
+          this.loadShiftAvailability();
+          this.loadShiftWarnings();
+        }, 600);
         this.isAssigning = false;
         this.spinner.hide();
         this.toastr.success(this.translate.instant('SHIFT_MANAGEMENT.TOAST_ASSIGN_SUCCESS'));
@@ -309,7 +316,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
 
   isAssignedToShift(shiftType: number, date: Date, employeeId?: string): boolean {
     // For admin users, check if the specific employee is assigned
-    if (this.canModifyOthers() && employeeId) {
+    if (this.isAdmin() && employeeId) {
       return this.isEmployeeAssignedToShift(employeeId, shiftType, date);
     }
 
@@ -436,7 +443,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     }
 
     // For admin view, need employee selected
-    if (this.canModifyOthers() && !employeeId) {
+    if (this.isAdmin() && !employeeId) {
       return false;
     }
 
@@ -445,7 +452,27 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       return false;
     }
 
-    // Can't assign if shift is fully booked
+    // Enforce role-specific capacity (Medic: 2, Technical: 4)
+    let role: string | undefined;
+    if (this.isAdmin() && employeeId) {
+      const emp = this.employees.find(e => (e.id + '') === employeeId);
+      role = emp?.profileType;
+    } else {
+      role = this.userRole as any;
+    }
+
+    if (role === 'Medic') {
+      const available = this.getAvailableMedics(shiftType, date);
+      if ((available ?? 0) <= 0) return false;
+    } else if (role === 'Technical') {
+      const available = this.getAvailableTechnicals(shiftType, date);
+      if ((available ?? 0) <= 0) return false;
+    } else {
+      // Administrators cannot be assigned to shifts
+      return false;
+    }
+
+    // Also guard against fully booked in general
     if (this.isShiftFullyBooked(shiftType, date)) {
       return false;
     }
@@ -460,7 +487,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
     }
 
     // For admin view, need employee selected
-    if (this.canModifyOthers() && !employeeId) {
+    if (this.isAdmin() && !employeeId) {
       return false;
     }
 
@@ -477,12 +504,26 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_PROCESSING');
     }
 
-    if (this.canModifyOthers() && !employeeId) {
+    if (this.isAdmin() && !employeeId) {
       return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_SELECT_EMPLOYEE');
     }
 
     if (this.isAssignedToShift(shiftType, date, employeeId)) {
       return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_ALREADY_ASSIGNED');
+    }
+
+    let role: string | undefined;
+    if (this.isAdmin() && employeeId) {
+      const emp = this.employees.find(e => (e.id + '') === employeeId);
+      role = emp?.profileType;
+    } else {
+      role = this.userRole as any;
+    }
+    if (role === 'Medic' && (this.getAvailableMedics(shiftType, date) ?? 0) <= 0) {
+      return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_FULLY_BOOKED');
+    }
+    if (role === 'Technical' && (this.getAvailableTechnicals(shiftType, date) ?? 0) <= 0) {
+      return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_FULLY_BOOKED');
     }
 
     if (this.isShiftFullyBooked(shiftType, date)) {
@@ -497,7 +538,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
       return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_PROCESSING');
     }
 
-    if (this.canModifyOthers() && !employeeId) {
+    if (this.isAdmin() && !employeeId) {
       return this.translate.instant('SHIFT_MANAGEMENT.TOOLTIP_SELECT_EMPLOYEE');
     }
 
@@ -510,7 +551,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
 
   shouldShowAssignedIndicator(shiftType: number, day: Date, selectedEmployeeId?: string): boolean {
     // For admin users with an employee selected, check if that employee is assigned
-    if (this.canModifyOthers() && selectedEmployeeId) {
+    if (this.isAdmin() && selectedEmployeeId) {
       return this.isAssignedToShift(shiftType, day, selectedEmployeeId);
     }
 
@@ -520,7 +561,7 @@ export class ShiftManagementComponent extends BaseTranslatableComponent implemen
 
   shouldApplyAssignedClass(shiftType: number, day: Date, selectedEmployeeId?: string): boolean {
     // For admin users with an employee selected, apply assigned class if that employee is assigned
-    if (this.canModifyOthers() && selectedEmployeeId) {
+    if (this.isAdmin() && selectedEmployeeId) {
       return this.isAssignedToShift(shiftType, day, selectedEmployeeId);
     }
 

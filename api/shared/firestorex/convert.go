@@ -59,6 +59,10 @@ func SnapshotDataTo(ds map[string]interface{}, out interface{}) error {
 						case time.Time:
 							fv.Set(reflect.ValueOf(tval))
 						case string:
+							if parsed, err := time.Parse(time.RFC3339Nano, tval); err == nil {
+								fv.Set(reflect.ValueOf(parsed))
+								break
+							}
 							if parsed, err := time.Parse(time.RFC3339, tval); err == nil {
 								fv.Set(reflect.ValueOf(parsed))
 							}

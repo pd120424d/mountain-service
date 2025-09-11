@@ -2,7 +2,6 @@ package googleadapter
 
 import (
 	"context"
-	"fmt"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
@@ -19,12 +18,6 @@ type queryAdapter struct{ q firestore.Query }
 type iteratorAdapter struct{ it *firestore.DocumentIterator }
 
 type docRefAdapter struct{ d *firestore.DocumentRef }
-
-type snapshotAdapter struct{ snap *firestore.DocumentSnapshot }
-
-type writeResultAdapter struct{ r *firestore.WriteResult }
-
-type updateAdapter struct{ u firestore.Update }
 
 func NewClientAdapter(c *firestore.Client) firestorex.Client { return &clientAdapter{c: c} }
 
@@ -91,10 +84,6 @@ type snapshotWrapper struct{ ds *firestore.DocumentSnapshot }
 
 func (s snapshotWrapper) DataTo(v interface{}) error { return s.ds.DataTo(v) }
 func (s snapshotWrapper) ID() string                 { return s.ds.Ref.ID }
-
-func iteratorDone() error {
-	return fmt.Errorf("iterator done")
-}
 
 func (a *docRefAdapter) Get(ctx context.Context) (firestorex.DocumentSnapshot, error) {
 	ds, err := a.d.Get(ctx)

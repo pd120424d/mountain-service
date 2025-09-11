@@ -42,6 +42,16 @@ describe('ShiftManagementComponent', () => {
       (component['auth'].getRole as jasmine.Spy).and.returnValue('Administrator');
       component.userRole = 'Administrator';
 
+      // Provide employees list so admin role can be derived for capacity checks
+      (component as any).employees = [
+        { id: 123, profileType: 'Technical' } as any,
+      ];
+
+      // Make capacity and booking checks permissive for admin tests
+      spyOn(component as any, 'getAvailableMedics').and.returnValue(2);
+      spyOn(component as any, 'getAvailableTechnicals').and.returnValue(4);
+      spyOn(component as any, 'isShiftFullyBooked').and.returnValue(false);
+
       // Mock employee shifts data
       const mockEmployeeShifts = [
         { id: 1, shiftDate: '2024-01-15', shiftType: 1, createdAt: '2024-01-15T00:00:00Z' },
@@ -126,9 +136,9 @@ describe('ShiftManagementComponent', () => {
 
   it('should check if user can modify others', () => {
     component.userRole = 'Administrator';
-    expect(component.canModifyOthers()).toBe(true);
+    expect(component.isAdmin()).toBe(true);
     component.userRole = 'Technical';
-    expect(component.canModifyOthers()).toBe(false);
+    expect(component.isAdmin()).toBe(false);
   });
 
   it('should assign to shift', () => {
@@ -238,6 +248,45 @@ describe('ShiftManagementComponent', () => {
     component.loadShiftWarnings();
     expect(component['shiftService'].getShiftWarnings).not.toHaveBeenCalled();
   });
+
+  it('should skip loading shift warnings for admin (no specific employee context)', () => {
+    (component['auth'].getRole as jasmine.Spy).and.returnValue('Administrator');
+    component.userRole = 'Administrator';
+    (component['shiftService'].getShiftWarnings as jasmine.Spy).calls.reset();
+    component.shiftWarnings = ['x'];
+
+    component.loadShiftWarnings();
+
+    expect(component['shiftService'].getShiftWarnings).not.toHaveBeenCalled();
+    expect(component.shiftWarnings).toEqual([]);
+  });
+
+  it('should enforce role-specific capacity: Medic cannot assign when medicSlotsAvailable=0', () => {
+    const day = new Date('2025-08-01');
+    component.userRole = 'Medic';
+    component.shiftAvailability = {
+      days: {
+        '2025-08-01': {
+          firstShift: { medicSlotsAvailable: 0, technicalSlotsAvailable: 3, isFullyBooked: false, isAssignedToEmployee: false }
+        }
+      }
+    } as any;
+    expect(component.canAssignToShift(1, day)).toBeFalse();
+  });
+
+  it('should enforce role-specific capacity: Technical cannot assign when technicalSlotsAvailable=0', () => {
+    const day = new Date('2025-08-02');
+    component.userRole = 'Technical';
+    component.shiftAvailability = {
+      days: {
+        '2025-08-02': {
+          firstShift: { medicSlotsAvailable: 3, technicalSlotsAvailable: 0, isFullyBooked: false, isAssignedToEmployee: false }
+        }
+      }
+    } as any;
+    expect(component.canAssignToShift(1, day)).toBeFalse();
+  });
+
 
   it('should translate warning messages with new format', () => {
     spyOn(component['translate'], 'instant').and.returnValue('You have only 4 shifts scheduled in the next 14 days. Consider scheduling more shifts to meet the 5 days/week quota.');

@@ -67,6 +67,8 @@ type ServerTimestampSentinel struct{}
 
 func Increment(n int64) interface{} { return IncrementSentinel{N: n} }
 
+const DocumentNameField = "__name__"
+
 type IncrementSentinel struct{ N int64 }
 
 func IsDone(err error) bool { return err == Done }

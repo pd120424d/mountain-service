@@ -4,12 +4,14 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { Employee, ShiftAvailabilityResponse, AssignShiftRequest, AssignShiftResponse, RemoveShiftRequest, ShiftResponse } from '../shared/models';
 import { formatISODateLocal } from '../shared/utils/date-time';
+import { AuthService } from '../services/auth.service';
+
 
 @Injectable({
   providedIn: 'root',
 })
 export class ShiftManagementService {
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private auth: AuthService) { }
 
   getShiftAvailability(days: number = 7): Observable<ShiftAvailabilityResponse> {
     console.log(`Fetching shift availability for ${days} days`);
@@ -48,7 +50,7 @@ export class ShiftManagementService {
       catchError(this.handleError)
     );
   }
-  
+
   removeEmployeeFromShiftByDetails(employeeId: string, shiftType: number, date: Date): Observable<any> {
     const req: RemoveShiftRequest = {
       shiftDate: formatISODateLocal(date),
@@ -65,7 +67,8 @@ export class ShiftManagementService {
 
   getShiftWarnings(employeeId: string): Observable<{warnings: string[]}> {
     console.log(`Fetching shift warnings for employee ${employeeId}`);
-    return this.http.get<{warnings: string[]}>(`/api/v1/employees/${employeeId}/shift-warnings`).pipe(
+    const base = this.auth.isAdmin() ? '/api/v1/admin' : '/api/v1';
+    return this.http.get<{warnings: string[]}>(`${base}/employees/${employeeId}/shift-warnings`).pipe(
       tap(response => console.log('Shift warnings response:', response)),
       catchError(this.handleError)
     );

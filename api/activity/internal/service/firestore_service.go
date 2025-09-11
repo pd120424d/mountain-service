@@ -247,7 +247,7 @@ func (s *firestoreService) ListByUrgencyCursor(ctx context.Context, urgencyID ui
 			qSame := s.client.Collection(s.collection).
 				Where("urgency_id", "==", int64(urgencyID)).
 				Where("created_at", "==", t).
-				OrderBy("__name__", firestorex.Desc)
+				OrderBy(firestorex.DocumentNameField, firestorex.Desc)
 			qSame = qSame.StartAfter(strconv.Itoa(int(lastID))).Limit(pageSize + 1)
 			it1 := qSame.Documents(ctx)
 			defer it1.Stop()
@@ -270,6 +270,11 @@ func (s *firestoreService) ListByUrgencyCursor(ctx context.Context, urgencyID ui
 				if err := doc.DataTo(&a); err != nil {
 					continue
 				}
+				// Defensive: skip boundary item if adapter returns it inclusively
+				if uint(a.ID) == lastID {
+					continue
+				}
+
 				items = append(items, sharedModels.Activity{
 					ID: uint(a.ID), Description: a.Description,
 					EmployeeID: uint(a.EmployeeID), UrgencyID: uint(a.UrgencyID),
@@ -429,7 +434,7 @@ func (s *firestoreService) ListAllCursor(ctx context.Context, pageSize int, page
 			// Two-phase to handle duplicate timestamps
 			qSame := s.client.Collection(s.collection).
 				Where("created_at", "==", t).
-				OrderBy("__name__", firestorex.Desc)
+				OrderBy(firestorex.DocumentNameField, firestorex.Desc)
 			qSame = qSame.StartAfter(strconv.Itoa(int(lastID))).Limit(pageSize + 1)
 			it1 := qSame.Documents(ctx)
 			defer it1.Stop()
@@ -450,6 +455,10 @@ func (s *firestoreService) ListAllCursor(ctx context.Context, pageSize int, page
 					UpdatedAt   interface{} `firestore:"updated_at"`
 				}
 				if err := doc.DataTo(&a); err != nil {
+					continue
+				}
+
+				if uint(a.ID) == lastID {
 					continue
 				}
 				items = append(items, sharedModels.Activity{

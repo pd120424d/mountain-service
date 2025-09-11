@@ -889,8 +889,13 @@ func (h *employeeHandler) GetShiftWarnings(ctx *gin.Context) {
 	log.Infof("Received Get Shift Warnings request for employee ID %s", employeeIDParam)
 
 	employeeID, err := strconv.Atoi(employeeIDParam)
-	if err != nil || employeeID <= 0 {
+	if err != nil {
 		log.Errorf("failed to extract url param, invalid employee ID: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
+		return
+	}
+	if employeeID <= 0 {
+		log.Errorf("invalid employee ID: %d", employeeID)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee ID"})
 		return
 	}

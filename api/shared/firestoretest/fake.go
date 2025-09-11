@@ -98,22 +98,37 @@ func (c *coll) Documents(ctx context.Context) firestorex.DocumentIterator {
 	}
 	// order
 	if c.ord != nil {
-		sort.Slice(items, func(i, j int) bool {
-			vi := items[i].data[c.ord.field]
-			vj := items[j].data[c.ord.field]
-			less := fmt.Sprint(vi) < fmt.Sprint(vj)
-			if c.ord.desc {
-				return !less
-			}
-			return less
-		})
+		if c.ord.field == firestorex.DocumentNameField {
+			sort.Slice(items, func(i, j int) bool {
+				less := items[i].id < items[j].id
+				if c.ord.desc {
+					return !less
+				}
+				return less
+			})
+		} else {
+			sort.Slice(items, func(i, j int) bool {
+				vi := items[i].data[c.ord.field]
+				vj := items[j].data[c.ord.field]
+				less := fmt.Sprint(vi) < fmt.Sprint(vj)
+				if c.ord.desc {
+					return !less
+				}
+				return less
+			})
+		}
 	}
 	// startAfter
 	if c.ord != nil && c.startAfter != nil {
 		cursor := fmt.Sprint(c.startAfter)
 		filtered := make([]doc, 0, len(items))
 		for _, d := range items {
-			val := fmt.Sprint(d.data[c.ord.field])
+			var val string
+			if c.ord.field == firestorex.DocumentNameField {
+				val = d.id
+			} else {
+				val = fmt.Sprint(d.data[c.ord.field])
+			}
 			if c.ord.desc {
 				if val < cursor {
 					filtered = append(filtered, d)

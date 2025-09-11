@@ -6,7 +6,7 @@ import { AuthService } from './services/auth.service';
 import { EmployeeService } from './employee/employee.service';
 import { UrgencyService } from './urgency/urgency.service';
 import { AppInitializationService } from './services/app-initialization.service';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 import { Employee } from './shared/models';
 
 describe('AppComponent', () => {
@@ -32,7 +32,7 @@ describe('AppComponent', () => {
 
   beforeEach(async () => {
     const translateSpy = jasmine.createSpyObj('TranslateService', ['use', 'setDefaultLang']);
-    const authSpy = jasmine.createSpyObj('AuthService', ['getRole', 'getUserId', 'isAuthenticated']);
+    const authSpy = jasmine.createSpyObj('AuthService', ['getRole', 'getUserId', 'isAuthenticated'], { authChanged$: of(null) });
     const employeeSpy = jasmine.createSpyObj('EmployeeService', ['getEmployeeById']);
     const appInitSpy = jasmine.createSpyObj('AppInitializationService', ['initialize', 'cleanup']);
     const urgencySpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated', 'refreshUnassignedCount'], { unassignedCount$: of(0) });
@@ -60,6 +60,7 @@ describe('AppComponent', () => {
     // Setup default return values
     appInitService.initialize.and.returnValue(Promise.resolve());
     appInitService.cleanup.and.returnValue();
+    urgencyService.refreshUnassignedCount.and.returnValue(of(0));
   });
 
   it('should create the app', () => {
@@ -268,8 +269,11 @@ describe('AppComponent', () => {
   });
 
   it('should subscribe to unassignedCount$ on init and update header badge', () => {
-    (urgencyService as any).unassignedCount$ = of(7);
+    const subject = new Subject<number>();
+    Object.defineProperty(urgencyService, 'unassignedCount$', { get: () => subject.asObservable() });
+    authService.isAuthenticated.and.returnValue(true);
     component.ngOnInit();
+    subject.next(7);
     expect(component.openUrgenciesCount).toBe(7);
   });
 

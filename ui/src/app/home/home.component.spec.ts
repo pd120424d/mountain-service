@@ -29,7 +29,7 @@ describe('HomeComponent', () => {
       providers: [
         ...sharedTestingProviders,
         { provide: NgxSpinnerService, useValue: spinnerSpy },
-        { provide: UrgencyService, useValue: jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated']) },
+        { provide: UrgencyService, useValue: jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated'], { unassignedCount$: of(3) }) },
         { provide: ToastrService, useValue: toastrSpy },
         { provide: AuthService, useValue: authSpy }
       ]
@@ -125,5 +125,12 @@ describe('HomeComponent', () => {
       authService.isAdmin.and.returnValue(true);
       expect(component.authService.isAdmin()).toBe(true);
     });
+
+  it('should reflect unassigned count from service observable', () => {
+    // provided unassignedCount$ emits 3 in providers
+    fixture.detectChanges();
+    expect(component.unassignedCount).toBe(3);
+  });
+
   });
 });
