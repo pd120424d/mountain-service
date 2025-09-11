@@ -13,7 +13,13 @@ service:
   type: ClusterIP
   port: 8083
 
-resources: {}
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
 
 ingress:
   enabled: true
@@ -71,6 +77,8 @@ pgbouncer:
 
 appEnv:
   DB_HOST: 127.0.0.1
+  GOMEMLIMIT: "400Mi"
+
   DB_PORT: "6432"
   DB_READ_HOST: 127.0.0.1
   DB_READ_PORT: "6433"

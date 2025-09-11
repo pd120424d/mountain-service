@@ -13,7 +13,13 @@ service:
   type: ClusterIP
   port: 8084
 
-resources: {}
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
 
 ingress:
   enabled: true
@@ -60,6 +66,8 @@ pgbouncer:
 appEnv:
   DB_HOST: 127.0.0.1
   DB_PORT: "6432"
+  GOMEMLIMIT: "400Mi"
+
   DB_SSLMODE: disable
   REDIS_ADDR: redis:6379
   GOOGLE_CLOUD_PROJECT: reflecting-card-469410-q1

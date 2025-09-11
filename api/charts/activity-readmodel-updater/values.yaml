@@ -12,7 +12,13 @@ service:
   type: ClusterIP
   port: 8090
 
-resources: {}
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
 
 secrets:
   dbCommon: db-common
@@ -40,6 +46,8 @@ appEnv:
   OUTBOX_POLL_INTERVAL_SECONDS: "10"
   HEALTH_PORT: "8090"
   LOG_LEVEL: info
+  GOMEMLIMIT: "400Mi"
+
   GCP_LOGGING_ENABLED: "true"
 
   SUBSCRIBER_NUM_GOROUTINES: "8"

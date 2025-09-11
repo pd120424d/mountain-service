@@ -13,7 +13,13 @@ service:
   type: ClusterIP
   port: 8090
 
-resources: {}
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: "300m"
+    memory: 128Mi
 
 ingress:
   enabled: true

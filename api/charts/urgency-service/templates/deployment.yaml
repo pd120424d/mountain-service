@@ -87,6 +87,8 @@ spec:
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
             - name: urgency_service_db
               valueFrom: {secretKeyRef: {name: {{ .Values.secrets.dbService }}, key: DB_NAME}}
+            - name: GOMEMLIMIT
+              value: {{ .Values.appEnv.GOMEMLIMIT | quote }}
             # GCP Logging Configuration
             - name: GCP_LOGGING_ENABLED
               value: "true"
