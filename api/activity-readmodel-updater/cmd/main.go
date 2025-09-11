@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
+
 	"strconv"
 	"syscall"
 	"time"
@@ -120,11 +122,20 @@ func main() {
 			w.Header().Set("Content-Type", "application/json")
 			ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 			defer cancel()
-			// Perform a lightweight Firestore operation
-			_, err := firestoreClient.Collections(ctx).Next()
-			if err != nil && err != iterator.Done {
+			// Firestore connectivity
+			if _, err := firestoreClient.Collections(ctx).Next(); err != nil && err != iterator.Done {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				w.Write([]byte(fmt.Sprintf(`{"status":"unhealthy","service":"activity-readmodel-updater","firestore_error":"%v"}`, err)))
+				return
+			}
+			// Pub/Sub topic/subscription existence
+			topic := pubsubClient.Topic(cfg.PubSubTopic)
+			sub := pubsubClient.Subscription(cfg.PubSubSubscription)
+			tExists, tErr := topic.Exists(ctx)
+			sExists, sErr := sub.Exists(ctx)
+			if tErr != nil || sErr != nil || !tExists || !sExists {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				w.Write([]byte(fmt.Sprintf(`{"status":"unhealthy","service":"activity-readmodel-updater","pubsub_topic_exists":%t,"pubsub_subscription_exists":%t,"topic_error":"%v","subscription_error":"%v"}`, tExists, sExists, tErr, sErr)))
 				return
 			}
 			w.WriteHeader(http.StatusOK)
@@ -148,26 +159,57 @@ func main() {
 		subscription.ReceiveSettings.NumGoroutines = cfg.SubscriberNumGoroutines
 		subscription.ReceiveSettings.MaxOutstandingMessages = cfg.SubscriberMaxOutstandingMessages
 		subscription.ReceiveSettings.MaxOutstandingBytes = cfg.SubscriberMaxOutstandingBytes
-		logger.Infof("Starting Pub/Sub subscriber: subscription=%s", cfg.PubSubSubscription)
 
 		// Sharded dispatcher ensures per-activity ordering, parallel across activities
 		dispatcher := events.NewShardedDispatcher(firebaseService, logger, cfg.ShardWorkers, cfg.ShardQueue)
-		err := subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-			ctx, reqID := utils.EnsureRequestID(ctx)
-			reqLog := logger.WithContext(ctx)
-			reqLog.Infof("Handling activity event: message_id=%s", msg.ID)
 
-			if err := dispatcher.Process(ctx, msg); err != nil {
-				reqLog.Errorf("Failed to handle activity event: error=%v, message_id=%s, request_id=%s", err, msg.ID, reqID)
-				msg.Nack()
-			} else {
-				reqLog.Infof("Successfully handled activity event: message_id=%s", msg.ID)
-				msg.Ack()
+		backoff := time.Second
+		attempt := 0
+		for {
+			if ctx.Err() != nil {
+				logger.Infof("Subscriber context canceled; exiting receive loop")
+				return
 			}
-		})
+			attempt++
+			logger.Infof("Starting Pub/Sub subscriber receive attempt=%d subscription=%s", attempt, cfg.PubSubSubscription)
+			err := subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+				defer func() {
+					if r := recover(); r != nil {
+						logger.Errorf("Panic in subscriber handler: %v\nstack=%s\nmessage_id=%s", r, string(debug.Stack()), msg.ID)
+						msg.Nack()
+					}
+				}()
+				ctx, reqID := utils.EnsureRequestID(ctx)
+				reqLog := logger.WithContext(ctx)
+				reqLog.Infof("Handling activity event: message_id=%s", msg.ID)
 
-		if err != nil {
-			logger.Errorf("Pub/Sub subscriber error: %v", err)
+				if err := dispatcher.Process(ctx, msg); err != nil {
+					reqLog.Errorf("Failed to handle activity event: error=%v, message_id=%s, request_id=%s", err, msg.ID, reqID)
+					msg.Nack()
+				} else {
+					reqLog.Infof("Successfully handled activity event: message_id=%s", msg.ID)
+					msg.Ack()
+				}
+			})
+
+			if err != nil {
+				logger.Errorf("Pub/Sub Receive returned with error: %v", err)
+			} else {
+				logger.Errorf("Pub/Sub Receive returned without error (unexpected); will retry")
+			}
+
+			sleep := backoff
+			if backoff < 30*time.Second {
+				backoff *= 2
+			}
+			logger.Infof("Retrying subscriber after backoff=%s (attempt=%d)", sleep, attempt)
+			select {
+			case <-time.After(sleep):
+				continue
+			case <-ctx.Done():
+				logger.Infof("Context canceled during backoff; exiting subscriber loop")
+				return
+			}
 		}
 	}()
 
