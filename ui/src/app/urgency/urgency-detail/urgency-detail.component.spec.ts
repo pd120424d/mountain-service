@@ -58,7 +58,7 @@ describe('UrgencyDetailComponent', () => {
     };
 
     const urgencyServiceSpy = jasmine.createSpyObj('UrgencyService', ['getUrgencyById', 'assignUrgency', 'unassignUrgency', 'closeUrgency']);
-    const activityServiceSpy = jasmine.createSpyObj('ActivityService', ['getActivitiesByUrgency', 'getActivitiesWithPagination', 'getActivitiesCursor', 'createActivity']);
+    const activityServiceSpy = jasmine.createSpyObj('ActivityService', ['getActivitiesByUrgency', 'getActivitiesWithPagination', 'getActivitiesCursor', 'createActivity', 'pollForActivityInUrgency']);
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['getUserId', 'isAdmin']);
     const toastrServiceSpy = jasmine.createSpyObj('ToastrService', ['success', 'error', 'warning']);
     const activatedRouteSpy = jasmine.createSpyObj('ActivatedRoute', [], {
@@ -139,17 +139,20 @@ describe('UrgencyDetailComponent', () => {
 
     authService.getUserId.and.returnValue('1');
     activityService.createActivity.and.returnValue(of(newActivity));
+    activityService.pollForActivityInUrgency.and.returnValue(of(void 0));
     activityService.getActivitiesCursor.and.returnValue(of({ activities: [newActivity, ...mockActivities], nextPageToken: undefined }));
 
     component.onSubmitActivity();
 
     expect(activityService.createActivity).toHaveBeenCalled();
+    expect(activityService.pollForActivityInUrgency).toHaveBeenCalledWith(1, 2, jasmine.any(Object));
     expect(toastrService.success).toHaveBeenCalled();
     expect(component.isSubmittingActivity).toBeFalse();
+    expect(component.isSyncingActivity).toBeFalse();
   });
 
 
-  it('should prepend activity immediately and refresh list after short delay', () => {
+  it('should show syncing and refresh list after poll resolves', () => {
     const newActivity: Activity = {
       id: 99,
       description: 'Immediate note',
@@ -168,19 +171,16 @@ describe('UrgencyDetailComponent', () => {
     component.activityForm.patchValue({ description: 'Immediate note' });
     authService.getUserId.and.returnValue('1');
     activityService.createActivity.and.returnValue(of(newActivity));
+    activityService.pollForActivityInUrgency.and.returnValue(of(void 0));
 
     spyOn(component, 'loadActivities');
 
-    jasmine.clock().install();
-    try {
-      component.onSubmitActivity();
-      expect(component.activities[0]).toEqual(newActivity);
+    component.onSubmitActivity();
 
-      jasmine.clock().tick(900);
-      expect(component.loadActivities).toHaveBeenCalled();
-    } finally {
-      jasmine.clock().uninstall();
-    }
+    expect(activityService.createActivity).toHaveBeenCalled();
+    expect(activityService.pollForActivityInUrgency).toHaveBeenCalledWith(1, 99, jasmine.any(Object));
+    expect(component.loadActivities).toHaveBeenCalled();
+    expect(component.isSyncingActivity).toBeFalse();
   });
 
   it('canAddActivity returns true only when assigned and InProgress', () => {

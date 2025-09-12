@@ -88,12 +88,17 @@ func (d *shardedDispatcher) Process(ctx context.Context, msg *pubsub.Message) er
 	idx := int(hashKey(key)) % len(d.chans)
 	wi := workItem{ctx: ctx, ev: ev, done: make(chan error, 1)}
 
+	// If the caller's context is already canceled returning that immediately
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	select {
+	case <-ctx.Done():
+		return ctx.Err()
 	case d.chans[idx] <- wi:
 		// wait for completion to preserve Pub/Sub semantics
 		return <-wi.done
-	case <-ctx.Done():
-		return ctx.Err()
 	case <-time.After(d.enqueueTimeout):
 		// Avoid stalling Receive loop when a shard queue is saturated
 		qLen, qCap := len(d.chans[idx]), cap(d.chans[idx])

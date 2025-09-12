@@ -13,8 +13,13 @@ command -v go-acc >/dev/null || {
 
 cd api
 
-SERVICES=("activity" "activity-readmodel-updater" "employee" "urgency") # Add "activity-readmodel-updater" when the tests are implemented and have enough coverage
-THRESHOLD=75.0
+ARG_SERVICE="$1"
+SERVICES=("activity" "activity-readmodel-updater" "employee" "urgency")
+if [ -n "$ARG_SERVICE" ] && [ "$ARG_SERVICE" != "all" ]; then
+  SERVICES=("$ARG_SERVICE")
+fi
+
+THRESHOLD=${THRESHOLD:-75.0}
 OVERALL_SUCCESS=true
 
 echo "Running backend coverage tests (threshold: $THRESHOLD%)"
