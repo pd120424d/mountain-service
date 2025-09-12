@@ -148,7 +148,7 @@
               </div>
               <div class="activity-meta">
                 <div class="activity-info">
-                  <span class="activity-date">{{ getActivityDisplayTime(activity) }}</span>
+                  <span class="activity-date" [title]="activity.createdAt | localDateTime: { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }">{{ getActivityDisplayTime(activity) }}</span>
                   <span *ngIf="activity.employeeId" class="activity-actor">
                     {{ 'URGENCY_DETAIL.ADDED_BY' | translate }} {{ getEmployeeName(activity.employeeId) }}
                   </span>

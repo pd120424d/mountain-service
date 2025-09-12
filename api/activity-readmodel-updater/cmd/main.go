@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -227,10 +228,15 @@ func main() {
 				}
 			})
 
-			if err != nil {
-				logger.Errorf("Pub/Sub Receive returned with error: %v", err)
+			// Handle Receive termination conditions explicitly
+			if err == nil {
+				logger.Warnf("Pub/Sub Receive returned nil (no error); restarting receive loop")
+				backoff = time.Second
+			} else if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				logger.Infof("Pub/Sub Receive stopped due to context cancellation: %v; exiting subscriber loop", err)
+				return
 			} else {
-				logger.Errorf("Pub/Sub Receive returned without error (unexpected); will retry")
+				logger.Warnf("Pub/Sub Receive returned error: %v; will retry", err)
 			}
 
 			sleep := backoff
