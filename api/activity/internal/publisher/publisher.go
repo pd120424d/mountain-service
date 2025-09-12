@@ -47,7 +47,7 @@ type Publisher struct {
 
 func New(log utils.Logger, repo repositories.OutboxRepository, pubsubClient *pubsub.Client, cfg Config) *Publisher {
 	if cfg.Interval <= 0 {
-		cfg.Interval = 10 * time.Second
+		cfg.Interval = 1 * time.Second // lower default to reduce e2e latency
 	}
 	if cfg.BatchSize <= 0 {
 		cfg.BatchSize = 100
@@ -57,31 +57,97 @@ func New(log utils.Logger, repo repositories.OutboxRepository, pubsubClient *pub
 		t := p.pubsub.Topic(name)
 		// Moderate batching/concurrency to improve throughput while staying safe by default
 		t.PublishSettings.NumGoroutines = 4
-		t.PublishSettings.DelayThreshold = 50 * time.Millisecond
-		t.PublishSettings.CountThreshold = 200
+		t.PublishSettings.DelayThreshold = 25 * time.Millisecond // flush faster under low volume
+		t.PublishSettings.CountThreshold = 100                   // smaller threshold improves latency
 		return realTopic{t: t}
 	}
 	return p
 }
 
 func (p *Publisher) Start(ctx context.Context) {
-	ctx, reqID := utils.EnsureRequestID(ctx)
-	p.log.Infof("Starting outbox publisher: topic=%s interval=%s", p.config.TopicName, p.config.Interval)
-	ticker := time.NewTicker(p.config.Interval)
+	ctx, _ = utils.EnsureRequestID(ctx)
+	// Adaptive polling: fast when backlog exists, exponential backoff when idle.
+	minInterval := 1 * time.Second
+	maxInterval := p.config.Interval
+	if maxInterval < minInterval {
+		maxInterval = minInterval
+	}
+	interval := minInterval
+
+	minBatch := 50
+	maxBatch := 2000
+	batch := p.config.BatchSize
+	if batch < minBatch {
+		batch = minBatch
+	}
+
+	p.log.Infof("Starting outbox publisher: topic=%s minInterval=%s maxInterval=%s initialBatch=%d", p.config.TopicName, minInterval, maxInterval, batch)
+
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				p.log.WithContext(ctx).Info("Stopping outbox publisher")
 				return
-			case <-ticker.C:
-				if err := p.processOnce(ctx); err != nil {
-					p.log.WithContext(ctx).Errorf("publisher cycle error: %v", err)
-				}
+			default:
 			}
+
+			// Peek to decide adaptively; tolerate errors by backing off
+			events, err := p.repo.GetUnpublishedEvents(ctx, batch)
+			if err != nil {
+				p.log.WithContext(ctx).Errorf("get unpublished (peek) failed: %v", err)
+				time.Sleep(interval)
+				// back off a bit on error
+				if interval < maxInterval {
+					interval *= 2
+					if interval > maxInterval {
+						interval = maxInterval
+					}
+				}
+				continue
+			}
+
+			if len(events) == 0 {
+				// No backlog: back off interval up to max and slowly shrink batch down
+				if interval < maxInterval {
+					interval *= 2
+					if interval > maxInterval {
+						interval = maxInterval
+					}
+				}
+				if batch > minBatch {
+					batch = batch / 2
+					if batch < minBatch {
+						batch = minBatch
+					}
+				}
+				time.Sleep(interval)
+				continue
+			}
+
+			// Backlog present: run a publish cycle
+			if err := p.processOnce(ctx); err != nil {
+				p.log.WithContext(ctx).Errorf("publisher cycle error: %v", err)
+			}
+
+			// If we exactly filled the batch on peek, likely more backlog -> speed up and grow batch
+			if len(events) == batch {
+				if batch < maxBatch {
+					batch *= 2
+					if batch > maxBatch {
+						batch = maxBatch
+					}
+				}
+				interval = minInterval
+				// Immediately continue to drain without sleeping
+				continue
+			}
+
+			// Some backlog but less than batch: keep interval low for low latency and small sleep
+			interval = minInterval
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
-	_ = reqID // reserved for future correlation across cycles
 }
 
 func (p *Publisher) processOnce(ctx context.Context) error {

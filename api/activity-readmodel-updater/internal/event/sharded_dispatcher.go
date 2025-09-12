@@ -4,7 +4,9 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"hash/fnv"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/service"
@@ -23,9 +25,11 @@ type ShardedDispatcher interface {
 // This preserves Pub/Sub acking semantics (ack/nack after processing) and keeps
 // ordering per key within a shard.
 type shardedDispatcher struct {
-	fb     service.FirebaseService
-	logger utils.Logger
-	chans  []chan workItem
+	fb             service.FirebaseService
+	logger         utils.Logger
+	chans          []chan workItem
+	enqueueTimeout time.Duration
+	workTimeout    time.Duration
 }
 
 type workItem struct {
@@ -41,7 +45,13 @@ func NewShardedDispatcher(fb service.FirebaseService, logger utils.Logger, shard
 	if queueSize <= 0 {
 		queueSize = 1024
 	}
-	d := &shardedDispatcher{fb: fb, logger: logger.WithName("shardedDispatcher"), chans: make([]chan workItem, shards)}
+	d := &shardedDispatcher{
+		fb:             fb,
+		logger:         logger.WithName("shardedDispatcher"),
+		chans:          make([]chan workItem, shards),
+		enqueueTimeout: 2 * time.Second,
+		workTimeout:    15 * time.Second,
+	}
 	for i := 0; i < shards; i++ {
 		ch := make(chan workItem, queueSize)
 		d.chans[i] = ch
@@ -52,7 +62,10 @@ func NewShardedDispatcher(fb service.FirebaseService, logger utils.Logger, shard
 
 func (d *shardedDispatcher) worker(ch <-chan workItem) {
 	for wi := range ch {
-		err := d.fb.SyncActivity(wi.ctx, wi.ev)
+		// Bound per-item processing time to avoid indefinite stalls
+		ctx, cancel := context.WithTimeout(wi.ctx, d.workTimeout)
+		err := d.fb.SyncActivity(ctx, wi.ev)
+		cancel()
 		wi.done <- err
 		close(wi.done)
 	}
@@ -74,12 +87,18 @@ func (d *shardedDispatcher) Process(ctx context.Context, msg *pubsub.Message) er
 	key := shardKey(ev, msg)
 	idx := int(hashKey(key)) % len(d.chans)
 	wi := workItem{ctx: ctx, ev: ev, done: make(chan error, 1)}
+
 	select {
 	case d.chans[idx] <- wi:
 		// wait for completion to preserve Pub/Sub semantics
 		return <-wi.done
 	case <-ctx.Done():
 		return ctx.Err()
+	case <-time.After(d.enqueueTimeout):
+		// Avoid stalling Receive loop when a shard queue is saturated
+		qLen, qCap := len(d.chans[idx]), cap(d.chans[idx])
+		d.logger.WithContext(ctx).Warnf("Shard queue saturated: shard=%d len=%d cap=%d; nacking for retry", idx, qLen, qCap)
+		return fmt.Errorf("shard %d queue full (%d/%d)", idx, qLen, qCap)
 	}
 }
 
