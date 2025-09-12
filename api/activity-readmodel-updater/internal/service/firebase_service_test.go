@@ -5,11 +5,130 @@ import (
 	"testing"
 	"time"
 
+	"errors"
+
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/firestoretest"
+	"github.com/pd120424d/mountain-service/api/shared/firestorex"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
 )
+
+// minimal error-injecting Firestorex client for error-path coverage
+// uses only the methods SyncActivity touches (Collection -> Doc -> Get/Set/Update/Delete)
+
+type errDocRef struct{ setErr, updErr, delErr error }
+
+func (d *errDocRef) Get(ctx context.Context) (firestorex.DocumentSnapshot, error) {
+	return nil, errors.New("notfound")
+}
+func (d *errDocRef) Set(ctx context.Context, data interface{}) (*firestorex.WriteResult, error) {
+	return nil, d.setErr
+}
+func (d *errDocRef) Update(ctx context.Context, updates []firestorex.Update) (*firestorex.WriteResult, error) {
+	return nil, d.updErr
+}
+func (d *errDocRef) Delete(ctx context.Context) (*firestorex.WriteResult, error) {
+	return nil, d.delErr
+}
+
+type errColl struct{ doc *errDocRef }
+
+// iterator-erroring client to cover iteration error branches
+type iterErr struct{}
+
+func (it *iterErr) Next() (firestorex.DocumentSnapshot, error) { return nil, errors.New("iter") }
+func (it *iterErr) Stop()                                      {}
+
+type stubDocRef struct{}
+
+func (s *stubDocRef) Get(ctx context.Context) (firestorex.DocumentSnapshot, error) {
+	return nil, errors.New("stub")
+}
+func (s *stubDocRef) Set(ctx context.Context, data interface{}) (*firestorex.WriteResult, error) {
+	return &firestorex.WriteResult{}, nil
+}
+func (s *stubDocRef) Update(ctx context.Context, updates []firestorex.Update) (*firestorex.WriteResult, error) {
+	return &firestorex.WriteResult{}, nil
+}
+func (s *stubDocRef) Delete(ctx context.Context) (*firestorex.WriteResult, error) {
+	return &firestorex.WriteResult{}, nil
+}
+
+type collIterErr struct{}
+
+// iterator that returns first a bad snapshot (DataTo error) then a good one
+type badSnap struct{}
+
+func (s *badSnap) DataTo(v interface{}) error { return errors.New("datato") }
+func (s *badSnap) ID() string                 { return "bad" }
+
+type goodSnap struct{}
+
+func (s *goodSnap) DataTo(v interface{}) error {
+	if doc, ok := v.(*FirebaseActivityDoc); ok {
+		doc.ID = 77
+		doc.UrgencyID = 9
+		doc.EmployeeID = 3
+		doc.Description = "ok"
+		doc.CreatedAt = time.Now().UTC()
+		return nil
+	}
+	return nil
+}
+func (s *goodSnap) ID() string { return "good" }
+
+type iterFirstBadThenGood struct{ i int }
+
+func (it *iterFirstBadThenGood) Next() (firestorex.DocumentSnapshot, error) {
+	it.i++
+	switch it.i {
+	case 1:
+		return &badSnap{}, nil
+	case 2:
+		return &goodSnap{}, nil
+	default:
+		return nil, firestorex.Done
+	}
+}
+func (it *iterFirstBadThenGood) Stop() {}
+
+type collBadGood struct{}
+
+func (c *collBadGood) Doc(id string) firestorex.DocumentRef                            { return &stubDocRef{} }
+func (c *collBadGood) Where(field, op string, value interface{}) firestorex.Query      { return c }
+func (c *collBadGood) OrderBy(field string, dir firestorex.Direction) firestorex.Query { return c }
+func (c *collBadGood) Limit(n int) firestorex.Query                                    { return c }
+func (c *collBadGood) Documents(ctx context.Context) firestorex.DocumentIterator {
+	return &iterFirstBadThenGood{}
+}
+func (c *collBadGood) StartAfter(v interface{}) firestorex.Query { return c }
+
+type clientBadGood struct{}
+
+func (cl *clientBadGood) Collection(name string) firestorex.CollectionRef { return &collBadGood{} }
+
+func (c *collIterErr) Doc(id string) firestorex.DocumentRef                            { return &stubDocRef{} }
+func (c *collIterErr) Where(field, op string, value interface{}) firestorex.Query      { return c }
+func (c *collIterErr) OrderBy(field string, dir firestorex.Direction) firestorex.Query { return c }
+func (c *collIterErr) Limit(n int) firestorex.Query                                    { return c }
+func (c *collIterErr) Documents(ctx context.Context) firestorex.DocumentIterator       { return &iterErr{} }
+func (c *collIterErr) StartAfter(v interface{}) firestorex.Query                       { return c }
+
+type clientIterErr struct{}
+
+func (cl *clientIterErr) Collection(name string) firestorex.CollectionRef { return &collIterErr{} }
+
+func (c *errColl) Doc(id string) firestorex.DocumentRef                            { return c.doc }
+func (c *errColl) Where(field, op string, value interface{}) firestorex.Query      { return c }
+func (c *errColl) OrderBy(field string, dir firestorex.Direction) firestorex.Query { return c }
+func (c *errColl) Limit(n int) firestorex.Query                                    { return c }
+func (c *errColl) Documents(ctx context.Context) firestorex.DocumentIterator       { return nil }
+func (c *errColl) StartAfter(v interface{}) firestorex.Query                       { return c }
+
+type errClient struct{ col *errColl }
+
+func (ec *errClient) Collection(name string) firestorex.CollectionRef { return ec.col }
 
 func TestFirebaseService_GetActivitiesByUrgency(t *testing.T) {
 	t.Parallel()
@@ -39,6 +158,26 @@ func TestFirebaseService_GetActivitiesByUrgency(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, items, 2)
 	})
+
+	// iterator failure surfaces error
+	t.Run("it returns error when iterator fails", func(t *testing.T) {
+		ctx := context.Background()
+		svcErr := NewFirebaseService(&clientIterErr{}, logger)
+		items, err := svcErr.GetActivitiesByUrgency(ctx, 2)
+		assert.Error(t, err)
+		assert.Nil(t, items)
+	})
+
+	// malformed doc is skipped; good doc is returned
+	t.Run("it skips bad snapshot and returns good one", func(t *testing.T) {
+		ctx := context.Background()
+		svcBG := NewFirebaseService(&clientBadGood{}, logger)
+		items, err := svcBG.GetActivitiesByUrgency(ctx, 9)
+		assert.NoError(t, err)
+		assert.Len(t, items, 1)
+		assert.Equal(t, uint(77), items[0].ID)
+	})
+
 }
 
 func TestFirebaseService_GetAllActivities(t *testing.T) {
@@ -50,6 +189,24 @@ func TestFirebaseService_GetAllActivities(t *testing.T) {
 		{"id": int64(2), "urgency_id": int64(3), "employee_id": int64(6), "description": "B", "created_at": "2025-01-03T10:00:00Z"},
 		{"id": int64(3), "urgency_id": int64(2), "employee_id": int64(7), "description": "C", "created_at": "2025-01-04T10:00:00Z"},
 	})
+
+	// iterator failure surfaces error
+	t.Run("it returns error when iterator fails", func(t *testing.T) {
+		ctx := context.Background()
+		svcErr := NewFirebaseService(&clientIterErr{}, logger)
+		items, err := svcErr.GetAllActivities(ctx, 10)
+		assert.Error(t, err)
+		assert.Nil(t, items)
+	})
+
+	t.Run("limit zero still returns data (no Limit applied)", func(t *testing.T) {
+		ctx := context.Background()
+		svcLocal := NewFirebaseService(fake, logger)
+		items, err := svcLocal.GetAllActivities(ctx, 0)
+		assert.NoError(t, err)
+		assert.Len(t, items, 3)
+	})
+
 	svc := NewFirebaseService(fake, logger)
 	t.Run("it returns error when Firebase client is nil", func(t *testing.T) {
 		logger := utils.NewTestLogger()
@@ -59,7 +216,18 @@ func TestFirebaseService_GetAllActivities(t *testing.T) {
 		activities, err := service.GetAllActivities(context.Background(), 10)
 		assert.Error(t, err)
 		assert.Nil(t, activities)
+
 		assert.Contains(t, err.Error(), "Firestore client is nil")
+	})
+
+	// malformed doc is skipped; good doc is returned
+	t.Run("it skips bad snapshot and returns good one", func(t *testing.T) {
+		ctx := context.Background()
+		svcBG := NewFirebaseService(&clientBadGood{}, logger)
+		items, err := svcBG.GetAllActivities(ctx, 10)
+		assert.NoError(t, err)
+		assert.Len(t, items, 1)
+		assert.Equal(t, uint(77), items[0].ID)
 	})
 
 	t.Run("it succeeds when GetAllActivities orders desc and limits", func(t *testing.T) {
@@ -415,6 +583,52 @@ func TestFirebaseService_SyncActivity(t *testing.T) {
 			t.Fatalf("doc should be deleted by newer delete")
 		}
 	})
+
+	// error-path coverage using error-injecting client
+
+	t.Run("returns error when ActivityID is zero", func(t *testing.T) {
+		err := svc.SyncActivity(ctx, activityV1.ActivityEvent{Type: "CREATE", ActivityID: 0, CreatedAt: time.Now().UTC()})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid activity id")
+	})
+
+	// unknown type with non-nil client hits default branch
+	t.Run("returns error for unknown type with client", func(t *testing.T) {
+		logger := utils.NewTestLogger()
+		ec := &errClient{col: &errColl{doc: &errDocRef{}}}
+		s := NewFirebaseService(ec, logger)
+		err := s.SyncActivity(ctx, activityV1.ActivityEvent{Type: "UNKNOWN", ActivityID: 201})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unknown event type")
+	})
+
+	t.Run("CREATE returns error when Set fails", func(t *testing.T) {
+		logger := utils.NewTestLogger()
+		ec := &errClient{col: &errColl{doc: &errDocRef{setErr: assert.AnError}}}
+		s := NewFirebaseService(ec, logger)
+		err := s.SyncActivity(ctx, activityV1.ActivityEvent{Type: "CREATE", ActivityID: 202, CreatedAt: time.Now().UTC()})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to create activity in Firebase")
+	})
+
+	t.Run("UPDATE returns error when Update fails", func(t *testing.T) {
+		logger := utils.NewTestLogger()
+		ec := &errClient{col: &errColl{doc: &errDocRef{updErr: assert.AnError}}}
+		s := NewFirebaseService(ec, logger)
+		err := s.SyncActivity(ctx, activityV1.ActivityEvent{Type: "UPDATE", ActivityID: 203, CreatedAt: time.Now().UTC()})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to update activity in Firebase")
+	})
+
+	t.Run("DELETE returns error when Delete fails", func(t *testing.T) {
+		logger := utils.NewTestLogger()
+		ec := &errClient{col: &errColl{doc: &errDocRef{delErr: assert.AnError}}}
+		s := NewFirebaseService(ec, logger)
+		err := s.SyncActivity(ctx, activityV1.ActivityEvent{Type: "DELETE", ActivityID: 204})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to delete activity in Firebase")
+	})
+
 }
 
 func TestFirebaseService_HealthCheck(t *testing.T) {

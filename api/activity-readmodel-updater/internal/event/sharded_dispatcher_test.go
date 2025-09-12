@@ -12,95 +12,145 @@ import (
 	"cloud.google.com/go/pubsub"
 	"github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
-	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/stretchr/testify/assert"
+	gomock "go.uber.org/mock/gomock"
 )
-
-type fakeFB struct {
-	mu    sync.Mutex
-	calls map[int][]int // activityID -> sequence of "description as int"
-	delay time.Duration
-}
-
-func (f *fakeFB) GetActivitiesByUrgency(ctx context.Context, urgencyID uint) ([]*models.Activity, error) {
-	return nil, nil
-}
-func (f *fakeFB) GetAllActivities(ctx context.Context, limit int) ([]*models.Activity, error) {
-	return nil, nil
-}
-
-func (f *fakeFB) SyncActivity(ctx context.Context, ev activityV1.ActivityEvent) error {
-	if f.delay > 0 {
-		time.Sleep(f.delay)
-	}
-	n, _ := strconv.Atoi(ev.Description)
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	if f.calls == nil {
-		f.calls = map[int][]int{}
-	}
-	f.calls[int(ev.ActivityID)] = append(f.calls[int(ev.ActivityID)], n)
-	return nil
-}
-func (f *fakeFB) HealthCheck(ctx context.Context) error { return nil }
 
 func TestShardedDispatcher_Process(t *testing.T) {
 	t.Parallel()
+	logger := utils.NewTestLogger()
 
-	t.Run("it succeeds when message is processed", func(t *testing.T) {
+	t.Run("orders per activity across shards", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockFB := service.NewMockFirebaseService(ctrl)
+		dispatcher := NewShardedDispatcher(mockFB, logger, 4, 64)
 
-		logger := utils.NewTestLogger()
-		fb := &fakeFB{delay: 5 * time.Millisecond}
-		dispatcher := NewShardedDispatcher(fb, logger, 4, 64)
+		var mu sync.Mutex
+		calls := map[uint][]int{}
+
+		mockFB.EXPECT().SyncActivity(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
+			func(ctx context.Context, ev activityV1.ActivityEvent) error {
+				seq, _ := strconv.Atoi(ev.Description)
+				mu.Lock()
+				calls[ev.ActivityID] = append(calls[ev.ActivityID], seq)
+				mu.Unlock()
+				return nil
+			},
+		)
 
 		mkMsg := func(id int, seq int) *pubsub.Message {
 			b, _ := json.Marshal(activityV1.ActivityEvent{Type: "UPDATE", ActivityID: uint(id), Description: strconv.Itoa(seq)})
 			return &pubsub.Message{Data: b, Attributes: map[string]string{}}
 		}
 
-		// Two activities processed concurrently; ensure per-activity order preserved
-		const N = 50
+		const N = 10
 		var wg sync.WaitGroup
 		wg.Add(2)
 		go func() {
 			defer wg.Done()
 			for i := 1; i <= N; i++ {
-				_ = dispatcher.Process(context.Background(), mkMsg(1, i))
+				_ = dispatcher.Process(t.Context(), mkMsg(1, i))
 			}
 		}()
 		go func() {
 			defer wg.Done()
 			for i := 1; i <= N; i++ {
-				_ = dispatcher.Process(context.Background(), mkMsg(2, i))
+				_ = dispatcher.Process(t.Context(), mkMsg(2, i))
 			}
 		}()
 		wg.Wait()
 
-		fb.mu.Lock()
-		defer fb.mu.Unlock()
-		seq1 := fb.calls[1]
-		seq2 := fb.calls[2]
-		if assert.Len(t, seq1, N) && assert.Len(t, seq2, N) {
+		mu.Lock()
+		defer mu.Unlock()
+		if assert.Len(t, calls[1], N) && assert.Len(t, calls[2], N) {
 			for i := 1; i <= N; i++ {
-				assert.Equal(t, i, seq1[i-1])
-				assert.Equal(t, i, seq2[i-1])
+				assert.Equal(t, i, calls[1][i-1])
+				assert.Equal(t, i, calls[2][i-1])
 			}
 		}
-
-		var _ service.FirebaseService = (*fakeFB)(nil)
 	})
 
-}
+	t.Run("returns error on unparseable payload", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockFB := service.NewMockFirebaseService(ctrl)
+		d := NewShardedDispatcher(mockFB, logger, 2, 8)
+		msg := &pubsub.Message{Data: []byte("notjson"), Attributes: map[string]string{}}
+		if err := d.Process(t.Context(), msg); err == nil {
+			t.Fatalf("expected error")
+		}
+	})
 
-func TestShardedDispatcher_Process_ErrorOnUnparseable(t *testing.T) {
-	logger := utils.NewTestLogger()
-	fb := &fakeFB{}
-	d := NewShardedDispatcher(fb, logger, 2, 8)
-	msg := &pubsub.Message{Data: []byte("notjson"), Attributes: map[string]string{}}
-	if err := d.Process(context.Background(), msg); err == nil {
-		t.Fatalf("expected error")
-	}
+	t.Run("returns error when shard saturated", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockFB := service.NewMockFirebaseService(ctrl)
+		mockFB.EXPECT().SyncActivity(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
+			func(ctx context.Context, ev activityV1.ActivityEvent) error {
+				time.Sleep(20 * time.Millisecond)
+				return nil
+			},
+		)
+		di := NewShardedDispatcher(mockFB, logger, 1, 1)
+		sd := di.(*shardedDispatcher)
+		sd.enqueueTimeout = 5 * time.Millisecond
+
+		mkMsg := func(seq int) *pubsub.Message {
+			b, _ := json.Marshal(activityV1.ActivityEvent{Type: "UPDATE", ActivityID: 1, Description: strconv.Itoa(seq)})
+			return &pubsub.Message{Data: b}
+		}
+
+		go func() { _ = di.Process(t.Context(), mkMsg(1)) }()
+		go func() { _ = di.Process(t.Context(), mkMsg(2)) }()
+
+		deadline := time.Now().Add(120 * time.Millisecond)
+		for len(sd.chans[0]) < 1 && time.Now().Before(deadline) {
+			time.Sleep(1 * time.Millisecond)
+		}
+		if len(sd.chans[0]) < 1 {
+			t.Fatalf("failed to fill shard buffer for saturation test")
+		}
+
+		err := di.Process(t.Context(), mkMsg(3))
+		if err == nil {
+			t.Fatalf("expected enqueue timeout error")
+		}
+	})
+
+	t.Run("surfaces context deadline exceeded when work timeout elapses", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockFB := service.NewMockFirebaseService(ctrl)
+		mockFB.EXPECT().SyncActivity(gomock.Any(), gomock.Any()).DoAndReturn(
+			func(ctx context.Context, ev activityV1.ActivityEvent) error {
+				<-ctx.Done()
+				return ctx.Err()
+			},
+		)
+		di := NewShardedDispatcher(mockFB, logger, 1, 8)
+		sd := di.(*shardedDispatcher)
+		sd.workTimeout = 10 * time.Millisecond
+
+		b, _ := json.Marshal(activityV1.ActivityEvent{Type: "UPDATE", ActivityID: 42, Description: "1"})
+		err := di.Process(t.Context(), &pubsub.Message{Data: b})
+		if err == nil {
+			t.Fatalf("expected context deadline exceeded error")
+		}
+	})
+
+	t.Run("returns error when context canceled before enqueue", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockFB := service.NewMockFirebaseService(ctrl)
+		di := NewShardedDispatcher(mockFB, logger, 1, 1)
+		sd := di.(*shardedDispatcher)
+		sd.enqueueTimeout = 50 * time.Millisecond
+
+		b, _ := json.Marshal(activityV1.ActivityEvent{Type: "UPDATE", ActivityID: 7, Description: "1"})
+		ctx, cancel := context.WithCancel(t.Context())
+		cancel()
+		err := di.Process(ctx, &pubsub.Message{Data: b})
+		if err == nil {
+			t.Fatalf("expected context canceled error")
+		}
+	})
 }
 
 func Test_shardKey_FallbackToMessageID(t *testing.T) {

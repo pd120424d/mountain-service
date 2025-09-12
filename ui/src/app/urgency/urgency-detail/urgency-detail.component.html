@@ -119,6 +119,10 @@
               <span *ngIf="isSubmittingActivity">{{ 'URGENCY_DETAIL.SUBMITTING_ACTIVITY' | translate }}</span>
               <span *ngIf="!isSubmittingActivity">{{ 'URGENCY_DETAIL.ADD_ACTIVITY' | translate }}</span>
             </button>
+              <div class="syncing-inline" *ngIf="isSyncingActivity" title="Syncing...">
+                <div class="spinner-small"></div>
+              </div>
+
           </div>
         </form>
       </div>

@@ -36,7 +36,7 @@ while [[ $# -gt 0 ]]; do
             echo "  activity              Run coverage for activity service"
             echo "  urgency               Run coverage for urgency service"
             echo "  employee              Run coverage for employee service"
-            # echo "  activity-readmodel    Run coverage for activity-readmodel-updater"
+            echo "  activity-readmodel    Run coverage for activity-readmodel-updater"
             echo "  all                   Run coverage for all services (default)"
             echo ""
             echo "Options:"
@@ -148,7 +148,7 @@ declare -A SERVICES
 SERVICES[activity]="$PROJECT_ROOT/activity"
 SERVICES[urgency]="$PROJECT_ROOT/urgency"
 SERVICES[employee]="$PROJECT_ROOT/employee"
-# SERVICES[activity-readmodel]="$PROJECT_ROOT/activity-readmodel-updater"
+SERVICES[activity-readmodel]="$PROJECT_ROOT/activity-readmodel-updater"
 
 # Main execution logic
 FAILED_SERVICES=()

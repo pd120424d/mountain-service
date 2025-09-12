@@ -41,6 +41,7 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   isLoadingActivities = false;
   isLoadingMore = false;
   isSubmittingActivity = false;
+  isSyncingActivity = false;
   nextPageToken: string | null = null;
   private intersectionObserver?: IntersectionObserver;
   // Pagination (legacy, retained for compatibility)
@@ -231,9 +232,6 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
 
       this.activityService.createActivity(activityRequest).subscribe({
         next: (created) => {
-          if (created) {
-            this.activities = [created, ...this.activities];
-          }
           this.toastr.success(this.translate.instant('URGENCY_DETAIL.ACTIVITY_ADDED_SUCCESS'));
           this.activityForm.reset();
           this.isSubmittingActivity = false;
@@ -241,7 +239,19 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
           setTimeout(() => {
             this.activityTextarea?.nativeElement?.focus();
           }, 100);
-          setTimeout(() => this.loadActivities(), 800);
+
+          // Poll in background until the created id is visible in the read model, then refresh
+          if (created?.id && this.urgencyId) {
+            this.isSyncingActivity = true;
+            this.activityService
+              .pollForActivityInUrgency(this.urgencyId, created.id, { timeoutMs: 10000, intervalMs: 300 })
+              .subscribe({
+                next: () => { this.isSyncingActivity = false; this.loadActivities(); },
+                error: () => { this.isSyncingActivity = false; this.loadActivities(); },
+              });
+          } else {
+            this.loadActivities();
+          }
         },
         error: (error) => {
           console.error('Error creating activity:', error);

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Observable, throwError, timer } from 'rxjs';
+import { catchError, map, switchMap, filter, take, takeUntil } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Activity, ActivityCreatePayload } from '../shared/models';
 
@@ -101,6 +101,30 @@ export class ActivityService {
       catchError(this.handleError)
     );
   }
+  // Poll Firestore (via cursor list) until a specific activity id appears for urgency
+  // Resolves when found; errors on timeout via takeUntil.
+  pollForActivityInUrgency(
+    urgencyId: number,
+    activityId: number,
+    opts: { timeoutMs?: number; intervalMs?: number } = {}
+  ): Observable<void> {
+    const timeoutMs = opts.timeoutMs ?? 10000;
+    const intervalMs = opts.intervalMs ?? 300;
+    const started = Date.now();
+
+    return timer(0, intervalMs).pipe(
+      switchMap(() =>
+        this.getActivitiesCursor({ urgencyId, pageSize: 20 }).pipe(
+          map((resp) => (resp.activities || []).some((a) => a.id === activityId))
+        )
+      ),
+      filter((found) => found),
+      take(1),
+      map(() => void 0),
+      takeUntil(timer(Math.max(0, timeoutMs - (Date.now() - started))))
+    );
+  }
+
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     if (error && error.error && typeof error.error === 'object' && 'error' in error.error) {
