@@ -1,0 +1,12 @@
+{{- if .Values.createRedirectMiddleware }}
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Values.middlewareName | default "redirect-https" }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+{{- end }}
+

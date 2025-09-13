@@ -1,0 +1,4 @@
+email: pd120424d@etf.bg.ac.rs
+createRedirectMiddleware: false
+middlewareName: redirect-https
+

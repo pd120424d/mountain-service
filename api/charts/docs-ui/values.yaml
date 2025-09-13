@@ -16,7 +16,11 @@ ingress:
   className: traefik
   host: mountain-service.duckdns.org
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    secretName: mountain-service-tls
   paths:
     - path: /docs
       pathType: Prefix
@@ -29,4 +33,4 @@ strategy:
 
 env:
   BASE_URL: /docs
-  CONFIG_URL: /docs/swagger-config.json
+  CONFIG_URL: /api/v1/docs/swagger-config.json

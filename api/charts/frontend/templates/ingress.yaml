@@ -20,5 +20,11 @@ spec:
                 name: {{ include "frontend.fullname" . }}
                 port:
                   number: {{ .Values.service.port }}
+  {{- with .Values.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ $.Values.ingress.host }}
+      secretName: {{ .secretName }}
+  {{- end }}
 {{- end -}}
 

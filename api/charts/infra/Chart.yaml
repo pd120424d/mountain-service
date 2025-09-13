@@ -1,0 +1,6 @@
+apiVersion: v2
+name: infra
+version: 0.1.0
+description: Infra helpers for mountain-service (cert-manager ClusterIssuers, optional Traefik middleware)
+type: application
+
