@@ -12,6 +12,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/activity-readmodel-updater/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
+	"go.uber.org/zap"
 )
 
 type ShardedDispatcher interface {
@@ -62,12 +63,43 @@ func NewShardedDispatcher(fb service.FirebaseService, logger utils.Logger, shard
 
 func (d *shardedDispatcher) worker(ch <-chan workItem) {
 	for wi := range ch {
-		// Bound per-item processing time to avoid indefinite stalls
-		ctx, cancel := context.WithTimeout(wi.ctx, d.workTimeout)
-		err := d.fb.SyncActivity(ctx, wi.ev)
-		cancel()
-		wi.done <- err
-		close(wi.done)
+		func(w workItem) {
+			defer func() {
+				if r := recover(); r != nil {
+					d.logger.WithContext(w.ctx).Errorf("Panic in shard worker: %v", r)
+					// Try to propagate error back to caller to avoid stalling Receive
+					select {
+					case w.done <- fmt.Errorf("panic: %v", r):
+					default:
+					}
+					close(w.done)
+				}
+			}()
+
+			ctx, cancel := context.WithTimeout(w.ctx, d.workTimeout)
+			log := d.logger.WithContext(ctx) //
+			stop := utils.TimeOperation(log, "ShardedDispatcher.worker.SyncActivity", zap.Int("activity_id", int(w.ev.ActivityID)), zap.String("type", w.ev.Type))
+
+			errCh := make(chan error, 1)
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						errCh <- fmt.Errorf("panic: %v", r)
+					}
+				}()
+				errCh <- d.fb.SyncActivity(ctx, w.ev)
+			}()
+			var err error
+			select {
+			case err = <-errCh:
+			case <-ctx.Done():
+				err = ctx.Err()
+			}
+			stop()
+			cancel()
+			w.done <- err
+			close(w.done)
+		}(wi)
 	}
 }
 

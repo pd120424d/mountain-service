@@ -151,6 +151,22 @@ func TestShardedDispatcher_Process(t *testing.T) {
 			t.Fatalf("expected context canceled error")
 		}
 	})
+
+	t.Run("it recovers from panic in SyncActivity and returns error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockFB := service.NewMockFirebaseService(ctrl)
+		mockFB.EXPECT().SyncActivity(gomock.Any(), gomock.Any()).DoAndReturn(
+			func(ctx context.Context, ev activityV1.ActivityEvent) error {
+				panic("boom")
+			},
+		)
+		di := NewShardedDispatcher(mockFB, logger, 1, 8)
+		b, _ := json.Marshal(activityV1.ActivityEvent{Type: "UPDATE", ActivityID: 9, Description: "1"})
+		err := di.Process(t.Context(), &pubsub.Message{Data: b})
+		if err == nil {
+			t.Fatalf("expected error from panic recovery")
+		}
+	})
 }
 
 func Test_shardKey_FallbackToMessageID(t *testing.T) {

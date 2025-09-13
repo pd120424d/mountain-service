@@ -12,6 +12,7 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/firestorex"
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
+	"go.uber.org/zap"
 )
 
 // FirebaseService handles Firebase Firestore operations for read model
@@ -151,6 +152,7 @@ func (s *firebaseService) SyncActivity(ctx context.Context, eventData activityV1
 	}
 
 	log := s.logger.WithContext(ctx)
+	defer utils.TimeOperation(log, "FirebaseService.SyncActivity", zap.Int("activity_id", int(eventData.ActivityID)), zap.String("type", eventData.Type))()
 	log.Infof("Syncing activity to Firebase: activity_id=%d, type=%s", eventData.ActivityID, eventData.Type)
 
 	docID := strconv.Itoa(int(eventData.ActivityID))
