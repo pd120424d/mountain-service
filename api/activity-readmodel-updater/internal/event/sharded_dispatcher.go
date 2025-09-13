@@ -51,7 +51,7 @@ func NewShardedDispatcher(fb service.FirebaseService, logger utils.Logger, shard
 		logger:         logger.WithName("shardedDispatcher"),
 		chans:          make([]chan workItem, shards),
 		enqueueTimeout: 2 * time.Second,
-		workTimeout:    15 * time.Second,
+		workTimeout:    60 * time.Second,
 	}
 	for i := 0; i < shards; i++ {
 		ch := make(chan workItem, queueSize)
@@ -94,6 +94,9 @@ func (d *shardedDispatcher) worker(ch <-chan workItem) {
 			case err = <-errCh:
 			case <-ctx.Done():
 				err = ctx.Err()
+				idx := int(hashKey(shardKey(w.ev, &pubsub.Message{ID: ""})) % uint64(len(d.chans)))
+				qLen, qCap := len(d.chans[idx]), cap(d.chans[idx])
+				log.Warnf("work timeout: activity_id=%d type=%s shard=%d shard_queue=%d/%d timeout=%s", int(w.ev.ActivityID), w.ev.Type, idx, qLen, qCap, d.workTimeout)
 			}
 			stop()
 			cancel()
