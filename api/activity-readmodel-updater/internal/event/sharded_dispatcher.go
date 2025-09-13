@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"hash/fnv"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -13,6 +14,12 @@ import (
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"go.uber.org/zap"
+)
+
+const (
+	DefaultMaxParallelWorkers = 16
+	DefaultEnqueueTimeout     = 2 * time.Second
+	DefaultWorkTimeout        = 60 * time.Second
 )
 
 type ShardedDispatcher interface {
@@ -26,119 +33,78 @@ type ShardedDispatcher interface {
 // This preserves Pub/Sub acking semantics (ack/nack after processing) and keeps
 // ordering per key within a shard.
 type shardedDispatcher struct {
-	fb             service.FirebaseService
-	logger         utils.Logger
-	chans          []chan workItem
-	enqueueTimeout time.Duration
-	workTimeout    time.Duration
-}
-
-type workItem struct {
-	ctx  context.Context
-	ev   activityV1.ActivityEvent
-	done chan error
+	fb                 service.FirebaseService
+	logger             utils.Logger
+	enqueueTimeout     time.Duration
+	workTimeout        time.Duration
+	limiter            chan struct{}
+	maxParallelWorkers int
+	locks              sync.Map
 }
 
 func NewShardedDispatcher(fb service.FirebaseService, logger utils.Logger, shards int, queueSize int) ShardedDispatcher {
 	if shards <= 0 {
-		shards = 8
-	}
-	if queueSize <= 0 {
-		queueSize = 1024
+		shards = DefaultMaxParallelWorkers
 	}
 	d := &shardedDispatcher{
-		fb:             fb,
-		logger:         logger.WithName("shardedDispatcher"),
-		chans:          make([]chan workItem, shards),
-		enqueueTimeout: 2 * time.Second,
-		workTimeout:    60 * time.Second,
-	}
-	for i := 0; i < shards; i++ {
-		ch := make(chan workItem, queueSize)
-		d.chans[i] = ch
-		go d.worker(ch)
+		fb:                 fb,
+		logger:             logger.WithName("shardedDispatcher"),
+		enqueueTimeout:     DefaultEnqueueTimeout,
+		workTimeout:        DefaultWorkTimeout,
+		limiter:            make(chan struct{}, shards),
+		maxParallelWorkers: shards,
 	}
 	return d
 }
 
-func (d *shardedDispatcher) worker(ch <-chan workItem) {
-	for wi := range ch {
-		func(w workItem) {
-			defer func() {
-				if r := recover(); r != nil {
-					d.logger.WithContext(w.ctx).Errorf("Panic in shard worker: %v", r)
-					// Try to propagate error back to caller to avoid stalling Receive
-					select {
-					case w.done <- fmt.Errorf("panic: %v", r):
-					default:
-					}
-					close(w.done)
-				}
-			}()
-
-			ctx, cancel := context.WithTimeout(w.ctx, d.workTimeout)
-			log := d.logger.WithContext(ctx) //
-			stop := utils.TimeOperation(log, "ShardedDispatcher.worker.SyncActivity", zap.Int("activity_id", int(w.ev.ActivityID)), zap.String("type", w.ev.Type))
-
-			errCh := make(chan error, 1)
-			go func() {
-				defer func() {
-					if r := recover(); r != nil {
-						errCh <- fmt.Errorf("panic: %v", r)
-					}
-				}()
-				errCh <- d.fb.SyncActivity(ctx, w.ev)
-			}()
-			var err error
-			select {
-			case err = <-errCh:
-			case <-ctx.Done():
-				err = ctx.Err()
-				idx := int(hashKey(shardKey(w.ev, &pubsub.Message{ID: ""})) % uint64(len(d.chans)))
-				qLen, qCap := len(d.chans[idx]), cap(d.chans[idx])
-				log.Warnf("work timeout: activity_id=%d type=%s shard=%d shard_queue=%d/%d timeout=%s", int(w.ev.ActivityID), w.ev.Type, idx, qLen, qCap, d.workTimeout)
-			}
-			stop()
-			cancel()
-			w.done <- err
-			close(w.done)
-		}(wi)
-	}
-}
-
-// Process parses the message, selects a shard by key and waits for completion.
-// It returns the processing result so caller can ack/nack accordingly.
+// Process parses the message and handles it with keyed per-activity ordering and a global concurrency limit.
 func (d *shardedDispatcher) Process(ctx context.Context, msg *pubsub.Message) error {
-	// Parse once here to select shard by ActivityID
 	ev, strat, err := Parse(msg.Data, msg.Attributes)
 	if err != nil {
-		// keep parity with Handler
 		d.logger.WithContext(ctx).Errorf("Unrecognized event payload format, cannot parse message_id=%s", msg.ID)
 		return err
 	}
 	_ = strat
 	normalizeType(&ev)
 
-	key := shardKey(ev, msg)
-	idx := int(hashKey(key)) % len(d.chans)
-	wi := workItem{ctx: ctx, ev: ev, done: make(chan error, 1)}
-
-	// If the caller's context is already canceled returning that immediately
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 
 	select {
+	case d.limiter <- struct{}{}:
+		defer func() { <-d.limiter }()
 	case <-ctx.Done():
 		return ctx.Err()
-	case d.chans[idx] <- wi:
-		// wait for completion to preserve Pub/Sub semantics
-		return <-wi.done
-	case <-time.After(d.enqueueTimeout):
-		// Avoid stalling Receive loop when a shard queue is saturated
-		qLen, qCap := len(d.chans[idx]), cap(d.chans[idx])
-		d.logger.WithContext(ctx).Warnf("Shard queue saturated: shard=%d len=%d cap=%d; nacking for retry", idx, qLen, qCap)
-		return fmt.Errorf("shard %d queue full (%d/%d)", idx, qLen, qCap)
+	}
+
+	key := shardKey(ev, msg)
+	lk := d.getLock(uint(key))
+	lk.Lock()
+	defer lk.Unlock()
+
+	wctx, cancel := context.WithTimeout(ctx, d.workTimeout)
+	log := d.logger.WithContext(wctx)
+	stop := utils.TimeOperation(log, "KeyedDispatcher.SyncActivity", zap.Int("activity_id", int(ev.ActivityID)), zap.String("type", ev.Type))
+	defer stop()
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				errCh <- fmt.Errorf("panic: %v", r)
+			}
+		}()
+		errCh <- d.fb.SyncActivity(wctx, ev)
+	}()
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-wctx.Done():
+		log.Warnf("work timeout: activity_id=%d type=%s timeout=%s", int(ev.ActivityID), ev.Type, d.workTimeout)
+		return wctx.Err()
 	}
 }
 
@@ -152,4 +118,11 @@ func shardKey(ev activityV1.ActivityEvent, msg *pubsub.Message) uint64 {
 	return h.Sum64()
 }
 
-func hashKey(k uint64) uint64 { return k }
+func (d *shardedDispatcher) getLock(k uint) *sync.Mutex {
+	if v, ok := d.locks.Load(k); ok {
+		return v.(*sync.Mutex)
+	}
+	m := &sync.Mutex{}
+	actual, _ := d.locks.LoadOrStore(k, m)
+	return actual.(*sync.Mutex)
+}

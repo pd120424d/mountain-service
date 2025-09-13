@@ -81,18 +81,19 @@ func TestShardedDispatcher_Process(t *testing.T) {
 		}
 	})
 
-	t.Run("returns error when shard saturated", func(t *testing.T) {
+	t.Run("blocks until permit available instead of nacking on saturation", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		mockFB := service.NewMockFirebaseService(ctrl)
+		started := make(chan struct{})
+		var once sync.Once
 		mockFB.EXPECT().SyncActivity(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
 			func(ctx context.Context, ev activityV1.ActivityEvent) error {
+				once.Do(func() { close(started) })
 				time.Sleep(20 * time.Millisecond)
 				return nil
 			},
 		)
-		di := NewShardedDispatcher(mockFB, logger, 1, 1)
-		sd := di.(*shardedDispatcher)
-		sd.enqueueTimeout = 5 * time.Millisecond
+		di := NewShardedDispatcher(mockFB, logger, 1, 1) // maxParallelWorkers=1
 
 		mkMsg := func(seq int) *pubsub.Message {
 			b, _ := json.Marshal(activityV1.ActivityEvent{Type: "UPDATE", ActivityID: 1, Description: strconv.Itoa(seq)})
@@ -100,19 +101,13 @@ func TestShardedDispatcher_Process(t *testing.T) {
 		}
 
 		go func() { _ = di.Process(t.Context(), mkMsg(1)) }()
-		go func() { _ = di.Process(t.Context(), mkMsg(2)) }()
-
-		deadline := time.Now().Add(120 * time.Millisecond)
-		for len(sd.chans[0]) < 1 && time.Now().Before(deadline) {
-			time.Sleep(1 * time.Millisecond)
-		}
-		if len(sd.chans[0]) < 1 {
-			t.Fatalf("failed to fill shard buffer for saturation test")
-		}
-
-		err := di.Process(t.Context(), mkMsg(3))
-		if err == nil {
-			t.Fatalf("expected enqueue timeout error")
+		<-started
+		start := time.Now()
+		err := di.Process(t.Context(), mkMsg(2))
+		dur := time.Since(start)
+		assert.NoError(t, err)
+		if dur < 15*time.Millisecond {
+			t.Fatalf("expected second call to block until permit frees; duration=%s", dur)
 		}
 	})
 
