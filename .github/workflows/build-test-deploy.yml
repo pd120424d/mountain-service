@@ -53,7 +53,9 @@ jobs:
       - name: Check if frontend tests should run
         id: should-run
         run: |
-          if [ "${{ needs.detect-changes.outputs.ui-changed }}" == "true" ] || [ "${{ github.event.inputs.force_deploy }}" == "true" ]; then
+          FORCE=false
+          if [ "${{ github.event.inputs.force_deploy }}" = "true" ] || git log -1 --pretty=%B | grep -qiE 'force[ _-]?rebuild|force[ _-]?deploy|rebuild all'; then FORCE=true; fi
+          if [ "${{ needs.detect-changes.outputs.ui-changed }}" = "true" ] || [ "$FORCE" = "true" ]; then
             echo "should-run=true" >> $GITHUB_OUTPUT
             echo "Frontend tests will run (UI changes detected or force deploy)"
           else
@@ -98,7 +100,9 @@ jobs:
       - name: Check if backend tests should run
         id: should-run
         run: |
-          if [ "${{ needs.detect-changes.outputs.api-changed }}" == "true" ] || [ "${{ github.event.inputs.force_deploy }}" == "true" ]; then
+          FORCE=false
+          if [ "${{ github.event.inputs.force_deploy }}" = "true" ] || git log -1 --pretty=%B | grep -qiE 'force[ _-]?rebuild|force[ _-]?deploy|rebuild all'; then FORCE=true; fi
+          if [ "${{ needs.detect-changes.outputs.api-changed }}" = "true" ] || [ "$FORCE" = "true" ]; then
             echo "should-run=true" >> $GITHUB_OUTPUT
             echo "Backend tests will run (API changes detected or force deploy)"
           else
@@ -124,7 +128,7 @@ jobs:
           TIMEOUT_SECONDS: '900'
         run: ./backend-test-cover.sh all --threshold=75
 
-  build-and-push-images:
+  build-ui:
     runs-on: ubuntu-latest
     needs: [detect-changes, test-frontend, test-backend]
     if: always() && (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped') && (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped')
@@ -132,30 +136,67 @@ jobs:
       contents: read
       packages: write
     outputs:
-      ui-changed: ${{ needs.detect-changes.outputs.ui-changed }}
-      employee-changed: ${{ steps.changes.outputs.employee }}
-      urgency-changed: ${{ steps.changes.outputs.urgency }}
-      activity-changed: ${{ steps.changes.outputs.activity }}
-      activity-updater-changed: ${{ steps.changes.outputs.activity-updater }}
-      version-changed: ${{ steps.changes.outputs.version }}
-      docs-aggregator-changed: ${{ steps.changes.outputs.docs-aggregator }}
-      contracts-changed: ${{ steps.changes.outputs.contracts }}
+      built: ${{ steps.set-built.outputs.built }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Detect service-specific changes
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Determine force rebuild
+        id: force
+        run: |
+          FORCE=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then FORCE=true; fi
+          if git log -1 --pretty=%B | grep -qiE 'force[ _-]?rebuild|force[ _-]?deploy|rebuild all'; then FORCE=true; fi
+          echo "force=${FORCE}" >> $GITHUB_OUTPUT
+
+      - name: Build and push UI image
+        if: needs.detect-changes.outputs.ui-changed == 'true' || steps.force.outputs.force == 'true'
+        run: |
+          cd ui
+          docker build -f Dockerfile \
+                       -t ghcr.io/pd120424d/mountain-ui:${{ github.sha }} \
+                       --build-arg BUILD_TIMESTAMP=$(date +%s) \
+                       --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
+                       --build-arg NGINX_CONFIG=production \
+                       --no-cache .
+          docker push ghcr.io/pd120424d/mountain-ui:${{ github.sha }}
+
+      - id: set-built
+        run: |
+          if [ "${{ needs.detect-changes.outputs.ui-changed }}" = "true" ] || [ "${{ steps.force.outputs.force }}" = "true" ]; then
+            echo "built=true" >> $GITHUB_OUTPUT
+          else
+            echo "built=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-employee:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-frontend, test-backend]
+    if: always() && (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped') && (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      built: ${{ steps.set-built.outputs.built }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Detect employee changes
         id: changes
         run: |
-          echo "employee=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/employee/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "urgency=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/urgency/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "activity=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "activity-updater=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity-readmodel-updater/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "version=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/version-service/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "docs-aggregator=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/docs-aggregator/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/employee/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "contracts=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/contracts/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
 
       - name: Login to GHCR
@@ -165,80 +206,244 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
-      - name: Build and push UI image
-        if: needs.detect-changes.outputs.ui-changed == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+      - name: Determine force rebuild
+        id: force
         run: |
-          cd ui
-          docker build -t ghcr.io/pd120424d/mountain-ui:latest \
-                       -t ghcr.io/pd120424d/mountain-ui:${{ github.sha }} \
-                       --build-arg BUILD_TIMESTAMP=$(date +%s) \
-                       --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
-                       --build-arg NGINX_CONFIG=production \
-                       --no-cache .
-          docker push ghcr.io/pd120424d/mountain-ui:latest
-          docker push ghcr.io/pd120424d/mountain-ui:${{ github.sha }}
+          FORCE=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then FORCE=true; fi
+          if git log -1 --pretty=%B | grep -qiE 'force[ _-]?rebuild|force[ _-]?deploy|rebuild all'; then FORCE=true; fi
+          echo "force=${FORCE}" >> $GITHUB_OUTPUT
 
       - name: Build and push Employee service
-        if: steps.changes.outputs.employee == 'true' || steps.changes.outputs.contracts == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        if: steps.changes.outputs.changed == 'true' || steps.changes.outputs.contracts == 'true' || steps.force.outputs.force == 'true'
         run: |
           cd api
-          docker build -f employee/Dockerfile -t ghcr.io/pd120424d/employee-service:latest \
+          docker build -f employee/Dockerfile \
                        -t ghcr.io/pd120424d/employee-service:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
                        --build-arg SWAGGER_HOST=mountain-service.duckdns.org \
                        --no-cache .
-          docker push ghcr.io/pd120424d/employee-service:latest
           docker push ghcr.io/pd120424d/employee-service:${{ github.sha }}
 
+      - id: set-built
+        run: |
+          if [ "${{ steps.changes.outputs.changed }}" = "true" ] || [ "${{ steps.changes.outputs.contracts }}" = "true" ] || [ "${{ steps.force.outputs.force }}" = "true" ]; then
+            echo "built=true" >> $GITHUB_OUTPUT
+          else
+            echo "built=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-urgency:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-frontend, test-backend]
+    if: always() && (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped') && (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      built: ${{ steps.set-built.outputs.built }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Detect urgency changes
+        id: changes
+        run: |
+          echo "changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/urgency/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "contracts=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/contracts/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Determine force rebuild
+        id: force
+        run: |
+          FORCE=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then FORCE=true; fi
+          if git log -1 --pretty=%B | grep -qiE 'force[ _-]?rebuild|force[ _-]?deploy|rebuild all'; then FORCE=true; fi
+          echo "force=${FORCE}" >> $GITHUB_OUTPUT
+
       - name: Build and push Urgency service
-        if: steps.changes.outputs.urgency == 'true' || steps.changes.outputs.contracts == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        if: steps.changes.outputs.changed == 'true' || steps.changes.outputs.contracts == 'true' || steps.force.outputs.force == 'true'
         run: |
           cd api
-          docker build -f urgency/Dockerfile -t ghcr.io/pd120424d/urgency-service:latest \
+          docker build -f urgency/Dockerfile \
                        -t ghcr.io/pd120424d/urgency-service:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
                        --build-arg SWAGGER_HOST=mountain-service.duckdns.org \
                        --no-cache .
-          docker push ghcr.io/pd120424d/urgency-service:latest
           docker push ghcr.io/pd120424d/urgency-service:${{ github.sha }}
 
+      - id: set-built
+        run: |
+          if [ "${{ steps.changes.outputs.changed }}" = "true" ] || [ "${{ steps.changes.outputs.contracts }}" = "true" ] || [ "${{ steps.force.outputs.force }}" = "true" ]; then
+            echo "built=true" >> $GITHUB_OUTPUT
+          else
+            echo "built=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-activity:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-frontend, test-backend]
+    if: always() && (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped') && (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      built: ${{ steps.set-built.outputs.built }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Detect activity changes
+        id: changes
+        run: |
+          echo "changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "contracts=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/contracts/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Determine force rebuild
+        id: force
+        run: |
+          FORCE=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then FORCE=true; fi
+          if git log -1 --pretty=%B | grep -qiE 'force[ _-]?rebuild|force[ _-]?deploy|rebuild all'; then FORCE=true; fi
+          echo "force=${FORCE}" >> $GITHUB_OUTPUT
+
       - name: Build and push Activity service (with CQRS support)
-        if: steps.changes.outputs.activity == 'true' || steps.changes.outputs.contracts == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        if: steps.changes.outputs.changed == 'true' || steps.changes.outputs.contracts == 'true' || steps.force.outputs.force == 'true'
         run: |
           cd api
-          docker build -f activity/Dockerfile -t ghcr.io/pd120424d/activity-service:latest \
+          docker build -f activity/Dockerfile \
                        -t ghcr.io/pd120424d/activity-service:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
                        --build-arg SWAGGER_HOST=mountain-service.duckdns.org \
                        --no-cache .
-          docker push ghcr.io/pd120424d/activity-service:latest
           docker push ghcr.io/pd120424d/activity-service:${{ github.sha }}
 
+      - id: set-built
+        run: |
+          if [ "${{ steps.changes.outputs.changed }}" = "true" ] || [ "${{ steps.changes.outputs.contracts }}" = "true" ] || [ "${{ steps.force.outputs.force }}" = "true" ]; then
+            echo "built=true" >> $GITHUB_OUTPUT
+          else
+            echo "built=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-activity-updater:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-frontend, test-backend]
+    if: always() && (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped') && (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      built: ${{ steps.set-built.outputs.built }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Detect updater changes
+        id: changes
+        run: |
+          echo "changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity-readmodel-updater/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Determine force rebuild
+        id: force
+        run: |
+          FORCE=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then FORCE=true; fi
+          if git log -1 --pretty=%B | grep -qiE 'force[ _-]?rebuild|force[ _-]?deploy|rebuild all'; then FORCE=true; fi
+          echo "force=${FORCE}" >> $GITHUB_OUTPUT
+
       - name: Build and push Activity Read Model Updater service
-        if: steps.changes.outputs.activity-updater == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        if: steps.changes.outputs.changed == 'true' || steps.force.outputs.force == 'true'
         run: |
           cd api
           docker build -f activity-readmodel-updater/Dockerfile \
-                       -t ghcr.io/pd120424d/activity-readmodel-updater:latest \
                        -t ghcr.io/pd120424d/activity-readmodel-updater:${{ github.sha }} \
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
                        --no-cache .
-          docker push ghcr.io/pd120424d/activity-readmodel-updater:latest
           docker push ghcr.io/pd120424d/activity-readmodel-updater:${{ github.sha }}
 
+      - id: set-built
+        run: |
+          if [ "${{ steps.changes.outputs.changed }}" = "true" ] || [ "${{ steps.force.outputs.force }}" = "true" ]; then
+            echo "built=true" >> $GITHUB_OUTPUT
+          else
+            echo "built=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-version:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-frontend, test-backend]
+    if: always() && (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped') && (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      built: ${{ steps.set-built.outputs.built }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Detect version service changes
+        id: changes
+        run: |
+          echo "changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/version-service/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Determine force rebuild
+        id: force
+        run: |
+          FORCE=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then FORCE=true; fi
+          if git log -1 --pretty=%B | grep -qiE 'force[ _-]?rebuild|force[ _-]?deploy|rebuild all'; then FORCE=true; fi
+          echo "force=${FORCE}" >> $GITHUB_OUTPUT
+
       - name: Build and push Version service
-        if: steps.changes.outputs.version == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        if: steps.changes.outputs.changed == 'true' || steps.force.outputs.force == 'true'
         run: |
           git fetch --tags --force --prune
           cd api
           GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
           SHORT_SHA=$(git rev-parse --short=8 HEAD)
           VERSION_ARG=${GIT_TAG:-$SHORT_SHA}
-          docker build -f version-service/Dockerfile -t ghcr.io/pd120424d/version-service:latest \
+          docker build -f version-service/Dockerfile \
                        -t ghcr.io/pd120424d/version-service:${{ github.sha }} \
                        --build-arg VERSION=${VERSION_ARG} \
                        --build-arg GIT_SHA=${SHORT_SHA} \
@@ -246,22 +451,72 @@ jobs:
                        --build-arg BUILD_TIMESTAMP=$(date +%s) \
                        --build-arg GIT_COMMIT_SHA=${{ github.sha }} \
                        --no-cache .
-          docker push ghcr.io/pd120424d/version-service:latest
           docker push ghcr.io/pd120424d/version-service:${{ github.sha }}
 
+      - id: set-built
+        run: |
+          if [ "${{ steps.changes.outputs.changed }}" = "true" ] || [ "${{ steps.force.outputs.force }}" = "true" ]; then
+            echo "built=true" >> $GITHUB_OUTPUT
+          else
+            echo "built=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-docs-aggregator:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-frontend, test-backend]
+    if: always() && (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped') && (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      built: ${{ steps.set-built.outputs.built }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Detect docs-aggregator changes
+        id: changes
+        run: |
+          echo "changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/docs-aggregator/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "contracts=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/contracts/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Determine force rebuild
+        id: force
+        run: |
+          FORCE=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then FORCE=true; fi
+          if git log -1 --pretty=%B | grep -qiE 'force[ _-]?rebuild|force[ _-]?deploy|rebuild all'; then FORCE=true; fi
+          echo "force=${FORCE}" >> $GITHUB_OUTPUT
+
       - name: Build and push Docs Aggregator
-        if: steps.changes.outputs.docs-aggregator == 'true' || steps.changes.outputs.contracts == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
+        if: steps.changes.outputs.changed == 'true' || steps.changes.outputs.contracts == 'true' || steps.force.outputs.force == 'true'
         run: |
           cd api
-          docker build -f docs-aggregator/Dockerfile -t ghcr.io/pd120424d/docs-aggregator:latest \
+          docker build -f docs-aggregator/Dockerfile \
                        -t ghcr.io/pd120424d/docs-aggregator:${{ github.sha }} \
                        --no-cache .
-          docker push ghcr.io/pd120424d/docs-aggregator:latest
           docker push ghcr.io/pd120424d/docs-aggregator:${{ github.sha }}
+
+      - id: set-built
+        run: |
+          if [ "${{ steps.changes.outputs.changed }}" = "true" ] || [ "${{ steps.changes.outputs.contracts }}" = "true" ] || [ "${{ steps.force.outputs.force }}" = "true" ]; then
+            echo "built=true" >> $GITHUB_OUTPUT
+          else
+            echo "built=false" >> $GITHUB_OUTPUT
+          fi
 
   deploy-k8s:
     runs-on: self-hosted
-    needs: [build-and-push-images]
+    needs: [detect-changes, build-ui, build-employee, build-urgency, build-activity, build-activity-updater, build-version, build-docs-aggregator]
     permissions:
       contents: read
 
@@ -515,56 +770,94 @@ jobs:
           NS=mountain-service
           HOST=mountain-service.duckdns.org
           SHA=${GITHUB_SHA:-${{ github.sha }}}
-          FORCE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true' }}"
 
-          # Determine which components changed (fallback logic mirrors detect-changes)
-          ui_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^ui/' && echo true || echo false)
-          contracts_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/contracts/' && echo true || echo false)
-          emp_changed=$([ "$(git diff --name-only HEAD~1 HEAD | grep -q '^api/employee/' && echo true || echo false)" = true -o "$contracts_changed" = true ] && echo true || echo false)
-          urg_changed=$([ "$(git diff --name-only HEAD~1 HEAD | grep -q '^api/urgency/' && echo true || echo false)" = true -o "$contracts_changed" = true ] && echo true || echo false)
-          act_changed=$([ "$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity/' && echo true || echo false)" = true -o "$contracts_changed" = true ] && echo true || echo false)
-          actu_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/activity-readmodel-updater/' && echo true || echo false)
-          ver_changed=$(git diff --name-only HEAD~1 HEAD | grep -q '^api/version-service/' && echo true || echo false)
-          docs_changed=$([ "$(git diff --name-only HEAD~1 HEAD | grep -q '^api/docs-aggregator/' && echo true || echo false)" = true -o "$contracts_changed" = true ] && echo true || echo false)
+          # Built flags from build jobs (true iff image was built and pushed in this run)
+          UI_BUILT="${{ needs.build-ui.outputs.built || 'false' }}"
+          EMP_BUILT="${{ needs.build-employee.outputs.built || 'false' }}"
+          URG_BUILT="${{ needs.build-urgency.outputs.built || 'false' }}"
+          ACT_BUILT="${{ needs.build-activity.outputs.built || 'false' }}"
+          ACTU_BUILT="${{ needs.build-activity-updater.outputs.built || 'false' }}"
+          VER_BUILT="${{ needs.build-version.outputs.built || 'false' }}"
+          DOCSAGG_BUILT="${{ needs.build-docs-aggregator.outputs.built || 'false' }}"
+
+          current_image() {
+            local deploy_name="$1"
+            kubectl -n "$NS" get deploy "$deploy_name" -o=jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "unknown"
+          }
+
+          print_state() {
+            local release="$1" deploy_name="$2"
+            echo "[$release] Helm values (image section):"
+            helm -n "$NS" get values "$release" -o yaml | sed -n '/^image:/,/^[^ ]/p' || true
+            echo "[$release] Current deployment image: $(current_image "$deploy_name")"
+          }
+
+          guard_no_latest() {
+            local release="$1" deploy_name="$2" built_flag="$3" set_tag="$4"
+            # If a new image will be set in this run, skip the guard
+            if [[ "$set_tag" == "true" && "$built_flag" == "true" ]]; then
+              return 0
+            fi
+            local img
+            img=$(current_image "$deploy_name")
+            if [[ "$img" == *":latest" ]]; then
+              echo "ERROR: [$release] deployment image uses ':latest' (img=$img). Refusing to proceed for unchanged service."
+              echo "HINT: Rebuild this service to pin a SHA tag, or set image.tag via Helm to a specific SHA."
+              exit 1
+            fi
+          }
 
           upgrade() {
-            local release="$1" chart="$2" deploy_name="$3" changed_flag="$4"
+            local release="$1" chart="$2" deploy_name="$3" built_flag="$4" set_tag="$5"
             local flags="--atomic --timeout 10m"
-            if [[ "$changed_flag" == "true" || "$FORCE" == "true" ]]; then
-              # Component changed or forced: set the new image tag and reuse existing values
-              echo "[$release] applying new image tag: $SHA (changed=$changed_flag force=$FORCE)"
+            if [[ "$set_tag" == "true" && "$built_flag" == "true" ]]; then
+              echo "[$release] setting image.tag=$SHA (built in this run)"
               helm upgrade --install "$release" "$chart" -n "$NS" $flags --reuse-values --set image.tag=$SHA
             else
-              # Component unchanged: reset values so we don't carry forward a previously bad image tag
-              echo "[$release] component unchanged; resetting values to chart defaults (keeping chart-provided config)"
-              helm upgrade --install "$release" "$chart" -n "$NS" $flags --reset-values
+              echo "[$release] no new image built; applying chart changes with existing values (no tag change)"
+              helm upgrade --install "$release" "$chart" -n "$NS" $flags --reuse-values
             fi
             kubectl -n "$NS" rollout status "deploy/$deploy_name" --timeout=300s
+            echo "[$release] Post-upgrade deployment image: $(current_image "$deploy_name")"
           }
 
           echo "Upgrading Frontend via Helm..."
-          upgrade frontend ./charts/frontend frontend "$ui_changed"
+          print_state frontend frontend
+          upgrade frontend ./charts/frontend frontend "$UI_BUILT" true
 
           echo "Upgrading Employee service via Helm..."
-          upgrade employee-service ./charts/employee-service employee-service "$emp_changed"
+          print_state employee-service employee-service
+          guard_no_latest employee-service employee-service "$EMP_BUILT" true
+          upgrade employee-service ./charts/employee-service employee-service "$EMP_BUILT" true
 
           echo "Upgrading Urgency service via Helm..."
-          upgrade urgency-service ./charts/urgency-service urgency-service "$urg_changed"
+          print_state urgency-service urgency-service
+          guard_no_latest urgency-service urgency-service "$URG_BUILT" true
+          upgrade urgency-service ./charts/urgency-service urgency-service "$URG_BUILT" true
 
           echo "Upgrading Activity service via Helm..."
-          upgrade activity-service ./charts/activity-service activity-service "$act_changed"
+          print_state activity-service activity-service
+          guard_no_latest activity-service activity-service "$ACT_BUILT" true
+          upgrade activity-service ./charts/activity-service activity-service "$ACT_BUILT" true
 
           echo "Upgrading Activity Readmodel Updater via Helm..."
-          upgrade activity-readmodel-updater ./charts/activity-readmodel-updater activity-readmodel-updater "$actu_changed"
+          print_state activity-readmodel-updater activity-readmodel-updater
+          guard_no_latest activity-readmodel-updater activity-readmodel-updater "$ACTU_BUILT" true
+          upgrade activity-readmodel-updater ./charts/activity-readmodel-updater activity-readmodel-updater "$ACTU_BUILT" true
 
           echo "Upgrading Version service via Helm..."
-          upgrade version-service ./charts/version-service version-service "$ver_changed"
+          print_state version-service version-service
+          guard_no_latest version-service version-service "$VER_BUILT" true
+          upgrade version-service ./charts/version-service version-service "$VER_BUILT" true
 
           echo "Upgrading Docs Aggregator via Helm..."
-          upgrade docs-aggregator ./charts/docs-aggregator docs-aggregator "$docs_changed"
+          print_state docs-aggregator docs-aggregator
+          guard_no_latest docs-aggregator docs-aggregator "$DOCSAGG_BUILT" true
+          upgrade docs-aggregator ./charts/docs-aggregator docs-aggregator "$DOCSAGG_BUILT" true
 
-          echo "Upgrading Docs UI via Helm..."
-          upgrade docs-ui ./charts/docs-ui docs-ui "$docs_changed"
+          echo "Upgrading Docs UI via Helm... (no tag pinning)"
+          print_state docs-ui docs-ui
+          upgrade docs-ui ./charts/docs-ui docs-ui "false" false
 
 
       - name: Show status and recent events
