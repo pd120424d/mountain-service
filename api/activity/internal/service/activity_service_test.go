@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/clients"
+
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
@@ -333,6 +334,64 @@ func TestActivityService_CreateActivity(t *testing.T) {
 		assert.Equal(t, uint(123), resp.EmployeeID)
 		assert.Equal(t, uint(11), resp.UrgencyID)
 	})
+
+	t.Run("it returns error when urgency client fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(77)).Return(nil, fmt.Errorf("boom"))
+		svc := NewActivityService(log, repo, mockUrg)
+
+		req := &activityV1.ActivityCreateRequest{Description: "x", EmployeeID: 1, UrgencyID: 77}
+		resp, err := svc.CreateActivity(t.Context(), req)
+		assert.Nil(t, resp)
+		if appErr, ok := err.(*commonv1.AppError); ok {
+			assert.Equal(t, "ACTIVITY_ERRORS.URGENCY_FETCH_FAILED", appErr.Code)
+		} else {
+			t.Fatalf("expected AppError, got %T", err)
+		}
+	})
+
+	t.Run("it returns error when urgency is nil", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(88)).Return(nil, nil)
+		svc := NewActivityService(log, repo, mockUrg)
+
+		req := &activityV1.ActivityCreateRequest{Description: "x", EmployeeID: 1, UrgencyID: 88}
+		resp, err := svc.CreateActivity(t.Context(), req)
+		assert.Nil(t, resp)
+		if appErr, ok := err.(*commonv1.AppError); ok {
+			assert.Equal(t, "ACTIVITY_ERRORS.INVALID_URGENCY_STATE", appErr.Code)
+		} else {
+			t.Fatalf("expected AppError, got %T", err)
+		}
+	})
+
+	t.Run("it returns error when urgency is not in_progress", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(99)).Return(&urgencyV1.UrgencyResponse{ID: 99, Status: urgencyV1.Open}, nil)
+		svc := NewActivityService(log, repo, mockUrg)
+
+		req := &activityV1.ActivityCreateRequest{Description: "x", EmployeeID: 1, UrgencyID: 99}
+		resp, err := svc.CreateActivity(t.Context(), req)
+		assert.Nil(t, resp)
+		if appErr, ok := err.(*commonv1.AppError); ok {
+			assert.Equal(t, "ACTIVITY_ERRORS.INVALID_URGENCY_STATE", appErr.Code)
+		} else {
+			t.Fatalf("expected AppError, got %T", err)
+		}
+	})
+
 }
 
 func TestActivityService_CreateActivity_Enrichment(t *testing.T) {

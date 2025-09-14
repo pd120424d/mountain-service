@@ -14,7 +14,7 @@ func TestWriteFreshWindow(t *testing.T) {
 	t.Parallel()
 
 	t.Run("it does not set the header or context when duration is not positive", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
+		testSetGinMode()
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("POST", "/test", nil)
@@ -28,7 +28,7 @@ func TestWriteFreshWindow(t *testing.T) {
 	})
 
 	t.Run("it does not set the header or context when context is nil", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
+		testSetGinMode()
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("POST", "/test", nil)
@@ -41,7 +41,7 @@ func TestWriteFreshWindow(t *testing.T) {
 
 	t.Run("it sets the header and context when duration is positive", func(t *testing.T) {
 
-		gin.SetMode(gin.TestMode)
+		testSetGinMode()
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("POST", "/test", nil)

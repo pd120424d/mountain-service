@@ -21,7 +21,8 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/server"
 
-	"github.com/pd120424d/mountain-service/api/activity/internal/clients"
+	s2semployee "github.com/pd120424d/mountain-service/api/shared/s2s/employee"
+	s2surgency "github.com/pd120424d/mountain-service/api/shared/s2s/urgency"
 
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"google.golang.org/api/option"
@@ -154,13 +155,13 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	if urgencyBaseURL == "" {
 		urgencyBaseURL = "http://urgency-service:8083"
 	}
-	urgencyClient := clients.NewUrgencyClient(clients.UrgencyClientConfig{BaseURL: urgencyBaseURL, ServiceAuth: serviceAuth, Logger: log, Timeout: 30 * time.Second})
+	urgencyClient := s2surgency.New(s2surgency.Config{BaseURL: urgencyBaseURL, ServiceAuth: serviceAuth, Logger: log, Timeout: 30 * time.Second})
 
 	employeeBaseURL := os.Getenv("EMPLOYEE_SERVICE_URL")
 	if employeeBaseURL == "" {
 		employeeBaseURL = "http://employee-service:8082"
 	}
-	employeeClient := clients.NewEmployeeClient(clients.EmployeeClientConfig{BaseURL: employeeBaseURL, ServiceAuth: serviceAuth, Logger: log, Timeout: 30 * time.Second})
+	employeeClient := s2semployee.New(s2semployee.Config{BaseURL: employeeBaseURL, ServiceAuth: serviceAuth, Logger: log, Timeout: 30 * time.Second})
 
 	activitySvc := service.NewActivityServiceWithDeps(log, activityRepo, urgencyClient, employeeClient)
 

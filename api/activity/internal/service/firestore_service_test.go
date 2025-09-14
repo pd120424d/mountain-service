@@ -285,3 +285,31 @@ func TestCoerceTime(t *testing.T) {
 	invalid := coerceTime("not-a-time")
 	assert.True(t, invalid.IsZero())
 }
+
+func TestFirestoreService_CountByUrgencyIDs(t *testing.T) {
+	log := utils.NewTestLogger()
+	fake := firestoretest.NewFake().WithCollection("activities", []map[string]interface{}{
+		{"id": int64(1), "urgency_id": int64(2), "employee_id": int64(1), "description": "a", "created_at": "2025-01-01T00:00:00Z"},
+		{"id": int64(2), "urgency_id": int64(2), "employee_id": int64(1), "description": "b", "created_at": "2025-01-02T00:00:00Z"},
+		{"id": int64(3), "urgency_id": int64(5), "employee_id": int64(1), "description": "c", "created_at": "2025-01-03T00:00:00Z"},
+		{"id": int64(4), "urgency_id": int64(2), "employee_id": int64(1), "description": "d", "created_at": "2025-01-04T00:00:00Z"},
+		{"id": int64(5), "urgency_id": int64(5), "employee_id": int64(1), "description": "e", "created_at": "2025-01-05T00:00:00Z"},
+	})
+	svc := NewFirebaseReadService(fake, log)
+	counts, err := svc.CountByUrgencyIDs(t.Context(), []uint{2, 5, 5, 0})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(3), counts[2])
+	assert.Equal(t, int64(2), counts[5])
+	assert.NotContains(t, counts, uint(0))
+
+	// nil client returns error
+	svc2 := NewFirebaseReadService(nil, log)
+	res, err := svc2.CountByUrgencyIDs(t.Context(), []uint{1})
+	assert.Error(t, err)
+	assert.Nil(t, res)
+
+	// empty input returns empty map and no error
+	counts3, err := svc.CountByUrgencyIDs(t.Context(), nil)
+	assert.NoError(t, err)
+	assert.Len(t, counts3, 0)
+}

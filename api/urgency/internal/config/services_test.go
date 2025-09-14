@@ -8,6 +8,7 @@ import (
 )
 
 func TestLoadServiceConfig(t *testing.T) {
+	// t.Parallel() disabled: subtests use t.Setenv
 
 	t.Run("it returns default values when environment variables are not set", func(t *testing.T) {
 		config := LoadServiceConfig()

@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
+
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,50 +19,9 @@ import (
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/config"
 	sharedModels "github.com/pd120424d/mountain-service/api/shared/models"
+
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
-
-type readModelFake struct {
-	items []sharedModels.Activity
-	token string
-	err   error
-}
-
-func (f *readModelFake) CountByUrgencyIDs(_ context.Context, ids []uint) (map[uint]int64, error) {
-	if f.err != nil {
-		return nil, f.err
-	}
-	m := map[uint]int64{}
-	for _, id := range ids {
-		m[id]++
-	}
-	return m, nil
-}
-
-func (f *readModelFake) ListByUrgency(_ context.Context, urgencyID uint, limit int) ([]sharedModels.Activity, error) {
-	if f.err != nil {
-		return nil, f.err
-	}
-	return f.items, nil
-}
-
-func (f *readModelFake) ListAll(_ context.Context, limit int) ([]sharedModels.Activity, error) {
-	return nil, fmt.Errorf("not used")
-}
-
-func (f *readModelFake) ListByUrgencyCursor(_ context.Context, urgencyID uint, pageSize int, pageToken string) ([]sharedModels.Activity, string, error) {
-	if f.err != nil {
-		return nil, "", f.err
-	}
-	return f.items, f.token, nil
-}
-
-func (f *readModelFake) ListAllCursor(_ context.Context, pageSize int, pageToken string) ([]sharedModels.Activity, string, error) {
-	if f.err != nil {
-		return nil, "", f.err
-	}
-	return f.items, f.token, nil
-}
 
 func TestActivityHandler_CreateActivity(t *testing.T) {
 	t.Parallel()
@@ -157,11 +118,11 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 	})
 }
 
-func TestActivityHandler_GetActivity_Suite(t *testing.T) {
+func TestActivityHandler_GetActivity(t *testing.T) {
+	t.Parallel()
 	log := utils.NewTestLogger()
 
 	t.Run("invalid id -> 400", func(t *testing.T) {
-		t.Parallel()
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/invalid", nil)
@@ -172,7 +133,6 @@ func TestActivityHandler_GetActivity_Suite(t *testing.T) {
 	})
 
 	t.Run("not found -> 404", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -186,7 +146,6 @@ func TestActivityHandler_GetActivity_Suite(t *testing.T) {
 	})
 
 	t.Run("zero id -> 404", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -214,11 +173,11 @@ func TestActivityHandler_GetActivity_Suite(t *testing.T) {
 	})
 }
 
-func TestActivityHandler_ListActivities_Suite(t *testing.T) {
+func TestActivityHandler_ListActivities(t *testing.T) {
+	t.Parallel()
 	log := utils.NewTestLogger()
 
 	t.Run("service fails", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -231,7 +190,6 @@ func TestActivityHandler_ListActivities_Suite(t *testing.T) {
 	})
 
 	t.Run("service success", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -244,7 +202,6 @@ func TestActivityHandler_ListActivities_Suite(t *testing.T) {
 	})
 
 	t.Run("query params", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -260,70 +217,82 @@ func TestActivityHandler_ListActivities_Suite(t *testing.T) {
 	})
 
 	t.Run("read-model urgency success", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
+
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=7", nil)
 		svcMock := service.NewMockActivityService(ctrl)
-		readModel := &readModelFake{items: []sharedModels.Activity{{ID: 42, Description: "rm", UrgencyID: 7, EmployeeID: 3}}}
+		readModel := service.NewMockFirestoreService(ctrl)
+		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(7), 10).Return([]sharedModels.Activity{{ID: 42, UrgencyID: 7, EmployeeID: 3}}, nil)
+
 		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
+
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":42")
 	})
 
 	t.Run("read-model urgency empty", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=7", nil)
 		svcMock := service.NewMockActivityService(ctrl)
-		readModel := &readModelFake{items: []sharedModels.Activity{}}
+		readModel := service.NewMockFirestoreService(ctrl)
+		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(7), 10).Return([]sharedModels.Activity{}, nil)
+
 		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
+
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"activities\":[]")
 	})
 
 	t.Run("read-model urgency error fallback", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=8", nil)
-		readModel := &readModelFake{err: fmt.Errorf("rm error")}
+		readModel := service.NewMockFirestoreService(ctrl)
+		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(8), 10).Return(nil, fmt.Errorf("rm error"))
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any(), gomock.Any()).Return(&activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{{ID: 77}}, Total: 1, Page: 1, PageSize: 10}, nil)
+
 		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
+
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":77")
 	})
 
 	t.Run("cursor by urgency", func(t *testing.T) {
-		t.Parallel()
+		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=7&pageToken=abc&pageSize=2", nil)
-		readModel := &readModelFake{items: []sharedModels.Activity{{ID: 42, Description: "cur"}}, token: "NT"}
+		readModel := service.NewMockFirestoreService(ctrl)
+		readModel.EXPECT().ListByUrgencyCursor(gomock.Any(), uint(7), 2, "abc").Return([]sharedModels.Activity{{ID: 42, UrgencyID: 7}, {ID: 43, UrgencyID: 7}}, "NEXT", nil)
+
 		NewActivityHandler(log, nil, readModel).ListActivities(ctx)
+
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":42")
 		assert.Contains(t, w.Body.String(), "\"nextPageToken\":")
 	})
 
 	t.Run("cursor all", func(t *testing.T) {
-		t.Parallel()
+		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
+
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?pageToken=abc&pageSize=2", nil)
-		readModel := &readModelFake{items: []sharedModels.Activity{{ID: 1}, {ID: 2}}, token: "TOK"}
+		readModel := service.NewMockFirestoreService(ctrl)
+		readModel.EXPECT().ListAllCursor(gomock.Any(), 2, "abc").Return([]sharedModels.Activity{{ID: 1}, {ID: 2}}, "NEXT", nil)
+
 		NewActivityHandler(log, nil, readModel).ListActivities(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"nextPageToken\":")
 	})
 
 	t.Run("cursor fallback when readModel nil", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -336,13 +305,14 @@ func TestActivityHandler_ListActivities_Suite(t *testing.T) {
 	})
 
 	t.Run("cursor read-model error returns empty page (no fallback)", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?pageToken=abc&pageSize=2", nil)
-		readModel := &readModelFake{err: fmt.Errorf("rm fail")}
+		readModel := service.NewMockFirestoreService(ctrl)
+		readModel.EXPECT().ListAllCursor(gomock.Any(), 2, "abc").Return(nil, "", fmt.Errorf("rm fail"))
 		svcMock := service.NewMockActivityService(ctrl)
+
 		// When a cursor token is provided and read-model fails, we do not fall back to DB paging.
 		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -353,13 +323,19 @@ func TestActivityHandler_ListActivities_Suite(t *testing.T) {
 	})
 
 	t.Run("read-model all success", func(t *testing.T) {
-		t.Parallel()
+		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?page=1&pageSize=2", nil)
-		items := []sharedModels.Activity{{ID: 1, CreatedAt: time.Date(2025, 1, 4, 10, 0, 0, 0, time.UTC)}, {ID: 2, CreatedAt: time.Date(2025, 1, 3, 10, 0, 0, 0, time.UTC)}, {ID: 3, CreatedAt: time.Date(2025, 1, 2, 10, 0, 0, 0, time.UTC)}}
-		readModel := &readModelAllFake{items: items}
+		readModel := service.NewMockFirestoreService(ctrl)
+		readModel.EXPECT().ListAll(gomock.Any(), 2).Return(
+			[]sharedModels.Activity{
+				{ID: 1, CreatedAt: time.Date(2025, 1, 4, 10, 0, 0, 0, time.UTC)},
+				{ID: 2, CreatedAt: time.Date(2025, 1, 3, 10, 0, 0, 0, time.UTC)},
+			}, nil)
+
 		NewActivityHandler(log, nil, readModel).ListActivities(ctx)
+
 		assert.Equal(t, http.StatusOK, w.Code)
 		body := w.Body.String()
 		assert.Contains(t, body, "\"id\":1")
@@ -368,25 +344,27 @@ func TestActivityHandler_ListActivities_Suite(t *testing.T) {
 	})
 
 	t.Run("read-model all error fallback", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities", nil)
-		readModel := &readModelAllFake{err: fmt.Errorf("rm all error")}
+		readModel := service.NewMockFirestoreService(ctrl)
+		readModel.EXPECT().ListAll(gomock.Any(), 10).Return(nil, fmt.Errorf("rm all error"))
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any(), gomock.Any()).Return(&activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{{ID: 99}}, Total: 1, Page: 1, PageSize: 10}, nil)
+
 		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
+
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":99")
 	})
 }
 
-func TestActivityHandler_GetActivityStats_Suite(t *testing.T) {
+func TestActivityHandler_GetActivityStats(t *testing.T) {
+	t.Parallel()
 	log := utils.NewTestLogger()
 
 	t.Run("service fails -> 500", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -399,7 +377,6 @@ func TestActivityHandler_GetActivityStats_Suite(t *testing.T) {
 	})
 
 	t.Run("success -> 200", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -417,11 +394,11 @@ func TestActivityHandler_GetActivityStats_Suite(t *testing.T) {
 	})
 }
 
-func TestActivityHandler_DeleteActivity_Suite(t *testing.T) {
+func TestActivityHandler_DeleteActivity(t *testing.T) {
+	t.Parallel()
 	log := utils.NewTestLogger()
 
 	t.Run("invalid id -> 400", func(t *testing.T) {
-		t.Parallel()
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/activities/invalid", nil)
@@ -432,7 +409,6 @@ func TestActivityHandler_DeleteActivity_Suite(t *testing.T) {
 	})
 
 	t.Run("not found -> 404", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -446,7 +422,6 @@ func TestActivityHandler_DeleteActivity_Suite(t *testing.T) {
 	})
 
 	t.Run("zero id -> 404", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -460,7 +435,6 @@ func TestActivityHandler_DeleteActivity_Suite(t *testing.T) {
 	})
 
 	t.Run("success -> 200", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -481,11 +455,11 @@ func TestActivityHandler_DeleteActivity_Suite(t *testing.T) {
 	})
 }
 
-func TestActivityHandler_ResetAllData_Suite(t *testing.T) {
+func TestActivityHandler_ResetAllData(t *testing.T) {
+	t.Parallel()
 	log := utils.NewTestLogger()
 
 	t.Run("service fails -> 500", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -498,7 +472,6 @@ func TestActivityHandler_ResetAllData_Suite(t *testing.T) {
 	})
 
 	t.Run("success -> 200", func(t *testing.T) {
-		t.Parallel()
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -518,57 +491,118 @@ func TestActivityHandler_ResetAllData_Suite(t *testing.T) {
 	})
 }
 
-func TestBuildActivityListRequest_InvalidValues(t *testing.T) {
-	w := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(w)
-	ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?page=-5&pageSize=0&urgencyId=abc", nil)
-	req := buildActivityListRequest(ctx)
-	assert.Equal(t, -5, req.Page)
-	assert.Equal(t, 0, req.PageSize)
-	assert.Nil(t, req.UrgencyID)
+func TestBuildActivityListRequest(t *testing.T) {
+	t.Run("it build properly with default values when invalid query params are provided", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?page=-5&pageSize=0&pageToken=abc", nil)
+		req := buildActivityListRequest(ctx)
+		assert.Equal(t, -5, req.Page)
+		assert.Equal(t, 0, req.PageSize)
+		assert.Nil(t, req.UrgencyID)
+		assert.Equal(t, "abc", req.PageToken)
+	})
 }
 
 func TestEncodeCursorToken(t *testing.T) {
-	zero := time.Time{}
-	assert.Equal(t, "", encodeCursorToken(zero, 0))
+	t.Parallel()
 
-	nonZero := time.Date(2025, 3, 1, 12, 0, 0, 0, time.UTC)
-	enc := encodeCursorToken(nonZero, 0)
-	assert.NotEmpty(t, enc)
-}
+	t.Run("it returns empty string for zero time", func(t *testing.T) {
+		zero := time.Time{}
+		assert.Equal(t, "", encodeCursorToken(zero, 0))
 
-// Fake read model for ListAll branch (no urgencyId)
-type readModelAllFake struct {
-	items []sharedModels.Activity
-	err   error
-}
+		nonZero := time.Date(2025, 3, 1, 12, 0, 0, 0, time.UTC)
+		enc := encodeCursorToken(nonZero, 0)
+		assert.NotEmpty(t, enc)
+	})
 
-func (f *readModelAllFake) CountByUrgencyIDs(_ context.Context, ids []uint) (map[uint]int64, error) {
-	if f.err != nil {
-		return nil, f.err
-	}
-	m := map[uint]int64{}
-	for _, id := range ids {
-		m[id] = int64(len(f.items))
-	}
-	return m, nil
+	t.Run("it returns non-empty string for non-zero time", func(t *testing.T) {
+		nonZero := time.Date(2025, 3, 1, 12, 0, 0, 0, time.UTC)
+		enc := encodeCursorToken(nonZero, 0)
+		assert.NotEmpty(t, enc)
+	})
 }
 
-func (f *readModelAllFake) ListByUrgency(_ context.Context, urgencyID uint, limit int) ([]sharedModels.Activity, error) {
-	return nil, fmt.Errorf("not used")
-}
-func (f *readModelAllFake) ListAll(_ context.Context, limit int) ([]sharedModels.Activity, error) {
-	if f.err != nil {
-		return nil, f.err
-	}
-	if limit <= 0 || limit >= len(f.items) {
-		return f.items, nil
-	}
-	return f.items[:limit], nil
-}
-func (f *readModelAllFake) ListByUrgencyCursor(_ context.Context, urgencyID uint, pageSize int, pageToken string) ([]sharedModels.Activity, string, error) {
-	return nil, "", fmt.Errorf("not used")
-}
-func (f *readModelAllFake) ListAllCursor(_ context.Context, pageSize int, pageToken string) ([]sharedModels.Activity, string, error) {
-	return nil, "", fmt.Errorf("not used")
+func TestActivityHandler_GetActivityCounts(t *testing.T) {
+	t.Parallel()
+	log := utils.NewTestLogger()
+
+	t.Run("read model not available -> 503", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/counts", nil)
+		NewActivityHandler(log, nil, nil).GetActivityCounts(ctx)
+		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
+	})
+
+	t.Run("missing urgencyId -> 400", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/counts", nil)
+		readModel := service.NewMockFirestoreService(ctrl)
+		NewActivityHandler(log, nil, readModel).GetActivityCounts(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "at least one urgencyId is required")
+	})
+
+	t.Run("invalid urgencyId -> 400", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/counts?urgencyId=abc", nil)
+		readModel := service.NewMockFirestoreService(ctrl)
+		NewActivityHandler(log, nil, readModel).GetActivityCounts(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "urgencyId[0] must be a positive integer")
+	})
+
+	t.Run("too many urgencyId -> 400", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		q := "/activities/counts?"
+		for i := 0; i < 101; i++ {
+			if i > 0 {
+				q += "&"
+			}
+			q += fmt.Sprintf("urgencyId=%d", i+1)
+		}
+		ctx.Request = httptest.NewRequest(http.MethodGet, q, nil)
+		readModel := service.NewMockFirestoreService(ctrl)
+		NewActivityHandler(log, nil, readModel).GetActivityCounts(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "urgencyId cannot exceed 100 per request")
+	})
+
+	t.Run("success -> 200 and maps counts by string keys", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/counts?urgencyId=3&urgencyId=5", nil)
+		readModel := service.NewMockFirestoreService(ctrl)
+		readModel.EXPECT().CountByUrgencyIDs(gomock.Any(), gomock.Any()).Return(map[uint]int64{3: 1, 5: 1}, nil)
+
+		NewActivityHandler(log, nil, readModel).GetActivityCounts(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		var resp activityV1.ActivityCountsResponse
+		assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, int64(1), resp.Counts["3"])
+		assert.Equal(t, int64(1), resp.Counts["5"])
+	})
+
+	t.Run("read-model error -> 500", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/counts?urgencyId=7", nil)
+		readModel := service.NewMockFirestoreService(ctrl)
+		readModel.EXPECT().CountByUrgencyIDs(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("rm fail"))
+
+		NewActivityHandler(log, nil, readModel).GetActivityCounts(ctx)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
 }

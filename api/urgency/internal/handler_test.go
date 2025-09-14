@@ -937,6 +937,7 @@ func TestUrgencyHandler_CreateUrgency_LevelMapping(t *testing.T) {
 }
 
 func TestUrgencyHandler_UnassignedUrgencyIDs(t *testing.T) {
+	t.Parallel()
 	log := utils.NewTestLogger()
 
 	t.Run("it returns 500 when service fails", func(t *testing.T) {
@@ -962,5 +963,70 @@ func TestUrgencyHandler_UnassignedUrgencyIDs(t *testing.T) {
 		h.UnassignedUrgencyIDs(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"ids\":[5,9]")
+	})
+}
+
+func TestUrgencyHandler_CloseUrgency(t *testing.T) {
+	t.Parallel()
+	log := utils.NewTestLogger()
+
+	t.Run("it returns 400 for invalid urgency ID", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "abc"}}
+		h := NewUrgencyHandler(log, nil)
+		h.CloseUrgency(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("it returns 400 with app error code when service returns AppError", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Set("employeeID", uint(10))
+		ctx.Set("role", "Medic")
+		svc := NewMockUrgencyService(ctrl)
+		svc.EXPECT().CloseUrgency(gomock.Any(), uint(1), uint(10), false).
+			Return(commonv1.NewAppError("URGENCY_ERRORS.INVALID_STATE", "cannot close", nil))
+		h := NewUrgencyHandler(log, svc)
+		h.CloseUrgency(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "INVALID_STATE")
+	})
+
+	t.Run("it returns 400 when service returns generic error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Set("employeeID", uint(10))
+		ctx.Set("role", "Medic")
+		svc := NewMockUrgencyService(ctrl)
+		svc.EXPECT().CloseUrgency(gomock.Any(), uint(1), uint(10), false).Return(errors.New("boom"))
+		h := NewUrgencyHandler(log, svc)
+		h.CloseUrgency(ctx)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("it returns 204 and sets fresh window on success (admin)", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		ctx.Set("employeeID", uint(99))
+		ctx.Set("role", "Administrator")
+		svc := NewMockUrgencyService(ctrl)
+		svc.EXPECT().CloseUrgency(gomock.Any(), uint(1), uint(99), true).Return(nil)
+		h := NewUrgencyHandler(log, svc)
+		h.CloseUrgency(ctx)
+		assert.Equal(t, http.StatusNoContent, w.Code)
+		if exp := w.Header().Get(config.FreshWindowHeader); assert.NotEmpty(t, exp) {
+			_, err := time.Parse(time.RFC3339, exp)
+			assert.NoError(t, err)
+		}
 	})
 }

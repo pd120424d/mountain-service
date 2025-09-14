@@ -160,8 +160,6 @@ func (r *activityRepository) GetStats(ctx context.Context) (*model.ActivityStats
 		return nil, fmt.Errorf("failed to get total activities count: %w", err)
 	}
 
-	// Level statistics removed - activities don't have levels
-
 	// Get recent activities (last 10)
 	if err := r.db.WithContext(ctx).Order("created_at DESC").Limit(10).Find(&stats.RecentActivities).Error; err != nil {
 		log.Errorf("Failed to get recent activities: %v", err)

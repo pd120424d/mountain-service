@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pd120424d/mountain-service/api/shared/auth"
+	s2semployee "github.com/pd120424d/mountain-service/api/shared/s2s/employee"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 	"github.com/pd120424d/mountain-service/api/urgency/internal/clients"
 )
@@ -41,12 +42,13 @@ func InitializeServiceClients(config ServiceConfig, logger utils.Logger) (*Servi
 		TokenTTL:    time.Hour,
 	})
 
-	employeeClient := clients.NewEmployeeClient(clients.EmployeeClientConfig{
+	s2sEmp := s2semployee.New(s2semployee.Config{
 		BaseURL:     config.EmployeeServiceURL,
 		ServiceAuth: serviceAuth,
 		Logger:      logger,
 		Timeout:     30 * time.Second,
 	})
+	employeeClient := clients.NewEmployeeClientFromS2S(s2sEmp, logger)
 
 	activityClient := clients.NewActivityClient(clients.ActivityClientConfig{
 		BaseURL:     config.ActivityServiceURL,

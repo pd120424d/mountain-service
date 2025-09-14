@@ -391,7 +391,7 @@ func (h *activityHandler) GetActivityStats(ctx *gin.Context) {
 // @Description Враћа број активности за наведене ургенције, помоћу Firestore агрегатних упита.
 // @Tags activities
 // @Produce json
-// @Param urgencyId query int true "Идентификатори ургенција" collectionFormat(multi)
+// @Param urgencyId query []int true "Идентификатори ургенција" collectionFormat(multi)
 // @Success 200 {object} activityV1.ActivityCountsResponse
 // @Failure 400 {object} activityV1.ErrorResponse
 // @Failure 503 {object} activityV1.ErrorResponse

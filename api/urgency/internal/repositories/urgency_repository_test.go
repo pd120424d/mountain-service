@@ -409,3 +409,128 @@ func TestUrgencyRepository_ListUnassignedIDs(t *testing.T) {
 		assert.Equal(t, u1.ID, ids[0])
 	}
 }
+
+func TestUrgencyRepository_DBErrors(t *testing.T) {
+	log := utils.NewTestLogger()
+
+	t.Run("GetAll returns error when DB is closed", func(t *testing.T) {
+		db := setupTestDB(t)
+		repo := NewUrgencyRepository(log, db)
+		sqlDB, _ := db.DB()
+		_ = sqlDB.Close()
+		_, err := repo.GetAll(context.Background())
+		assert.Error(t, err)
+	})
+
+	t.Run("ListPaginated returns error when DB is closed (count)", func(t *testing.T) {
+		db := setupTestDB(t)
+		repo := NewUrgencyRepository(log, db)
+		sqlDB, _ := db.DB()
+		_ = sqlDB.Close()
+		_, _, err := repo.ListPaginated(context.Background(), 1, 10, nil)
+		assert.Error(t, err)
+	})
+
+	t.Run("ListUnassignedIDs returns error when DB is closed", func(t *testing.T) {
+		db := setupTestDB(t)
+		repo := NewUrgencyRepository(log, db)
+		sqlDB, _ := db.DB()
+		_ = sqlDB.Close()
+		_, err := repo.ListUnassignedIDs(context.Background())
+		assert.Error(t, err)
+	})
+
+	t.Run("ResetAllData returns error when DB is closed", func(t *testing.T) {
+		db := setupTestDB(t)
+		repo := NewUrgencyRepository(log, db)
+		sqlDB, _ := db.DB()
+		_ = sqlDB.Close()
+		err := repo.ResetAllData(context.Background())
+		assert.Error(t, err)
+	})
+
+	t.Run("Create returns error when DB is closed", func(t *testing.T) {
+		db := setupTestDB(t)
+		repo := NewUrgencyRepository(log, db)
+		sqlDB, _ := db.DB()
+		_ = sqlDB.Close()
+		err := repo.Create(context.Background(), &model.Urgency{})
+		assert.Error(t, err)
+	})
+}
+
+func TestUrgencyRepository_withRead(t *testing.T) {
+	log := utils.NewTestLogger()
+
+	newDB := func(t *testing.T) *gorm.DB {
+		sdb, err := sql.Open("sqlite", ":memory:")
+		require.NoError(t, err)
+		db, err := gorm.Open(sqlite.Dialector{Conn: sdb}, &gorm.Config{})
+		require.NoError(t, err)
+		require.NoError(t, db.AutoMigrate(&model.Urgency{}))
+		return db
+	}
+
+	t.Run("uses write DB when fresh required (RYW)", func(t *testing.T) {
+		writeDB := newDB(t)
+		readDB := newDB(t)
+		repo := NewUrgencyRepositoryRW(log, writeDB, readDB)
+
+		// Seed only write DB
+		req := &model.Urgency{FirstName: "W", LastName: "Only", ContactPhone: "1", Description: "d", Level: urgencyV1.Medium, Status: urgencyV1.Open}
+		require.NoError(t, writeDB.Create(req).Error)
+
+		ctx := utils.RequireFresh(t.Context())
+		items, err := repo.GetAll(ctx)
+		require.NoError(t, err)
+		assert.Len(t, items, 1)
+		assert.Equal(t, "W", items[0].FirstName)
+	})
+
+	t.Run("uses read replica with read-only tx when fresh not required", func(t *testing.T) {
+		writeDB := newDB(t)
+		readDB := newDB(t)
+		repo := NewUrgencyRepositoryRW(log, writeDB, readDB)
+
+		// Seed only read DB
+		seed := &model.Urgency{FirstName: "R", LastName: "Only", ContactPhone: "1", Description: "d", Level: urgencyV1.Low, Status: urgencyV1.Open}
+		require.NoError(t, readDB.Create(seed).Error)
+
+		items, err := repo.GetAll(t.Context())
+		require.NoError(t, err)
+		assert.Len(t, items, 1)
+		assert.Equal(t, "R", items[0].FirstName)
+	})
+
+	t.Run("begin error on read tx surfaces error", func(t *testing.T) {
+		writeDB := newDB(t)
+		readDB := newDB(t)
+		repo := NewUrgencyRepositoryRW(log, writeDB, readDB)
+		// Close underlying read DB to force Begin error
+		sqlRead, _ := readDB.DB()
+		_ = sqlRead.Close()
+		_, err := repo.GetAll(t.Context())
+		assert.Error(t, err)
+	})
+
+	t.Run("fn error rolls back and returns error", func(t *testing.T) {
+		writeDB := newDB(t)
+		readDB := newDB(t)
+		repo := NewUrgencyRepositoryRW(log, writeDB, readDB)
+		// Trigger fn error via unsupported filter type in List
+		_, err := repo.List(t.Context(), map[string]interface{}{"first_name": []string{"x"}})
+		assert.Error(t, err)
+	})
+
+	t.Run("nil read DB falls back to write DB", func(t *testing.T) {
+		writeDB := newDB(t)
+		repo := NewUrgencyRepositoryRW(log, writeDB, nil)
+		// Seed write
+		req := &model.Urgency{FirstName: "OnlyWrite", LastName: "X", ContactPhone: "1", Description: "d", Level: urgencyV1.High, Status: urgencyV1.Open}
+		require.NoError(t, writeDB.Create(req).Error)
+		items, err := repo.GetAll(t.Context())
+		require.NoError(t, err)
+		assert.Len(t, items, 1)
+		assert.Equal(t, "OnlyWrite", items[0].FirstName)
+	})
+}

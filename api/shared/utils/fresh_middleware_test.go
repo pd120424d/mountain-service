@@ -15,7 +15,7 @@ func TestFreshReadWindowMiddleware_AllowsChainWithoutHeader(t *testing.T) {
 	t.Parallel()
 
 	t.Run("it allows the request to continue when the header is missing", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
+		testSetGinMode()
 		r := gin.New()
 		r.Use(FreshReadWindowMiddleware())
 		r.GET("/ok", func(c *gin.Context) { c.String(200, "ok") })
@@ -29,7 +29,7 @@ func TestFreshReadWindowMiddleware_AllowsChainWithoutHeader(t *testing.T) {
 	})
 
 	t.Run("it allows the request to continue when the header is invalid", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
+		testSetGinMode()
 		r := gin.New()
 		r.Use(FreshReadWindowMiddleware())
 		r.GET("/ok", func(c *gin.Context) { c.String(200, "ok") })
@@ -44,7 +44,7 @@ func TestFreshReadWindowMiddleware_AllowsChainWithoutHeader(t *testing.T) {
 	})
 
 	t.Run("it allows the request to continue when the header is in the past", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
+		testSetGinMode()
 		r := gin.New()
 		r.Use(FreshReadWindowMiddleware())
 		r.GET("/ok", func(c *gin.Context) { c.String(200, "ok") })
@@ -59,7 +59,7 @@ func TestFreshReadWindowMiddleware_AllowsChainWithoutHeader(t *testing.T) {
 	})
 
 	t.Run("it sets the context when the header is in the future", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
+		testSetGinMode()
 		r := gin.New()
 		r.Use(FreshReadWindowMiddleware())
 		var hadFresh bool

@@ -15,6 +15,14 @@ import (
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
 
+// HTTPClient abstracts the shared HTTP client for easier testing.
+type HTTPClient interface {
+	Get(ctx context.Context, endpoint string) (*http.Response, error)
+	Post(ctx context.Context, endpoint string, body interface{}) (*http.Response, error)
+	Put(ctx context.Context, endpoint string, body interface{}) (*http.Response, error)
+	Delete(ctx context.Context, endpoint string) (*http.Response, error)
+}
+
 // ActivityClient interface for communicating with the activity service
 type ActivityClient interface {
 	CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error)

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
@@ -291,6 +292,88 @@ func TestActivityRepository_List(t *testing.T) {
 		assert.Equal(t, 1, filter.Page)
 		assert.Equal(t, model.DefaultPageSize, filter.PageSize)
 	})
+
+	t.Run("successfully lists activities with date filters", func(t *testing.T) {
+		db := setupActivityTestDB(t)
+		log := utils.NewTestLogger()
+		repo := NewActivityRepository(log, db)
+
+		base := time.Date(2025, 1, 10, 10, 0, 0, 0, time.UTC)
+		a1 := &model.Activity{Description: "a1", CreatedAt: base.Add(-3 * time.Hour)}
+		a2 := &model.Activity{Description: "a2", CreatedAt: base.Add(-2 * time.Hour)}
+		a3 := &model.Activity{Description: "a3", CreatedAt: base.Add(-1 * time.Hour)}
+		assert.NoError(t, db.Create(a1).Error)
+		assert.NoError(t, db.Create(a2).Error)
+		assert.NoError(t, db.Create(a3).Error)
+
+		start := base.Add(-2 * time.Hour)
+		end := base.Add(-2 * time.Hour)
+		f := &model.ActivityFilter{StartDate: &start, EndDate: &end, Page: 1, PageSize: 10}
+		items, total, err := repo.List(t.Context(), f)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), total)
+		if assert.Len(t, items, 1) {
+			assert.Equal(t, "a2", items[0].Description)
+		}
+	})
+
+	t.Run("it builds complex queries correctly", func(t *testing.T) {
+		db := setupActivityTestDB(t)
+		log := utils.NewTestLogger()
+		repo := NewActivityRepository(log, db)
+
+		// Create test data
+		employeeID := uint(1)
+		urgencyID := uint(2)
+
+		activity1 := &model.Activity{
+			Description: "Test employee creation",
+			EmployeeID:  employeeID,
+		}
+		activity2 := &model.Activity{
+			Description: "Test urgency creation",
+			EmployeeID:  employeeID,
+			UrgencyID:   urgencyID,
+		}
+
+		err := repo.Create(t.Context(), activity1)
+		assert.NoError(t, err)
+		err = repo.Create(t.Context(), activity2)
+		assert.NoError(t, err)
+
+		// Test complex filter with multiple criteria
+		filter := &model.ActivityFilter{
+			EmployeeID: &employeeID,
+			UrgencyID:  &urgencyID,
+			Page:       1,
+			PageSize:   10,
+		}
+
+		activities, total, err := repo.List(t.Context(), filter)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), total)
+		assert.Len(t, activities, 1)
+	})
+
+	t.Run("it returns an error when count query fails", func(t *testing.T) {
+		gormDB, mock, sqlDB := newGormWithSQLMock(t)
+		defer sqlDB.Close()
+		log := utils.NewTestLogger()
+		repo := NewActivityRepository(log, gormDB)
+
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "activities" WHERE "activities"."deleted_at" IS NULL`)).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "activities" WHERE "activities"."deleted_at" IS NULL ORDER BY created_at DESC LIMIT $1`)).
+			WithArgs(50).
+			WillReturnError(sqlmock.ErrCancelled)
+
+		filter := model.NewActivityFilter()
+		items, total, err := repo.List(t.Context(), filter)
+		assert.Error(t, err)
+		assert.Nil(t, items)
+		assert.Equal(t, int64(0), total)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
 }
 
 func TestActivityRepository_GetStats(t *testing.T) {
@@ -445,66 +528,5 @@ func TestActivityRepository_ResetAllData(t *testing.T) {
 		err = db.Model(&model.Activity{}).Count(&count).Error
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), count)
-	})
-}
-
-func TestActivityRepository_DatabaseConnection(t *testing.T) {
-	t.Parallel()
-
-	t.Run("it handles database connection properly", func(t *testing.T) {
-		// Test that the repository works with a proper database connection
-		db := setupActivityTestDB(t)
-		log := utils.NewTestLogger()
-		repo := NewActivityRepository(log, db)
-
-		activity := &model.Activity{
-			Description: "Test",
-		}
-
-		err := repo.Create(t.Context(), activity)
-		assert.NoError(t, err)
-		assert.NotZero(t, activity.ID)
-	})
-}
-
-func TestActivityRepository_QueryBuilding(t *testing.T) {
-	t.Parallel()
-
-	t.Run("it builds complex queries correctly", func(t *testing.T) {
-		db := setupActivityTestDB(t)
-		log := utils.NewTestLogger()
-		repo := NewActivityRepository(log, db)
-
-		// Create test data
-		employeeID := uint(1)
-		urgencyID := uint(2)
-
-		activity1 := &model.Activity{
-			Description: "Test employee creation",
-			EmployeeID:  employeeID,
-		}
-		activity2 := &model.Activity{
-			Description: "Test urgency creation",
-			EmployeeID:  employeeID,
-			UrgencyID:   urgencyID,
-		}
-
-		err := repo.Create(t.Context(), activity1)
-		assert.NoError(t, err)
-		err = repo.Create(t.Context(), activity2)
-		assert.NoError(t, err)
-
-		// Test complex filter with multiple criteria
-		filter := &model.ActivityFilter{
-			EmployeeID: &employeeID,
-			UrgencyID:  &urgencyID,
-			Page:       1,
-			PageSize:   10,
-		}
-
-		activities, total, err := repo.List(t.Context(), filter)
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), total)
-		assert.Len(t, activities, 1)
 	})
 }

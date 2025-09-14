@@ -248,10 +248,15 @@ func (z *zapLogger) Sync() error {
 }
 
 func (z *zapLogger) WithName(name string) Logger {
+	// For test loggers (svcName empty), avoid rotation and avoid copying mutex.
+	if z.svcName == "" {
+		named := z.logger.Named(name)
+		return &zapLogger{logger: named}
+	}
 	_ = z.rotate()
 	named := z.logger.Named(name)
 	return &zapLogger{
-		mutex:       z.mutex, // Share the same mutex
+		mutex:       z.mutex,
 		logger:      named,
 		file:        z.file,
 		svcName:     z.svcName,
