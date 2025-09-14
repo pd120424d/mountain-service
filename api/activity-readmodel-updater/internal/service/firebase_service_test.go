@@ -103,6 +103,7 @@ func (c *collBadGood) Documents(ctx context.Context) firestorex.DocumentIterator
 	return &iterFirstBadThenGood{}
 }
 func (c *collBadGood) StartAfter(v interface{}) firestorex.Query { return c }
+func (c *collBadGood) Count(ctx context.Context) (int64, error)  { return 2, nil }
 
 type clientBadGood struct{}
 
@@ -114,6 +115,7 @@ func (c *collIterErr) OrderBy(field string, dir firestorex.Direction) firestorex
 func (c *collIterErr) Limit(n int) firestorex.Query                                    { return c }
 func (c *collIterErr) Documents(ctx context.Context) firestorex.DocumentIterator       { return &iterErr{} }
 func (c *collIterErr) StartAfter(v interface{}) firestorex.Query                       { return c }
+func (c *collIterErr) Count(ctx context.Context) (int64, error)                        { return 0, errors.New("iter") }
 
 type clientIterErr struct{}
 
@@ -125,6 +127,7 @@ func (c *errColl) OrderBy(field string, dir firestorex.Direction) firestorex.Que
 func (c *errColl) Limit(n int) firestorex.Query                                    { return c }
 func (c *errColl) Documents(ctx context.Context) firestorex.DocumentIterator       { return nil }
 func (c *errColl) StartAfter(v interface{}) firestorex.Query                       { return c }
+func (c *errColl) Count(ctx context.Context) (int64, error)                        { return 0, errors.New("err") }
 
 type errClient struct{ col *errColl }
 

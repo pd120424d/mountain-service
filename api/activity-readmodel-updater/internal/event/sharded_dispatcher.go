@@ -59,13 +59,19 @@ func NewShardedDispatcher(fb service.FirebaseService, logger utils.Logger, shard
 
 // Process parses the message and handles it with keyed per-activity ordering and a global concurrency limit.
 func (d *shardedDispatcher) Process(ctx context.Context, msg *pubsub.Message) error {
+	log := d.logger.WithContext(ctx)
 	ev, strat, err := Parse(msg.Data, msg.Attributes)
 	if err != nil {
-		d.logger.WithContext(ctx).Errorf("Unrecognized event payload format, cannot parse message_id=%s", msg.ID)
+		payloadSnippet := string(msg.Data)
+		if len(payloadSnippet) > 256 {
+			payloadSnippet = payloadSnippet[:256] + "..."
+		}
+		log.Errorf("Unrecognized event payload format, cannot parse message_id=%s payload_snippet=%q", msg.ID, payloadSnippet)
 		return err
 	}
-	_ = strat
+	rawType := ev.Type
 	normalizeType(&ev)
+	log.Infof("Event parsed: strategy=%s activity_id=%d type_raw=%s type=%s", strat, ev.ActivityID, rawType, ev.Type)
 
 	if err := ctx.Err(); err != nil {
 		return err
@@ -84,7 +90,6 @@ func (d *shardedDispatcher) Process(ctx context.Context, msg *pubsub.Message) er
 	defer lk.Unlock()
 
 	wctx, cancel := context.WithTimeout(ctx, d.workTimeout)
-	log := d.logger.WithContext(wctx)
 	stop := utils.TimeOperation(log, "KeyedDispatcher.SyncActivity", zap.Int("activity_id", int(ev.ActivityID)), zap.String("type", ev.Type))
 	defer stop()
 	defer cancel()

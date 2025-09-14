@@ -85,35 +85,33 @@ func loadConfig() *Config {
 }
 
 func main() {
-	// Load configuration
 	cfg := loadConfig()
 
-	// Initialize logger
 	logger, err := utils.NewLogger("activity-readmodel-updater")
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
+	ctx0, _ := utils.EnsureRequestID(context.Background())
+	logger = logger.WithName("main").WithContext(ctx0)
+
 	credsSrc := "ADC"
 	if cfg.FirebaseCredentialsPath != "" {
 		credsSrc = fmt.Sprintf("file:%s", cfg.FirebaseCredentialsPath)
 	}
 	logger.Infof("Starting Activity Read Model Updater version=%s git_sha=%s project_id=%s topic=%s subscription=%s creds=%s", cfg.Version, cfg.GitSHA, cfg.FirebaseProjectID, cfg.PubSubTopic, cfg.PubSubSubscription, credsSrc)
 
-	// Initialize Firebase Firestore
 	firestoreClient, err := initFirestore(cfg.FirebaseCredentialsPath, cfg.FirebaseProjectID)
 	if err != nil {
 		logger.Fatalf("Failed to initialize Firestore: %v", err)
 	}
 	defer firestoreClient.Close()
 
-	// Initialize Pub/Sub
 	pubsubClient, err := initPubSub(cfg.FirebaseCredentialsPath, cfg.FirebaseProjectID)
 	if err != nil {
 		logger.Fatalf("Failed to initialize Pub/Sub: %v", err)
 	}
 	defer pubsubClient.Close()
 
-	// Initialize services
 	fsAdapter := googleadapter.NewClientAdapter(firestoreClient)
 	firebaseService := service.NewFirebaseService(fsAdapter, logger)
 
@@ -217,7 +215,12 @@ func main() {
 				}()
 				ctx, reqID := utils.EnsureRequestID(ctx)
 				reqLog := logger.WithContext(ctx)
-				reqLog.Infof("Handling activity event: message_id=%s", msg.ID)
+				attempt := 0
+				if msg.DeliveryAttempt != nil {
+					attempt = *msg.DeliveryAttempt
+				}
+				agg := msg.Attributes["aggregateId"]
+				reqLog.Infof("Handling activity event: message_id=%s delivery_attempt=%d aggregate_id=%s publish_time=%s", msg.ID, attempt, agg, msg.PublishTime.Format(time.RFC3339))
 
 				if err := dispatcher.Process(ctx, msg); err != nil {
 					reqLog.Errorf("Failed to handle activity event: error=%v, message_id=%s, request_id=%s", err, msg.ID, reqID)
