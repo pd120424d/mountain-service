@@ -26,6 +26,17 @@ type readModelFake struct {
 	err   error
 }
 
+func (f *readModelFake) CountByUrgencyIDs(_ context.Context, ids []uint) (map[uint]int64, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	m := map[uint]int64{}
+	for _, id := range ids {
+		m[id]++
+	}
+	return m, nil
+}
+
 func (f *readModelFake) ListByUrgency(_ context.Context, urgencyID uint, limit int) ([]sharedModels.Activity, error) {
 	if f.err != nil {
 		return nil, f.err
@@ -530,6 +541,17 @@ func TestEncodeCursorToken(t *testing.T) {
 type readModelAllFake struct {
 	items []sharedModels.Activity
 	err   error
+}
+
+func (f *readModelAllFake) CountByUrgencyIDs(_ context.Context, ids []uint) (map[uint]int64, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	m := map[uint]int64{}
+	for _, id := range ids {
+		m[id] = int64(len(f.items))
+	}
+	return m, nil
 }
 
 func (f *readModelAllFake) ListByUrgency(_ context.Context, urgencyID uint, limit int) ([]sharedModels.Activity, error) {

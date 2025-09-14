@@ -149,6 +149,24 @@ func (c *coll) Documents(ctx context.Context) firestorex.DocumentIterator {
 	return &iter{items: items, idx: 0}
 }
 
+// Count returns number of documents matching current query
+func (c *coll) Count(ctx context.Context) (int64, error) {
+	it := c.Documents(ctx)
+	defer it.Stop()
+	var n int64
+	for {
+		_, err := it.Next()
+		if firestorex.IsDone(err) {
+			break
+		}
+		if err != nil {
+			return 0, err
+		}
+		n++
+	}
+	return n, nil
+}
+
 func matchFilters(m map[string]interface{}, flts []filter) bool {
 	for _, f := range flts {
 		av := m[f.field]

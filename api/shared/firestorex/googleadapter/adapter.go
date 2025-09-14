@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/firestore"
+	"cloud.google.com/go/firestore/apiv1/firestorepb"
 	"google.golang.org/api/iterator"
 
 	"github.com/pd120424d/mountain-service/api/shared/firestorex"
@@ -64,6 +65,23 @@ func (a *queryAdapter) Limit(n int) firestorex.Query { return &queryAdapter{q: a
 func (a *queryAdapter) Documents(ctx context.Context) firestorex.DocumentIterator {
 	it := a.q.Documents(ctx)
 	return &iteratorAdapter{it: it}
+}
+
+// Count uses Firestore aggregation query to return the number of documents matching the query.
+func (a *queryAdapter) Count(ctx context.Context) (int64, error) {
+	agg := a.q.NewAggregationQuery().WithCount("count")
+	res, err := agg.Get(ctx)
+	if err != nil {
+		return 0, err
+	}
+	v, ok := res["count"]
+	if !ok || v == nil {
+		return 0, nil
+	}
+	if vv, ok := v.(*firestorepb.Value); ok && vv != nil {
+		return vv.GetIntegerValue(), nil
+	}
+	return 0, nil
 }
 
 // Iterator

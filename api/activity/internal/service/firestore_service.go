@@ -18,6 +18,7 @@ type FirestoreService interface {
 	ListAll(ctx context.Context, limit int) ([]sharedModels.Activity, error)
 	ListByUrgencyCursor(ctx context.Context, urgencyID uint, pageSize int, pageToken string) ([]sharedModels.Activity, string, error)
 	ListAllCursor(ctx context.Context, pageSize int, pageToken string) ([]sharedModels.Activity, string, error)
+	CountByUrgencyIDs(ctx context.Context, ids []uint) (map[uint]int64, error)
 }
 
 type firestoreService struct {
@@ -538,3 +539,60 @@ func coerceTime(v interface{}) time.Time {
 }
 
 func isDone(err error) bool { return firestorex.IsDone(err) }
+
+// CountByUrgencyIDs returns counts per urgency ID using Firestore count() aggregation.
+// It limits concurrency to 8 to avoid overloading Firestore and keeps each
+// individual count query simple and highly selective on the indexed urgency_id.
+func (s *firestoreService) CountByUrgencyIDs(ctx context.Context, ids []uint) (map[uint]int64, error) {
+	log := s.logger.WithContext(ctx)
+	defer utils.TimeOperation(log, "FirestoreService.CountByUrgencyIDs")()
+	if s.client == nil {
+		return nil, fmt.Errorf("firestore client is nil")
+	}
+	// Deduplicate IDs to avoid redundant queries
+	uniq := make(map[uint]struct{}, len(ids))
+	ordered := make([]uint, 0, len(ids))
+	for _, id := range ids {
+		if id == 0 {
+			continue
+		}
+		if _, ok := uniq[id]; !ok {
+			uniq[id] = struct{}{}
+			ordered = append(ordered, id)
+		}
+	}
+	res := make(map[uint]int64, len(ordered))
+	sem := make(chan struct{}, 8)
+	type item struct {
+		id  uint
+		c   int64
+		err error
+	}
+	ch := make(chan item, len(ordered))
+	for _, id := range ordered {
+		sem <- struct{}{}
+		go func(u uint) {
+			defer func() { <-sem }()
+			q := s.client.Collection(s.collection).Where("urgency_id", "==", int64(u))
+			cnt, err := q.Count(ctx)
+			ch <- item{id: u, c: cnt, err: err}
+		}(id)
+	}
+	// wait for all to finish
+	for i := 0; i < cap(sem); i++ {
+		sem <- struct{}{}
+	}
+	close(ch)
+	// collect results
+	var firstErr error
+	for it := range ch {
+		if it.err != nil && firstErr == nil {
+			firstErr = it.err
+		}
+		res[it.id] = it.c
+	}
+	if firstErr != nil {
+		return res, firstErr
+	}
+	return res, nil
+}

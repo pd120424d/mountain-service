@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -23,6 +24,7 @@ type ActivityHandler interface {
 	GetActivity(ctx *gin.Context)
 	ListActivities(ctx *gin.Context)
 	GetActivityStats(ctx *gin.Context)
+	GetActivityCounts(ctx *gin.Context)
 	DeleteActivity(ctx *gin.Context)
 	ResetAllData(ctx *gin.Context)
 }
@@ -382,6 +384,61 @@ func (h *activityHandler) GetActivityStats(ctx *gin.Context) {
 	log.Info("Successfully retrieved activity stats")
 
 	ctx.JSON(http.StatusOK, response)
+}
+
+// GetActivityCounts Број активности по ургенцији (Firestore)
+// @Summary Број активности по ургенцији
+// @Description Враћа број активности за наведене ургенције, помоћу Firestore агрегатних упита.
+// @Tags activities
+// @Produce json
+// @Param urgencyId query int true "Идентификатори ургенција" collectionFormat(multi)
+// @Success 200 {object} activityV1.ActivityCountsResponse
+// @Failure 400 {object} activityV1.ErrorResponse
+// @Failure 503 {object} activityV1.ErrorResponse
+// @Router /activities/counts [get]
+func (h *activityHandler) GetActivityCounts(ctx *gin.Context) {
+	log := h.log.WithContext(ctx.Request.Context())
+	defer utils.TimeOperation(log, "ActivityHandler.GetActivityCounts")()
+
+	if h.readModel == nil {
+		ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": "Read model (Firestore) is not available"})
+		return
+	}
+
+	raw := ctx.QueryArray("urgencyId")
+	if len(raw) == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "at least one urgencyId is required"})
+		return
+	}
+	if len(raw) > 100 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "urgencyId cannot exceed 100 per request"})
+		return
+	}
+	ids := make([]uint, 0, len(raw))
+	for i, s := range raw {
+		v, err := strconv.Atoi(strings.TrimSpace(s))
+		if err != nil || v <= 0 {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("urgencyId[%d] must be a positive integer", i)})
+			return
+		}
+		ids = append(ids, uint(v))
+	}
+
+	cctx, cancel := context.WithTimeout(ctx.Request.Context(), config.DefaultListTimeout)
+	defer cancel()
+
+	counts, err := h.readModel.CountByUrgencyIDs(cctx, ids)
+	if err != nil {
+		log.Errorf("Failed to get activity counts: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to compute counts", "details": err.Error()})
+		return
+	}
+
+	out := make(map[string]int64, len(counts))
+	for id, c := range counts {
+		out[strconv.Itoa(int(id))] = c
+	}
+	ctx.JSON(http.StatusOK, activityV1.ActivityCountsResponse{Counts: out})
 }
 
 // DeleteActivity Брисање активности по ID

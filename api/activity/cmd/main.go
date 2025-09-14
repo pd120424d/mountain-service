@@ -226,6 +226,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		authorized.POST("/activities", activityHandler.CreateActivity)
 		authorized.GET("/activities", activityHandler.ListActivities)
 		authorized.GET("/activities/stats", activityHandler.GetActivityStats)
+		authorized.GET("/activities/counts", activityHandler.GetActivityCounts)
 		authorized.GET("/activities/:id", activityHandler.GetActivity)
 		authorized.DELETE("/activities/:id", activityHandler.DeleteActivity)
 	}

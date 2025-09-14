@@ -223,7 +223,11 @@ func main() {
 				reqLog.Infof("Handling activity event: message_id=%s delivery_attempt=%d aggregate_id=%s publish_time=%s", msg.ID, attempt, agg, msg.PublishTime.Format(time.RFC3339))
 
 				if err := dispatcher.Process(ctx, msg); err != nil {
-					reqLog.Errorf("Failed to handle activity event: error=%v, message_id=%s, request_id=%s", err, msg.ID, reqID)
+					if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+						reqLog.Warnf("Handler context canceled: message_id=%s delivery_attempt=%d; nacking for redelivery", msg.ID, attempt)
+					} else {
+						reqLog.Errorf("Failed to handle activity event: error=%v, message_id=%s, request_id=%s", err, msg.ID, reqID)
+					}
 					msg.Nack()
 				} else {
 					reqLog.Infof("Successfully handled activity event: message_id=%s", msg.ID)

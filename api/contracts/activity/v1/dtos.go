@@ -74,6 +74,33 @@ type ActivityStatsResponse struct {
 	ActivitiesLast30Days int64              `json:"activitiesLast30Days"`
 }
 
+// ActivityCountsRequest DTO for requesting counts by urgency IDs
+// swagger:model
+type ActivityCountsRequest struct {
+	UrgencyIDs []uint `json:"urgencyIds" binding:"required"`
+}
+
+func (r *ActivityCountsRequest) Validate() error {
+	if len(r.UrgencyIDs) == 0 {
+		return fmt.Errorf("urgencyIds must not be empty")
+	}
+	if len(r.UrgencyIDs) > 100 {
+		return fmt.Errorf("urgencyIds cannot exceed 100 per request")
+	}
+	for i, id := range r.UrgencyIDs {
+		if id == 0 {
+			return fmt.Errorf("urgencyIds[%d] must be > 0", i)
+		}
+	}
+	return nil
+}
+
+// ActivityCountsResponse DTO for returning counts keyed by urgencyId (as string keys for JSON)
+// swagger:model
+type ActivityCountsResponse struct {
+	Counts map[string]int64 `json:"counts"`
+}
+
 // Helper methods
 
 func (r *ActivityCreateRequest) Validate() error {

@@ -35,6 +35,7 @@ type Query interface {
 	StartAfter(v interface{}) Query
 	Limit(n int) Query
 	Documents(ctx context.Context) DocumentIterator
+	Count(ctx context.Context) (int64, error)
 }
 
 type DocumentIterator interface {
