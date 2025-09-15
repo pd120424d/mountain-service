@@ -360,40 +360,6 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 	})
 }
 
-func TestActivityHandler_GetActivityStats(t *testing.T) {
-	t.Parallel()
-	log := utils.NewTestLogger()
-
-	t.Run("service fails -> 500", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/stats", nil)
-		svcMock := service.NewMockActivityService(ctrl)
-		svcMock.EXPECT().GetActivityStats(gomock.Any()).Return(nil, fmt.Errorf("database error"))
-		NewActivityHandler(log, svcMock, nil).GetActivityStats(ctx)
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Failed to get activity stats")
-	})
-
-	t.Run("success -> 200", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		w := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(w)
-		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/stats", nil)
-		svcMock := service.NewMockActivityService(ctrl)
-		svcMock.EXPECT().GetActivityStats(gomock.Any()).Return(&activityV1.ActivityStatsResponse{TotalActivities: 1, RecentActivities: []activityV1.ActivityResponse{{ID: 5}}, ActivitiesLast24h: 1, ActivitiesLast7Days: 2, ActivitiesLast30Days: 3}, nil)
-		NewActivityHandler(log, svcMock, nil).GetActivityStats(ctx)
-		assert.Equal(t, http.StatusOK, w.Code)
-		body := w.Body.String()
-		assert.Contains(t, body, "\"totalActivities\":1")
-		assert.Contains(t, body, "\"id\":5")
-		assert.Contains(t, body, "\"activitiesLast24h\":1")
-		assert.Contains(t, body, "\"activitiesLast7Days\":2")
-		assert.Contains(t, body, "\"activitiesLast30Days\":3")
-	})
-}
-
 func TestActivityHandler_DeleteActivity(t *testing.T) {
 	t.Parallel()
 	log := utils.NewTestLogger()

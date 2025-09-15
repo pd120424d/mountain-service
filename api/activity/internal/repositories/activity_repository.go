@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
@@ -20,7 +19,6 @@ type ActivityRepository interface {
 	CreateWithOutbox(ctx context.Context, activity *model.Activity, event *models.OutboxEvent) error
 	GetByID(ctx context.Context, id uint) (*model.Activity, error)
 	List(ctx context.Context, filter *model.ActivityFilter) ([]model.Activity, int64, error)
-	GetStats(ctx context.Context) (*model.ActivityStats, error)
 	Delete(ctx context.Context, id uint) error
 	ResetAllData(ctx context.Context) error
 }
@@ -145,56 +143,6 @@ func (r *activityRepository) List(ctx context.Context, filter *model.ActivityFil
 
 	log.Infof("Activities listed successfully: count=%d, total=%d", len(activities), total)
 	return activities, total, nil
-}
-
-func (r *activityRepository) GetStats(ctx context.Context) (*model.ActivityStats, error) {
-	log := r.log.WithContext(ctx)
-	defer utils.TimeOperation(log, "ActivityRepository.GetStats")()
-	log.Info("Getting activity statistics")
-
-	stats := &model.ActivityStats{}
-
-	// Get total count
-	if err := r.db.WithContext(ctx).Model(&model.Activity{}).Count(&stats.TotalActivities).Error; err != nil {
-		log.Errorf("Failed to get total activities count: %v", err)
-		return nil, fmt.Errorf("failed to get total activities count: %w", err)
-	}
-
-	// Get recent activities (last 10)
-	if err := r.db.WithContext(ctx).Order("created_at DESC").Limit(10).Find(&stats.RecentActivities).Error; err != nil {
-		log.Errorf("Failed to get recent activities: %v", err)
-		return nil, fmt.Errorf("failed to get recent activities: %w", err)
-	}
-
-	// Get activities for different time periods
-	now := time.Now()
-
-	// Last 24 hours
-	if err := r.db.WithContext(ctx).Model(&model.Activity{}).
-		Where("created_at >= ?", now.Add(-24*time.Hour)).
-		Count(&stats.ActivitiesLast24h).Error; err != nil {
-		log.Errorf("Failed to get activities last 24h: %v", err)
-		return nil, fmt.Errorf("failed to get activities last 24h: %w", err)
-	}
-
-	// Last 7 days
-	if err := r.db.WithContext(ctx).Model(&model.Activity{}).
-		Where("created_at >= ?", now.Add(-7*24*time.Hour)).
-		Count(&stats.ActivitiesLast7Days).Error; err != nil {
-		log.Errorf("Failed to get activities last 7 days: %v", err)
-		return nil, fmt.Errorf("failed to get activities last 7 days: %w", err)
-	}
-
-	// Last 30 days
-	if err := r.db.WithContext(ctx).Model(&model.Activity{}).
-		Where("created_at >= ?", now.Add(-30*24*time.Hour)).
-		Count(&stats.ActivitiesLast30Days).Error; err != nil {
-		log.Errorf("Failed to get activities last 30 days: %v", err)
-		return nil, fmt.Errorf("failed to get activities last 30 days: %w", err)
-	}
-
-	log.Info("Activity statistics retrieved successfully")
-	return stats, nil
 }
 
 func (r *activityRepository) Delete(ctx context.Context, id uint) error {

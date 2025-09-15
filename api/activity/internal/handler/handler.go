@@ -23,7 +23,6 @@ type ActivityHandler interface {
 	CreateActivity(ctx *gin.Context)
 	GetActivity(ctx *gin.Context)
 	ListActivities(ctx *gin.Context)
-	GetActivityStats(ctx *gin.Context)
 	GetActivityCounts(ctx *gin.Context)
 	DeleteActivity(ctx *gin.Context)
 	ResetAllData(ctx *gin.Context)
@@ -352,36 +351,6 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	}
 
 	log.Infof("Listed %d activities out of %d total. Used PostgreSQL write model.", len(response.Activities), response.Total)
-
-	ctx.JSON(http.StatusOK, response)
-}
-
-// GetActivityStats Преузимање статистика активности
-// @Summary Статистике активности
-// @Description Преузимање свеобухватних статистика активности
-// @Tags activities
-// @Produce json
-// @Success 200 {object} activityV1.ActivityStatsResponse
-// @Failure 500 {object} map[string]interface{}
-// @Router /activities/stats [get]
-func (h *activityHandler) GetActivityStats(ctx *gin.Context) {
-	log := h.log.WithContext(ctx.Request.Context())
-	defer utils.TimeOperation(log, "ActivityHandler.GetActivityStats")()
-	log.Info("Received Get Activity Stats request")
-
-	if ctx.Request != nil {
-		log = h.log.WithContext(ctx.Request.Context())
-	}
-	log.Info("Received Get Activity Stats request")
-
-	response, err := h.svc.GetActivityStats(ctx.Request.Context())
-	if err != nil {
-		log.Errorf("Failed to get activity stats: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get activity stats", "details": err.Error()})
-		return
-	}
-
-	log.Info("Successfully retrieved activity stats")
 
 	ctx.JSON(http.StatusOK, response)
 }

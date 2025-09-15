@@ -99,21 +99,6 @@ func (mr *MockActivityRepositoryMockRecorder) GetByID(ctx, id any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockActivityRepository)(nil).GetByID), ctx, id)
 }
 
-// GetStats mocks base method.
-func (m *MockActivityRepository) GetStats(ctx context.Context) (*model.ActivityStats, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStats", ctx)
-	ret0, _ := ret[0].(*model.ActivityStats)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetStats indicates an expected call of GetStats.
-func (mr *MockActivityRepositoryMockRecorder) GetStats(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStats", reflect.TypeOf((*MockActivityRepository)(nil).GetStats), ctx)
-}
-
 // List mocks base method.
 func (m *MockActivityRepository) List(ctx context.Context, filter *model.ActivityFilter) ([]model.Activity, int64, error) {
 	m.ctrl.T.Helper()

@@ -15,7 +15,6 @@ import {
   V1ActivityCreateRequest,
   V1ActivityListResponse,
   V1ActivityResponse,
-  V1ActivityStatsResponse,
 } from "./data-contracts";
 import { ContentType, HttpClient, RequestParams } from "./http-client";
 
@@ -89,23 +88,6 @@ export class Activities<SecurityDataType = unknown> extends HttpClient<SecurityD
       path: `/activities/reset`,
       method: "DELETE",
       secure: true,
-      ...params,
-    });
-  /**
-   * @description Преузимање свеобухватних статистика активности
-   *
-   * @tags activities
-   * @name StatsList
-   * @summary Статистике активности
-   * @request GET:/activities/stats
-   * @secure
-   */
-  statsList = (params: RequestParams = {}) =>
-    this.request<V1ActivityStatsResponse, Record<string, any>>({
-      path: `/activities/stats`,
-      method: "GET",
-      secure: true,
-      format: "json",
       ...params,
     });
   /**

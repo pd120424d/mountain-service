@@ -22,7 +22,6 @@ type ActivityService interface {
 	CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error)
 	GetActivityByID(ctx context.Context, id uint) (*activityV1.ActivityResponse, error)
 	ListActivities(ctx context.Context, req *activityV1.ActivityListRequest) (*activityV1.ActivityListResponse, error)
-	GetActivityStats(ctx context.Context) (*activityV1.ActivityStatsResponse, error)
 	DeleteActivity(ctx context.Context, id uint) error
 	ResetAllData(ctx context.Context) error
 
@@ -275,22 +274,6 @@ func (s *activityService) ListActivities(ctx context.Context, req *activityV1.Ac
 
 	log.Infof("Listed %d activities out of %d total", len(activities), total)
 	return response, nil
-}
-
-func (s *activityService) GetActivityStats(ctx context.Context) (*activityV1.ActivityStatsResponse, error) {
-	log := s.log.WithContext(ctx)
-	defer utils.TimeOperation(log, "ActivityService.GetActivityStats")()
-	log.Info("Getting activity statistics")
-
-	stats, err := s.repo.GetStats(ctx)
-	if err != nil {
-		log.Errorf("Failed to get activity stats: %v", err)
-		return nil, commonv1.NewAppError("ACTIVITY_ERRORS.STATS_FAILED", "failed to get activity stats", map[string]interface{}{"cause": err.Error()})
-	}
-
-	log.Info("Activity statistics retrieved successfully")
-	response := stats.ToResponse()
-	return &response, nil
 }
 
 func (s *activityService) ResetAllData(ctx context.Context) error {

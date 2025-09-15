@@ -85,21 +85,6 @@ func (mr *MockActivityServiceMockRecorder) GetActivityByID(ctx, id any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivityByID", reflect.TypeOf((*MockActivityService)(nil).GetActivityByID), ctx, id)
 }
 
-// GetActivityStats mocks base method.
-func (m *MockActivityService) GetActivityStats(ctx context.Context) (*v1.ActivityStatsResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetActivityStats", ctx)
-	ret0, _ := ret[0].(*v1.ActivityStatsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetActivityStats indicates an expected call of GetActivityStats.
-func (mr *MockActivityServiceMockRecorder) GetActivityStats(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivityStats", reflect.TypeOf((*MockActivityService)(nil).GetActivityStats), ctx)
-}
-
 // ListActivities mocks base method.
 func (m *MockActivityService) ListActivities(ctx context.Context, req *v1.ActivityListRequest) (*v1.ActivityListResponse, error) {
 	m.ctrl.T.Helper()

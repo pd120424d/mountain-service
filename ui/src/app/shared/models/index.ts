@@ -53,8 +53,7 @@ export {
 // Activity Service
 export type {
   V1ActivityResponse as ActivityResponse,
-  V1ActivityListResponse as ActivityListResponse,
-  V1ActivityStatsResponse as ActivityStatsResponse
+  V1ActivityListResponse as ActivityListResponse
 } from './generated/activity';
 
 export {

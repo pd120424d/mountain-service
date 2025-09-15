@@ -39,10 +39,3 @@ export interface V1ActivityResponse {
   urgencyId?: number;
 }
 
-export interface V1ActivityStatsResponse {
-  activitiesLast24h?: number;
-  activitiesLast30Days?: number;
-  activitiesLast7Days?: number;
-  recentActivities?: V1ActivityResponse[];
-  totalActivities?: number;
-}

@@ -185,37 +185,6 @@ func TestActivityFilter_GetLimit(t *testing.T) {
 	assert.Equal(t, 25, limit)
 }
 
-func TestActivityStats_ToResponse(t *testing.T) {
-	t.Parallel()
-
-	stats := &ActivityStats{
-		TotalActivities: 100,
-
-		RecentActivities: []Activity{
-			{
-				ID:          1,
-				Description: "Recent activity description",
-				EmployeeID:  1,
-				UrgencyID:   2,
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
-			},
-		},
-		ActivitiesLast24h:    10,
-		ActivitiesLast7Days:  50,
-		ActivitiesLast30Days: 100,
-	}
-
-	response := stats.ToResponse()
-
-	assert.Equal(t, int64(100), response.TotalActivities)
-	assert.Len(t, response.RecentActivities, 1)
-	assert.Equal(t, uint(1), response.RecentActivities[0].ID)
-	assert.Equal(t, int64(10), response.ActivitiesLast24h)
-	assert.Equal(t, int64(50), response.ActivitiesLast7Days)
-	assert.Equal(t, int64(100), response.ActivitiesLast30Days)
-}
-
 func TestActivityFilter_EdgeCases(t *testing.T) {
 	t.Parallel()
 
@@ -275,57 +244,6 @@ func TestActivityFilter_EdgeCases(t *testing.T) {
 		filter.Validate()
 		limit := filter.GetLimit()
 		assert.Equal(t, 25, limit)
-	})
-}
-
-func TestActivityStats_EdgeCases(t *testing.T) {
-	t.Parallel()
-
-	t.Run("it converts stats with zero values", func(t *testing.T) {
-		stats := &ActivityStats{
-			TotalActivities:      0,
-			RecentActivities:     []Activity{},
-			ActivitiesLast24h:    0,
-			ActivitiesLast7Days:  0,
-			ActivitiesLast30Days: 0,
-		}
-
-		response := stats.ToResponse()
-		assert.Equal(t, int64(0), response.TotalActivities)
-		assert.Equal(t, int64(0), response.ActivitiesLast24h)
-		assert.Equal(t, int64(0), response.ActivitiesLast7Days)
-		assert.Equal(t, int64(0), response.ActivitiesLast30Days)
-		assert.Empty(t, response.RecentActivities)
-	})
-
-	t.Run("it converts stats with large values", func(t *testing.T) {
-		stats := &ActivityStats{
-			TotalActivities:      999999,
-			RecentActivities:     []Activity{},
-			ActivitiesLast24h:    50000,
-			ActivitiesLast7Days:  200000,
-			ActivitiesLast30Days: 500000,
-		}
-
-		response := stats.ToResponse()
-		assert.Equal(t, int64(999999), response.TotalActivities)
-		assert.Equal(t, int64(50000), response.ActivitiesLast24h)
-		assert.Equal(t, int64(200000), response.ActivitiesLast7Days)
-		assert.Equal(t, int64(500000), response.ActivitiesLast30Days)
-	})
-
-	t.Run("it handles nil maps correctly", func(t *testing.T) {
-		stats := &ActivityStats{
-			TotalActivities:      100,
-			RecentActivities:     nil,
-			ActivitiesLast24h:    10,
-			ActivitiesLast7Days:  50,
-			ActivitiesLast30Days: 100,
-		}
-
-		response := stats.ToResponse()
-		assert.Equal(t, int64(100), response.TotalActivities)
-		assert.NotNil(t, response.RecentActivities) // This is created as empty slice
 	})
 }
 

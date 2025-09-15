@@ -88,29 +88,6 @@ func (f *ActivityFilter) GetLimit() int {
 	return f.PageSize
 }
 
-type ActivityStats struct {
-	TotalActivities      int64
-	RecentActivities     []Activity
-	ActivitiesLast24h    int64
-	ActivitiesLast7Days  int64
-	ActivitiesLast30Days int64
-}
-
-func (s *ActivityStats) ToResponse() activityV1.ActivityStatsResponse {
-	recentActivities := make([]activityV1.ActivityResponse, len(s.RecentActivities))
-	for i, activity := range s.RecentActivities {
-		recentActivities[i] = activity.ToResponse()
-	}
-
-	return activityV1.ActivityStatsResponse{
-		TotalActivities:      s.TotalActivities,
-		RecentActivities:     recentActivities,
-		ActivitiesLast24h:    s.ActivitiesLast24h,
-		ActivitiesLast7Days:  s.ActivitiesLast7Days,
-		ActivitiesLast30Days: s.ActivitiesLast30Days,
-	}
-}
-
 func NewActivity(description string, employeeID, urgencyID uint) *Activity {
 	return &Activity{
 		Description: description,

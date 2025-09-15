@@ -64,16 +64,6 @@ type ActivityListResponse struct {
 	NextPageToken string             `json:"nextPageToken,omitempty"`
 }
 
-// ActivityStatsResponse DTO for returning activity statistics
-// swagger:model
-type ActivityStatsResponse struct {
-	TotalActivities      int64              `json:"totalActivities"`
-	RecentActivities     []ActivityResponse `json:"recentActivities"`
-	ActivitiesLast24h    int64              `json:"activitiesLast24h"`
-	ActivitiesLast7Days  int64              `json:"activitiesLast7Days"`
-	ActivitiesLast30Days int64              `json:"activitiesLast30Days"`
-}
-
 // ActivityCountsRequest DTO for requesting counts by urgency IDs
 // swagger:model
 type ActivityCountsRequest struct {
