@@ -81,7 +81,10 @@
               {{ 'URGENCY_STATUS.' + (urgency.status?.toUpperCase()?.replace(' ', '_') || 'UNKNOWN') | translate }}
             </span>
           </td>
-          <td>{{ countsByUrgencyId[urgency.id!] || 0 }}</td>
+          <td>
+            <span *ngIf="countsLoading; else countTpl" class="spinner-inline" aria-label="loading"></span>
+            <ng-template #countTpl>{{ countsByUrgencyId[urgency.id!] ?? 0 }}</ng-template>
+          </td>
           <td>{{ urgency.createdAt | localDate }}</td>
           <td class="actions">
             <button class="btn btn-sm btn-info" (click)="viewUrgency(urgency.id!)"

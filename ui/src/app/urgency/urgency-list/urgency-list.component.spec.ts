@@ -3,17 +3,19 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 
 import { UrgencyListComponent } from './urgency-list.component';
 import { UrgencyService } from '../urgency.service';
 import { Urgency, UrgencyLevel, UrgencyStatus } from '../../shared/models';
 import { AuthService } from '../../services/auth.service';
+import { ActivityService } from '../../services/activity.service';
 
 describe('UrgencyListComponent', () => {
   let component: UrgencyListComponent;
   let fixture: ComponentFixture<UrgencyListComponent>;
   let urgencyService: jasmine.SpyObj<UrgencyService>;
+  let activityService: jasmine.SpyObj<ActivityService>;
 
   const mockUrgencies: Urgency[] = [
     {
@@ -48,8 +50,13 @@ describe('UrgencyListComponent', () => {
 
   beforeEach(async () => {
     const urgencyServiceSpy = jasmine.createSpyObj('UrgencyService', ['getUrgencies', 'getUrgenciesPaginated']);
+    const activityServiceSpy = jasmine.createSpyObj('ActivityService', ['getCountsByUrgencyIds']);
+
+    const authServiceSpy = jasmine.createSpyObj('AuthService', ['getUserId', 'isAuthenticated']);
 
     await TestBed.configureTestingModule({
+
+
       imports: [
         UrgencyListComponent,
         TranslateModule.forRoot()
@@ -60,29 +67,66 @@ describe('UrgencyListComponent', () => {
         provideRouter([]),
         TranslateService,
         { provide: UrgencyService, useValue: urgencyServiceSpy },
-        { provide: AuthService, useValue: jasmine.createSpyObj('AuthService', ['getUserId']) }
+        { provide: ActivityService, useValue: activityServiceSpy },
+        { provide: AuthService, useValue: authServiceSpy }
       ]
     })
       .compileComponents();
 
     fixture = TestBed.createComponent(UrgencyListComponent);
     component = fixture.componentInstance;
+    const auth = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+    auth.isAuthenticated.and.returnValue(true);
+    auth.getUserId.and.returnValue('0');
+
     urgencyService = TestBed.inject(UrgencyService) as jasmine.SpyObj<UrgencyService>;
+    activityService = TestBed.inject(ActivityService) as jasmine.SpyObj<ActivityService>;
   });
 
   it('should create', () => {
     urgencyService.getUrgenciesPaginated.and.returnValue(of({ urgencies: [], total: 0, page: 1, pageSize: 20, totalPages: 0 }));
+    activityService.getCountsByUrgencyIds.and.returnValue(of({}));
     expect(component).toBeTruthy();
   });
 
-  it('should load urgencies on init', () => {
+  it('should load urgencies on init and fetch activity counts', () => {
     urgencyService.getUrgenciesPaginated.and.returnValue(of({ urgencies: mockUrgencies, total: mockUrgencies.length, page: 1, pageSize: 20, totalPages: 1 }));
+    activityService.getCountsByUrgencyIds.and.returnValue(of({ '1': 5, '2': 3 }));
 
     component.ngOnInit();
 
     expect(urgencyService.getUrgenciesPaginated).toHaveBeenCalledWith({ page: 1, pageSize: 20, myUrgencies: true });
+    expect(activityService.getCountsByUrgencyIds).toHaveBeenCalledWith([1, 2]);
     expect(component.urgencies).toEqual(mockUrgencies);
+    expect(component.countsByUrgencyId[1]).toBe(5);
+    expect(component.countsByUrgencyId[2]).toBe(3);
     expect(component.isLoading).toBeFalse();
+  });
+
+  it('should show spinner while counts are loading and hide after they arrive', () => {
+    // Arrange urgencies load
+    urgencyService.getUrgenciesPaginated.and.returnValue(of({ urgencies: mockUrgencies, total: mockUrgencies.length, page: 1, pageSize: 20, totalPages: 1 }));
+    const counts$ = new Subject<Record<string, number>>();
+    activityService.getCountsByUrgencyIds.and.returnValue(counts$.asObservable());
+
+    // Act
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    // While counts stream is pending, spinner should be visible in the table
+    expect(component['countsLoading']).toBeTrue();
+    const spinnerEl = fixture.nativeElement.querySelector('td .spinner-inline');
+    expect(spinnerEl).toBeTruthy();
+
+    // Now emit counts and complete
+    counts$.next({ '1': 7, '2': 0 });
+    counts$.complete();
+    fixture.detectChanges();
+
+    // Spinner hidden, counts mapped
+    expect(component['countsLoading']).toBeFalse();
+    expect(component.countsByUrgencyId[1]).toBe(7);
+    expect(component.countsByUrgencyId[2]).toBe(0);
   });
 
   it('should handle error when loading urgencies', () => {
@@ -119,6 +163,7 @@ describe('UrgencyListComponent', () => {
 
   it('should compute unassignedCount correctly', () => {
     urgencyService.getUrgenciesPaginated.and.returnValue(of({ urgencies: mockUrgencies, total: mockUrgencies.length, page: 1, pageSize: 20, totalPages: 1 }));
+    activityService.getCountsByUrgencyIds.and.returnValue(of({ '1': 5, '2': 3 }));
     component.ngOnInit();
     expect(component.unassignedCount).toBe(1); // one without assignedEmployeeId
   });

@@ -7,6 +7,8 @@ import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
 import { AuthService } from '../../services/auth.service';
 import { ActivityService } from '../../services/activity.service';
+import { finalize } from 'rxjs/operators';
+
 import { Urgency, UrgencyLevel, UrgencyStatus, UrgencyStatus as GeneratedUrgencyStatus, UrgencyLevel as GeneratedUrgencyLevel, createUrgencyDisplayName, hasAcceptedAssignment } from '../../shared/models';
 
 @Component({
@@ -25,6 +27,8 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   total = 0;
   totalPages = 0;
   activeTab: 'mine' | 'all' = 'mine';
+
+  countsLoading = false;
 
   countsByUrgencyId: Record<number, number> = {};
 
@@ -75,15 +79,20 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
 
   private fetchActivityCounts(): void {
     const ids = (this.urgencies || []).map(u => u.id!).filter((v): v is number => typeof v === 'number');
-    if (!ids.length) { this.countsByUrgencyId = {}; return; }
-    this.activityService.getCountsByUrgencyIds(ids).subscribe({
-      next: (counts) => {
-        const mapped: Record<number, number> = {};
-        Object.entries(counts || {}).forEach(([k, v]) => { mapped[parseInt(k, 10)] = Number(v) || 0; });
-        this.countsByUrgencyId = mapped;
-      },
-      error: () => { this.countsByUrgencyId = {}; }
-    });
+    if (!ids.length) { this.countsByUrgencyId = {}; this.countsLoading = false; return; }
+    this.countsLoading = true;
+    const obs = (this.activityService as any)?.getCountsByUrgencyIds?.(ids);
+    if (!obs || typeof obs.pipe !== 'function') { this.countsLoading = false; this.countsByUrgencyId = {}; return; }
+    obs
+      .pipe(finalize(() => { this.countsLoading = false; }))
+      .subscribe({
+        next: (counts: Record<string, number>) => {
+          const mapped: Record<number, number> = {};
+          Object.entries(counts || {}).forEach(([k, v]) => { mapped[parseInt(k, 10)] = Number(v) || 0; });
+          this.countsByUrgencyId = mapped;
+        },
+        error: () => { this.countsByUrgencyId = {}; }
+      });
   }
 
   viewUrgency(id: number): void {

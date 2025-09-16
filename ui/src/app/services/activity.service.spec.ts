@@ -104,6 +104,29 @@ describe('ActivityService', () => {
     });
   });
 
+	  describe('getCountsByUrgencyIds', () => {
+	    it('should fetch counts for provided urgency IDs', () => {
+	      const ids = [1, 2, 5];
+	      const expectedUrl = `${expectedActivityUrl}/counts?urgencyId=1&urgencyId=2&urgencyId=5`;
+
+	      service.getCountsByUrgencyIds(ids).subscribe(counts => {
+	        expect(counts).toEqual({ '1': 10, '2': 0, '5': 3 } as any);
+	      });
+
+	      const req = httpMock.expectOne(expectedUrl);
+	      expect(req.request.method).toBe('GET');
+	      req.flush({ counts: { '1': 10, '2': 0, '5': 3 } });
+	    });
+
+	    it('should return empty object and not call HTTP when ids are empty', () => {
+	      service.getCountsByUrgencyIds([]).subscribe(counts => {
+	        expect(counts).toEqual({});
+	      });
+	      httpMock.expectNone((req) => req.url.includes('/activities/counts'));
+	    });
+	  });
+
+
   describe('getActivitiesWithPagination', () => {
     it('should fetch activities with pagination parameters', () => {
       const params = { urgencyId: 123, employeeId: 1, page: 1, pageSize: 10 };
