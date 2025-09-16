@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BaseTranslatableComponent } from '../../base-translatable.component';
 import { UrgencyService } from '../urgency.service';
 import { AuthService } from '../../services/auth.service';
+import { ActivityService } from '../../services/activity.service';
 import { Urgency, UrgencyLevel, UrgencyStatus, UrgencyStatus as GeneratedUrgencyStatus, UrgencyLevel as GeneratedUrgencyLevel, createUrgencyDisplayName, hasAcceptedAssignment } from '../../shared/models';
 
 @Component({
@@ -25,6 +26,7 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   totalPages = 0;
   activeTab: 'mine' | 'all' = 'mine';
 
+  countsByUrgencyId: Record<number, number> = {};
 
   UrgencyLevel = UrgencyLevel;
   Status = UrgencyStatus;
@@ -37,6 +39,7 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
     private urgencyService: UrgencyService,
     private router: Router,
     public authService: AuthService,
+    private activityService: ActivityService,
     translate: TranslateService
   ) {
     super(translate);
@@ -60,11 +63,26 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
         this.pageSize = resp?.pageSize ?? this.pageSize;
         this.totalPages = resp?.totalPages ?? Math.ceil(this.total / this.pageSize);
         this.isLoading = false;
+        this.fetchActivityCounts();
       },
       error: (error) => {
         this.error = error.message || 'Failed to load urgencies';
         this.isLoading = false;
+        this.countsByUrgencyId = {};
       }
+    });
+  }
+
+  private fetchActivityCounts(): void {
+    const ids = (this.urgencies || []).map(u => u.id!).filter((v): v is number => typeof v === 'number');
+    if (!ids.length) { this.countsByUrgencyId = {}; return; }
+    this.activityService.getCountsByUrgencyIds(ids).subscribe({
+      next: (counts) => {
+        const mapped: Record<number, number> = {};
+        Object.entries(counts || {}).forEach(([k, v]) => { mapped[parseInt(k, 10)] = Number(v) || 0; });
+        this.countsByUrgencyId = mapped;
+      },
+      error: () => { this.countsByUrgencyId = {}; }
     });
   }
 

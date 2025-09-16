@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, timer } from 'rxjs';
+import { Observable, throwError, timer, of } from 'rxjs';
 import { catchError, map, switchMap, filter, take, takeUntil } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Activity, ActivityCreatePayload } from '../shared/models';
@@ -86,6 +86,16 @@ export class ActivityService {
         activities: (resp?.activities ?? []).map((a: any) => this.mapActivityFromServer(a)),
         nextPageToken: resp?.nextPageToken,
       })),
+      catchError(this.handleError)
+    );
+  }
+
+  getCountsByUrgencyIds(ids: number[]): Observable<Record<string, number>> {
+    if (!ids || ids.length === 0) return of({});
+    const params = ids.map((id) => `urgencyId=${encodeURIComponent(id)}`).join('&');
+    const url = `${this.activityApiUrl}/counts?${params}`;
+    return this.http.get<{ counts: Record<string, number> }>(url).pipe(
+      map((resp) => resp?.counts ?? {}),
       catchError(this.handleError)
     );
   }

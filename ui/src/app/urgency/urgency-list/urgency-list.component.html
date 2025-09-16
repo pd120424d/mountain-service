@@ -60,6 +60,7 @@
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.LOCATION' | translate }}</th>
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.LEVEL' | translate }}</th>
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.STATUS' | translate }}</th>
+          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.ACTIVITIES' | translate }}</th>
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.CREATED_AT' | translate }}</th>
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.ACTIONS' | translate }}</th>
         </tr>
@@ -68,7 +69,7 @@
         <tr *ngFor="let urgency of urgencies"
             class="urgency-row"
             [ngClass]="getRowClass(urgency)">
-                    <td>{{ getDisplayName(urgency) }}</td>
+          <td>{{ getDisplayName(urgency) }}</td>
           <td>{{ urgency.location }}</td>
           <td>
             <span class="level-badge" [ngClass]="getLevelClass(urgency.level!)">
@@ -80,13 +81,13 @@
               {{ 'URGENCY_STATUS.' + (urgency.status?.toUpperCase()?.replace(' ', '_') || 'UNKNOWN') | translate }}
             </span>
           </td>
+          <td>{{ countsByUrgencyId[urgency.id!] || 0 }}</td>
           <td>{{ urgency.createdAt | localDate }}</td>
           <td class="actions">
             <button class="btn btn-sm btn-info" (click)="viewUrgency(urgency.id!)"
               [title]="'URGENCY_LIST.VIEW' | translate">
               {{ 'URGENCY_LIST.VIEW' | translate }}
             </button>
-
           </td>
         </tr>
       </tbody>

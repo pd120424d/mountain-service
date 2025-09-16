@@ -291,6 +291,7 @@
             "LOCATION": "Location",
             "LEVEL": "Urgency Level",
             "STATUS": "Status",
+            "ACTIVITIES": "Activities",
             "CREATED_AT": "Reported At",
             "ACTIONS": "Actions"
         },

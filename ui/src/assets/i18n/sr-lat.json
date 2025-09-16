@@ -310,6 +310,7 @@
             "LOCATION": "Lokacija",
             "LEVEL": "Nivo",
             "STATUS": "Status",
+            "ACTIVITIES": "Aktivnosti",
             "CREATED_AT": "Kreirano",
             "ACTIONS": "Akcije"
         },
