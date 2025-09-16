@@ -14,3 +14,13 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
+
+
+{{- define "employee-service.serviceAccountName" -}}
+{{- $sa := .Values.serviceAccount | default dict -}}
+{{- if ($sa.create | default false) -}}
+{{- default (printf "%s-admin-ops" (include "employee-service.fullname" .)) $sa.name -}}
+{{- else -}}
+{{- default "default" $sa.name -}}
+{{- end -}}
+{{- end -}}

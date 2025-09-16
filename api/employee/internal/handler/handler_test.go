@@ -2,8 +2,14 @@ package handler
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +18,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
@@ -32,7 +39,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -113,7 +120,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 			mockEmplSvc := service.NewMockEmployeeService(ctrl)
 			mockShiftSvc := service.NewMockShiftService(ctrl)
 			log := utils.NewTestLogger()
-			handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+			handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
@@ -149,7 +156,7 @@ func TestEmployeeHandler_RegisterEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -204,7 +211,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -235,7 +242,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -270,7 +277,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -297,7 +304,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -326,7 +333,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -355,7 +362,7 @@ func TestEmployeeHandler_LoginEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -391,7 +398,7 @@ func TestEmployeeHandler_LogoutEmployee(t *testing.T) {
 		emplServiceMock := service.NewMockEmployeeService(ctrl)
 		shiftServiceMock := service.NewMockShiftService(ctrl)
 
-		h := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
+		h := NewEmployeeHandler(log, afero.NewMemMapFs(), emplServiceMock, shiftServiceMock)
 
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -422,7 +429,7 @@ func TestEmployeeHandler_LogoutEmployee(t *testing.T) {
 		emplServiceMock := service.NewMockEmployeeService(ctrl)
 		shiftServiceMock := service.NewMockShiftService(ctrl)
 
-		handler := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), emplServiceMock, shiftServiceMock)
 
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -446,7 +453,7 @@ func TestEmployeeHandler_LogoutEmployee(t *testing.T) {
 		emplServiceMock := service.NewMockEmployeeService(ctrl)
 		shiftServiceMock := service.NewMockShiftService(ctrl)
 
-		handler := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), emplServiceMock, shiftServiceMock)
 
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -472,7 +479,7 @@ func TestEmployeeHandler_LogoutEmployee(t *testing.T) {
 		emplServiceMock := service.NewMockEmployeeService(ctrl)
 		shiftServiceMock := service.NewMockShiftService(ctrl)
 
-		handler := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), emplServiceMock, shiftServiceMock)
 
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
@@ -498,7 +505,7 @@ func TestEmployeeHandler_LogoutEmployee(t *testing.T) {
 		emplServiceMock := service.NewMockEmployeeService(ctrl)
 		shiftServiceMock := service.NewMockShiftService(ctrl)
 
-		handler := NewEmployeeHandler(log, emplServiceMock, shiftServiceMock)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), emplServiceMock, shiftServiceMock)
 
 		emplServiceMock.EXPECT().
 			LogoutEmployee(gomock.Any(), "token-123", gomock.AssignableToTypeOf(time.Time{})).
@@ -532,7 +539,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -557,7 +564,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -583,7 +590,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -612,7 +619,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -638,7 +645,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -667,7 +674,7 @@ func TestEmployeeHandler_OAuth2Token(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -702,7 +709,7 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -723,7 +730,7 @@ func TestEmployeeHandler_ListEmployees(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -758,7 +765,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -786,7 +793,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -837,7 +844,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 			mockEmplSvc := service.NewMockEmployeeService(ctrl)
 			mockShiftSvc := service.NewMockShiftService(ctrl)
 			log := utils.NewTestLogger()
-			handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+			handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
@@ -869,7 +876,7 @@ func TestEmployeeHandler_UpdateEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -913,7 +920,7 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -935,7 +942,7 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -959,7 +966,7 @@ func TestEmployeeHandler_DeleteEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -987,7 +994,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1015,7 +1022,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1043,7 +1050,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1117,7 +1124,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 			mockEmplSvc := service.NewMockEmployeeService(ctrl)
 			mockShiftSvc := service.NewMockShiftService(ctrl)
 			log := utils.NewTestLogger()
-			handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+			handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
@@ -1148,7 +1155,7 @@ func TestEmployeeHandler_AssignShift(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1188,7 +1195,7 @@ func TestEmployeeHandler_GetShifts(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1210,7 +1217,7 @@ func TestEmployeeHandler_GetShifts(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1232,7 +1239,7 @@ func TestEmployeeHandler_GetShifts(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1256,7 +1263,7 @@ func TestEmployeeHandler_GetShifts(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1291,7 +1298,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1313,7 +1320,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1335,7 +1342,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1359,7 +1366,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1384,7 +1391,7 @@ func TestEmployeeHandler_GetShiftsAvailability(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1413,7 +1420,7 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1441,7 +1448,7 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1469,7 +1476,7 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1492,7 +1499,7 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1522,7 +1529,7 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1552,7 +1559,7 @@ func TestEmployeeHandler_RemoveShift(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1585,7 +1592,7 @@ func TestEmployeeHandler_ResetAllData(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1608,7 +1615,7 @@ func TestEmployeeHandler_ResetAllData(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1635,7 +1642,7 @@ func TestEmployeeHandler_GetOnCallEmployees(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1656,7 +1663,7 @@ func TestEmployeeHandler_GetOnCallEmployees(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1679,7 +1686,7 @@ func TestEmployeeHandler_GetOnCallEmployees(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1711,7 +1718,7 @@ func TestEmployeeHandler_GetOnCallEmployees(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1747,7 +1754,7 @@ func TestEmployeeHandler_CheckActiveEmergencies(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1769,7 +1776,7 @@ func TestEmployeeHandler_CheckActiveEmergencies(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1793,7 +1800,7 @@ func TestEmployeeHandler_CheckActiveEmergencies(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1828,7 +1835,7 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1850,7 +1857,7 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1872,7 +1879,7 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1896,7 +1903,7 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1920,7 +1927,7 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1951,7 +1958,7 @@ func TestEmployeeHandler_GetShiftWarnings(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -1982,7 +1989,7 @@ func TestEmployeeHandler_GetAdminShiftsAvailability(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -2002,7 +2009,7 @@ func TestEmployeeHandler_GetAdminShiftsAvailability(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -2022,7 +2029,7 @@ func TestEmployeeHandler_GetAdminShiftsAvailability(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -2131,7 +2138,7 @@ func TestEmployeeHandler_GetAdminShiftsAvailability(t *testing.T) {
 			tt.setupMocks(mockShiftSvc)
 
 			log := utils.NewTestLogger()
-			handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+			handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
@@ -2156,7 +2163,7 @@ func TestEmployeeHandler_GetEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -2198,7 +2205,7 @@ func TestEmployeeHandler_GetEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -2219,7 +2226,7 @@ func TestEmployeeHandler_GetEmployee(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -2246,7 +2253,7 @@ func TestEmployeeHandler_GetErrorCatalog(t *testing.T) {
 		mockEmplSvc := service.NewMockEmployeeService(ctrl)
 		mockShiftSvc := service.NewMockShiftService(ctrl)
 		log := utils.NewTestLogger()
-		handler := NewEmployeeHandler(log, mockEmplSvc, mockShiftSvc)
+		handler := NewEmployeeHandler(log, afero.NewMemMapFs(), mockEmplSvc, mockShiftSvc)
 
 		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
@@ -2260,5 +2267,108 @@ func TestEmployeeHandler_GetErrorCatalog(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, expectedResult, w.Body.String())
 
+	})
+}
+
+func TestEmployeeHandler_RestartDeployment(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	makeHandler := func(fs afero.Fs) EmployeeHandler {
+		ctrl := gomock.NewController(t)
+		mockEmplSvc := service.NewMockEmployeeService(ctrl)
+		mockShiftSvc := service.NewMockShiftService(ctrl)
+		log := utils.NewTestLogger()
+		return NewEmployeeHandler(log, fs, mockEmplSvc, mockShiftSvc)
+	}
+
+	doReq := func(fs afero.Fs, body string) (*httptest.ResponseRecorder, *gin.Context) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/admin/k8s/restart", strings.NewReader(body))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		makeHandler(fs).RestartDeployment(ctx)
+		return w, ctx
+	}
+
+	writeFile := func(fs afero.Fs, path string, data []byte) error {
+		if err := fs.MkdirAll("/var/run/secrets/kubernetes.io/serviceaccount", 0o700); err != nil {
+			return err
+		}
+		return afero.WriteFile(fs, path, data, 0o600)
+	}
+
+	genSelfSignedCA := func() []byte {
+		priv, _ := rsa.GenerateKey(rand.Reader, 2048)
+		tpl := &x509.Certificate{
+			SerialNumber:          big.NewInt(1),
+			Subject:               pkix.Name{CommonName: "test-ca"},
+			NotBefore:             time.Now().Add(-time.Hour),
+			NotAfter:              time.Now().Add(time.Hour),
+			IsCA:                  true,
+			KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+			BasicConstraintsValid: true,
+		}
+		der, _ := x509.CreateCertificate(rand.Reader, tpl, tpl, &priv.PublicKey, priv)
+		var buf bytes.Buffer
+		_ = pem.Encode(&buf, &pem.Block{Type: "CERTIFICATE", Bytes: der})
+		return buf.Bytes()
+	}
+
+	t.Run("invalid json returns 400", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		w, _ := doReq(fs, `{"deployment":`)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid request payload")
+	})
+
+	t.Run("empty deployment returns 400", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		w, _ := doReq(fs, `{"deployment":""}`)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid request payload")
+	})
+
+	t.Run("not allowed deployment returns 400", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		w, _ := doReq(fs, `{"deployment":"unknown-service"}`)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "deployment not allowed")
+	})
+
+	t.Run("missing token returns 500", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		os.Setenv("K8S_NAMESPACE", "test-ns")
+		defer os.Unsetenv("K8S_NAMESPACE")
+		w, _ := doReq(fs, `{"deployment":"employee-service"}`)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "k8s auth not available")
+	})
+
+	t.Run("missing ca returns 500", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		_ = writeFile(fs, "/var/run/secrets/kubernetes.io/serviceaccount/token", []byte("tok"))
+		w, _ := doReq(fs, `{"deployment":"employee-service"}`)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "k8s ca not available")
+	})
+
+	t.Run("invalid ca parse returns 500", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		_ = writeFile(fs, "/var/run/secrets/kubernetes.io/serviceaccount/token", []byte("tok"))
+		_ = writeFile(fs, "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt", []byte("not-a-pem"))
+		w, _ := doReq(fs, `{"deployment":"employee-service"}`)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "failed to parse k8s ca")
+	})
+
+	t.Run("http call failure returns 500", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		_ = writeFile(fs, "/var/run/secrets/kubernetes.io/serviceaccount/token", []byte("tok"))
+		_ = writeFile(fs, "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt", genSelfSignedCA())
+		os.Setenv("K8S_NAMESPACE", "test-ns2")
+		defer os.Unsetenv("K8S_NAMESPACE")
+		w, _ := doReq(fs, `{"deployment":"employee-service"}`)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "failed to contact k8s api")
 	})
 }

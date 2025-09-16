@@ -1,14 +1,20 @@
 package handler
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/afero"
 
 	employeeV1 "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
@@ -59,6 +65,7 @@ type EmployeeHandler interface {
 	// Admin operations
 	ResetAllData(ctx *gin.Context)
 	GetAdminShiftsAvailability(ctx *gin.Context)
+	RestartDeployment(ctx *gin.Context)
 
 	// Catalog and metadata
 	GetErrorCatalog(ctx *gin.Context)
@@ -66,13 +73,15 @@ type EmployeeHandler interface {
 
 type employeeHandler struct {
 	log          utils.Logger
+	fs           afero.Fs
 	emplService  service.EmployeeService
 	shiftService service.ShiftService
 }
 
-func NewEmployeeHandler(log utils.Logger, employeeService service.EmployeeService, shiftService service.ShiftService) EmployeeHandler {
+func NewEmployeeHandler(log utils.Logger, fs afero.Fs, employeeService service.EmployeeService, shiftService service.ShiftService) EmployeeHandler {
 	return &employeeHandler{
 		log:          log.WithName("employeeHandler"),
+		fs:           fs,
 		emplService:  employeeService,
 		shiftService: shiftService,
 	}
@@ -781,6 +790,90 @@ func (h *employeeHandler) GetAdminShiftsAvailability(ctx *gin.Context) {
 
 	log.Infof("Successfully retrieved admin shifts availability for %d days", days)
 	ctx.JSON(http.StatusOK, response)
+}
+
+// RestartDeployment triggers a rollout restart for a Kubernetes Deployment (admin-only)
+// Admin-only endpoint: POST /api/v1/admin/k8s/restart with body {"deployment":"name"}
+func (h *employeeHandler) RestartDeployment(ctx *gin.Context) {
+	log := h.log.WithContext(requestContext(ctx))
+	defer utils.TimeOperation(log, "EmployeeHandler.RestartDeployment")()
+	log.Info("Admin restart deployment request received")
+
+	var req struct {
+		Deployment string `json:"deployment"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil || req.Deployment == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: expected {deployment}"})
+		return
+	}
+
+	allowed := map[string]bool{
+		"employee-service": true,
+		"urgency-service":  true,
+		"activity-service": true,
+		"version-service":  true,
+		"docs-aggregator":  true,
+		"docs-ui":          true,
+	}
+	if !allowed[req.Deployment] {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "deployment not allowed"})
+		return
+	}
+
+	ns := "mountain-service"
+	if b, err := afero.ReadFile(h.fs, "/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil && len(b) > 0 {
+		ns = strings.TrimSpace(string(b))
+	} else if env := os.Getenv("K8S_NAMESPACE"); env != "" {
+		ns = env
+	}
+
+	token, err := afero.ReadFile(h.fs, "/var/run/secrets/kubernetes.io/serviceaccount/token")
+	if err != nil {
+		log.Errorf("failed to read serviceaccount token: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "k8s auth not available"})
+		return
+	}
+	caCrt, err := afero.ReadFile(h.fs, "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+	if err != nil {
+		log.Errorf("failed to read k8s CA cert: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "k8s ca not available"})
+		return
+	}
+	pool := x509.NewCertPool()
+	if ok := pool.AppendCertsFromPEM(caCrt); !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse k8s ca"})
+		return
+	}
+	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}}, Timeout: 10 * time.Second}
+
+	// Build strategic-merge patch that emulates `kubectl rollout restart`
+	restartedAt := time.Now().UTC().Format(time.RFC3339)
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, restartedAt)
+	url := fmt.Sprintf("https://kubernetes.default.svc/apis/apps/v1/namespaces/%s/deployments/%s", ns, req.Deployment)
+	httpReq, err := http.NewRequest("PATCH", url, bytes.NewBufferString(patch))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create request"})
+		return
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+string(token))
+	httpReq.Header.Set("Content-Type", "application/strategic-merge-patch+json")
+
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		log.Errorf("k8s request error: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to contact k8s api"})
+		return
+	}
+	defer func() { _, _ = io.Copy(io.Discard, resp.Body); _ = resp.Body.Close() }()
+
+	if resp.StatusCode >= 300 {
+		log.Errorf("k8s api returned status: %s", resp.Status)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("k8s api error: %s", resp.Status)})
+		return
+	}
+
+	log.Infof("Restart triggered for deployment=%s in namespace=%s", req.Deployment, ns)
+	ctx.JSON(http.StatusOK, gin.H{"message": "restart triggered", "deployment": req.Deployment, "namespace": ns, "at": restartedAt})
 }
 
 // GetOnCallEmployees Претрага запослених који су тренутно на дужности

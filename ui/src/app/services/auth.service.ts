@@ -110,4 +110,8 @@ export class AuthService {
   resetAllData(): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/admin/reset`);
   }
+
+  restartService(deployment: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/admin/k8s/restart`, { deployment });
+  }
 }

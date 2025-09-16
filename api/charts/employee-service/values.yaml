@@ -100,3 +100,21 @@ tolerations: []
 
 affinity: {}
 
+
+
+# ServiceAccount used by employee-service to perform admin ops (restart deployments)
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# RBAC for restarting deployments
+rbac:
+  create: true
+  allowedDeployments:
+    - employee-service
+    - urgency-service
+    - activity-service
+    - version-service
+    - docs-aggregator
+    - docs-ui

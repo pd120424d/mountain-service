@@ -23,7 +23,9 @@ A modular, microservice-based system designed for managing mountain operations�
 - Urgency management with real-time escalation
 - Role-based access and user authentication
 - Angular-based frontend with localization support
-- Kubernetes deployment (k8s/) with Secrets via GitHub Actions
+- Admin panel: safe service restarts (Kubernetes deployment rollout restart)
+- Observability: Grafana dashboards at /grafana (admin-only)
+- Kubernetes deployment (Helm charts in api/charts/) with Secrets via GitHub Actions
 
 ---
 
@@ -125,6 +127,29 @@ Secrets required for K8s: see docs/README.k8s-variables.md
 3. For more specific setup instructions, refer to individual README files:
 
 - [Backend README](./api/README.md)
+
+---
+
+## Observability and Admin operations
+
+- Grafana: Exposed at https://mountain-service.duckdns.org/grafana (link available in Admin panel). See docs/OBSERVABILITY-GRAFANA.md for Helm install and Ingress example.
+- Admin service restarts: Admin panel includes a dropdown and confirmation modal to safely trigger a rollout restart of selected services.
+  - Backend endpoint: POST /api/v1/admin/k8s/restart with body {"deployment":"<name>"}
+  - Secured by admin JWT and Kubernetes RBAC; only allowlisted Deployments can be restarted.
+  - Enabled via Helm in the employee-service chart:
+
+    values.yaml
+    - serviceAccount.create: true
+    - rbac.create: true
+    - rbac.allowedDeployments: [employee-service, urgency-service, activity-service, version-service, docs-aggregator, docs-ui]
+
+  - Install/upgrade example:
+    helm upgrade --install employee-service api/charts/employee-service -n mountain-service -f your-values.yaml
+
+For details:
+- docs/OBSERVABILITY-GRAFANA.md — Grafana setup and exposure at /grafana
+- docs/ADMIN-RESTART.md — How the restart feature works, Helm values, and testing the endpoint
+
 - [Frontend README](./ui/README.md)
 
 ---

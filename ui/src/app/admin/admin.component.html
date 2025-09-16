@@ -28,6 +28,57 @@
             {{ 'ADMIN_PANEL.API_OVERVIEW.OPEN_API_DOCS' | translate }}
           </a>
         </div>
+        <div class="api-card" style="width:100%">
+          <div class="api-card-header">
+            <i class="fas fa-chart-line"></i>
+            <h3>{{ 'ADMIN_PANEL.API_OVERVIEW.GRAFANA' | translate }}</h3>
+          </div>
+          <p class="api-card-description">
+            {{ 'ADMIN_PANEL.API_OVERVIEW.GRAFANA_DESC' | translate }}
+          </p>
+          <a href="/grafana/" target="_blank" class="btn btn-primary">
+            <i class="fas fa-external-link-alt"></i>
+            {{ 'ADMIN_PANEL.API_OVERVIEW.OPEN_GRAFANA' | translate }}
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="operations-section">
+      <h2>{{ 'ADMIN_PANEL.RESTART.TITLE' | translate }}</h2>
+      <p class="section-description">{{ 'ADMIN_PANEL.RESTART.DESCRIPTION' | translate }}</p>
+
+      <div class="restart-controls">
+        <label for="service-select">{{ 'ADMIN_PANEL.RESTART.SELECT_SERVICE' | translate }}</label>
+        <select id="service-select" [(ngModel)]="selectedDeployment">
+          <option value="" disabled selected>--</option>
+          <option *ngFor="let s of services" [value]="s.id">{{ s.labelKey | translate }}</option>
+        </select>
+        <button class="btn btn-warning" (click)="openRestartModal()" [disabled]="!selectedDeployment || isRestarting">
+          <i class="fas fa-sync"></i> {{ 'ADMIN_PANEL.RESTART.BUTTON' | translate }}
+        </button>
+      </div>
+
+      <div class="modal-backdrop" *ngIf="showRestartModal">
+        <div class="modal">
+          <h3>{{ 'ADMIN_PANEL.RESTART.CONFIRM_TITLE' | translate }}</h3>
+          <p>{{ 'ADMIN_PANEL.RESTART.CONFIRM_MESSAGE' | translate:{ service: selectedDeployment } }}</p>
+          <div class="modal-actions">
+            <button class="btn btn-secondary" (click)="cancelRestart()">{{ 'ADMIN_PANEL.RESTART.CANCEL' | translate }}</button>
+            <button class="btn btn-danger" (click)="confirmRestart()" [disabled]="isRestarting">
+              <span *ngIf="isRestarting">{{ 'ADMIN_PANEL.RESTART.IN_PROGRESS' | translate }}...</span>
+              <span *ngIf="!isRestarting">{{ 'ADMIN_PANEL.RESTART.CONFIRM_BUTTON' | translate }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="restartSuccess" class="alert alert-success">
+        {{ restartMessage || ('ADMIN_PANEL.RESTART.SUCCESS' | translate) }}
+      </div>
+      <div *ngIf="restartError" class="alert alert-danger">
+        {{ restartMessage || ('ADMIN_PANEL.RESTART.ERROR' | translate) }}
       </div>
     </div>
 
@@ -36,11 +87,11 @@
       <p class="warning-text">
         {{ 'ADMIN_PANEL.RESET_WARNING' | translate }}
       </p>
-      
+
       <div class="reset-section">
-        <button 
-          class="btn btn-danger" 
-          (click)="onResetAllData()" 
+        <button
+          class="btn btn-danger"
+          (click)="onResetAllData()"
           [disabled]="isResetting"
         >
           <span *ngIf="isResetting">{{ 'ADMIN_PANEL.RESETTING' | translate }}...</span>

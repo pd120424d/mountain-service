@@ -177,12 +177,36 @@
         "API_OVERVIEW": {
             "TITLE": "Pregled API-ja",
             "DESCRIPTION": "Pristup dokumentaciji API-ja i interfejsima za testiranje",
+            "GRAFANA": "Grafana",
+            "GRAFANA_DESC": "Kontrolne table i metrike servisa",
+            "OPEN_GRAFANA": "Otvori Grafana",
             "EMPLOYEE_API": "API Servisa za Zaposlene",
             "EMPLOYEE_API_DESC": "Upravljanje zaposlenima, smenama i autentifikacijom",
             "URGENCY_API": "API Servisa za Hitnosti",
             "URGENCY_API_DESC": "Rukovanje izveštajima o hitnim slučajevima i upravljanje incidentima",
             "ACTIVITY_API": "API Servisa za Aktivnosti",
             "ACTIVITY_API_DESC": "Upravljanje aktivnostima i njihovim napretkom"
+        },
+        "RESTART": {
+            "TITLE": "Operacije servisa",
+            "DESCRIPTION": "Ponovo pokrenite Kubernetes servis ako je zaglavljen ili problematičan.",
+            "SELECT_SERVICE": "Izaberite servis",
+            "BUTTON": "Ponovo pokreni servis",
+            "CONFIRM_TITLE": "Potvrdite ponovno pokretanje",
+            "CONFIRM_MESSAGE": "Da li ste sigurni da želite da ponovo pokrenete {{service}} sada?",
+            "CONFIRM_BUTTON": "Da, ponovo pokreni",
+            "CANCEL": "Ne, otkaži",
+            "IN_PROGRESS": "Ponovno pokretanje",
+            "SUCCESS": "Ponovno pokretanje je pokrenuto",
+            "ERROR": "Neuspešno ponovno pokretanje servisa"
+        },
+        "SERVICES": {
+            "EMPLOYEE": "Servis za zaposlene",
+            "URGENCY": "Servis za hitnosti",
+            "ACTIVITY": "Servis za aktivnosti",
+            "VERSION": "Servis verzija",
+            "DOCS_AGGREGATOR": "Agregator dokumentacije",
+            "DOCS_UI": "Dokumentacija UI"
         },
         "DANGER_ZONE": "Opasna zona",
         "RESET_WARNING": "PAŽNJA: Ova akcija će trajno izbrisati sve podatke iz sistema, uključujući zaposlene, smene i sve povezane informacije. Ova akcija se ne može poništiti!",

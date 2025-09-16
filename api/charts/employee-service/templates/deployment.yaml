@@ -21,6 +21,8 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      serviceAccountName: {{ include "employee-service.serviceAccountName" . }}
+
       volumes:
         - name: cloudsql-sa
           secret:

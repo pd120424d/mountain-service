@@ -22,7 +22,7 @@ import (
 	_ "github.com/pd120424d/mountain-service/api/contracts/employee/v1"
 
 	"github.com/gin-gonic/gin"
-
+	"github.com/spf13/afero"
 	"gorm.io/gorm"
 )
 
@@ -157,7 +157,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	}
 
 	// Initialize handler with services
-	employeeHandler := handler.NewEmployeeHandler(log, employeeService, shiftService)
+	employeeHandler := handler.NewEmployeeHandler(log, afero.NewOsFs(), employeeService, shiftService)
 
 	r.POST("/api/v1/employees", employeeHandler.RegisterEmployee)
 	r.POST("/api/v1/login", employeeHandler.LoginEmployee)
@@ -212,5 +212,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		admin.DELETE("/reset", employeeHandler.ResetAllData)
 		admin.GET("/shifts/availability", employeeHandler.GetAdminShiftsAvailability)
 		admin.GET("/employees/:id/shift-warnings", employeeHandler.GetShiftWarnings)
+		// Admin K8s ops
+		admin.POST("/k8s/restart", employeeHandler.RestartDeployment)
 	}
 }

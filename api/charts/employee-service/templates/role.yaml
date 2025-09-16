@@ -1,0 +1,18 @@
+{{- $rbac := .Values.rbac | default dict -}}
+{{- if ($rbac.create | default false) }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "employee-service.fullname" . }}-restart-role
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "employee-service.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "patch", "update"]
+    {{- with ($rbac.allowedDeployments) }}
+    resourceNames:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+{{- end }}

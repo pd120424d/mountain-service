@@ -203,4 +203,15 @@ describe('AuthService', () => {
     // The method doesn't set intervalSub to undefined, it just unsubscribes
     expect(service['intervalSub']).toBe(mockSubscription);
   });
+
+  it('should call post on restartService with deployment payload', () => {
+    const dep = 'employee-service';
+    service.restartService(dep).subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/admin/k8s/restart`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ deployment: dep });
+    req.flush({ message: 'ok' });
+  });
+
 });

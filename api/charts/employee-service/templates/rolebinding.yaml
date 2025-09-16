@@ -1,0 +1,19 @@
+{{- $rbac := .Values.rbac | default dict -}}
+{{- $sa := .Values.serviceAccount | default dict -}}
+{{- if and ($rbac.create | default false) ($sa.create | default false) }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "employee-service.fullname" . }}-restart-binding
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "employee-service.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "employee-service.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "employee-service.fullname" . }}-restart-role
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

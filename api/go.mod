@@ -17,6 +17,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/redis/go-redis/v9 v9.12.1
+	github.com/spf13/afero v1.15.0
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/swag v1.16.5
 	go.uber.org/mock v0.4.0
