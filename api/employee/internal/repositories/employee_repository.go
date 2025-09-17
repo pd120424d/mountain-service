@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"time"
 
 	"github.com/pd120424d/mountain-service/api/employee/internal/model"
 	"github.com/pd120424d/mountain-service/api/shared/auth"
@@ -121,7 +122,11 @@ func (r *employeeRepository) Delete(ctx context.Context, id uint) error {
 		return err
 	}
 
-	if err := r.db.WithContext(ctx).Unscoped().Delete(&employee).Error; err != nil {
+	// Perform a soft delete explicitly by updating deleted_at
+	if err := r.db.WithContext(ctx).
+		Model(&model.Employee{}).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Update("deleted_at", time.Now()).Error; err != nil {
 		return err
 	}
 

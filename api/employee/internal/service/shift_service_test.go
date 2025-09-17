@@ -271,7 +271,9 @@ func TestShiftService_AssignShift(t *testing.T) {
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
 		employee := &model.Employee{ID: 1, ProfileType: model.Medic}
-		D := time.Date(2025, 9, 15, 0, 0, 0, 0, time.UTC)
+		// Use a future base date to avoid flakiness when current date passes the fixed point
+		today := time.Now().UTC().Truncate(24 * time.Hour)
+		D := today.AddDate(0, 0, 7)
 		D1 := D.AddDate(0, 0, 1)
 
 		existingShifts := []model.Shift{{ShiftDate: D, ShiftType: 1}, {ShiftDate: D, ShiftType: 2}}
@@ -305,7 +307,9 @@ func TestShiftService_AssignShift(t *testing.T) {
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
 		employee := &model.Employee{ID: 1, ProfileType: model.Medic}
-		D := time.Date(2025, 9, 15, 0, 0, 0, 0, time.UTC)
+		// Future-based dates to keep test stable over time
+		today := time.Now().UTC().Truncate(24 * time.Hour)
+		D := today.AddDate(0, 0, 7)
 		D2 := D.AddDate(0, 0, 2)
 
 		existingShifts := []model.Shift{{ShiftDate: D, ShiftType: 1}, {ShiftDate: D, ShiftType: 2}}
@@ -345,7 +349,9 @@ func TestShiftService_AssignShift(t *testing.T) {
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
 		employee := &model.Employee{ID: 1, ProfileType: model.Medic}
-		D := time.Date(2025, 9, 15, 0, 0, 0, 0, time.UTC)
+		// Future-based dates to keep test stable over time
+		today := time.Now().UTC().Truncate(24 * time.Hour)
+		D := today.AddDate(0, 0, 7)
 		D2 := D.AddDate(0, 0, 2)
 
 		existingShifts := []model.Shift{{ShiftDate: D, ShiftType: 2}, {ShiftDate: D, ShiftType: 3}}
@@ -385,7 +391,9 @@ func TestShiftService_AssignShift(t *testing.T) {
 		service := NewShiftService(log, emplRepoMock, shiftRepoMock)
 
 		employee := &model.Employee{ID: 1, ProfileType: model.Medic}
-		D := time.Date(2025, 9, 15, 0, 0, 0, 0, time.UTC)
+		// Future-based dates to keep test stable over time
+		today := time.Now().UTC().Truncate(24 * time.Hour)
+		D := today.AddDate(0, 0, 7)
 		D3 := D.AddDate(0, 0, 3)
 
 		existingShifts := []model.Shift{{ShiftDate: D, ShiftType: 2}, {ShiftDate: D, ShiftType: 3}}

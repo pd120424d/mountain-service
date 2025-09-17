@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/pd120424d/mountain-service/api/activity/internal/clients"
 	"github.com/pd120424d/mountain-service/api/activity/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/config"
@@ -29,13 +30,14 @@ type ActivityHandler interface {
 }
 
 type activityHandler struct {
-	log       utils.Logger
-	svc       service.ActivityService
-	readModel service.FirestoreService
+	log           utils.Logger
+	svc           service.ActivityService
+	readModel     service.FirestoreService
+	urgencyClient clients.UrgencyClient
 }
 
-func NewActivityHandler(log utils.Logger, svc service.ActivityService, readModel service.FirestoreService) ActivityHandler {
-	return &activityHandler{log: log.WithName("activityHandler"), svc: svc, readModel: readModel}
+func NewActivityHandler(log utils.Logger, svc service.ActivityService, readModel service.FirestoreService, urgencyClient clients.UrgencyClient) ActivityHandler {
+	return &activityHandler{log: log.WithName("activityHandler"), svc: svc, readModel: readModel, urgencyClient: urgencyClient}
 }
 
 // CreateActivity Креирање нове активности
@@ -65,6 +67,18 @@ func (h *activityHandler) CreateActivity(ctx *gin.Context) {
 		log.Errorf("validation failed: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	if h.urgencyClient != nil {
+		cctx, cancel := context.WithTimeout(ctx.Request.Context(), config.DefaultListTimeout)
+		defer cancel()
+		if _, uerr := h.urgencyClient.GetUrgencyByID(cctx, req.UrgencyID); uerr != nil {
+			if strings.Contains(strings.ToLower(uerr.Error()), "not found") {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency has been deleted or does not exist"})
+				return
+			}
+			log.Warnf("Urgency validation failed; continuing without blocking: %v", uerr)
+		}
 	}
 
 	response, err := h.svc.CreateActivity(ctx.Request.Context(), &req)
@@ -110,6 +124,18 @@ func (h *activityHandler) GetActivity(ctx *gin.Context) {
 		log.Errorf("Failed to get activity: %v", err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Activity not found"})
 		return
+	}
+
+	if h.urgencyClient != nil {
+		cctx, cancel := context.WithTimeout(ctx.Request.Context(), config.DefaultListTimeout)
+		defer cancel()
+		if _, uerr := h.urgencyClient.GetUrgencyByID(cctx, response.UrgencyID); uerr != nil {
+			if strings.Contains(strings.ToLower(uerr.Error()), "not found") {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency has been deleted or does not exist"})
+				return
+			}
+			log.Warnf("Urgency validation failed; continuing without blocking: %v", uerr)
+		}
 	}
 
 	log.Infof("Successfully retrieved activity with ID %d", id)
@@ -190,6 +216,18 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	log := h.log.WithContext(cctx)
 	defer utils.TimeOperation(log, "ActivityHandler.ListActivities")()
 	log.Info("Received List Activities request")
+
+	if req.UrgencyID != nil && h.urgencyClient != nil {
+		if _, err := h.urgencyClient.GetUrgencyByID(cctx, *req.UrgencyID); err != nil {
+			// Treat not found as deleted or missing
+			if strings.Contains(strings.ToLower(err.Error()), "not found") {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency has been deleted or does not exist"})
+				return
+			}
+			// On transient client errors, proceed to avoid breaking UX; logs will capture the failure
+			log.Warnf("Urgency validation failed; continuing without blocking: %v", err)
+		}
+	}
 
 	// Cursor-based pagination (preferred when pageToken provided)
 	if h.readModel != nil && req.PageToken != "" {
@@ -395,6 +433,18 @@ func (h *activityHandler) GetActivityCounts(ctx *gin.Context) {
 
 	cctx, cancel := context.WithTimeout(ctx.Request.Context(), config.DefaultListTimeout)
 	defer cancel()
+
+	if h.urgencyClient != nil {
+		for _, id := range ids {
+			if _, uerr := h.urgencyClient.GetUrgencyByID(cctx, id); uerr != nil {
+				if strings.Contains(strings.ToLower(uerr.Error()), "not found") {
+					ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency has been deleted or does not exist"})
+					return
+				}
+				log.Warnf("Urgency validation failed; continuing without blocking: %v", uerr)
+			}
+		}
+	}
 
 	counts, err := h.readModel.CountByUrgencyIDs(cctx, ids)
 	if err != nil {

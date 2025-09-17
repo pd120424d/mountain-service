@@ -203,7 +203,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		log.Warn("Firestore project ID not set, fetching activities will fallback to SQL DB!")
 	}
 
-	activityHandler := handler.NewActivityHandler(log, activitySvc, readModel)
+	activityHandler := handler.NewActivityHandler(log, activitySvc, readModel, urgencyClient)
 
 	// Setup JWT secret
 	jwtSecret := server.SetupJWTSecret(log)

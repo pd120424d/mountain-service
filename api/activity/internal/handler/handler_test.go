@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
+	"github.com/pd120424d/mountain-service/api/activity/internal/clients"
 	"github.com/pd120424d/mountain-service/api/activity/internal/service"
 	activityV1 "github.com/pd120424d/mountain-service/api/contracts/activity/v1"
 	"github.com/pd120424d/mountain-service/api/shared/config"
@@ -38,7 +39,7 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/activities", strings.NewReader(invalidPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler := NewActivityHandler(log, nil, nil)
+		handler := NewActivityHandler(log, nil, nil, nil)
 		handler.CreateActivity(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -57,7 +58,7 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "/activities", strings.NewReader(invalidPayload))
 		ctx.Request.Header.Set("Content-Type", "application/json")
 
-		handler := NewActivityHandler(log, nil, nil)
+		handler := NewActivityHandler(log, nil, nil, nil)
 		handler.CreateActivity(ctx)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -80,7 +81,7 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().CreateActivity(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("database error"))
 
-		handler := NewActivityHandler(log, svcMock, nil)
+		handler := NewActivityHandler(log, svcMock, nil, nil)
 		handler.CreateActivity(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -103,7 +104,7 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().CreateActivity(gomock.Any(), gomock.Any()).Return(&activityV1.ActivityResponse{ID: 1}, nil)
 
-		handler := NewActivityHandler(log, svcMock, nil)
+		handler := NewActivityHandler(log, svcMock, nil, nil)
 		handler.CreateActivity(ctx)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
@@ -116,6 +117,25 @@ func TestActivityHandler_CreateActivity(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	})
+
+	t.Run("create urgency deleted -> 404", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		validPayload := `{
+				"description": "Test",
+				"employeeId": 1,
+				"urgencyId": 7
+			}`
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/activities", strings.NewReader(validPayload))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		uc := clients.NewMockUrgencyClient(ctrl)
+		uc.EXPECT().GetUrgencyByID(gomock.Any(), uint(7)).Return(nil, fmt.Errorf("urgency 7 not found"))
+		NewActivityHandler(log, nil, nil, uc).CreateActivity(ctx)
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "urgency has been deleted or does not exist")
+	})
+
 }
 
 func TestActivityHandler_GetActivity(t *testing.T) {
@@ -127,7 +147,7 @@ func TestActivityHandler_GetActivity(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/invalid", nil)
 		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
-		NewActivityHandler(log, nil, nil).GetActivity(ctx)
+		NewActivityHandler(log, nil, nil, nil).GetActivity(ctx)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "Invalid activity ID")
 	})
@@ -140,7 +160,7 @@ func TestActivityHandler_GetActivity(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().GetActivityByID(gomock.Any(), uint(1)).Return(nil, fmt.Errorf("not found"))
-		NewActivityHandler(log, svcMock, nil).GetActivity(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).GetActivity(ctx)
 		assert.Equal(t, http.StatusNotFound, w.Code)
 		assert.Contains(t, w.Body.String(), "Activity not found")
 	})
@@ -153,7 +173,7 @@ func TestActivityHandler_GetActivity(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "0"}}
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().GetActivityByID(gomock.Any(), uint(0)).Return(nil, fmt.Errorf("activity not found"))
-		NewActivityHandler(log, svcMock, nil).GetActivity(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).GetActivity(ctx)
 		assert.Equal(t, http.StatusNotFound, w.Code)
 		assert.Contains(t, w.Body.String(), "Activity not found")
 	})
@@ -167,15 +187,46 @@ func TestActivityHandler_GetActivity(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().GetActivityByID(gomock.Any(), uint(1)).Return(&activityV1.ActivityResponse{ID: 1}, nil)
-		NewActivityHandler(log, svcMock, nil).GetActivity(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).GetActivity(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":1")
 	})
+
+	t.Run("urgency deleted -> 404", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/1", nil)
+		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
+		svcMock := service.NewMockActivityService(ctrl)
+		svcMock.EXPECT().GetActivityByID(gomock.Any(), uint(1)).Return(&activityV1.ActivityResponse{ID: 1, UrgencyID: 7}, nil)
+		uc := clients.NewMockUrgencyClient(ctrl)
+		uc.EXPECT().GetUrgencyByID(gomock.Any(), uint(7)).Return(nil, fmt.Errorf("urgency 7 not found"))
+		NewActivityHandler(log, svcMock, nil, uc).GetActivity(ctx)
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "urgency has been deleted or does not exist")
+	})
+
 }
 
 func TestActivityHandler_ListActivities(t *testing.T) {
 	t.Parallel()
 	log := utils.NewTestLogger()
+
+	t.Run("urgency not found or deleted -> 404", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=7", nil)
+
+		uc := clients.NewMockUrgencyClient(ctrl)
+		uc.EXPECT().GetUrgencyByID(gomock.Any(), uint(7)).Return(nil, fmt.Errorf("urgency 7 not found"))
+
+		NewActivityHandler(log, nil, nil, uc).ListActivities(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "urgency has been deleted or does not exist")
+	})
 
 	t.Run("service fails", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -184,7 +235,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities", nil)
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("database error"))
-		NewActivityHandler(log, svcMock, nil).ListActivities(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).ListActivities(ctx)
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "database error")
 	})
@@ -196,7 +247,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities", nil)
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any(), gomock.Any()).Return(&activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{{ID: 1}}, Total: 1, Page: 1, PageSize: 10}, nil)
-		NewActivityHandler(log, svcMock, nil).ListActivities(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).ListActivities(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":1")
 	})
@@ -212,7 +263,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 			assert.Equal(t, 25, req.PageSize)
 			return &activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{}, Total: 0, Page: 2, PageSize: 25}, nil
 		})
-		NewActivityHandler(log, svcMock, nil).ListActivities(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).ListActivities(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
@@ -226,7 +277,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		readModel := service.NewMockFirestoreService(ctrl)
 		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(7), 10).Return([]sharedModels.Activity{{ID: 42, UrgencyID: 7, EmployeeID: 3}}, nil)
 
-		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
+		NewActivityHandler(log, svcMock, readModel, nil).ListActivities(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":42")
@@ -241,7 +292,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		readModel := service.NewMockFirestoreService(ctrl)
 		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(7), 10).Return([]sharedModels.Activity{}, nil)
 
-		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
+		NewActivityHandler(log, svcMock, readModel, nil).ListActivities(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"activities\":[]")
@@ -257,7 +308,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any(), gomock.Any()).Return(&activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{{ID: 77}}, Total: 1, Page: 1, PageSize: 10}, nil)
 
-		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
+		NewActivityHandler(log, svcMock, readModel, nil).ListActivities(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":77")
@@ -271,7 +322,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		readModel := service.NewMockFirestoreService(ctrl)
 		readModel.EXPECT().ListByUrgencyCursor(gomock.Any(), uint(7), 2, "abc").Return([]sharedModels.Activity{{ID: 42, UrgencyID: 7}, {ID: 43, UrgencyID: 7}}, "NEXT", nil)
 
-		NewActivityHandler(log, nil, readModel).ListActivities(ctx)
+		NewActivityHandler(log, nil, readModel, nil).ListActivities(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":42")
@@ -287,7 +338,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		readModel := service.NewMockFirestoreService(ctrl)
 		readModel.EXPECT().ListAllCursor(gomock.Any(), 2, "abc").Return([]sharedModels.Activity{{ID: 1}, {ID: 2}}, "NEXT", nil)
 
-		NewActivityHandler(log, nil, readModel).ListActivities(ctx)
+		NewActivityHandler(log, nil, readModel, nil).ListActivities(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"nextPageToken\":")
 	})
@@ -299,7 +350,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?pageToken=abc&pageSize=2", nil)
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any(), gomock.Any()).Return(&activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{{ID: 10}}, Total: 1, Page: 1, PageSize: 2}, nil)
-		NewActivityHandler(log, svcMock, nil).ListActivities(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).ListActivities(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":10")
 	})
@@ -314,7 +365,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		svcMock := service.NewMockActivityService(ctrl)
 
 		// When a cursor token is provided and read-model fails, we do not fall back to DB paging.
-		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
+		NewActivityHandler(log, svcMock, readModel, nil).ListActivities(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		body := w.Body.String()
 		assert.Contains(t, body, "\"activities\":[]")
@@ -334,7 +385,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 				{ID: 2, CreatedAt: time.Date(2025, 1, 3, 10, 0, 0, 0, time.UTC)},
 			}, nil)
 
-		NewActivityHandler(log, nil, readModel).ListActivities(ctx)
+		NewActivityHandler(log, nil, readModel, nil).ListActivities(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		body := w.Body.String()
@@ -353,7 +404,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any(), gomock.Any()).Return(&activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{{ID: 99}}, Total: 1, Page: 1, PageSize: 10}, nil)
 
-		NewActivityHandler(log, svcMock, readModel).ListActivities(ctx)
+		NewActivityHandler(log, svcMock, readModel, nil).ListActivities(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "\"id\":99")
@@ -369,7 +420,7 @@ func TestActivityHandler_DeleteActivity(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/activities/invalid", nil)
 		ctx.Params = []gin.Param{{Key: "id", Value: "invalid"}}
-		NewActivityHandler(log, nil, nil).DeleteActivity(ctx)
+		NewActivityHandler(log, nil, nil, nil).DeleteActivity(ctx)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "Invalid activity ID")
 	})
@@ -382,7 +433,7 @@ func TestActivityHandler_DeleteActivity(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().DeleteActivity(gomock.Any(), uint(1)).Return(fmt.Errorf("not found"))
-		NewActivityHandler(log, svcMock, nil).DeleteActivity(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).DeleteActivity(ctx)
 		assert.Equal(t, http.StatusNotFound, w.Code)
 		assert.Contains(t, w.Body.String(), "Activity not found")
 	})
@@ -395,7 +446,7 @@ func TestActivityHandler_DeleteActivity(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "0"}}
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().DeleteActivity(gomock.Any(), uint(0)).Return(fmt.Errorf("activity not found"))
-		NewActivityHandler(log, svcMock, nil).DeleteActivity(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).DeleteActivity(ctx)
 		assert.Equal(t, http.StatusNotFound, w.Code)
 		assert.Contains(t, w.Body.String(), "Activity not found")
 	})
@@ -408,7 +459,7 @@ func TestActivityHandler_DeleteActivity(t *testing.T) {
 		ctx.Params = []gin.Param{{Key: "id", Value: "1"}}
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().DeleteActivity(gomock.Any(), uint(1)).Return(nil)
-		NewActivityHandler(log, svcMock, nil).DeleteActivity(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).DeleteActivity(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "Activity deleted successfully")
 
@@ -432,7 +483,7 @@ func TestActivityHandler_ResetAllData(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/activities/reset", nil)
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ResetAllData(gomock.Any()).Return(fmt.Errorf("database error"))
-		NewActivityHandler(log, svcMock, nil).ResetAllData(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).ResetAllData(ctx)
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "Failed to reset activity data")
 	})
@@ -444,7 +495,7 @@ func TestActivityHandler_ResetAllData(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodDelete, "/activities/reset", nil)
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ResetAllData(gomock.Any()).Return(nil)
-		NewActivityHandler(log, svcMock, nil).ResetAllData(ctx)
+		NewActivityHandler(log, svcMock, nil, nil).ResetAllData(ctx)
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "All activity data reset successfully")
 
@@ -497,7 +548,7 @@ func TestActivityHandler_GetActivityCounts(t *testing.T) {
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/counts", nil)
-		NewActivityHandler(log, nil, nil).GetActivityCounts(ctx)
+		NewActivityHandler(log, nil, nil, nil).GetActivityCounts(ctx)
 		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 	})
 
@@ -507,7 +558,7 @@ func TestActivityHandler_GetActivityCounts(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/counts", nil)
 		readModel := service.NewMockFirestoreService(ctrl)
-		NewActivityHandler(log, nil, readModel).GetActivityCounts(ctx)
+		NewActivityHandler(log, nil, readModel, nil).GetActivityCounts(ctx)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "at least one urgencyId is required")
 	})
@@ -518,7 +569,7 @@ func TestActivityHandler_GetActivityCounts(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/counts?urgencyId=abc", nil)
 		readModel := service.NewMockFirestoreService(ctrl)
-		NewActivityHandler(log, nil, readModel).GetActivityCounts(ctx)
+		NewActivityHandler(log, nil, readModel, nil).GetActivityCounts(ctx)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "urgencyId[0] must be a positive integer")
 	})
@@ -536,9 +587,22 @@ func TestActivityHandler_GetActivityCounts(t *testing.T) {
 		}
 		ctx.Request = httptest.NewRequest(http.MethodGet, q, nil)
 		readModel := service.NewMockFirestoreService(ctrl)
-		NewActivityHandler(log, nil, readModel).GetActivityCounts(ctx)
+		NewActivityHandler(log, nil, readModel, nil).GetActivityCounts(ctx)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "urgencyId cannot exceed 100 per request")
+	})
+
+	t.Run("counts urgency deleted -> 404", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/counts?urgencyId=7", nil)
+		uc := clients.NewMockUrgencyClient(ctrl)
+		uc.EXPECT().GetUrgencyByID(gomock.Any(), uint(7)).Return(nil, fmt.Errorf("urgency 7 not found"))
+		readModel := service.NewMockFirestoreService(ctrl)
+		NewActivityHandler(log, nil, readModel, uc).GetActivityCounts(ctx)
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Contains(t, w.Body.String(), "urgency has been deleted or does not exist")
 	})
 
 	t.Run("success -> 200 and maps counts by string keys", func(t *testing.T) {
@@ -550,7 +614,7 @@ func TestActivityHandler_GetActivityCounts(t *testing.T) {
 		readModel := service.NewMockFirestoreService(ctrl)
 		readModel.EXPECT().CountByUrgencyIDs(gomock.Any(), gomock.Any()).Return(map[uint]int64{3: 1, 5: 1}, nil)
 
-		NewActivityHandler(log, nil, readModel).GetActivityCounts(ctx)
+		NewActivityHandler(log, nil, readModel, nil).GetActivityCounts(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp activityV1.ActivityCountsResponse
@@ -567,7 +631,7 @@ func TestActivityHandler_GetActivityCounts(t *testing.T) {
 		readModel := service.NewMockFirestoreService(ctrl)
 		readModel.EXPECT().CountByUrgencyIDs(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("rm fail"))
 
-		NewActivityHandler(log, nil, readModel).GetActivityCounts(ctx)
+		NewActivityHandler(log, nil, readModel, nil).GetActivityCounts(ctx)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 	})

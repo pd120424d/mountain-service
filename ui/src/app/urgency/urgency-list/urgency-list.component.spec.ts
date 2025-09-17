@@ -129,6 +129,19 @@ describe('UrgencyListComponent', () => {
     expect(component.countsByUrgencyId[2]).toBe(0);
   });
 
+  it('should show --- when counts request fails', () => {
+    urgencyService.getUrgenciesPaginated.and.returnValue(of({ urgencies: mockUrgencies, total: mockUrgencies.length, page: 1, pageSize: 20, totalPages: 1 }));
+    activityService.getCountsByUrgencyIds.and.returnValue(throwError(() => new Error('boom')));
+
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    expect((component as any).countsError).toBeTrue();
+    const lastCell = fixture.nativeElement.querySelector('tbody tr td:last-child');
+    expect(lastCell.textContent.trim()).toBe('---');
+  });
+
+
   it('should handle error when loading urgencies', () => {
     const errorMessage = 'Failed to load urgencies';
     urgencyService.getUrgenciesPaginated.and.returnValue(throwError(() => new Error(errorMessage)));

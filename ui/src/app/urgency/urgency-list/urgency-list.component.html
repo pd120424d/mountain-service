@@ -60,9 +60,9 @@
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.LOCATION' | translate }}</th>
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.LEVEL' | translate }}</th>
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.STATUS' | translate }}</th>
-          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.ACTIVITIES' | translate }}</th>
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.CREATED_AT' | translate }}</th>
           <th>{{ 'URGENCY_LIST.TABLE_HEADERS.ACTIONS' | translate }}</th>
+          <th>{{ 'URGENCY_LIST.TABLE_HEADERS.ACTIVITIES' | translate }}</th>
         </tr>
       </thead>
       <tbody>
@@ -81,16 +81,19 @@
               {{ 'URGENCY_STATUS.' + (urgency.status?.toUpperCase()?.replace(' ', '_') || 'UNKNOWN') | translate }}
             </span>
           </td>
-          <td>
-            <span *ngIf="countsLoading; else countTpl" class="spinner-inline" aria-label="loading"></span>
-            <ng-template #countTpl>{{ countsByUrgencyId[urgency.id!] ?? 0 }}</ng-template>
-          </td>
           <td>{{ urgency.createdAt | localDate }}</td>
           <td class="actions">
             <button class="btn btn-sm btn-info" (click)="viewUrgency(urgency.id!)"
               [title]="'URGENCY_LIST.VIEW' | translate">
               {{ 'URGENCY_LIST.VIEW' | translate }}
             </button>
+          </td>
+          <td class="activities">
+            <span *ngIf="countsLoading; else afterLoading" class="spinner-inline" aria-label="loading"></span>
+            <ng-template #afterLoading>
+              <ng-container *ngIf="!countsError; else dashTpl">{{ countsByUrgencyId[urgency.id!] ?? 0 }}</ng-container>
+            </ng-template>
+            <ng-template #dashTpl>---</ng-template>
           </td>
         </tr>
       </tbody>

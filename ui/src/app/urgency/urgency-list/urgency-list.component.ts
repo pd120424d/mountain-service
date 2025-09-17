@@ -29,7 +29,7 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
   activeTab: 'mine' | 'all' = 'mine';
 
   countsLoading = false;
-
+  countsError = false;
   countsByUrgencyId: Record<number, number> = {};
 
   UrgencyLevel = UrgencyLevel;
@@ -79,10 +79,11 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
 
   private fetchActivityCounts(): void {
     const ids = (this.urgencies || []).map(u => u.id!).filter((v): v is number => typeof v === 'number');
-    if (!ids.length) { this.countsByUrgencyId = {}; this.countsLoading = false; return; }
+    if (!ids.length) { this.countsByUrgencyId = {}; this.countsLoading = false; this.countsError = false; return; }
     this.countsLoading = true;
+    this.countsError = false;
     const obs = (this.activityService as any)?.getCountsByUrgencyIds?.(ids);
-    if (!obs || typeof obs.pipe !== 'function') { this.countsLoading = false; this.countsByUrgencyId = {}; return; }
+    if (!obs || typeof obs.pipe !== 'function') { this.countsLoading = false; this.countsByUrgencyId = {}; this.countsError = true; return; }
     obs
       .pipe(finalize(() => { this.countsLoading = false; }))
       .subscribe({
@@ -90,8 +91,9 @@ export class UrgencyListComponent extends BaseTranslatableComponent implements O
           const mapped: Record<number, number> = {};
           Object.entries(counts || {}).forEach(([k, v]) => { mapped[parseInt(k, 10)] = Number(v) || 0; });
           this.countsByUrgencyId = mapped;
+          this.countsError = false;
         },
-        error: () => { this.countsByUrgencyId = {}; }
+        error: () => { this.countsByUrgencyId = {}; this.countsError = true; }
       });
   }
 

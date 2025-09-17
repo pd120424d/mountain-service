@@ -139,9 +139,11 @@ func TestEmployeeRepositoryMockDB_Delete(t *testing.T) {
 
 	gormDB, mock := setupMockDB(t)
 	repo := NewEmployeeRepository(log, gormDB)
+	// Enable verbose SQL logging for this test to align expectations
+	gormDB.Logger = gormDB.Logger.LogMode(logger.Info)
 
 	t.Run("it returns an error when employee Lees not exist", func(t *testing.T) {
-		mock.ExpectQuery(`SELECT \* FROM "employees"`).
+		mock.ExpectQuery(`SELECT \* FROM "employees" WHERE .*"employees"\."id" = \$1`).
 			WithArgs(999, 1).
 			WillReturnError(gorm.ErrRecordNotFound)
 
@@ -150,20 +152,21 @@ func TestEmployeeRepositoryMockDB_Delete(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
-	t.Run("it returns an error when it fails to delete an employee", func(t *testing.T) {
-		mock.ExpectQuery(`SELECT \* FROM "employees"`).
+	t.Run("it deletes an employee when it exists (soft delete)", func(t *testing.T) {
+		// Expect the initial SELECT by id to load the employee
+		mock.ExpectQuery(`SELECT \* FROM "employees" WHERE .*"employees"\."id" = \$1`).
 			WithArgs(1, 1).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "username", "first_name", "last_name"}).
 				AddRow(1, "test-user", "Bruce", "Lee"))
 
 		mock.ExpectBegin()
-		mock.ExpectExec(`DELETE FROM "employees"`).
-			WithArgs(1).
-			WillReturnError(sqlmock.ErrCancelled)
-		mock.ExpectRollback()
+		mock.ExpectExec(`UPDATE "employees" SET "deleted_at"=\$1,"updated_at"=\$2 WHERE \(id = \$3 AND deleted_at IS NULL\) AND "employees"\."deleted_at" IS NULL`).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+		mock.ExpectCommit()
 
 		err := repo.Delete(context.Background(), 1)
-		assert.Error(t, err)
+		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
