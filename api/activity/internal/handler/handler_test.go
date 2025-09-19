@@ -592,17 +592,18 @@ func TestActivityHandler_GetActivityCounts(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "urgencyId cannot exceed 100 per request")
 	})
 
-	t.Run("counts urgency deleted -> 404", func(t *testing.T) {
+	t.Run("counts does not validate urgency existence -> 200 with 0", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		w := httptest.NewRecorder()
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities/counts?urgencyId=7", nil)
-		uc := clients.NewMockUrgencyClient(ctrl)
-		uc.EXPECT().GetUrgencyByID(gomock.Any(), uint(7)).Return(nil, fmt.Errorf("urgency 7 not found"))
 		readModel := service.NewMockFirestoreService(ctrl)
-		NewActivityHandler(log, nil, readModel, uc).GetActivityCounts(ctx)
-		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "urgency has been deleted or does not exist")
+		readModel.EXPECT().CountByUrgencyIDs(gomock.Any(), gomock.Any()).Return(map[uint]int64{7: 0}, nil)
+		NewActivityHandler(log, nil, readModel, nil).GetActivityCounts(ctx)
+		assert.Equal(t, http.StatusOK, w.Code)
+		var resp activityV1.ActivityCountsResponse
+		assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		assert.Equal(t, int64(0), resp.Counts["7"])
 	})
 
 	t.Run("success -> 200 and maps counts by string keys", func(t *testing.T) {

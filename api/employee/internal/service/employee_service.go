@@ -29,6 +29,7 @@ func NewEmployeeService(log utils.Logger, emplRepo repositories.EmployeeReposito
 
 func (s *employeeService) RegisterEmployee(ctx context.Context, req employeeV1.EmployeeCreateRequest) (*employeeV1.EmployeeResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "EmployeeService.RegisterEmployee")()
 	log.Infof("Creating new employee with data: %s", req.ToString())
 
 	profileType := model.ProfileTypeFromString(req.ProfileType)
@@ -111,6 +112,7 @@ func (s *employeeService) RegisterEmployee(ctx context.Context, req employeeV1.E
 
 func (s *employeeService) LoginEmployee(ctx context.Context, req employeeV1.EmployeeLogin) (string, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "EmployeeService.LoginEmployee")()
 	log.Info("Processing employee login")
 
 	employee, err := s.emplRepo.GetEmployeeByUsername(ctx, req.Username)
@@ -136,6 +138,7 @@ func (s *employeeService) LoginEmployee(ctx context.Context, req employeeV1.Empl
 
 func (s *employeeService) LogoutEmployee(ctx context.Context, tokenID string, expiresAt time.Time) error {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "EmployeeService.LogoutEmployee")()
 	log.Info("Processing employee logout")
 
 	if s.blacklist == nil {
@@ -154,6 +157,7 @@ func (s *employeeService) LogoutEmployee(ctx context.Context, tokenID string, ex
 
 func (s *employeeService) ListEmployees(ctx context.Context) ([]employeeV1.EmployeeResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "EmployeeService.ListEmployees")()
 	log.Info("Retrieving list of employees")
 
 	employees, err := s.emplRepo.GetAll(ctx)
@@ -187,6 +191,7 @@ func (s *employeeService) ListEmployees(ctx context.Context) ([]employeeV1.Emplo
 
 func (s *employeeService) UpdateEmployee(ctx context.Context, employeeID uint, req employeeV1.EmployeeUpdateRequest) (*employeeV1.EmployeeResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "EmployeeService.UpdateEmployee")()
 	log.Infof("Updating employee with ID %d", employeeID)
 
 	var employee model.Employee
@@ -209,6 +214,7 @@ func (s *employeeService) UpdateEmployee(ctx context.Context, employeeID uint, r
 
 func (s *employeeService) DeleteEmployee(ctx context.Context, employeeID uint) error {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "EmployeeService.DeleteEmployee")()
 	log.Infof("Deleting employee with ID %d", employeeID)
 
 	if err := s.emplRepo.Delete(ctx, employeeID); err != nil {
@@ -222,6 +228,7 @@ func (s *employeeService) DeleteEmployee(ctx context.Context, employeeID uint) e
 
 func (s *employeeService) GetEmployeeByID(ctx context.Context, employeeID uint) (*model.Employee, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "EmployeeService.GetEmployeeByID")()
 	log.Infof("Getting employee by ID %d", employeeID)
 
 	var employee model.Employee
@@ -235,6 +242,7 @@ func (s *employeeService) GetEmployeeByID(ctx context.Context, employeeID uint) 
 
 func (s *employeeService) GetEmployeeByUsername(ctx context.Context, username string) (*model.Employee, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "EmployeeService.GetEmployeeByUsername")()
 	log.Infof("Getting employee by username %s", username)
 
 	employee, err := s.emplRepo.GetEmployeeByUsername(ctx, username)
@@ -248,6 +256,7 @@ func (s *employeeService) GetEmployeeByUsername(ctx context.Context, username st
 
 func (s *employeeService) ResetAllData(ctx context.Context) error {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "EmployeeService.ResetAllData")()
 	log.Warn("Resetting all employee data")
 
 	err := s.emplRepo.ResetAllData(ctx)

@@ -28,6 +28,7 @@ func NewShiftService(log utils.Logger, emplRepo repositories.EmployeeRepository,
 
 func (s *shiftService) AssignShift(ctx context.Context, employeeID uint, req employeeV1.AssignShiftRequest) (*employeeV1.AssignShiftResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "ShiftService.AssignShift")()
 	log.Infof("Assigning shift for employee ID %d", employeeID)
 
 	// Step 1: Validate employee exists
@@ -115,6 +116,7 @@ func (s *shiftService) AssignShift(ctx context.Context, employeeID uint, req emp
 
 func (s *shiftService) GetShifts(ctx context.Context, employeeID uint) ([]employeeV1.ShiftResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "ShiftService.GetShifts")()
 	log.Infof("Getting shifts for employee ID %d", employeeID)
 
 	rows, err := s.shiftsRepo.GetEmployeeShiftRowsByEmployeeID(ctx, employeeID)
@@ -141,6 +143,7 @@ func (s *shiftService) GetShifts(ctx context.Context, employeeID uint) ([]employ
 
 func (s *shiftService) GetShiftsAvailability(ctx context.Context, employeeID uint, days int) (*employeeV1.ShiftAvailabilityResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "ShiftService.GetShiftsAvailability")()
 	log.Infof("Getting shift availability for employee %d for %d days", employeeID, days)
 
 	if days <= 0 || days > 90 {
@@ -214,6 +217,7 @@ func (s *shiftService) GetShiftsAvailability(ctx context.Context, employeeID uin
 
 func (s *shiftService) RemoveShift(ctx context.Context, employeeID uint, req employeeV1.RemoveShiftRequest) error {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "ShiftService.RemoveShift")()
 	log.Infof("Removing shift for employee ID %d", employeeID)
 
 	shiftDate, err := time.ParseInLocation("2006-01-02", req.ShiftDate, time.UTC)
@@ -236,6 +240,7 @@ func (s *shiftService) RemoveShift(ctx context.Context, employeeID uint, req emp
 
 func (s *shiftService) GetOnCallEmployees(ctx context.Context, currentTime time.Time, shiftBuffer time.Duration) ([]employeeV1.EmployeeResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "ShiftService.GetOnCallEmployees")()
 	log.Infof("Getting on-call employees")
 
 	employees, err := s.shiftsRepo.GetOnCallEmployees(ctx, currentTime, shiftBuffer)
@@ -255,6 +260,7 @@ func (s *shiftService) GetOnCallEmployees(ctx context.Context, currentTime time.
 
 func (s *shiftService) GetShiftWarnings(ctx context.Context, employeeID uint) ([]string, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "ShiftService.GetShiftWarnings")()
 	log.Infof("Getting shift warnings for employee ID %d", employeeID)
 
 	// Check if employee exists
@@ -335,6 +341,7 @@ func (s *shiftService) GetShiftWarnings(ctx context.Context, employeeID uint) ([
 
 func (s *shiftService) GetAdminShiftsAvailability(ctx context.Context, days int) (*employeeV1.ShiftAvailabilityResponse, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "ShiftService.GetAdminShiftsAvailability")()
 	log.Infof("Getting admin shifts availability for %d days", days)
 
 	// TODO: we need to return shift availability for all employees here, if it is possible somehow

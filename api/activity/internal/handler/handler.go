@@ -431,20 +431,8 @@ func (h *activityHandler) GetActivityCounts(ctx *gin.Context) {
 		ids = append(ids, uint(v))
 	}
 
-	cctx, cancel := context.WithTimeout(ctx.Request.Context(), config.DefaultListTimeout)
+	cctx, cancel := context.WithTimeout(ctx.Request.Context(), config.CountTimeout)
 	defer cancel()
-
-	if h.urgencyClient != nil {
-		for _, id := range ids {
-			if _, uerr := h.urgencyClient.GetUrgencyByID(cctx, id); uerr != nil {
-				if strings.Contains(strings.ToLower(uerr.Error()), "not found") {
-					ctx.JSON(http.StatusNotFound, gin.H{"error": "urgency has been deleted or does not exist"})
-					return
-				}
-				log.Warnf("Urgency validation failed; continuing without blocking: %v", uerr)
-			}
-		}
-	}
 
 	counts, err := h.readModel.CountByUrgencyIDs(cctx, ids)
 	if err != nil {

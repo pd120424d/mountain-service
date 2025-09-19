@@ -60,6 +60,7 @@ func (s *firebaseService) GetActivitiesByUrgency(ctx context.Context, urgencyID 
 	}
 
 	log := s.logger.WithContext(ctx)
+	defer utils.TimeOperation(log, "FirebaseService.GetActivitiesByUrgency")()
 	log.Infof("Getting activities from Firebase for urgency: %d", urgencyID)
 
 	iter := s.client.Collection(s.collection).
@@ -103,6 +104,7 @@ func (s *firebaseService) GetAllActivities(ctx context.Context, limit int) ([]*m
 	}
 
 	log := s.logger.WithContext(ctx)
+	defer utils.TimeOperation(log, "FirebaseService.GetAllActivities")()
 	log.Infof("Getting all activities from Firebase with limit: %d", limit)
 
 	query := s.client.Collection(s.collection).OrderBy("created_at", firestorex.Desc)
@@ -253,6 +255,7 @@ func (s *firebaseService) HealthCheck(ctx context.Context) error {
 	iter := s.client.Collection(s.collection).Limit(1).Documents(ctx)
 	_, err := iter.Next()
 	log := s.logger.WithContext(ctx)
+	defer utils.TimeOperation(log, "FirebaseService.HealthCheck")()
 	if err != nil && !isDone(err) {
 		log.Errorf("Firebase health check failed: %v", err)
 		return fmt.Errorf("failed to check health: %w", err)

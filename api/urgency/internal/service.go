@@ -103,6 +103,7 @@ func (s *urgencyService) ListUnassignedIDs(ctx context.Context) ([]uint, error) 
 
 func (s *urgencyService) GetAllUrgencies(ctx context.Context) ([]model.Urgency, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "UrgencyService.GetAllUrgencies")()
 	urgencies, err := s.repo.GetAll(ctx)
 	if err != nil {
 		log.Errorf("Failed to get urgencies: %v", err)
@@ -113,6 +114,7 @@ func (s *urgencyService) GetAllUrgencies(ctx context.Context) ([]model.Urgency, 
 
 func (s *urgencyService) GetUrgencyByID(ctx context.Context, id uint) (*model.Urgency, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "UrgencyService.GetUrgencyByID")()
 	var urgency model.Urgency
 	if err := s.repo.GetByID(ctx, id, &urgency); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -128,6 +130,7 @@ func (s *urgencyService) GetUrgencyByID(ctx context.Context, id uint) (*model.Ur
 // on which the activitiies creation depends.
 func (s *urgencyService) GetUrgencyByIDPrimary(ctx context.Context, id uint) (*model.Urgency, error) {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "UrgencyService.GetUrgencyByIDPrimary")()
 	var urgency model.Urgency
 	if err := s.repo.GetByIDPrimary(ctx, id, &urgency); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -166,6 +169,7 @@ func (s *urgencyService) DeleteUrgency(ctx context.Context, id uint) error {
 
 func (s *urgencyService) ResetAllData(ctx context.Context) error {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "UrgencyService.ResetAllData")()
 	if err := s.repo.ResetAllData(ctx); err != nil {
 		log.Errorf("Failed to reset all data: %v", err)
 		return commonv1.NewAppError("URGENCY_ERRORS.RESET_FAILED", "failed to reset all data", map[string]interface{}{"cause": err.Error()})
@@ -174,6 +178,9 @@ func (s *urgencyService) ResetAllData(ctx context.Context) error {
 }
 
 func (s *urgencyService) AssignUrgency(ctx context.Context, urgencyID, employeeID uint) error {
+	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "UrgencyService.AssignUrgency")()
+
 	if urgencyID == 0 || employeeID == 0 {
 		return commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId and employeeId are required", nil)
 	}
@@ -268,6 +275,9 @@ func (s *urgencyService) CloseUrgency(ctx context.Context, urgencyID uint, actor
 }
 
 func (s *urgencyService) GetAssignment(ctx context.Context, urgencyID uint) (*urgencyV1.AssignmentResponse, error) {
+	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "UrgencyService.GetAssignment")()
+
 	if urgencyID == 0 {
 		return nil, commonv1.NewAppError("VALIDATION.INVALID_REQUEST", "urgencyId is required", nil)
 	}
@@ -287,6 +297,7 @@ func (s *urgencyService) GetAssignment(ctx context.Context, urgencyID uint) (*ur
 
 func (s *urgencyService) createAssignmentAndNotification(ctx context.Context, urgency *model.Urgency, employee employeeV1.EmployeeResponse) error {
 	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "UrgencyService.createAssignmentAndNotification")()
 	if employee.Phone != "" {
 		smsNotification := &model.Notification{
 			UrgencyID:        urgency.ID,

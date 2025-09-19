@@ -1,0 +1,46 @@
+# Helmfile to deploy kube-prometheus-stack (Prometheus + Grafana) for Mountain Service
+# Usage:
+#   export GRAFANA_ADMIN_PASSWORD='REPLACE_WITH_STRONG_PASSWORD'
+#   helmfile -f deploy/helmfile/helmfile.yaml apply
+
+helmDefaults:
+  wait: true
+  timeout: 600s
+  atomic: true
+
+repositories:
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+
+releases:
+  - name: kube-prometheus-stack
+    namespace: monitoring
+    createNamespace: true
+    chart: prometheus-community/kube-prometheus-stack
+    version: "65.3.1"
+    values:
+      - grafana:
+          # Keep secrets out of git; require an env var at apply-time.
+          adminPassword: "{{ requiredEnv \"GRAFANA_ADMIN_PASSWORD\" }}"
+          grafana.ini:
+            server:
+              root_url: "%(protocol)s://%(domain)s/grafana/"
+              serve_from_sub_path: true
+            security:
+              allow_embedding: false
+            auth:
+              disable_login_form: false
+              disable_signout_menu: false
+          ingress:
+            enabled: true
+            # NOTE: Update to 'websecure' and add TLS once cert-manager/Traefik TLS is ready.
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: web
+            hosts:
+              - mountain-service.duckdns.org
+            path: /grafana
+            pathType: Prefix
+        prometheus:
+          prometheusSpec:
+            retention: 15d
+
