@@ -99,7 +99,7 @@ describe('UrgencyDetailComponent', () => {
     component.ngOnInit();
 
     expect(urgencyService.getUrgencyById).toHaveBeenCalledWith(1);
-    expect(activityService.getActivitiesCursor).toHaveBeenCalledWith({ urgencyId: 1, pageSize: 10 });
+    expect(activityService.getActivitiesCursor).toHaveBeenCalledWith({ urgencyId: 1, pageSize: 50 });
     expect(component.urgency).toEqual(mockUrgency);
     expect(component.activities).toEqual(mockActivities);
   });

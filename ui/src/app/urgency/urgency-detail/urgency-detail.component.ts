@@ -46,7 +46,7 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   private intersectionObserver?: IntersectionObserver;
   // Pagination (legacy, retained for compatibility)
   activitiesPage = 1;
-  activitiesPageSize = 10;
+  activitiesPageSize = 50;
   totalActivities = 0;
   totalActivitiesPages = 0;
   // Fallback when backend uses Postgres (no cursor token)

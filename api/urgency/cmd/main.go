@@ -47,8 +47,7 @@ func main() {
 	}
 
 	ctx, _ := utils.EnsureRequestID(context.Background())
-	log = log.WithContext(ctx)
-	log.Info("Starting Urgency service")
+	log.WithContext(ctx).Info("Starting Urgency service")
 	defer utils.TimeOperation(log, "UrgencyService.main")()
 	defer func(log utils.Logger) {
 		err := log.Sync()

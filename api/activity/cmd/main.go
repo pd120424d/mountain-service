@@ -59,8 +59,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create logger: %v", err))
 	}
-	log = log.WithContext(ctx)
-	log.Info("Starting Activity service")
+	log.WithContext(ctx).Info("Starting Activity service")
 	defer utils.TimeOperation(log, "ActivityService.main")()
 
 	// Setup server configuration

@@ -111,8 +111,7 @@ func main() {
 	}
 
 	ctx, _ := utils.EnsureRequestID(context.Background())
-	log = log.WithContext(ctx)
-	log.Info("Starting Docs Aggregator service")
+	log.WithContext(ctx).Info("Starting Docs Aggregator service")
 	defer utils.TimeOperation(log, "DocsAggregatorService.main")()
 
 	r := gin.Default()

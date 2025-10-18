@@ -30,8 +30,7 @@ func main() {
 	}
 
 	ctx, _ := utils.EnsureRequestID(context.Background())
-	log = log.WithContext(ctx)
-	log.Info("Starting Version service")
+	log.WithContext(ctx).Info("Starting Version service")
 	defer utils.TimeOperation(log, "VersionService.main")()
 
 	log.Info("Starting Version service on :8090...") // Updated to trigger deployment
