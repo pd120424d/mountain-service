@@ -49,6 +49,8 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
   activitiesPageSize = 10;
   totalActivities = 0;
   totalActivitiesPages = 0;
+  // Fallback when backend uses Postgres (no cursor token)
+  usePagePaging = false;
 
   error: string | null = null;
   urgencyId: number | null = null;
@@ -133,6 +135,7 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
     this.isLoadingActivities = true;
     this.nextPageToken = null;
     this.activities = [];
+    this.usePagePaging = false;
 
     console.debug('[Activities] Fetch first page', { urgencyId: this.urgencyId, pageSize: this.activitiesPageSize });
     this.activityService.getActivitiesCursor({
@@ -142,9 +145,13 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
       next: (resp) => {
         this.activities = (resp.activities || []);
         this.nextPageToken = resp.nextPageToken || null;
+        // If backend is using Postgres (no cursor token), fall back to page-based loading
+        if (!this.nextPageToken) {
+          this.usePagePaging = true;
+          this.activitiesPage = 1;
+        }
         this.isLoadingActivities = false;
-        console.debug('[Activities] First page loaded', { count: this.activities.length, nextPageToken: this.nextPageToken });
-        // Defer to allow Angular to render the #loadMoreAnchor (*ngIf depends on nextPageToken)
+        console.debug('[Activities] First page loaded', { count: this.activities.length, nextPageToken: this.nextPageToken, usePagePaging: this.usePagePaging });
         setTimeout(() => this.setupIntersectionObserver());
       },
       error: (error) => {
@@ -172,13 +179,14 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
     if (this.intersectionObserver) {
       this.intersectionObserver.disconnect();
     }
-    console.debug('[Activities] Setting up IntersectionObserver', { hasToken: !!this.nextPageToken });
+    const canLoadMore = !!this.nextPageToken || this.usePagePaging;
+    console.debug('[Activities] Setting up IntersectionObserver', { hasToken: !!this.nextPageToken, usePagePaging: this.usePagePaging });
     this.intersectionObserver = new IntersectionObserver(entries => {
       const entry = entries[0];
       if (entry) {
-        console.debug('[Activities] Intersection observed', { isIntersecting: entry.isIntersecting, hasToken: !!this.nextPageToken, isLoadingMore: this.isLoadingMore });
+        console.debug('[Activities] Intersection observed', { isIntersecting: entry.isIntersecting, hasToken: !!this.nextPageToken, usePagePaging: this.usePagePaging, isLoadingMore: this.isLoadingMore });
       }
-      if (entry && entry.isIntersecting && this.nextPageToken && !this.isLoadingMore) {
+      if (entry && entry.isIntersecting && !this.isLoadingMore && (this.nextPageToken || this.usePagePaging)) {
         this.loadMoreActivities();
       }
     }, {
@@ -186,31 +194,66 @@ export class UrgencyDetailComponent extends BaseTranslatableComponent implements
       rootMargin: '200px 0px',
       threshold: 0
     });
-    this.intersectionObserver.observe(this.loadMoreAnchor.nativeElement);
+    if (canLoadMore) {
+      this.intersectionObserver.observe(this.loadMoreAnchor.nativeElement);
+    }
   }
 
   private loadMoreActivities(): void {
-    if (!this.urgencyId || !this.nextPageToken) return;
-    this.isLoadingMore = true;
-    const outgoing = this.nextPageToken;
-    console.debug('[Activities] Loading more', { urgencyId: this.urgencyId, pageSize: this.activitiesPageSize, pageToken: outgoing });
-    this.activityService.getActivitiesCursor({
-      urgencyId: this.urgencyId,
-      pageSize: this.activitiesPageSize,
-      pageToken: outgoing || undefined
-    }).subscribe({
-      next: (resp) => {
-        const more = resp.activities || [];
-        this.activities = this.activities.concat(more);
-        this.nextPageToken = resp.nextPageToken || null;
-        this.isLoadingMore = false;
-        console.debug('[Activities] Loaded more', { appended: more.length, nextPageToken: this.nextPageToken });
-      },
-      error: (err) => {
-        console.error('[Activities] Failed to load more', err);
-        this.isLoadingMore = false;
-      }
-    });
+    if (!this.urgencyId) return;
+    // If we have a cursor token, continue cursor-based loading
+    if (this.nextPageToken) {
+      this.isLoadingMore = true;
+      const outgoing = this.nextPageToken;
+      console.debug('[Activities] Loading more (cursor)', { urgencyId: this.urgencyId, pageSize: this.activitiesPageSize, pageToken: outgoing });
+      this.activityService.getActivitiesCursor({
+        urgencyId: this.urgencyId,
+        pageSize: this.activitiesPageSize,
+        pageToken: outgoing || undefined
+      }).subscribe({
+        next: (resp) => {
+          const more = resp.activities || [];
+          this.activities = this.activities.concat(more);
+          this.nextPageToken = resp.nextPageToken || null;
+          this.isLoadingMore = false;
+          console.debug('[Activities] Loaded more (cursor)', { appended: more.length, nextPageToken: this.nextPageToken });
+        },
+        error: (err) => {
+          console.error('[Activities] Failed to load more (cursor)', err);
+          this.isLoadingMore = false;
+        }
+      });
+      return;
+    }
+
+    // Fallback: page-based loading when cursor is unavailable (Postgres path)
+    if (this.usePagePaging) {
+      this.isLoadingMore = true;
+      const nextPage = (this.activitiesPage || 1) + 1;
+      console.debug('[Activities] Loading more (paged)', { urgencyId: this.urgencyId, page: nextPage, pageSize: this.activitiesPageSize });
+      this.activityService.getActivitiesWithPagination({
+        urgencyId: this.urgencyId,
+        page: nextPage,
+        pageSize: this.activitiesPageSize
+      }).subscribe({
+        next: (resp) => {
+          const more = (resp.activities || []);
+          this.activities = this.activities.concat(more);
+          this.activitiesPage = resp.page ?? nextPage;
+          // Stop when fewer than pageSize returned
+          if (!more || more.length < this.activitiesPageSize) {
+            this.usePagePaging = false;
+            if (this.intersectionObserver) this.intersectionObserver.disconnect();
+          }
+          this.isLoadingMore = false;
+          console.debug('[Activities] Loaded more (paged)', { appended: more.length, page: this.activitiesPage, keepPaging: this.usePagePaging });
+        },
+        error: (err) => {
+          console.error('[Activities] Failed to load more (paged)', err);
+          this.isLoadingMore = false;
+        }
+      });
+    }
   }
 
 

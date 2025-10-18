@@ -164,7 +164,7 @@
             </div>
           </div>
 
-        <div #loadMoreAnchor class="infinite-scroll-anchor" *ngIf="!isLoadingActivities && activities.length > 0 && nextPageToken"></div>
+        <div #loadMoreAnchor class="infinite-scroll-anchor" *ngIf="!isLoadingActivities && activities.length > 0 && (nextPageToken || usePagePaging)"></div>
         <div *ngIf="isLoadingMore" class="loading-activities">
           <div class="spinner-small"></div>
           <p>{{ 'URGENCY_DETAIL.LOADING_ACTIVITIES' | translate }}</p>
