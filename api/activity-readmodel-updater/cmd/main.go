@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -87,33 +86,34 @@ func loadConfig() *Config {
 func main() {
 	cfg := loadConfig()
 
-	logger, err := utils.NewLogger("activity-readmodel-updater")
+	log, err := utils.NewLogger("activity-readmodel-updater")
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
-	ctx0, _ := utils.EnsureRequestID(context.Background())
-	logger = logger.WithName("main").WithContext(ctx0)
+	mainCtx, _ := utils.EnsureRequestID(context.Background())
+	log = log.WithName("main").WithContext(mainCtx)
+	defer utils.TimeOperation(log, "ActivityReadModelUpdaterService.main")()
 
 	credsSrc := "ADC"
 	if cfg.FirebaseCredentialsPath != "" {
 		credsSrc = fmt.Sprintf("file:%s", cfg.FirebaseCredentialsPath)
 	}
-	logger.Infof("Starting Activity Read Model Updater version=%s git_sha=%s project_id=%s topic=%s subscription=%s creds=%s", cfg.Version, cfg.GitSHA, cfg.FirebaseProjectID, cfg.PubSubTopic, cfg.PubSubSubscription, credsSrc)
+	log.Infof("Starting Activity Read Model Updater version=%s git_sha=%s project_id=%s topic=%s subscription=%s creds=%s", cfg.Version, cfg.GitSHA, cfg.FirebaseProjectID, cfg.PubSubTopic, cfg.PubSubSubscription, credsSrc)
 
-	firestoreClient, err := initFirestore(cfg.FirebaseCredentialsPath, cfg.FirebaseProjectID)
+	firestoreClient, err := initFirestore(mainCtx, cfg.FirebaseCredentialsPath, cfg.FirebaseProjectID)
 	if err != nil {
-		logger.Fatalf("Failed to initialize Firestore: %v", err)
+		log.Fatalf("Failed to initialize Firestore: %v", err)
 	}
 	defer firestoreClient.Close()
 
-	pubsubClient, err := initPubSub(cfg.FirebaseCredentialsPath, cfg.FirebaseProjectID)
+	pubsubClient, err := initPubSub(mainCtx, cfg.FirebaseCredentialsPath, cfg.FirebaseProjectID)
 	if err != nil {
-		logger.Fatalf("Failed to initialize Pub/Sub: %v", err)
+		log.Fatalf("Failed to initialize Pub/Sub: %v", err)
 	}
 	defer pubsubClient.Close()
 
 	fsAdapter := googleadapter.NewClientAdapter(firestoreClient)
-	firebaseService := service.NewFirebaseService(fsAdapter, logger)
+	firebaseService := service.NewFirebaseService(fsAdapter, log)
 
 	// Start health/ready endpoints server
 	go func() {
@@ -170,21 +170,23 @@ func main() {
 				sExists, se = sub.Exists(ctx)
 				return te, se
 			}(); te != nil || se != nil {
-				logger.Warnf("Failed to check Pub/Sub health: topic_exists=%t, subscription_exists=%t, topic_error=%v, subscription_error=%v", tExists, sExists, te, se)
+				log.Warnf("Failed to check Pub/Sub health: topic_exists=%t, subscription_exists=%t, topic_error=%v, subscription_error=%v", tExists, sExists, te, se)
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(fmt.Sprintf(`{"status":"ok","service":"activity-readmodel-updater","firestore_ok":%t,"pubsub_topic_exists":%t,"pubsub_subscription_exists":%t}`, fsOK, tExists, sExists)))
 		})
 
 		healthAddr := fmt.Sprintf(":%d", cfg.HealthPort)
-		logger.Infof("Starting health check server on %s", healthAddr)
+		log.Infof("Starting health check server on %s", healthAddr)
 		if err := http.ListenAndServe(healthAddr, mux); err != nil {
-			logger.Errorf("Health check server error: %v", err)
+			log.Errorf("Health check server error: %v", err)
 		}
 	}()
 
 	// Create a cancellable context for subscriber
-	ctx, cancel := context.WithCancel(context.Background())
+	ctxWithCancel, cancel := context.WithCancel(context.Background())
+	ctxWithCancel, _ = utils.EnsureRequestID(ctxWithCancel)
+	pubSubLog := log.WithContext(ctxWithCancel)
 	defer cancel()
 
 	// Start Pub/Sub subscriber
@@ -194,27 +196,29 @@ func main() {
 		subscription.ReceiveSettings.MaxOutstandingMessages = cfg.SubscriberMaxOutstandingMessages
 		subscription.ReceiveSettings.MaxOutstandingBytes = cfg.SubscriberMaxOutstandingBytes
 
+		pubSubLog.Infof("Starting Pub/Sub subscriber with config: subscription=%s num_goroutines=%d max_outstanding_messages=%d max_outstanding_bytes=%d", cfg.PubSubSubscription, cfg.SubscriberNumGoroutines, cfg.SubscriberMaxOutstandingMessages, cfg.SubscriberMaxOutstandingBytes)
+
 		// Sharded dispatcher ensures per-activity ordering, parallel across activities
-		dispatcher := events.NewShardedDispatcher(firebaseService, logger, cfg.ShardWorkers, cfg.ShardQueue)
+		dispatcher := events.NewShardedDispatcher(firebaseService, pubSubLog, cfg.ShardWorkers, cfg.ShardQueue)
 
 		backoff := time.Second
 		attempt := 0
 		for {
-			if ctx.Err() != nil {
-				logger.Infof("Subscriber context canceled; exiting receive loop")
+			if ctxWithCancel.Err() != nil {
+				pubSubLog.Infof("Subscriber context canceled; exiting receive loop")
 				return
 			}
 			attempt++
-			logger.Infof("Starting Pub/Sub subscriber receive attempt=%d subscription=%s", attempt, cfg.PubSubSubscription)
-			err := subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+			pubSubLog.Infof("Starting Pub/Sub subscriber receive attempt=%d subscription=%s", attempt, cfg.PubSubSubscription)
+			err := subscription.Receive(ctxWithCancel, func(ctx context.Context, msg *pubsub.Message) {
 				defer func() {
 					if r := recover(); r != nil {
-						logger.Errorf("Panic in subscriber handler: %v\nstack=%s\nmessage_id=%s", r, string(debug.Stack()), msg.ID)
+						pubSubLog.Errorf("Panic in subscriber handler: %v\nstack=%s\nmessage_id=%s", r, string(debug.Stack()), msg.ID)
 						msg.Nack()
 					}
 				}()
 				ctx, reqID := utils.EnsureRequestID(ctx)
-				reqLog := logger.WithContext(ctx)
+				reqLog := pubSubLog.WithContext(ctx)
 				attempt := 0
 				if msg.DeliveryAttempt != nil {
 					attempt = *msg.DeliveryAttempt
@@ -237,25 +241,25 @@ func main() {
 
 			// Handle Receive termination conditions explicitly
 			if err == nil {
-				logger.Warnf("Pub/Sub Receive returned nil (no error); restarting receive loop")
+				pubSubLog.Warnf("Pub/Sub Receive returned nil (no error); restarting receive loop")
 				backoff = time.Second
 			} else if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-				logger.Infof("Pub/Sub Receive stopped due to context cancellation: %v; exiting subscriber loop", err)
+				pubSubLog.Infof("Pub/Sub Receive stopped due to context cancellation: %v; exiting subscriber loop", err)
 				return
 			} else {
-				logger.Warnf("Pub/Sub Receive returned error: %v; will retry", err)
+				pubSubLog.Warnf("Pub/Sub Receive returned error: %v; will retry", err)
 			}
 
 			sleep := backoff
 			if backoff < 30*time.Second {
 				backoff *= 2
 			}
-			logger.Infof("Retrying subscriber after backoff=%s (attempt=%d)", sleep, attempt)
+			pubSubLog.Infof("Retrying subscriber after backoff=%s (attempt=%d)", sleep, attempt)
 			select {
 			case <-time.After(sleep):
 				continue
-			case <-ctx.Done():
-				logger.Infof("Context canceled during backoff; exiting subscriber loop")
+			case <-ctxWithCancel.Done():
+				pubSubLog.Infof("Context canceled during backoff; exiting subscriber loop")
 				return
 			}
 		}
@@ -265,20 +269,18 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	logger.Infof("Activity Read Model Updater started successfully")
+	log.Infof("Activity Read Model Updater started successfully")
 	<-sigChan
 
-	logger.Infof("Shutting down Activity Read Model Updater...")
+	log.Infof("Shutting down Activity Read Model Updater...")
 	cancel()
 
 	// Give some time for graceful shutdown
 	time.Sleep(5 * time.Second)
-	logger.Infof("Activity Read Model Updater stopped")
+	log.Infof("Activity Read Model Updater stopped")
 }
 
-func initFirestore(credentialsPath, projectID string) (*firestore.Client, error) {
-	ctx := context.Background()
-
+func initFirestore(ctx context.Context, credentialsPath, projectID string) (*firestore.Client, error) {
 	var client *firestore.Client
 	var err error
 
@@ -304,9 +306,7 @@ func initFirestore(credentialsPath, projectID string) (*firestore.Client, error)
 	return client, nil
 }
 
-func initPubSub(credentialsPath, projectID string) (*pubsub.Client, error) {
-	ctx := context.Background()
-
+func initPubSub(ctx context.Context, credentialsPath, projectID string) (*pubsub.Client, error) {
 	var client *pubsub.Client
 	var err error
 

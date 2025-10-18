@@ -30,7 +30,7 @@ type ServerConfig struct {
 
 // InitializeServer initializes a complete server with database, CORS, routes, and graceful shutdown
 func InitializeServer(log utils.Logger, config ServerConfig) error {
-	log.Infof("Starting %s", config.ServiceName)
+	log.Infof("Initializing server: %s", config.ServiceName)
 
 	db := InitDb(log, config.ServiceName, config.DatabaseConfig)
 

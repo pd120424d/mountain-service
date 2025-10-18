@@ -54,10 +54,14 @@ import (
 
 func main() {
 	svcName := globConf.ActivityServiceName
+	ctx, _ := utils.EnsureRequestID(context.Background())
 	log, err := utils.NewLogger(svcName)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create logger: %v", err))
 	}
+	log = log.WithContext(ctx)
+	log.Info("Starting Activity service")
+	defer utils.TimeOperation(log, "ActivityService.main")()
 
 	// Setup server configuration
 	serverConfig := server.ServerConfig{

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -104,13 +105,18 @@ func main() {
 		panic(fmt.Errorf("docs-aggregator config error: %w", err))
 	}
 
-	logger, err := utils.NewLogger("docs-aggregator")
+	log, err := utils.NewLogger("docs-aggregator")
 	if err != nil {
 		panic("failed to create logger")
 	}
 
+	ctx, _ := utils.EnsureRequestID(context.Background())
+	log = log.WithContext(ctx)
+	log.Info("Starting Docs Aggregator service")
+	defer utils.TimeOperation(log, "DocsAggregatorService.main")()
+
 	r := gin.Default()
-	r.Use(logger.RequestLogger())
+	r.Use(log.RequestLogger())
 
 	r.GET("/health", func(c *gin.Context) {
 		c.String(http.StatusOK, "healthy")
@@ -137,7 +143,7 @@ func main() {
 
 		swaggerConfigHandler := func(c *gin.Context) {
 			c.Header("Cache-Control", "public, max-age=60")
-			reqLog := logger.WithContext(c.Request.Context())
+			reqLog := log.WithContext(c.Request.Context())
 			urls := make([]map[string]string, 0, len(cfg.Services))
 
 			basePath := "/docs/specs"
@@ -166,7 +172,7 @@ func main() {
 		apiDocs.GET("/swagger-config.json", swaggerConfigHandler)
 
 		specsHandler := func(c *gin.Context) {
-			reqLog := logger.WithContext(c.Request.Context())
+			reqLog := log.WithContext(c.Request.Context())
 			name := c.Param("service")
 
 			// Make sure to trim any blank spaces and .json extension if present
@@ -245,8 +251,8 @@ func main() {
 	if v := os.Getenv("PORT"); v != "" {
 		addr = ":" + v
 	}
-	logger.Infof("docs-aggregator listening on %s", addr)
+	log.Infof("docs-aggregator listening on %s", addr)
 	if err := r.Run(addr); err != nil {
-		logger.Fatalf("server error: %v", err)
+		log.Fatalf("server error: %v", err)
 	}
 }

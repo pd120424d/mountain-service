@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -47,6 +48,11 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create logger: %v", err))
 	}
+
+	ctx, _ := utils.EnsureRequestID(context.Background())
+	log = log.WithContext(ctx)
+	log.Info("Starting Employee service")
+	defer utils.TimeOperation(log, "EmployeeService.main")()
 	defer func(log utils.Logger) {
 		err := log.Sync()
 		if err != nil {

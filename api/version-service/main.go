@@ -29,6 +29,11 @@ func main() {
 		panic("failed to create new logger: " + err.Error())
 	}
 
+	ctx, _ := utils.EnsureRequestID(context.Background())
+	log = log.WithContext(ctx)
+	log.Info("Starting Version service")
+	defer utils.TimeOperation(log, "VersionService.main")()
+
 	log.Info("Starting Version service on :8090...") // Updated to trigger deployment
 
 	r := gin.Default()
