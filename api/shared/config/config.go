@@ -29,9 +29,10 @@ const (
 )
 
 const (
-	DefaultListTimeout = 300 * time.Millisecond
-	CursorListTimeout  = 1 * time.Second
-	CountTimeout       = 2 * time.Second
+	DefaultListTimeout  = 300 * time.Millisecond
+	CursorListTimeout   = 1 * time.Second
+	PostgresListTimeout = 1 * time.Second
+	CountTimeout        = 2 * time.Second
 
 	// Fresh-read (RYW) propagation via header and default window duration
 	FreshWindowHeader  = "X-Fresh-Until"

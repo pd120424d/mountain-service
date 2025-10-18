@@ -306,18 +306,22 @@ func encodeCursorToken(t time.Time, id uint) string {
 // @Failure 500 {object} map[string]interface{}
 // @Router /activities [get]
 func (h *activityHandler) ListActivities(ctx *gin.Context) {
-	// Parse query first, then choose timeout (cursor path gets a longer timeout)
+	// Parse query first, then choose timeout (Postgres and cursor paths get a longer timeout)
 	req := buildActivityListRequest(ctx)
 	baseCtx := ctx.Request.Context()
+
+	source := h.determineSource(ctx)
+
 	to := config.DefaultListTimeout
 	if req.PageToken != "" {
 		to = config.CursorListTimeout
+	} else if source == "postgres" {
+		to = config.PostgresListTimeout
 	}
 	cctx, cancel := context.WithTimeout(baseCtx, to)
 	defer cancel()
 	log := h.log.WithContext(cctx)
 
-	source := h.determineSource(ctx)
 	startTime := time.Now()
 	defer func() {
 		duration := time.Since(startTime)
