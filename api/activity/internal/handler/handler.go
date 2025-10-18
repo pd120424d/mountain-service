@@ -27,17 +27,119 @@ type ActivityHandler interface {
 	GetActivityCounts(ctx *gin.Context)
 	DeleteActivity(ctx *gin.Context)
 	ResetAllData(ctx *gin.Context)
+
+	// Admin-only feature flag endpoints
+	GetActivitySourceFlag(ctx *gin.Context)
+	SetActivitySourceFlag(ctx *gin.Context)
+
+	SetFeatureFlagService(svc service.FeatureFlagService)
+}
+
+type ActivityHandlerConfig struct {
+	DefaultSource  string
+	AdminCanToggle bool
 }
 
 type activityHandler struct {
-	log           utils.Logger
-	svc           service.ActivityService
-	readModel     service.FirestoreService
+	log       utils.Logger
+	svc       service.ActivityService
+	readModel service.FirestoreService
+
 	urgencyClient clients.UrgencyClient
+	config        ActivityHandlerConfig
+	flags         service.FeatureFlagService
 }
 
-func NewActivityHandler(log utils.Logger, svc service.ActivityService, readModel service.FirestoreService, urgencyClient clients.UrgencyClient) ActivityHandler {
-	return &activityHandler{log: log.WithName("activityHandler"), svc: svc, readModel: readModel, urgencyClient: urgencyClient}
+func NewActivityHandler(log utils.Logger, svc service.ActivityService, readModel service.FirestoreService, urgencyClient clients.UrgencyClient, defaultSource string, adminCanToggle bool) ActivityHandler {
+	return &activityHandler{
+		log:           log.WithName("activityHandler"),
+		svc:           svc,
+		readModel:     readModel,
+		urgencyClient: urgencyClient,
+		config: ActivityHandlerConfig{
+			DefaultSource:  defaultSource,
+			AdminCanToggle: adminCanToggle,
+		},
+	}
+}
+
+// ActivitySourceFlagRequest represents the admin toggle payload
+// swagger:model ActivitySourceFlagRequest
+type ActivitySourceFlagRequest struct {
+	UsePostgres bool `json:"usePostgres" example:"true"`
+}
+
+// ActivitySourceFlagResponse represents the flag state returned to clients
+// swagger:model ActivitySourceFlagResponse
+type ActivitySourceFlagResponse struct {
+	UsePostgres bool `json:"usePostgres"`
+}
+
+// SetFeatureFlagService wires a shared feature flag provider (optional).
+func (h *activityHandler) SetFeatureFlagService(svc service.FeatureFlagService) {
+	h.flags = svc
+}
+
+// GetActivitySourceFlag Админ: враћа тренутну вредност feature флага (да ли се користи Postgres за листање)
+// @Summary Админ: одакле се читају активности
+// @Description Враћа глобалну вредност флага: ако је true, користи се Postgres за читање активности; иначе Firestore
+// @Tags admin
+// @Produce json
+// @Success 200 {object} ActivitySourceFlagResponse
+// @Failure 503 {object} map[string]string
+// @Router /admin/feature-flags/activity-source [get]
+func (h *activityHandler) GetActivitySourceFlag(ctx *gin.Context) {
+	if h.flags == nil {
+		ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": "Feature flag service not available"})
+		return
+	}
+	usePg, _ := h.flags.GetUsePostgresForActivities(ctx.Request.Context())
+	ctx.JSON(http.StatusOK, ActivitySourceFlagResponse{UsePostgres: usePg})
+}
+
+// SetActivitySourceFlag Админ: поставља глобални feature флаг
+// @Summary Админ: постави извор за листање активности
+// @Description Када се укључи (true), листање активности користи Postgres. Подразумевано је false (Firestore).
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param flag body ActivitySourceFlagRequest true "Toggle Postgres as activity source"
+// @Success 200 {object} ActivitySourceFlagResponse
+// @Failure 400 {object} map[string]string
+// @Failure 503 {object} map[string]string
+// @Router /admin/feature-flags/activity-source [put]
+func (h *activityHandler) SetActivitySourceFlag(ctx *gin.Context) {
+	if h.flags == nil {
+		ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": "Feature flag service not available"})
+		return
+	}
+	var req ActivitySourceFlagRequest
+	if err := json.NewDecoder(ctx.Request.Body).Decode(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body"})
+		return
+	}
+	actor := "admin"
+	if v, ok := ctx.Get("email"); ok {
+		if s, ok2 := v.(string); ok2 && s != "" {
+			actor = s
+		}
+	}
+	_ = h.flags.SetUsePostgresForActivities(ctx.Request.Context(), req.UsePostgres, actor)
+	ctx.JSON(http.StatusOK, ActivitySourceFlagResponse{UsePostgres: req.UsePostgres})
+}
+
+func (h *activityHandler) determineSource(ctx *gin.Context) string {
+	if override, exists := ctx.Get("activity_source_override"); exists {
+		if source, ok := override.(string); ok {
+			return source
+		}
+	}
+	if h.flags != nil {
+		if usePg, _ := h.flags.GetUsePostgresForActivities(ctx.Request.Context()); usePg {
+			return "postgres"
+		}
+	}
+	return h.config.DefaultSource
 }
 
 // CreateActivity Креирање нове активности
@@ -214,8 +316,16 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	cctx, cancel := context.WithTimeout(baseCtx, to)
 	defer cancel()
 	log := h.log.WithContext(cctx)
-	defer utils.TimeOperation(log, "ActivityHandler.ListActivities")()
-	log.Info("Received List Activities request")
+
+	source := h.determineSource(ctx)
+	startTime := time.Now()
+	defer func() {
+		duration := time.Since(startTime)
+		log.Infof("ActivityHandler.ListActivities completed: source=%s duration=%dms", source, duration.Milliseconds())
+	}()
+
+	log.Infof("Received List Activities request: source=%s urgencyId=%v pageToken=%v page=%d pageSize=%d",
+		source, req.UrgencyID, req.PageToken != "", req.Page, req.PageSize)
 
 	if req.UrgencyID != nil && h.urgencyClient != nil {
 		if _, err := h.urgencyClient.GetUrgencyByID(cctx, *req.UrgencyID); err != nil {
@@ -227,6 +337,12 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			// On transient client errors, proceed to avoid breaking UX; logs will capture the failure
 			log.Warnf("Urgency validation failed; continuing without blocking: %v", err)
 		}
+	}
+
+	// If source is explicitly set to postgres, use PostgreSQL directly
+	if source == "postgres" {
+		h.listFromPostgres(ctx, cctx, log, &req)
+		return
 	}
 
 	// Cursor-based pagination (preferred when pageToken provided)
@@ -523,4 +639,23 @@ func (h *activityHandler) ResetAllData(ctx *gin.Context) {
 	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "All activity data reset successfully"})
+}
+
+func (h *activityHandler) listFromPostgres(ctx *gin.Context, cctx context.Context, log utils.Logger, req *activityV1.ActivityListRequest) {
+	startTime := time.Now()
+	defer func() {
+		duration := time.Since(startTime)
+		log.Infof("PostgreSQL query completed: duration=%dms urgencyId=%v page=%d pageSize=%d",
+			duration.Milliseconds(), req.UrgencyID, req.Page, req.PageSize)
+	}()
+
+	response, err := h.svc.ListActivities(cctx, req)
+	if err != nil {
+		log.Errorf("Failed to list activities from PostgreSQL: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list activities", "details": err.Error()})
+		return
+	}
+
+	log.Infof("Listed %d activities out of %d total. Used PostgreSQL write model.", len(response.Activities), response.Total)
+	ctx.JSON(http.StatusOK, response)
 }

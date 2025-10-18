@@ -11,6 +11,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	_ "github.com/pd120424d/mountain-service/api/activity/cmd/docs"
 	"github.com/pd120424d/mountain-service/api/activity/internal/handler"
+	"github.com/pd120424d/mountain-service/api/activity/internal/middleware"
 	"github.com/pd120424d/mountain-service/api/activity/internal/model"
 	"github.com/pd120424d/mountain-service/api/activity/internal/publisher"
 	"github.com/pd120424d/mountain-service/api/activity/internal/repositories"
@@ -165,6 +166,8 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 
 	activitySvc := service.NewActivityServiceWithDeps(log, activityRepo, urgencyClient, employeeClient)
 
+	var flagSvc service.FeatureFlagService
+
 	// Initialize Firestore service if env vars present
 	var readModel service.FirestoreService
 	projectID := os.Getenv("FIREBASE_PROJECT_ID")
@@ -197,13 +200,32 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 		} else {
 			adapter := googleadapter.NewClientAdapter(fsClient)
 			readModel = service.NewFirebaseReadService(adapter, log)
+			flagSvc = service.NewFirestoreFeatureFlag(adapter, log)
 			log.Info("Activity read-model (Firestore) enabled")
 		}
 	} else {
 		log.Warn("Firestore project ID not set, fetching activities will fallback to SQL DB!")
 	}
 
-	activityHandler := handler.NewActivityHandler(log, activitySvc, readModel, urgencyClient)
+	// Fallback to in-memory flag service if Firestore not available
+	if flagSvc == nil {
+		flagSvc = service.NewInMemoryFeatureFlag(log, false)
+	}
+
+	// Load feature flag configuration
+	defaultSource := os.Getenv("ACTIVITY_DATA_SOURCE")
+	if defaultSource == "" {
+		defaultSource = "firestore"
+	}
+	adminCanToggle := os.Getenv("ADMIN_CAN_TOGGLE_ACTIVITY_SOURCE")
+	if adminCanToggle == "" {
+		adminCanToggle = "true"
+	}
+	log.Infof("Activity data source configuration: default=%s, admin_can_toggle=%s", defaultSource, adminCanToggle)
+
+	activityHandler := handler.NewActivityHandler(log, activitySvc, readModel, urgencyClient, defaultSource, adminCanToggle == "true")
+
+	activityHandler.SetFeatureFlagService(flagSvc)
 
 	// Setup JWT secret
 	jwtSecret := server.SetupJWTSecret(log)
@@ -221,8 +243,12 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	log.Info("Successfully initialized Redis token blacklist")
 
 	authMiddleware := auth.AuthMiddleware(log, tokenBlacklist)
+	adminToggleMiddleware := middleware.AdminToggleMiddleware(middleware.AdminToggleConfig{
+		Logger:         log,
+		AdminCanToggle: adminCanToggle == "true",
+	})
 
-	authorized := r.Group("/api/v1").Use(authMiddleware)
+	authorized := r.Group("/api/v1").Use(authMiddleware, adminToggleMiddleware)
 	{
 		authorized.POST("/activities", activityHandler.CreateActivity)
 		authorized.GET("/activities", activityHandler.ListActivities)
@@ -242,5 +268,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log, tokenBlacklist))
 	{
 		admin.DELETE("/activities/reset", activityHandler.ResetAllData)
+		admin.GET("/feature-flags/activity-source", activityHandler.GetActivitySourceFlag)
+		admin.PUT("/feature-flags/activity-source", activityHandler.SetActivitySourceFlag)
 	}
 }
