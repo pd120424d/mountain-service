@@ -79,7 +79,7 @@ graph TD
 4. Build Docker image with models
 5. Deploy to Azure VM
 
-## 🛠️ Local Development
+## Local Development
 
 ### Available Scripts
 
@@ -123,7 +123,7 @@ npm run models:validate              # Alias for validate-models
    npm start
    ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 

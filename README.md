@@ -1,161 +1,229 @@
-# 🏔️ Mountain Service Project
+# Mountain Service Project
 
-A modular, microservice-based system designed for managing mountain operations—coordinating employee shifts, tracking activities, and responding to urgencies in real time. Built with Go and Angular, this project emphasizes scalability, clarity, and role-based workflows.
+A modular, microservice-based system designed for managing mountain rescue operations—coordinating employee shifts, tracking activities, and responding to urgencies in real time. Built with Go and Angular, this project emphasizes scalability, eventual consistency, and production-ready patterns.
+
+**Deployed at:** [http://mountain-service.duckdns.org/](http://mountain-service.duckdns.org/)
 
 ---
 
 ## Table of Contents
 
-- [Features](#-features)
-- [CI/CD Pipeline](#-cicd-pipeline)
-- [Architecture](#-architecture)
-- [Microservices](#-microservices)
-- [Tech Stack](#-tech-stack)
-- [Getting Started](#-getting-started)
-- [License](#-license)
+- [Features](#features)
+- [Microservices](#microservices)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Documentation](#documentation)
+- [License](#license)
+- [Credits](#credits)
 
 ---
 
 ## Features
 
-- Employee shift scheduling with role constraints (Medic, Technical, Administrator)
-- Activity tracking for mountain operations
-- Urgency management with real-time escalation
-- Role-based access and user authentication
-- Angular-based frontend with localization support
-- Admin panel: safe service restarts (Kubernetes deployment rollout restart)
-- Observability: Grafana dashboards at /grafana (admin-only)
-- Kubernetes deployment (Helm charts in api/charts/) with Secrets via GitHub Actions
+- **Employee Management**: Shift scheduling with role constraints (Medic, Technical, Administrator)
+- **Activity Tracking**: Real-time activity logs with infinite scroll and cursor-based pagination
+- **Urgency Management**: Critical incident tracking with real-time escalation
+- **CQRS Architecture**: Separate read/write models for optimal performance
+- **Role-based Access**: JWT authentication with service-to-service security
+- **Localization**: Multi-language support (Serbian Cyrillic, Latin, English, Russian)
+- **Admin Panel**: Safe service restarts via Kubernetes rollout
+- **Observability**: Grafana dashboards with GCP Cloud Logging integration
 
 ---
 
-## CI/CD Pipeline
-
-This project uses GitHub Actions for:
-- TypeScript model generation/validation
-- Backend/frontend test coverage
-- Kubernetes deployment with kubectl (see .github/workflows/k8s-deploy.yml)
-
-See docs/CI-CD-MODEL-GENERATION.md for model generation details.
-
----
-
-## Architecture
-
-The system follows a microservice architecture:
-
-```
-                       +-------------------+
-                       |   Angular Frontend |
-                       +-------------------+
-                                |
-                                v
-                     +---------------------+
-                     |    API Gateway       |
-                     +---------------------+
-                                |
-        -------------------------------------------------
-        |                     |                      |
-        v                     v                      v
-+----------------+   +------------------+   +------------------+
-|  Employee Svc  |   |  Activity Svc     |   |  Urgency Svc     |
-+----------------+   +------------------+   +------------------+
-
-```
-
-Each service is independently deployable and communicates via HTTP/REST APIs.
-
----
 
 ## Microservices
 
-| Service           | Description                                | Path                        |
-|-------------------|--------------------------------------------|-----------------------------|
-| Employee Service  | Manages employee profiles and shifts       | `api/employee/`             |
-| Activity Service  | Tracks mountain-related tasks and logs     | `api/activity/`             |
-| Urgency Service   | Handles alerts and critical notifications  | `api/urgency/`              |
-| API Gateway       | Entry point that routes requests           | `api/api-gateway/`          |
-| Frontend (Angular)| UI for employees/admins                    | `frontend/`                 |
+| Service                    | Description                                      | Path                              | Tech Stack                    |
+|----------------------------|--------------------------------------------------|-----------------------------------|-------------------------------|
+| **Employee Service**       | Employee profiles, shifts, authentication        | `api/employee/`                   | Go, Gin, GORM, PostgreSQL     |
+| **Activity Service**       | Activity tracking with CQRS read-model           | `api/activity/`                   | Go, Gin, GORM, Firestore      |
+| **Urgency Service**        | Critical incident management                     | `api/urgency/`                    | Go, Gin, GORM, PostgreSQL     |
+| **Activity Read-Model**    | Firestore sync via Pub/Sub events                | `api/activity-readmodel-updater/` | Go, Pub/Sub, Firestore        |
+| **Docs Aggregator**        | Centralized Swagger/OpenAPI documentation        | `api/docs-aggregator/`            | Go, Swagger UI                |
+| **Version Service**        | Build version and health checks                  | `api/version-service/`            | Go, Gin                       |
+| **Frontend**               | Angular SPA with localization                    | `ui/`                             | Angular 18, TypeScript, Nginx |
 
 ---
 
 ## Tech Stack
 
-- **Backend**: Go (Gin, GORM, Zap, Afero)
-- **Frontend**: Angular, Typescript
-- **Database**: PostgreSQL, Redis, Firebase
-- **DevOps**: Docker, Makefiles, CI/CD ready
-- **Tools**: GitHub Actions, Prometheus/Grafana (planned), Kubernetes
+### Backend
+- **Language**: Go 1.22+
+- **Framework**: Gin (HTTP), GORM (ORM)
+- **Databases**:
+  - PostgreSQL (write model, with read replicas)
+  - Google Cloud Firestore (read model)
+  - Redis (token blacklist)
+- **Messaging**: Google Cloud Pub/Sub
+- **Logging**: Uber Zap + GCP Cloud Logging
+- **Testing**: gomock, go-sqlmock, testify
+
+### Frontend
+- **Framework**: Angular 18
+- **Language**: TypeScript 5.5
+- **UI Components**: Angular Material
+- **Localization**: ngx-translate (Serbian Cyrillic/Latin, English, Russian)
+- **Maps**: Leaflet with OpenStreetMap
+- **Testing**: Karma, Jasmine
+
+### Infrastructure
+- **Container Orchestration**: Kubernetes (GKE)
+- **Package Manager**: Helm 3
+- **Ingress**: Traefik with TLS
+- **CI/CD**: GitHub Actions
+- **Monitoring**: Grafana + GCP Cloud Logging
+- **Secrets Management**: Kubernetes Secrets via GitHub Actions
+
+### DevOps Tools
+- **Code Generation**: swagger-typescript-api, gomock, swag
+- **Database Migrations**: GORM AutoMigrate
+- **Containerization**: Docker multi-stage builds
+- **Load Balancing**: PgBouncer (database connection pooling)
 
 ---
 
 ## Getting Started
 
-1. Clone the repository:
+### Prerequisites
+
+- **Go** 1.22+ ([install](https://go.dev/doc/install))
+- **Node.js** 20+ and npm ([install](https://nodejs.org/))
+- **Docker** and Docker Compose ([install](https://docs.docker.com/get-docker/))
+- **kubectl** ([install](https://kubernetes.io/docs/tasks/tools/))
+- **Helm** 3+ ([install](https://helm.sh/docs/intro/install/))
+
+### Local Development Setup
+
+1. **Clone the repository:**
 
 ```bash
-git clone https://github.com/your-org/mountain-service.git
+git clone https://github.com/pd120424d/mountain-service.git
 cd mountain-service
 ```
 
-2. Kubernetes quick start:
+2. **Set up environment variables:**
 
 ```bash
-kubectl apply -f k8s/namespaces.yaml
-kubectl -n mountain apply -f k8s/deployments/
-kubectl -n mountain apply -f k8s/services/
-kubectl -n mountain apply -f k8s/frontend/
+# Backend services
+cd api
+cp .env.example .env
+# Edit .env with your database credentials, JWT secrets, etc.
+```
+Note: Go module root is in api/. Run Go commands from the api/ directory.
+
+
+3. **Run backend services:**
+
+```bash
+# Employee service
+cd api/employee
+go run cmd/main.go
+
+# Activity service
+cd api/activity
+go run cmd/main.go
+
+# Urgency service
+cd api/urgency
+go run cmd/main.go
 ```
 
-3. GitHub Secrets required: see docs/README.k8s-variables.md
+4. **Run frontend:**
 
-4. For legacy Docker instructions, see deprecated/README.md
+```bash
+cd ui
+npm install
+npm start
+# Open http://localhost:4200
+```
 
-- [Backend README](./api/README.md)
-- [Frontend README](./ui/README.md)
+### Running Tests
+
+**Backend tests with coverage:**
+
+```bash
+cd api
+./backend-test-cover.sh
+# Opens coverage report in browser
+```
+
+**Frontend tests with coverage:**
+
+```bash
+cd ui
+npm test
+# Or with coverage:
+./frontend-test-cover.sh
+```
+
+### Building for Production
+
+**Backend Docker images:**
+
+```bash
+# Build all services
+cd api
+docker build -t employee-service:latest -f employee/Dockerfile .
+docker build -t activity-service:latest -f activity/Dockerfile .
+docker build -t urgency-service:latest -f urgency/Dockerfile .
+```
+
+**Frontend Docker image:**
+
+```bash
+cd ui
+docker build -t frontend:latest .
+```
+
+### Kubernetes Deployment
+
+**Deploy with Helm:**
+
+```bash
+# Install all services
+cd api/charts
+
+helm install employee-service ./employee-service
+helm install activity-service ./activity-service
+helm install urgency-service ./urgency-service
+helm install frontend ./frontend
+
+# Or use the umbrella chart (if available)
+helm install mountain-service ./mountain-service
+```
+
+**Check deployment status:**
+
+```bash
+kubectl get pods
+kubectl get ingress
+```
 
 ---
 
-## CI/CD and Deployment
-
-- Test coverage workflows are kept: backend-test-coverage.yml, frontend-test-coverage.yml
-- Deployment to Kubernetes is handled by .github/workflows/k8s-deploy.yml
-- Legacy AWS/docker-compose workflows and scripts are in deprecated/
-
-Secrets required for K8s: see docs/README.k8s-variables.md
-
-3. For more specific setup instructions, refer to individual README files:
-
-- [Backend README](./api/README.md)
 
 ---
 
-## Observability and Admin operations
 
-- Grafana: Exposed at https://mountain-service.duckdns.org/grafana (link available in Admin panel). See docs/OBSERVABILITY-GRAFANA.md for Helm install and Ingress example.
-- Admin service restarts: Admin panel includes a dropdown and confirmation modal to safely trigger a rollout restart of selected services.
-  - Backend endpoint: POST /api/v1/admin/k8s/restart with body {"deployment":"<name>"}
-  - Secured by admin JWT and Kubernetes RBAC; only allowlisted Deployments can be restarted.
-  - Enabled via Helm in the employee-service chart:
+## Documentation
 
-    values.yaml
-    - serviceAccount.create: true
-    - rbac.create: true
-    - rbac.allowedDeployments: [employee-service, urgency-service, activity-service, version-service, docs-aggregator, docs-ui]
-
-  - Install/upgrade example:
-    helm upgrade --install employee-service api/charts/employee-service -n mountain-service -f your-values.yaml
-
-For details:
-- docs/OBSERVABILITY-GRAFANA.md — Grafana setup and exposure at /grafana
-- docs/ADMIN-RESTART.md — How the restart feature works, Helm values, and testing the endpoint
-
-- [Frontend README](./ui/README.md)
+For detailed documentation on the project, including API references, deployment guides, and more, please refer to the [docs](docs/) directory.
 
 ---
+
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Credits
+
+- **Google Cloud Platform** for Firestore, Pub/Sub, and Cloud Logging
+- **Kubernetes** and **Helm** communities for excellent orchestration tools
+- **Angular** and **Go** communities for robust frameworks
+- **OpenStreetMap** for map data
 
 ---
