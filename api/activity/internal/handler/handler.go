@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/pd120424d/mountain-service/api/activity/internal/clients"
 	"github.com/pd120424d/mountain-service/api/activity/internal/service"
@@ -19,6 +20,9 @@ import (
 	sharedModels "github.com/pd120424d/mountain-service/api/shared/models"
 	"github.com/pd120424d/mountain-service/api/shared/utils"
 )
+
+const defaultPageSize = 50
+const maximumPageSize = 100
 
 type ActivityHandler interface {
 	CreateActivity(ctx *gin.Context)
@@ -321,11 +325,17 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	cctx, cancel := context.WithTimeout(baseCtx, to)
 	defer cancel()
 	log := h.log.WithContext(cctx)
+	defer utils.TimeOperation(log, "ActivityHandler.ListActivities",
+		zap.String("source", source),
+		zap.Int("page_size", req.PageSize),
+		zap.Bool("has_page_token", req.PageToken != ""),
+	)()
 
 	startTime := time.Now()
 	defer func() {
 		duration := time.Since(startTime)
-		log.Infof("ActivityHandler.ListActivities completed: source=%s duration=%dms", source, duration.Milliseconds())
+		log.Infof("ActivityHandler.ListActivities completed: source=%s pageSize=%d hasPageToken=%v duration=%dms",
+			source, req.PageSize, req.PageToken != "", duration.Milliseconds())
 	}()
 
 	log.Infof("Received List Activities request: source=%s urgencyId=%v pageToken=%v page=%d pageSize=%d",
@@ -353,10 +363,10 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 	if h.readModel != nil && req.PageToken != "" {
 		size := req.PageSize
 		if size <= 0 {
-			size = 10
+			size = defaultPageSize
 		}
-		if size > 100 {
-			size = 100
+		if size > maximumPageSize {
+			size = maximumPageSize
 		}
 
 		var (
@@ -380,6 +390,7 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, resp)
 			return
 		} else {
+			marshalStart := time.Now()
 			resp := &activityV1.ActivityListResponse{Activities: make([]activityV1.ActivityResponse, 0, len(activities))}
 			for _, a := range activities {
 				ar := a.ToResponse()
@@ -388,7 +399,8 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			resp.Total = int64(len(activities))
 			resp.PageSize = size
 			resp.NextPageToken = nextToken
-			log.Infof("Listed %d activities using Firestore cursor. nextToken set? %v", len(resp.Activities), nextToken != "")
+			marshalMs := time.Since(marshalStart).Milliseconds()
+			log.Infof("Firestore cursor marshal: marshalMs=%d count=%d nextToken=%v", marshalMs, len(resp.Activities), nextToken != "")
 			ctx.JSON(http.StatusOK, resp)
 			return
 		}
@@ -401,7 +413,7 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			page = 1
 		}
 		if size <= 0 {
-			size = 10
+			size = defaultPageSize
 		}
 
 		limit := page * size
@@ -460,7 +472,7 @@ func (h *activityHandler) ListActivities(ctx *gin.Context) {
 			page = 1
 		}
 		if size <= 0 {
-			size = 10
+			size = defaultPageSize
 		}
 		limit := page * size
 		activities, err := h.readModel.ListAll(cctx, limit)
