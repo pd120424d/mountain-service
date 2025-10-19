@@ -70,6 +70,20 @@ func (mr *MockActivityRepositoryMockRecorder) CreateWithOutbox(ctx, activity, ev
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWithOutbox", reflect.TypeOf((*MockActivityRepository)(nil).CreateWithOutbox), ctx, activity, event)
 }
 
+// CreateBatchWithOutbox mocks base method.
+func (m *MockActivityRepository) CreateBatchWithOutbox(ctx context.Context, activities []*model.Activity, events []*models.OutboxEvent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateBatchWithOutbox", ctx, activities, events)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateBatchWithOutbox indicates an expected call of CreateBatchWithOutbox.
+func (mr *MockActivityRepositoryMockRecorder) CreateBatchWithOutbox(ctx, activities, events any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBatchWithOutbox", reflect.TypeOf((*MockActivityRepository)(nil).CreateBatchWithOutbox), ctx, activities, events)
+}
+
 // Delete mocks base method.
 func (m *MockActivityRepository) Delete(ctx context.Context, id uint) error {
 	m.ctrl.T.Helper()

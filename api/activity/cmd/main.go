@@ -270,6 +270,7 @@ func setupRoutes(log utils.Logger, r *gin.Engine, db *gorm.DB) {
 	// Admin-only routes
 	admin := r.Group("/api/v1/admin").Use(auth.AdminMiddleware(log, tokenBlacklist))
 	{
+		admin.POST("/activities/batch", activityHandler.AddActivitiesBatch)
 		admin.DELETE("/activities/reset", activityHandler.ResetAllData)
 		admin.GET("/feature-flags/activity-source", activityHandler.GetActivitySourceFlag)
 		admin.PUT("/feature-flags/activity-source", activityHandler.SetActivitySourceFlag)

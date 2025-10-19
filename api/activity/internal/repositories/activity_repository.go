@@ -17,6 +17,7 @@ import (
 type ActivityRepository interface {
 	Create(ctx context.Context, activity *model.Activity) error
 	CreateWithOutbox(ctx context.Context, activity *model.Activity, event *models.OutboxEvent) error
+	CreateBatchWithOutbox(ctx context.Context, activities []*model.Activity, events []*models.OutboxEvent) error
 	GetByID(ctx context.Context, id uint) (*model.Activity, error)
 	List(ctx context.Context, filter *model.ActivityFilter) ([]model.Activity, int64, error)
 	Delete(ctx context.Context, id uint) error
@@ -75,6 +76,47 @@ func (r *activityRepository) CreateWithOutbox(ctx context.Context, activity *mod
 				log.Errorf("Failed to create outbox event: %v", err)
 				return fmt.Errorf("failed to create outbox event: %w", err)
 			}
+		}
+		return nil
+	})
+}
+
+func (r *activityRepository) CreateBatchWithOutbox(ctx context.Context, activities []*model.Activity, events []*models.OutboxEvent) error {
+	log := r.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "ActivityRepository.CreateBatchWithOutbox")()
+	if len(activities) == 0 {
+		return nil
+	}
+	if len(events) != len(activities) {
+		return fmt.Errorf("events length (%d) must match activities length (%d)", len(events), len(activities))
+	}
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.CreateInBatches(activities, len(activities)).Error; err != nil {
+			log.Errorf("Failed to batch create activities: %v", err)
+			return fmt.Errorf("failed to batch create activities: %w", err)
+		}
+		// Backfill AggregateID and JSON payloads with DB IDs and timestamps
+		for i, a := range activities {
+			if events[i] == nil {
+				continue
+			}
+			e := events[i]
+			e.AggregateID = fmt.Sprintf("activity-%d", a.ID)
+			// Update ActivityEvent JSON with ActivityID and CreatedAt when possible
+			var ev activityV1.ActivityEvent
+			if json.Unmarshal([]byte(e.EventData), &ev) == nil {
+				ev.ActivityID = a.ID
+				if ev.CreatedAt.IsZero() {
+					ev.CreatedAt = a.CreatedAt
+				}
+				if b, mErr := json.Marshal(ev); mErr == nil {
+					e.EventData = string(b)
+				}
+			}
+		}
+		if err := tx.CreateInBatches(events, len(events)).Error; err != nil {
+			log.Errorf("Failed to batch create outbox events: %v", err)
+			return fmt.Errorf("failed to batch create outbox events: %w", err)
 		}
 		return nil
 	})

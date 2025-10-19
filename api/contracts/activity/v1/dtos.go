@@ -41,6 +41,26 @@ type ActivityCreateRequest struct {
 	UrgencyID   uint   `json:"urgencyId" binding:"required"`
 }
 
+// BatchAddActivitiesRequest represents a batch payload for creating activities (admin-only endpoint)
+// swagger:model
+type BatchAddActivitiesRequest struct {
+	Items []ActivityCreateRequest `json:"items" binding:"required"`
+}
+
+// BatchAddResult represents per-item outcome within a batch add
+// swagger:model
+type BatchAddResult struct {
+	Index int    `json:"index"`
+	ID    uint   `json:"id,omitempty"`
+	Error string `json:"error,omitempty"`
+}
+
+// BatchAddActivitiesResponse represents the results for the batch add operation
+// swagger:model
+type BatchAddActivitiesResponse struct {
+	Results []BatchAddResult `json:"results"`
+}
+
 // ActivityListRequest DTO for listing activities with filters
 // swagger:model
 type ActivityListRequest struct {

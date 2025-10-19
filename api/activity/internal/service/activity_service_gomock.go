@@ -50,6 +50,21 @@ func (m *MockActivityService) CreateActivity(ctx context.Context, req *v1.Activi
 	return ret0, ret1
 }
 
+// CreateActivitiesBatch mocks base method.
+func (m *MockActivityService) CreateActivitiesBatch(ctx context.Context, items []v1.ActivityCreateRequest) ([]v1.BatchAddResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateActivitiesBatch", ctx, items)
+	ret0, _ := ret[0].([]v1.BatchAddResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateActivitiesBatch indicates an expected call of CreateActivitiesBatch.
+func (mr *MockActivityServiceMockRecorder) CreateActivitiesBatch(ctx, items any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateActivitiesBatch", reflect.TypeOf((*MockActivityService)(nil).CreateActivitiesBatch), ctx, items)
+}
+
 // CreateActivity indicates an expected call of CreateActivity.
 func (mr *MockActivityServiceMockRecorder) CreateActivity(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()

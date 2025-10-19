@@ -394,6 +394,117 @@ func TestActivityService_CreateActivity(t *testing.T) {
 
 }
 
+func TestActivityService_CreateActivitiesBatch(t *testing.T) {
+	t.Parallel()
+
+	t.Run("it succeeds with memoization and single repo call", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(10)).Return(&urgencyV1.UrgencyResponse{ID: 10, Status: urgencyV1.InProgress, FirstName: "U", LastName: "One", Level: urgencyV1.Medium}, nil).Times(1)
+		empClient := &fakeEmployeeClient{first: "E", last: "Name"}
+		svc := NewActivityServiceWithDeps(log, repo, mockUrg, empClient)
+
+		repo.EXPECT().CreateBatchWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+			func(_ context.Context, acts []*model.Activity, evs []*models.OutboxEvent) error {
+				for i, a := range acts {
+					a.ID = uint(i + 1)
+					a.CreatedAt = time.Now()
+				}
+				if len(evs) != len(acts) {
+					return fmt.Errorf("events len mismatch")
+				}
+				return nil
+			},
+		).Times(1)
+
+		items := []activityV1.ActivityCreateRequest{
+			{Description: "a", EmployeeID: 1, UrgencyID: 10},
+			{Description: "b", EmployeeID: 2, UrgencyID: 10},
+		}
+		res, err := svc.CreateActivitiesBatch(t.Context(), items)
+		assert.NoError(t, err)
+		require.Len(t, res, 2)
+		assert.Equal(t, 0, res[0].Index)
+		assert.Equal(t, uint(1), res[0].ID)
+		assert.Equal(t, 1, res[1].Index)
+		assert.Equal(t, uint(2), res[1].ID)
+	})
+
+	t.Run("it returns validation error on one item, other succeeds", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(5)).Return(&urgencyV1.UrgencyResponse{ID: 5, Status: urgencyV1.InProgress}, nil)
+		svc := NewActivityServiceWithDeps(log, repo, mockUrg, nil)
+
+		repo.EXPECT().CreateBatchWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+			func(_ context.Context, acts []*model.Activity, _ []*models.OutboxEvent) error {
+				if len(acts) != 1 {
+					return fmt.Errorf("expected 1 valid activity")
+				}
+				acts[0].ID = 42
+				acts[0].CreatedAt = time.Now()
+				return nil
+			},
+		)
+
+		items := []activityV1.ActivityCreateRequest{
+			{Description: "", EmployeeID: 0, UrgencyID: 5},   // invalid
+			{Description: "ok", EmployeeID: 7, UrgencyID: 5}, // valid
+		}
+		res, err := svc.CreateActivitiesBatch(t.Context(), items)
+		assert.NoError(t, err)
+		require.Len(t, res, 2)
+		assert.Equal(t, 0, res[0].Index)
+		assert.NotEmpty(t, res[0].Error)
+		assert.Equal(t, 1, res[1].Index)
+		assert.Equal(t, uint(42), res[1].ID)
+	})
+
+	t.Run("repo error bubbles up and marks valid items as error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(3)).Return(&urgencyV1.UrgencyResponse{ID: 3, Status: urgencyV1.InProgress}, nil)
+		svc := NewActivityServiceWithDeps(log, repo, mockUrg, nil)
+
+		repo.EXPECT().CreateBatchWithOutbox(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("db down"))
+
+		items := []activityV1.ActivityCreateRequest{
+			{Description: "one", EmployeeID: 1, UrgencyID: 3},
+		}
+		res, err := svc.CreateActivitiesBatch(t.Context(), items)
+		assert.Error(t, err)
+		require.Len(t, res, 1)
+		assert.Equal(t, 0, res[0].Index)
+		assert.Contains(t, res[0].Error, "db down")
+	})
+
+	t.Run("it returns error when invalid urgency state rejects item", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		log := utils.NewTestLogger()
+		repo := repositories.NewMockActivityRepository(ctrl)
+		mockUrg := clients.NewMockUrgencyClient(ctrl)
+		mockUrg.EXPECT().GetUrgencyByID(gomock.Any(), uint(8)).Return(&urgencyV1.UrgencyResponse{ID: 8, Status: urgencyV1.Open}, nil)
+		svc := NewActivityServiceWithDeps(log, repo, mockUrg, nil)
+
+		items := []activityV1.ActivityCreateRequest{{Description: "x", EmployeeID: 1, UrgencyID: 8}}
+		res, err := svc.CreateActivitiesBatch(t.Context(), items)
+		assert.NoError(t, err)
+		require.Len(t, res, 1)
+		assert.NotEmpty(t, res[0].Error)
+	})
+}
+
 func TestActivityService_CreateActivity_Enrichment(t *testing.T) {
 	t.Parallel()
 

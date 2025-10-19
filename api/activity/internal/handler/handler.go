@@ -23,6 +23,7 @@ import (
 
 const defaultPageSize = 50
 const maximumPageSize = 100
+const maxBatchSize = 100
 
 type ActivityHandler interface {
 	CreateActivity(ctx *gin.Context)
@@ -32,7 +33,8 @@ type ActivityHandler interface {
 	DeleteActivity(ctx *gin.Context)
 	ResetAllData(ctx *gin.Context)
 
-	// Admin-only feature flag endpoints
+	// Admin-only endpoints
+	AddActivitiesBatch(ctx *gin.Context)
 	GetActivitySourceFlag(ctx *gin.Context)
 	SetActivitySourceFlag(ctx *gin.Context)
 
@@ -199,6 +201,45 @@ func (h *activityHandler) CreateActivity(ctx *gin.Context) {
 	utils.WriteFreshWindow(ctx, config.DefaultFreshWindow)
 
 	ctx.JSON(http.StatusCreated, response)
+}
+
+// AddActivitiesBatch Админ: креирање више активности у једном захтеву (само за тестирање)
+// @Summary Админ: серијско додавање активности
+// @Description Креира више активности у једном захтеву. Само за администраторе.
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param request body activityV1.BatchAddActivitiesRequest true "Пакет захтева за креирање активности"
+// @Success 200 {object} activityV1.BatchAddActivitiesResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /admin/activities/batch [post]
+func (h *activityHandler) AddActivitiesBatch(ctx *gin.Context) {
+	log := h.log.WithContext(ctx.Request.Context())
+	defer utils.TimeOperation(log, "ActivityHandler.AddActivitiesBatch")()
+
+	var req activityV1.BatchAddActivitiesRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Errorf("Failed to bind batch request: %v", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
+		return
+	}
+
+	if len(req.Items) == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "items must not be empty"})
+		return
+	}
+	if len(req.Items) > maxBatchSize {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("items cannot exceed %d", maxBatchSize)})
+		return
+	}
+
+	results, err := h.svc.CreateActivitiesBatch(ctx.Request.Context(), req.Items)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Batch operation failed", "details": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, activityV1.BatchAddActivitiesResponse{Results: results})
 }
 
 // GetActivity Преузимање активности по ID

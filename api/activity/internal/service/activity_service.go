@@ -20,6 +20,7 @@ import (
 
 type ActivityService interface {
 	CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error)
+	CreateActivitiesBatch(ctx context.Context, items []activityV1.ActivityCreateRequest) ([]activityV1.BatchAddResult, error)
 	GetActivityByID(ctx context.Context, id uint) (*activityV1.ActivityResponse, error)
 	ListActivities(ctx context.Context, req *activityV1.ActivityListRequest) (*activityV1.ActivityListResponse, error)
 	DeleteActivity(ctx context.Context, id uint) error
@@ -58,6 +59,115 @@ func NewActivityServiceWithDeps(
 	},
 ) ActivityService {
 	return &activityService{log: log.WithName("activityService"), repo: repo, urgencyClient: urgencyClient, employeeClient: employeeClient}
+}
+
+func (s *activityService) CreateActivitiesBatch(ctx context.Context, items []activityV1.ActivityCreateRequest) ([]activityV1.BatchAddResult, error) {
+	log := s.log.WithContext(ctx)
+	defer utils.TimeOperation(log, "ActivityService.CreateActivitiesBatch")()
+
+	results := make([]activityV1.BatchAddResult, len(items))
+	if len(items) == 0 {
+		return results, nil
+	}
+
+	// Prepare slices preserving order
+	activities := make([]*model.Activity, 0, len(items))
+	events := make([]*models.OutboxEvent, 0, len(items))
+	indexMap := make([]int, 0, len(items))
+
+	// Per-batch memoization caches
+	var urgencyCache map[uint]*urgencyV1.UrgencyResponse
+	if s.urgencyClient != nil {
+		urgencyCache = make(map[uint]*urgencyV1.UrgencyResponse, len(items))
+	}
+	var employeeNameCache map[uint]string
+	if s.employeeClient != nil {
+		employeeNameCache = make(map[uint]string)
+	}
+
+	for i := range items {
+		item := items[i]
+		if err := item.Validate(); err != nil {
+			results[i] = activityV1.BatchAddResult{Index: i, Error: err.Error()}
+			continue
+		}
+
+		var urgencyTitle string
+		var urgencyLevel string
+		if s.urgencyClient != nil {
+			var urg *urgencyV1.UrgencyResponse
+			if cached, ok := urgencyCache[item.UrgencyID]; ok {
+				urg = cached
+			} else {
+				u, err := s.urgencyClient.GetUrgencyByID(ctx, item.UrgencyID)
+				if err != nil {
+					results[i] = activityV1.BatchAddResult{Index: i, Error: fmt.Sprintf("failed to validate urgency: %v", err)}
+					continue
+				}
+				urg = u
+				urgencyCache[item.UrgencyID] = u
+			}
+			if urg == nil || urg.Status != urgencyV1.InProgress {
+				results[i] = activityV1.BatchAddResult{Index: i, Error: "activities can be added only to in_progress urgencies"}
+				continue
+			}
+			urgencyTitle = strings.TrimSpace(strings.TrimSpace(urg.FirstName) + " " + strings.TrimSpace(urg.LastName))
+			urgencyLevel = string(urg.Level)
+		}
+
+		var employeeName string
+		if s.employeeClient != nil {
+			if name, ok := employeeNameCache[item.EmployeeID]; ok {
+				employeeName = name
+			} else {
+				if emp, err := s.employeeClient.GetEmployeeByID(ctx, item.EmployeeID); err == nil && emp != nil {
+					fullName := strings.TrimSpace(strings.TrimSpace(emp.FirstName) + " " + strings.TrimSpace(emp.LastName))
+					employeeName = fullName
+					employeeNameCache[item.EmployeeID] = fullName
+				}
+			}
+		}
+
+		act := model.FromCreateRequest(&item)
+		ev := activityV1.CreateOutboxEvent(
+			act.ID,
+			activityV1.ActivityEvent{
+				Type:         "CREATE",
+				ActivityID:   act.ID,
+				UrgencyID:    act.UrgencyID,
+				EmployeeID:   act.EmployeeID,
+				Description:  act.Description,
+				CreatedAt:    act.CreatedAt,
+				EmployeeName: employeeName,
+				UrgencyTitle: urgencyTitle,
+				UrgencyLevel: urgencyLevel,
+			},
+		)
+
+		activities = append(activities, act)
+		events = append(events, (*models.OutboxEvent)(ev))
+		indexMap = append(indexMap, i)
+	}
+
+	// If no valid items, return results as-is
+	if len(activities) == 0 {
+		return results, nil
+	}
+
+	if err := s.repo.CreateBatchWithOutbox(ctx, activities, events); err != nil {
+		for _, idx := range indexMap {
+			if results[idx].Index == 0 && results[idx].Error == "" && results[idx].ID == 0 {
+				results[idx] = activityV1.BatchAddResult{Index: idx, Error: err.Error()}
+			}
+		}
+		return results, err
+	}
+
+	for j, act := range activities {
+		idx := indexMap[j]
+		results[idx] = activityV1.BatchAddResult{Index: idx, ID: act.ID}
+	}
+	return results, nil
 }
 
 func (s *activityService) CreateActivity(ctx context.Context, req *activityV1.ActivityCreateRequest) (*activityV1.ActivityResponse, error) {

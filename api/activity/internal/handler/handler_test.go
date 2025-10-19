@@ -712,6 +712,58 @@ func TestActivityHandler_DetermineSource(t *testing.T) {
 	})
 }
 
+func TestActivityHandler_AddActivitiesBatch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	log := utils.NewTestLogger()
+
+	t.Run("success with two items", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/admin/activities/batch", strings.NewReader(`{"items":[{"description":"a","employeeId":1,"urgencyId":2},{"description":"b","employeeId":3,"urgencyId":4}]}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		svcMock := service.NewMockActivityService(ctrl)
+		readModel := service.NewMockFirestoreService(ctrl)
+
+		// Expect one batch call
+		batchResults := []activityV1.BatchAddResult{{Index: 0, ID: 1}, {Index: 1, ID: 2}}
+		svcMock.EXPECT().CreateActivitiesBatch(gomock.Any(), gomock.Any()).Return(batchResults, nil)
+
+		newTestHandler(log, svcMock, readModel, nil).(*activityHandler).AddActivitiesBatch(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		body := w.Body.String()
+		assert.Contains(t, body, "\"results\"")
+		assert.Contains(t, body, "\"id\":1")
+		assert.Contains(t, body, "\"id\":2")
+	})
+
+	t.Run("rejects when items exceed limit", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		// build payload with 101 items
+		var b strings.Builder
+		b.WriteString("{\"items\":[")
+		for i := 0; i < 101; i++ {
+			if i > 0 {
+				b.WriteString(",")
+			}
+			b.WriteString("{\"description\":\"x\",\"employeeId\":1,\"urgencyId\":1}")
+		}
+		b.WriteString("]}")
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/admin/activities/batch", strings.NewReader(b.String()))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+
+		newTestHandler(log, nil, nil, nil).(*activityHandler).AddActivitiesBatch(ctx)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "cannot exceed")
+	})
+}
+
 func newTestHandler(log utils.Logger, svc service.ActivityService, readModel service.FirestoreService, urgencyClient clients.UrgencyClient) ActivityHandler {
 	return NewActivityHandler(log, svc, readModel, urgencyClient, "firestore", true)
 }
