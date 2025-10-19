@@ -275,7 +275,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=7", nil)
 		svcMock := service.NewMockActivityService(ctrl)
 		readModel := service.NewMockFirestoreService(ctrl)
-		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(7), 10).Return([]sharedModels.Activity{{ID: 42, UrgencyID: 7, EmployeeID: 3}}, nil)
+		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(7), 50).Return([]sharedModels.Activity{{ID: 42, UrgencyID: 7, EmployeeID: 3}}, nil)
 
 		newTestHandler(log, svcMock, readModel, nil).ListActivities(ctx)
 
@@ -290,7 +290,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=7", nil)
 		svcMock := service.NewMockActivityService(ctrl)
 		readModel := service.NewMockFirestoreService(ctrl)
-		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(7), 10).Return([]sharedModels.Activity{}, nil)
+		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(7), 50).Return([]sharedModels.Activity{}, nil)
 
 		newTestHandler(log, svcMock, readModel, nil).ListActivities(ctx)
 
@@ -304,7 +304,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities?urgencyId=8", nil)
 		readModel := service.NewMockFirestoreService(ctrl)
-		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(8), 10).Return(nil, fmt.Errorf("rm error"))
+		readModel.EXPECT().ListByUrgency(gomock.Any(), uint(8), 50).Return(nil, fmt.Errorf("rm error"))
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any(), gomock.Any()).Return(&activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{{ID: 77}}, Total: 1, Page: 1, PageSize: 10}, nil)
 
@@ -400,7 +400,7 @@ func TestActivityHandler_ListActivities(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, "/activities", nil)
 		readModel := service.NewMockFirestoreService(ctrl)
-		readModel.EXPECT().ListAll(gomock.Any(), 10).Return(nil, fmt.Errorf("rm all error"))
+		readModel.EXPECT().ListAll(gomock.Any(), 50).Return(nil, fmt.Errorf("rm all error"))
 		svcMock := service.NewMockActivityService(ctrl)
 		svcMock.EXPECT().ListActivities(gomock.Any(), gomock.Any()).Return(&activityV1.ActivityListResponse{Activities: []activityV1.ActivityResponse{{ID: 99}}, Total: 1, Page: 1, PageSize: 10}, nil)
 
