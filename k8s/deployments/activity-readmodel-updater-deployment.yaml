@@ -71,6 +71,18 @@ spec:
               value: "true"
             - name: GCP_LOGGING_CREDENTIALS_PATH
               value: "/var/secrets/gcp-logging/key.json"
+            - name: SUBSCRIBER_NUM_GOROUTINES
+              value: "32"
+            - name: SUBSCRIBER_MAX_OUTSTANDING_MESSAGES
+              value: "5000"
+            - name: SUBSCRIBER_MAX_OUTSTANDING_BYTES
+              value: "104857600"
+            - name: SHARD_WORKERS
+              value: "48"
+            - name: SHARD_QUEUE
+              value: "4096"
+            - name: GOMEMLIMIT
+              value: "400MiB"
 
           volumeMounts:
             - name: gcp-readmodel-updater-key
@@ -81,11 +93,11 @@ spec:
               readOnly: true
           resources:
             requests:
-              cpu: "50m"
-              memory: "128Mi"
-            limits:
-              cpu: "200m"
+              cpu: "250m"
               memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
           livenessProbe:
             httpGet:
               path: /health

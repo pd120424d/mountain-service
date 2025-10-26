@@ -70,6 +70,10 @@ spec:
               value: {{ .Values.appEnv.SUBSCRIBER_MAX_OUTSTANDING_MESSAGES | quote }}
             - name: SUBSCRIBER_MAX_OUTSTANDING_BYTES
               value: {{ .Values.appEnv.SUBSCRIBER_MAX_OUTSTANDING_BYTES | quote }}
+            - name: SHARD_WORKERS
+              value: {{ .Values.appEnv.SHARD_WORKERS | quote }}
+            - name: SHARD_QUEUE
+              value: {{ .Values.appEnv.SHARD_QUEUE | quote }}
             - name: GCP_LOGGING_ENABLED
               value: {{ .Values.appEnv.GCP_LOGGING_ENABLED | quote }}
             - name: GOMEMLIMIT
